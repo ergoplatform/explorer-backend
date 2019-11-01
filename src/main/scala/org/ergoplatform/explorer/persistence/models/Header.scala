@@ -6,7 +6,7 @@ final case class Header(
   id: Id,
   parentId: Id,
   version: Short,
-  height: Long,
+  height: Int,
   nBits: Long,
   difficulty: Long,
   timestamp: Long,

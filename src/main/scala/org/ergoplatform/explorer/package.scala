@@ -4,7 +4,6 @@ import doobie.util.{Get, Put}
 import doobie.refined.implicits._
 import eu.timepit.refined._
 import eu.timepit.refined.api.Refined
-import eu.timepit.refined.collection.NonEmpty
 import eu.timepit.refined.string._
 import io.estatico.newtype.{Coercible, NewType}
 import io.estatico.newtype.ops._
@@ -16,11 +15,11 @@ package object explorer {
     implicit def put[T]: Put[T] = Put[A].contramap(Coercible.instance(_))
   }
 
-  object StringTagDoobieInstances extends DoobieInstances[NonEmptyString]
+  object StringTagDoobieInstances extends DoobieInstances[String]
 
   type Id = Id.Type
 
-  object Id extends NewType.Default[NonEmptyString] {
+  object Id extends NewType.Default[String] {
     // doobie instances
     implicit def get: Get[Type] = StringTagDoobieInstances.get
     implicit def put: Put[Type] = StringTagDoobieInstances.put
@@ -28,7 +27,7 @@ package object explorer {
 
   type TxId = TxId.Type
 
-  object TxId extends NewType.Default[NonEmptyString] {
+  object TxId extends NewType.Default[String] {
     // doobie instances
     implicit def get: Get[Type] = StringTagDoobieInstances.get
     implicit def put: Put[Type] = StringTagDoobieInstances.put
@@ -36,7 +35,7 @@ package object explorer {
 
   type BoxId = BoxId.Type
 
-  object BoxId extends NewType.Default[NonEmptyString] {
+  object BoxId extends NewType.Default[String] {
     // doobie instances
     implicit def get: Get[Type] = StringTagDoobieInstances.get
     implicit def put: Put[Type] = StringTagDoobieInstances.put
@@ -44,17 +43,17 @@ package object explorer {
 
   type AssetId = AssetId.Type
 
-  object AssetId extends NewType.Default[NonEmptyString] {
+  object AssetId extends NewType.Default[String] {
     // doobie instances
     implicit def get: Get[Type] = StringTagDoobieInstances.get
     implicit def put: Put[Type] = StringTagDoobieInstances.put
   }
 
-  type Address = Base58String
+  type Address = String Refined Base58StringP
 
-  type HexString = String Refined MatchesRegex[W.`"[0-9a-fA-F]+"`.T]
+  type HexString = String Refined HexStringP
 
-  type Base58String = String Refined MatchesRegex[W.`"[1-9A-HJ-NP-Za-km-z]+"`.T]
+  type HexStringP = MatchesRegex[W.`"[0-9a-fA-F]+"`.T]
 
-  type NonEmptyString = String Refined NonEmpty
+  type Base58StringP = MatchesRegex[W.`"[1-9A-HJ-NP-Za-km-z]+"`.T]
 }
