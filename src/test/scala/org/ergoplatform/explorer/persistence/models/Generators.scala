@@ -75,4 +75,7 @@ object Generators {
         votes,
         mainChain
       )
+
+  def withSingleInstance[T](gen: Gen[T])(test: T => Any): Any =
+    gen.sample.foreach(test)
 }

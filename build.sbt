@@ -35,14 +35,17 @@ lazy val projectDeps = Seq(
   "io.chrisdavenport" %% "log4cats-slf4j"      % log4catsVersion,
   "eu.timepit"        %% "refined"             % "0.9.10",
   "io.estatico"       %% "newtype"             % "0.4.3",
-  "org.slf4j"         % "slf4j-simple"         % "1.7.28"
+  "org.slf4j"         % "slf4j-simple"         % "1.7.28",
+  "org.flywaydb"      % "flyway-core"          % "5.1.1",
 )
 
 lazy val testDeps = Seq(
-  "org.tpolecat"   %% "doobie-scalatest" % doobieVersion % "test",
-  "org.scalactic"  %% "scalactic"        % "3.0.8"       % "test",
-  "org.scalatest"  %% "scalatest"        % "3.0.8"       % "test",
-  "org.scalacheck" %% "scalacheck"       % "1.14.1"      % "test"
+  "org.tpolecat"       %% "doobie-scalatest"     % doobieVersion % Test,
+  "org.scalactic"      %% "scalactic"            % "3.0.8"       % Test,
+  "org.scalatest"      %% "scalatest"            % "3.0.8"       % Test,
+  "org.scalacheck"     %% "scalacheck"           % "1.14.1"      % Test,
+  "org.testcontainers" % "postgresql"            % "1.7.3"       % Test,
+  "com.dimafeng"       %% "testcontainers-scala" % "0.18.0"      % Test
 )
 
 libraryDependencies ++= (projectDeps ++ testDeps)
