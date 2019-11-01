@@ -4,37 +4,48 @@ import doobie.util.{Get, Put}
 import eu.timepit.refined._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.string._
-import io.estatico.newtype.NewType
+import io.estatico.newtype.{Coercible, NewType}
 import io.estatico.newtype.ops._
 
 package object explorer {
 
+  sealed class DoobieInstances[A: Get: Put] {
+    implicit def get[T: Coercible[A, *]]: Get[T] = Get[A].map(_.coerce)
+    implicit def put[T]: Put[T] = Put[A].contramap(Coercible.instance(_))
+  }
+
+  object StringTagDoobieInstances extends DoobieInstances[String]
+
   type Id = Id.Type
 
   object Id extends NewType.Default[String] {
-    implicit def get: Get[Type] = Get[String].map(_.coerce)
-    implicit def put: Put[Type] = Put[String].contramap(unwrap(_))
+    // doobie instances
+    implicit def get: Get[Type] = StringTagDoobieInstances.get
+    implicit def put: Put[Type] = StringTagDoobieInstances.put
   }
 
   type TxId = TxId.Type
 
   object TxId extends NewType.Default[String] {
-    implicit def get: Get[Type] = Get[String].map(_.coerce)
-    implicit def put: Put[Type] = Put[String].contramap(unwrap(_))
+    // doobie instances
+    implicit def get: Get[Type] = StringTagDoobieInstances.get
+    implicit def put: Put[Type] = StringTagDoobieInstances.put
   }
 
   type BoxId = BoxId.Type
 
   object BoxId extends NewType.Default[String] {
-    implicit def get: Get[Type] = Get[String].map(_.coerce)
-    implicit def put: Put[Type] = Put[String].contramap(unwrap(_))
+    // doobie instances
+    implicit def get: Get[Type] = StringTagDoobieInstances.get
+    implicit def put: Put[Type] = StringTagDoobieInstances.put
   }
 
   type AssetId = AssetId.Type
 
   object AssetId extends NewType.Default[String] {
-    implicit def get: Get[Type] = Get[String].map(_.coerce)
-    implicit def put: Put[Type] = Put[String].contramap(unwrap(_))
+    // doobie instances
+    implicit def get: Get[Type] = StringTagDoobieInstances.get
+    implicit def put: Put[Type] = StringTagDoobieInstances.put
   }
 
   type Address = Base58String
