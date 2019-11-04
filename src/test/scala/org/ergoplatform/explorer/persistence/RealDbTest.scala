@@ -14,18 +14,18 @@ trait RealDbTest
     with BeforeAndAfter
     with BeforeAndAfterAll { self: TestSuite =>
 
-  val container: PostgreSQLContainer = {
-    val c = PostgreSQLContainer("postgres:latest")
-    c.container.withUsername("ergo").withDatabaseName("explorer")
-    c
-  }
-
   lazy val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
     container.driverClassName,
     container.jdbcUrl,
     container.username,
     container.password
   )
+
+  private lazy val container: PostgreSQLContainer = {
+    val c = PostgreSQLContainer("postgres:latest")
+    c.container.withUsername("ergo").withDatabaseName("explorer")
+    c
+  }
 
   private lazy val flyway = new Flyway()
 

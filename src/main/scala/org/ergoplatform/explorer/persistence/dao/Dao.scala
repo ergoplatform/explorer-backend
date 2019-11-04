@@ -21,11 +21,21 @@ trait Dao {
   lazy val tableNameFr: Fragment =
     Fragment.const(tableName)
 
+  /** All fields of a model fragment.
+    */
   lazy val fieldsFr: Fragment =
     Fragment.const(fieldsString)
 
+  /** Select fragment of all fields of a model.
+    */
   lazy val selectFr: Fragment =
-    fr"select" ++ fieldsFr ++ fr"from" ++ tableNameFr
+  fr"select" ++ fieldsFr ++ fr"from" ++ tableNameFr
+
+  /** Select fragment of all fields of a model with a given reference symbol `ref`.
+    */
+  final def selectWithRefFr(ref: String): Fragment =
+    fr"select" ++ Fragment.const(fields.map(field => s"$ref.$field").mkString(", ")) ++
+      fr"from" ++ tableNameFr ++ fr"$ref"
 
   def insert[M: Read: Write](m: M): ConnectionIO[M] =
     insert.withUniqueGeneratedKeys[M](fields: _*)(m)

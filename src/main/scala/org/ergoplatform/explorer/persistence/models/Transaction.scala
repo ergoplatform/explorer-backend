@@ -5,5 +5,5 @@ final case class Transaction(
   headerId: String,
   isCoinbase: Boolean,
   timestamp: Long,
-  size: Long
+  size: Int
 )
