@@ -54,7 +54,7 @@ object Generators {
       n             <- hexStringRGen
       d             <- Gen.posNum[Double].map(_.toString)
       votes         <- hexStringGen
-      mainChain     <- Gen.oneOf(Seq(true, false))
+      mainChain     <- Gen.oneOf(List(true, false))
     } yield
       Header(
         id,
@@ -75,6 +75,23 @@ object Generators {
         votes,
         mainChain
       )
+
+  def transactionGen: Gen[Transaction] =
+    for {
+      id       <- txIdGen
+      headerId <- idGen
+      coinbase <- Gen.oneOf(true, false)
+      ts       <- Gen.posNum[Long]
+      size     <- Gen.posNum[Int]
+    } yield Transaction(id, headerId, coinbase, ts, size)
+
+  def headerWithTxsGen(mainChain: Boolean): Gen[(Header, List[Transaction])] =
+    for {
+      header <- headerGen.map(_.copy(mainChain = mainChain))
+      txs    <- Gen
+              .nonEmptyListOf(transactionGen)
+              .map(_.map(_.copy(headerId = header.id)))
+    } yield (header, txs)
 
   def withSingleInstance[T](gen: Gen[T])(test: T => Any): Any =
     gen.sample.foreach(test)
