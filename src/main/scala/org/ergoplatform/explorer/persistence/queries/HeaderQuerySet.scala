@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.persistence.dao
+package org.ergoplatform.explorer.persistence.queries
 
 import cats.implicits._
 import doobie.implicits._
@@ -7,7 +7,7 @@ import doobie.{ConnectionIO, Update}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.persistence.models.Header
 
-object HeaderDao extends Dao {
+object HeaderQuerySet extends QuerySet {
 
   val tableName: String = "node_headers"
 
@@ -42,13 +42,13 @@ object HeaderDao extends Dao {
       .to[List]
 
   def get(id: Id): ConnectionIO[Option[Header]] =
-    (selectFr ++ fr"where id = $id").query[Header].option
+    sql"select * from node_headers where id = $id".query[Header].option
 
   def getAllByHeight(height: Int): ConnectionIO[List[Header]] =
-    (selectFr ++ fr"where height = $height").query[Header].to[List]
+    sql"select * from node_headers where height = $height".query[Header].to[List]
 
   def getHeightOf(id: Id): ConnectionIO[Option[Int]] =
-    (fr"select height from" ++ tableNameFr ++ fr"where id = $id").query[Int].option
+    sql"select height from node_headers where id = $id".query[Int].option
 
   private def update: Update[(Header, Id)] =
     Update[(Header, Id)](

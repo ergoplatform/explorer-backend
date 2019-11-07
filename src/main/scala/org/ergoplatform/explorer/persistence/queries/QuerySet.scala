@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.persistence.dao
+package org.ergoplatform.explorer.persistence.queries
 
 import cats.implicits._
 import doobie.implicits._
@@ -8,7 +8,7 @@ import doobie.{ConnectionIO, Update}
 
 /** Database table access operations layer.
   */
-trait Dao {
+trait QuerySet {
 
   /** Name of the table according to a database schema.
     */
@@ -17,25 +17,6 @@ trait Dao {
   /** Table column names listing according to a database schema.
     */
   val fields: List[String]
-
-  lazy val tableNameFr: Fragment =
-    Fragment.const(tableName)
-
-  /** All fields of a model fragment.
-    */
-  lazy val fieldsFr: Fragment =
-    Fragment.const(fieldsString)
-
-  /** Select fragment of all fields of a model.
-    */
-  lazy val selectFr: Fragment =
-  fr"select" ++ fieldsFr ++ fr"from" ++ tableNameFr
-
-  /** Select fragment of all fields of a model with a given reference symbol `ref`.
-    */
-  final def selectWithRefFr(ref: String): Fragment =
-    fr"select" ++ Fragment.const(fields.map(field => s"$ref.$field").mkString(", ")) ++
-      fr"from" ++ tableNameFr ++ fr"$ref"
 
   def insert[M: Read: Write](m: M): ConnectionIO[M] =
     insert.withUniqueGeneratedKeys[M](fields: _*)(m)

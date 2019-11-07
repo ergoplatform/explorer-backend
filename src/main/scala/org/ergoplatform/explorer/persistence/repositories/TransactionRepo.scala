@@ -50,7 +50,7 @@ object TransactionRepo {
   final class Live[F[_]: Sync](xa: Transactor[F])
     extends TransactionRepo[F] {
 
-    import org.ergoplatform.explorer.persistence.dao.{TransactionDao => dao}
+    import org.ergoplatform.explorer.persistence.queries.{TransactionQuerySet => dao}
 
     def insert(tx: Transaction): F[Unit] =
       dao.insert(tx).transact(xa).as(())
@@ -68,12 +68,14 @@ object TransactionRepo {
       address: Address,
       offset: Int,
       limit: Int
-    ): Stream[F, Transaction] = ???
+    ): Stream[F, Transaction] =
+      dao.getAllRelatedToAddress(address, offset, limit).transact(xa)
 
     def getAllMainSince(
       height: Int,
       offset: Int,
       limit: Int
-    ): Stream[F, Transaction] = ???
+    ): Stream[F, Transaction] =
+      dao.getAllMainSince(height, offset, limit).transact(xa)
   }
 }

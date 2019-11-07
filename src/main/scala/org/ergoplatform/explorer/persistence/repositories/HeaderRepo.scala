@@ -37,7 +37,7 @@ object HeaderRepo {
 
   final class Live[F[_]: Sync](xa: Transactor[F]) extends HeaderRepo[F] {
 
-    import org.ergoplatform.explorer.persistence.dao.{HeaderDao => dao}
+    import org.ergoplatform.explorer.persistence.queries.{HeaderQuerySet => dao}
 
     def insert(h: Header): F[Unit] =
       dao.insert(h).transact(xa).as(())
