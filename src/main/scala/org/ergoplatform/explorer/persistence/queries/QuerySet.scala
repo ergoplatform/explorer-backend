@@ -24,12 +24,12 @@ trait QuerySet {
   def insertMany[M: Read: Write](list: List[M]): ConnectionIO[List[M]] =
     insert.updateManyWithGeneratedKeys[M](fields: _*)(list).compile.to[List]
 
+  private def insert[M: Write]: Update[M] =
+    Update[M](s"insert into $tableName ($fieldsString) values ($holdersString)")
+
   private def fieldsString: String =
     fields.mkString(", ")
 
   private def holdersString: String =
     fields.map(_ => "?").mkString(", ")
-
-  private def insert[M: Write]: Update[M] =
-    Update[M](s"insert into $tableName ($fieldsString) values ($holdersString)")
 }

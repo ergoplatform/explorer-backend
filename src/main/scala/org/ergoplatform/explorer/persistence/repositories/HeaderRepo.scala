@@ -37,21 +37,21 @@ object HeaderRepo {
 
   final class Live[F[_]: Sync](xa: Transactor[F]) extends HeaderRepo[F] {
 
-    import org.ergoplatform.explorer.persistence.queries.{HeaderQuerySet => dao}
+    import org.ergoplatform.explorer.persistence.queries.{HeaderQuerySet => QS}
 
     def insert(h: Header): F[Unit] =
-      dao.insert(h).transact(xa).as(())
+      QS.insert(h).transact(xa).as(())
 
     def update(h: Header): F[Unit] =
-      dao.update(h).transact(xa).as(())
+      QS.update(h).transact(xa).as(())
 
     def get(id: Id): F[Option[Header]] =
-      dao.get(id).transact(xa)
+      QS.get(id).transact(xa)
 
     def getAllByHeight(height: Int): F[List[Header]] =
-      dao.getAllByHeight(height).transact(xa)
+      QS.getAllByHeight(height).transact(xa)
 
     def getHeightOf(id: Id): F[Option[Int]] =
-      dao.getHeightOf(id).transact(xa)
+      QS.getHeightOf(id).transact(xa)
   }
 }

@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.{Address, Id, TxId}
 
 /** [[Transaction]] data access operations.
   */
-trait TransactionRepo[F[_]] {
+trait TransactionRepo[F[_], G[_]] {
 
   /** Put a given `tx` to persistence.
     */
@@ -22,11 +22,11 @@ trait TransactionRepo[F[_]] {
 
   /** Get all transactions with id matching a given `idStr` from main-chain.
     */
-  def getAllMainByIdSubstring(idStr: String): F[List[Transaction]]
+  def getAllMainByIdSubstring(substring: String): F[List[Transaction]]
 
   /** Get all transactions from block with a given `id`.
     */
-  def getAllByBlockId(id: Id): Stream[F, Transaction]
+  def getAllByBlockId(id: Id): G[Transaction]
 
   /** Get all transaction related to a given `address`.
     */
@@ -34,7 +34,7 @@ trait TransactionRepo[F[_]] {
     address: Address,
     offset: Int,
     limit: Int
-  ): Stream[F, Transaction]
+  ): G[Transaction]
 
   /** Get all transactions appeared in the main-chain after given height.
     */
@@ -42,40 +42,40 @@ trait TransactionRepo[F[_]] {
     height: Int,
     offset: Int,
     limit: Int
-  ): Stream[F, Transaction]
+  ): G[Transaction]
 }
 
 object TransactionRepo {
 
   final class Live[F[_]: Sync](xa: Transactor[F])
-    extends TransactionRepo[F] {
+    extends TransactionRepo[F, Stream[F, *]] {
 
-    import org.ergoplatform.explorer.persistence.queries.{TransactionQuerySet => dao}
+    import org.ergoplatform.explorer.persistence.queries.{TransactionQuerySet => QS}
 
     def insert(tx: Transaction): F[Unit] =
-      dao.insert(tx).transact(xa).as(())
+      QS.insert(tx).transact(xa).as(())
 
     def getMain(id: TxId): F[Option[Transaction]] =
-      dao.getMain(id).transact(xa)
+      QS.getMain(id).transact(xa)
 
     def getAllMainByIdSubstring(idStr: String): F[List[Transaction]] =
-      dao.getAllMainByIdSubstring(idStr).transact(xa)
+      QS.getAllMainByIdSubstring(idStr).transact(xa)
 
     def getAllByBlockId(id: Id): Stream[F, Transaction] =
-      dao.getAllByBlockId(id).transact(xa)
+      QS.getAllByBlockId(id).transact(xa)
 
     def getAllRelatedToAddress(
       address: Address,
       offset: Int,
       limit: Int
     ): Stream[F, Transaction] =
-      dao.getAllRelatedToAddress(address, offset, limit).transact(xa)
+      QS.getAllRelatedToAddress(address, offset, limit).transact(xa)
 
     def getAllMainSince(
       height: Int,
       offset: Int,
       limit: Int
     ): Stream[F, Transaction] =
-      dao.getAllMainSince(height, offset, limit).transact(xa)
+      QS.getAllMainSince(height, offset, limit).transact(xa)
   }
 }
