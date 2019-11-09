@@ -1,3 +1,5 @@
 package org.ergoplatform.explorer.persistence.models
 
-final case class Miner(address: String, name: String)
+import org.ergoplatform.explorer.Address
+
+final case class Miner(address: Address, name: String)

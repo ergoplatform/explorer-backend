@@ -6,7 +6,7 @@ final case class MinerStats(
   minerAddress: Address,
   totalDifficulties: Long,
   totalTime: Long,
-  blocksMined: Long,
+  blocksMined: Int,
   minerName: Option[String]
 ) {
   val verboseName: String = minerName.getOrElse(minerAddress.value.takeRight(8))
