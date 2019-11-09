@@ -3,11 +3,13 @@ package org.ergoplatform.explorer.persistence.repositories
 import cats.effect.Sync
 import cats.implicits._
 import doobie.implicits._
+import doobie.refined.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
 import org.ergoplatform.explorer.persistence.models.Output
 import org.ergoplatform.explorer.persistence.models.composite.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, HexString}
+import org.ergoplatform.explorer.persistence.doobieInstances._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */

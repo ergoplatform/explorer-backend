@@ -9,6 +9,8 @@ import org.ergoplatform.explorer.{Address, BoxId, HexString}
 
 object OutputQuerySet extends QuerySet {
 
+  import org.ergoplatform.explorer.persistence.doobieInstances._
+
   val tableName: String = "node_outputs"
 
   val fields: List[String] = List(
@@ -65,7 +67,9 @@ object OutputQuerySet extends QuerySet {
          |where o.address = $address
          |""".stripMargin.query[ExtendedOutput].stream
 
-  def getAllByErgoTree(ergoTree: HexString): Stream[ConnectionIO, ExtendedOutput] =
+  def getAllByErgoTree(
+    ergoTree: HexString
+  ): Stream[ConnectionIO, ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -86,7 +90,9 @@ object OutputQuerySet extends QuerySet {
          |where o.ergo_tree = $ergoTree
          |""".stripMargin.query[ExtendedOutput].stream
 
-  def getAllMainUnspentByAddress(address: Address): Stream[ConnectionIO, ExtendedOutput] =
+  def getAllMainUnspentByAddress(
+    address: Address
+  ): Stream[ConnectionIO, ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,

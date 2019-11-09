@@ -2,7 +2,6 @@ package org.ergoplatform.explorer.persistence.queries
 
 import cats.implicits._
 import doobie.implicits._
-import doobie.util.fragment.Fragment
 import doobie.util.{Read, Write}
 import doobie.{ConnectionIO, Update}
 

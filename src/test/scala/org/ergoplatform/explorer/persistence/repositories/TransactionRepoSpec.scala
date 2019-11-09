@@ -15,7 +15,7 @@ class TransactionRepoSpec
   import org.ergoplatform.explorer.persistence.models.Generators._
 
   property("insert/getMain") {
-    withHeaderAndTransactionReposLive { (headerRepo, txRepo) =>
+    withLiveRepos { (headerRepo, txRepo) =>
       withSingleInstance(headerWithTxsGen(mainChain = true)) {
         case (header, txs) =>
           headerRepo.insert(header).unsafeRunSync()
@@ -29,7 +29,7 @@ class TransactionRepoSpec
   }
 
   property("getMain (ignore transactions from forks)") {
-    withHeaderAndTransactionReposLive { (headerRepo, txRepo) =>
+    withLiveRepos { (headerRepo, txRepo) =>
       withSingleInstance(headerWithTxsGen(mainChain = false)) {
         case (header, txs) =>
           headerRepo.insert(header).unsafeRunSync()
@@ -42,7 +42,7 @@ class TransactionRepoSpec
   }
 
   property("getAllMainByIdSubstring") {
-    withHeaderAndTransactionReposLive { (headerRepo, txRepo) =>
+    withLiveRepos { (headerRepo, txRepo) =>
       withSingleInstance(headerWithTxsGen(mainChain = true)) {
         case (header, txs) =>
           headerRepo.insert(header).unsafeRunSync()
@@ -56,7 +56,7 @@ class TransactionRepoSpec
   }
 
   property("getAllByBlockId") {
-    withHeaderAndTransactionReposLive { (headerRepo, txRepo) =>
+    withLiveRepos { (headerRepo, txRepo) =>
       withSingleInstance(headerWithTxsGen(mainChain = true)) {
         case (header, txs) =>
           headerRepo.insert(header).unsafeRunSync()
@@ -69,8 +69,8 @@ class TransactionRepoSpec
     }
   }
 
-  private def withHeaderAndTransactionReposLive(
-    body: (HeaderRepo[IO], TransactionRepo[IO]) => Any
+  private def withLiveRepos(
+    body: (HeaderRepo[IO], TransactionRepo.Live[IO]) => Any
   ): Any = {
     val headerRepo = new repositories.HeaderRepo.Live[IO](xa)
     val txRepo = new repositories.TransactionRepo.Live[IO](xa)
