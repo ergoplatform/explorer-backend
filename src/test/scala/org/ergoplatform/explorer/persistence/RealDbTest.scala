@@ -35,15 +35,13 @@ trait RealDbTest extends CatsInstances with BeforeAndAfter with BeforeAndAfterAl
     flyway.migrate()
   }
 
-  override def afterAll(): Unit = {
-    truncateAll()
+  override def afterAll(): Unit =
     container.container.stop()
-  }
 
   override def after(fun: => Any)(implicit pos: Position): Unit =
     truncateAll()
 
-  def truncateAll(): Unit =
+  private def truncateAll(): Unit =
     sql"""
          |truncate node_inputs;
          |truncate node_outputs;
