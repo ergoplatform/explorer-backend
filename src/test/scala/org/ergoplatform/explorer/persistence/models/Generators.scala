@@ -158,6 +158,18 @@ object Generators {
       }
     }
 
+  def assetGen: Gen[Asset] =
+    for {
+      id    <- assetIdGen
+      boxId <- boxIdGen
+      amt   <- Gen.posNum[Long]
+    } yield Asset(id, boxId, amt)
+
+  def assetsWithBoxIdGen: Gen[(BoxId, List[Asset])] =
+    boxIdGen.flatMap { boxId =>
+      Gen.nonEmptyListOf(assetGen).map(x => boxId -> x.map(_.copy(boxId = boxId)))
+    }
+
   def withSingleInstance[T](gen: Gen[T])(test: T => Any): Any =
     gen.sample.foreach(test)
 }
