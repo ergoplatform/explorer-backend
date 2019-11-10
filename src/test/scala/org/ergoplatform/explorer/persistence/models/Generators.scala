@@ -1,10 +1,14 @@
 package org.ergoplatform.explorer.persistence.models
 
 import eu.timepit.refined._
+import cats.syntax.option._
 import io.circe.Json
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
-import org.ergoplatform.explorer.persistence.models.composite.ExtendedOutput
+import org.ergoplatform.explorer.persistence.models.composite.{
+  ExtendedInput,
+  ExtendedOutput
+}
 import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.{Base16, Base58}
@@ -126,15 +130,33 @@ object Generators {
       ts      <- Gen.posNum[Long]
     } yield Output(boxId, txId, value, height, idx, tree, address, regs, ts)
 
-  def outputsWithTxWithHeaderGen(
+  def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
-  ): Gen[(Header, Transaction, List[(Output, ExtendedOutput)])] =
+  ): Gen[(Header, Transaction, List[ExtendedOutput])] =
     for {
       header <- headerGen.map(_.copy(mainChain = mainChain))
       tx     <- transactionGen.map(_.copy(headerId = header.id))
       outs   <- Gen.nonEmptyListOf(outputGen).map(_.map(_.copy(txId = tx.id)))
       extOuts = outs.map(o => ExtendedOutput(o, None, mainChain))
-    } yield (header, tx, outs.zip(extOuts))
+    } yield (header, tx, extOuts)
+
+  def inputGen: Gen[Input] =
+    for {
+      boxId <- boxIdGen
+      txId  <- txIdGen
+      proof <- hexStringRGen
+      ext   <- registersGen
+    } yield Input(boxId, txId, proof, ext)
+
+  def extInputWithOutputGen: Gen[(Output, ExtendedInput)] =
+    outputGen.flatMap { out =>
+      inputGen.map { in =>
+        val inModified = in.copy(boxId = out.boxId)
+        val extIn =
+          ExtendedInput(inModified, out.value.some, out.txId.some, out.address.some)
+        out -> extIn
+      }
+    }
 
   def withSingleInstance[T](gen: Gen[T])(test: T => Any): Any =
     gen.sample.foreach(test)

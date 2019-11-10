@@ -15,15 +15,14 @@ class OutputRepoSpec
 
   property("insert/getByBoxId") {
     withLiveRepos { (hRepo, txRepo, oRepo) =>
-      withSingleInstance(outputsWithTxWithHeaderGen(mainChain = true)) {
+      withSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
         case (header, tx, outputs) =>
           hRepo.insert(header).unsafeRunSync()
           txRepo.insert(tx).unsafeRunSync()
-          outputs.foreach {
-            case (out, extOut) =>
-              oRepo.getByBoxId(out.boxId).unsafeRunSync() shouldBe None
-              oRepo.insert(out)
-              oRepo.getByBoxId(out.boxId).unsafeRunSync() shouldBe Some(extOut)
+          outputs.foreach { extOut =>
+            oRepo.getByBoxId(extOut.output.boxId).unsafeRunSync() shouldBe None
+            oRepo.insert(extOut.output)
+            oRepo.getByBoxId(extOut.output.boxId).unsafeRunSync() shouldBe Some(extOut)
           }
       }
     }
@@ -33,31 +32,31 @@ class OutputRepoSpec
     withLiveRepos { (hRepo, txRepo, oRepo) =>
       withSingleInstance(hexStringRGen.flatMap(hex => addressGen.map(_ -> hex))) {
         case (address, ergoTree) =>
-          withSingleInstance(outputsWithTxWithHeaderGen(mainChain = true)) {
+          withSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
             case (header, tx, outputs) =>
               hRepo.insert(header).unsafeRunSync()
               txRepo.insert(tx).unsafeRunSync()
               val (matching, nonMatching) = (outputs.tail, outputs.last)
               matching
-                .map {
-                  case (out, extOut) =>
-                    out.copy(address = address, ergoTree = ergoTree) -> extOut
+                .map { extOut =>
+                  extOut.copy(
+                    output = extOut.output.copy(address = address, ergoTree = ergoTree)
+                  )
                 }
-                .foreach {
-                  case (out, _) =>
-                    oRepo.insert(out).unsafeRunSync()
+                .foreach { extOut =>
+                  oRepo.insert(extOut.output).unsafeRunSync()
                 }
-              oRepo.insert(nonMatching._1).unsafeRunSync()
+              oRepo.insert(nonMatching.output).unsafeRunSync()
               oRepo
                 .getAllByAddress(address)
                 .compile
                 .toList
-                .unsafeRunSync() should contain theSameElementsAs matching.map(_._2)
+                .unsafeRunSync() should contain theSameElementsAs matching
               oRepo
                 .getAllByErgoTree(ergoTree)
                 .compile
                 .toList
-                .unsafeRunSync() should contain theSameElementsAs matching.map(_._2)
+                .unsafeRunSync() should contain theSameElementsAs matching
           }
       }
     }
