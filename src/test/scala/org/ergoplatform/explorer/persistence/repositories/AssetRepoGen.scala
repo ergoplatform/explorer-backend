@@ -16,10 +16,10 @@ class AssetRepoGen
 
   property("insert/getAllByBoxId") {
     withLiveRepo { repo =>
-      withSingleInstance(assetsWithBoxIdGen) {
+      forAll(assetsWithBoxIdGen) {
         case (boxId, assets) =>
+          repo.getAllByBoxId(boxId).unsafeRunSync() shouldBe 'empty
           assets.foreach { asset =>
-            repo.getAllByBoxId(boxId).unsafeRunSync() shouldBe 'empty
             repo.insert(asset).unsafeRunSync()
           }
           repo

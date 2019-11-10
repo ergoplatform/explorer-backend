@@ -49,7 +49,7 @@ class TransactionRepoSpec
           txs.foreach { tx =>
             txRepo.insert(tx).unsafeRunSync()
             txRepo.getAllMainByIdSubstring(TxId.unwrap(tx.id).take(8))
-              .unsafeRunSync() shouldBe Some(tx)
+              .unsafeRunSync() shouldBe List(tx)
           }
       }
     }

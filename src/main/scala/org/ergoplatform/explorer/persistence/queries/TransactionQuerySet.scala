@@ -23,7 +23,7 @@ object TransactionQuerySet extends QuerySet {
     sql"""
          |select t.id, t.header_id, t.coinbase, t.timestamp, t.size from node_transactions t
          |left join node_headers h on h.id = t.header_id
-         |where h.main_chain = true
+         |where h.main_chain = true and t.id = $id
          |""".stripMargin.query[Transaction].option
 
   def getAllMainByIdSubstring(idStr: String): ConnectionIO[List[Transaction]] =

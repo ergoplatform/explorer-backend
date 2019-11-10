@@ -21,7 +21,7 @@ class OutputRepoSpec
           txRepo.insert(tx).unsafeRunSync()
           outputs.foreach { extOut =>
             oRepo.getByBoxId(extOut.output.boxId).unsafeRunSync() shouldBe None
-            oRepo.insert(extOut.output)
+            oRepo.insert(extOut.output).unsafeRunSync()
             oRepo.getByBoxId(extOut.output.boxId).unsafeRunSync() shouldBe Some(extOut)
           }
       }
@@ -36,7 +36,8 @@ class OutputRepoSpec
             case (header, tx, outputs) =>
               hRepo.insert(header).unsafeRunSync()
               txRepo.insert(tx).unsafeRunSync()
-              val (matching, nonMatching) = (outputs.tail, outputs.last)
+              val dOutputs = outputs.distinct
+              val (matching, nonMatching) = (dOutputs.tail, dOutputs.last)
               matching
                 .map { extOut =>
                   extOut.copy(
