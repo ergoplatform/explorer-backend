@@ -1,15 +1,15 @@
 package org.ergoplatform.explorer.persistence.repositories
 
 import cats.effect.IO
-import org.ergoplatform.explorer.persistence.{RealDbTest, repositories}
+import org.ergoplatform.explorer.persistence.{repositories, RealDbTest}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 class HeaderRepoSpec
   extends PropSpec
-    with Matchers
-    with RealDbTest
-    with ScalaCheckDrivenPropertyChecks {
+  with Matchers
+  with RealDbTest
+  with ScalaCheckDrivenPropertyChecks {
 
   import org.ergoplatform.explorer.persistence.models.Generators._
 

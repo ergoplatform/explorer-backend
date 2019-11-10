@@ -4,6 +4,7 @@ import cats.effect.Sync
 import cats.implicits._
 import doobie.util.transactor.Transactor
 import doobie.implicits._
+import doobie.refined.implicits._
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.persistence.models.AdProof
 

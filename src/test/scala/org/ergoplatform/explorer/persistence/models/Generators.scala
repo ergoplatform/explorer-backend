@@ -5,7 +5,10 @@ import eu.timepit.refined._
 import io.circe.Json
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
-import org.ergoplatform.explorer.persistence.models.composite.{ExtendedInput, ExtendedOutput}
+import org.ergoplatform.explorer.persistence.models.composite.{
+  ExtendedInput,
+  ExtendedOutput
+}
 import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.{Base16, Base58}

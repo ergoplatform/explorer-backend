@@ -6,7 +6,7 @@ import org.ergoplatform.explorer.persistence.RealDbTest
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class AssetRepoGen
+class AssetRepoSpec
   extends PropSpec
   with Matchers
   with RealDbTest
