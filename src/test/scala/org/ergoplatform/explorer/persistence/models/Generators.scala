@@ -175,6 +175,12 @@ object Generators {
       Gen.nonEmptyListOf(assetGen).map(x => boxId -> x.map(_.copy(boxId = boxId)))
     }
 
+  @scala.annotation.tailrec
   def withSingleInstance[T](gen: Gen[T])(test: T => Any): Any =
-    gen.sample.foreach(test)
+    gen.sample match {
+      case Some(sample) =>
+        test(sample)
+      case None =>
+        withSingleInstance(gen)(test)
+    }
 }

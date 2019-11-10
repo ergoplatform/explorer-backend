@@ -36,17 +36,16 @@ class OutputRepoSpec
             case (header, tx, outputs) =>
               hRepo.insert(header).unsafeRunSync()
               txRepo.insert(tx).unsafeRunSync()
-              val dOutputs = outputs.distinct
-              val (matching, nonMatching) = (dOutputs.tail, dOutputs.last)
-              matching
+              val nonMatching = outputs.head
+              val matching = outputs.tail
                 .map { extOut =>
                   extOut.copy(
                     output = extOut.output.copy(address = address, ergoTree = ergoTree)
                   )
                 }
-                .foreach { extOut =>
-                  oRepo.insert(extOut.output).unsafeRunSync()
-                }
+              matching.foreach { extOut =>
+                oRepo.insert(extOut.output).unsafeRunSync()
+              }
               oRepo.insert(nonMatching.output).unsafeRunSync()
               oRepo
                 .getAllByAddress(address)
