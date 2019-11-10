@@ -53,13 +53,6 @@ object Generators {
   def assetIdGen: Gen[AssetId] =
     hexStringGen.map(_.coerce[AssetId])
 
-  def adProofGen: Gen[AdProof] =
-    for {
-      headerId <- idGen
-      proof    <- hexStringRGen
-      digest   <- hexStringRGen
-    } yield AdProof(headerId, proof, digest)
-
   def headerGen: Gen[Header] =
     for {
       id            <- idGen
@@ -99,6 +92,18 @@ object Generators {
         votes,
         mainChain
       )
+
+  def adProofGen: Gen[AdProof] =
+    for {
+      headerId <- idGen
+      proof    <- hexStringRGen
+      digest   <- hexStringRGen
+    } yield AdProof(headerId, proof, digest)
+
+  def adProofWithHeaderGen: Gen[(Header, AdProof)] =
+    headerGen.flatMap { header =>
+      adProofGen.map(x => header -> x.copy(headerId = header.id))
+    }
 
   def transactionGen: Gen[Transaction] =
     for {

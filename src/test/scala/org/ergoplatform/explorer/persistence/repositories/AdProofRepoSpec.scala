@@ -14,19 +14,22 @@ class AdProofRepoSpec
   import org.ergoplatform.explorer.persistence.models.Generators._
 
   property("insert/getByHeaderId") {
-    withLiveRepos { repo =>
-      forAll(adProofGen) { proof =>
-        repo.getByHeaderId(proof.headerId).unsafeRunSync() shouldBe None
-        repo.insert(proof).unsafeRunSync()
-        repo.getByHeaderId(proof.headerId).unsafeRunSync() shouldBe Some(proof)
+    withLiveRepos { (headerRepo, repo) =>
+      forAll(adProofWithHeaderGen) {
+        case (header, proof) =>
+          headerRepo.insert(header).unsafeRunSync()
+          repo.getByHeaderId(proof.headerId).unsafeRunSync() shouldBe None
+          repo.insert(proof).unsafeRunSync()
+          repo.getByHeaderId(proof.headerId).unsafeRunSync() shouldBe Some(proof)
       }
     }
   }
 
   private def withLiveRepos(
-    body: AdProofRepo.Live[IO] => Any
+    body: (HeaderRepo.Live[IO], AdProofRepo.Live[IO]) => Any
   ): Any = {
     val repo = new repositories.AdProofRepo.Live[IO](xa)
-    body(repo)
+    val headerRepo = new repositories.HeaderRepo.Live[IO](xa)
+    body(headerRepo, repo)
   }
 }
