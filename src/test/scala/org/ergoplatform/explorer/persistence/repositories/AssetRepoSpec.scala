@@ -16,7 +16,7 @@ class AssetRepoSpec
 
   property("insert/getAllByBoxId") {
     withLiveRepo { repo =>
-      forAll(assetsWithBoxIdGen) {
+      forSingleInstance(assetsWithBoxIdGen) {
         case (boxId, assets) =>
           repo.getAllByBoxId(boxId).unsafeRunSync() shouldBe 'empty
           assets.foreach { asset =>

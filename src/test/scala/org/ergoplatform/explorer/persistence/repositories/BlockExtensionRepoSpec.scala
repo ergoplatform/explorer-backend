@@ -1,11 +1,11 @@
 package org.ergoplatform.explorer.persistence.repositories
 
 import cats.effect.IO
-import org.ergoplatform.explorer.persistence.{repositories, RealDbTest}
+import org.ergoplatform.explorer.persistence.{RealDbTest, repositories}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class AdProofRepoSpec
+class BlockExtensionRepoSpec
   extends PropSpec
   with Matchers
   with RealDbTest
@@ -15,20 +15,20 @@ class AdProofRepoSpec
 
   property("insert/getByHeaderId") {
     withLiveRepos { (headerRepo, repo) =>
-      forSingleInstance(adProofWithHeaderGen) {
-        case (header, proof) =>
+      forSingleInstance(blockExtensionWithHeaderGen) {
+        case (header, extension) =>
           headerRepo.insert(header).unsafeRunSync()
-          repo.getByHeaderId(proof.headerId).unsafeRunSync() shouldBe None
-          repo.insert(proof).unsafeRunSync()
-          repo.getByHeaderId(proof.headerId).unsafeRunSync() shouldBe Some(proof)
+          repo.getByHeaderId(extension.headerId).unsafeRunSync() shouldBe None
+          repo.insert(extension).unsafeRunSync()
+          repo.getByHeaderId(extension.headerId).unsafeRunSync() shouldBe Some(extension)
       }
     }
   }
 
   private def withLiveRepos(
-    body: (HeaderRepo.Live[IO], AdProofRepo.Live[IO]) => Any
+    body: (HeaderRepo.Live[IO], BlockExtensionRepo.Live[IO]) => Any
   ): Any = {
-    val repo = new repositories.AdProofRepo.Live[IO](xa)
+    val repo = new repositories.BlockExtensionRepo.Live[IO](xa)
     val headerRepo = new repositories.HeaderRepo.Live[IO](xa)
     body(headerRepo, repo)
   }

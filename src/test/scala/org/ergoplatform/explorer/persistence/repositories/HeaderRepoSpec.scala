@@ -15,7 +15,7 @@ class HeaderRepoSpec
 
   property("insert/get") {
     withHeaderRepoLive { repo =>
-      withSingleInstance(headerGen) { header =>
+      forSingleInstance(headerGen) { header =>
         repo.get(header.id).unsafeRunSync() shouldBe None
         repo.insert(header).unsafeRunSync()
         repo.get(header.id).unsafeRunSync() shouldBe Some(header)
@@ -25,7 +25,7 @@ class HeaderRepoSpec
 
   property("update") {
     withHeaderRepoLive { repo =>
-      withSingleInstance(headerGen) { header =>
+      forSingleInstance(headerGen) { header =>
         repo.insert(header).unsafeRunSync()
         val header2 = header.copy(height = header.height + 1)
         repo.update(header2).unsafeRunSync()
@@ -36,7 +36,7 @@ class HeaderRepoSpec
 
   property("getAllByHeight") {
     withHeaderRepoLive { repo =>
-      withSingleInstance(headerGen) { header =>
+      forSingleInstance(headerGen) { header =>
         repo.insert(header).unsafeRunSync()
         repo.getAllByHeight(header.height).unsafeRunSync() shouldBe List(header)
       }
@@ -45,7 +45,7 @@ class HeaderRepoSpec
 
   property("getHeightOf") {
     withHeaderRepoLive { repo =>
-      withSingleInstance(headerGen) { header =>
+      forSingleInstance(headerGen) { header =>
         repo.insert(header).unsafeRunSync()
         repo.getHeightOf(header.id).unsafeRunSync() shouldBe Some(header.height)
       }

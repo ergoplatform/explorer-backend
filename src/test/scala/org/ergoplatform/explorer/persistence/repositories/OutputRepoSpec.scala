@@ -15,7 +15,7 @@ class OutputRepoSpec
 
   property("insert/getByBoxId") {
     withLiveRepos { (hRepo, txRepo, oRepo) =>
-      withSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
+      forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
         case (header, tx, outputs) =>
           hRepo.insert(header).unsafeRunSync()
           txRepo.insert(tx).unsafeRunSync()
@@ -30,9 +30,9 @@ class OutputRepoSpec
 
   property("getAllByAddress/getAllByErgoTree") {
     withLiveRepos { (hRepo, txRepo, oRepo) =>
-      withSingleInstance(hexStringRGen.flatMap(hex => addressGen.map(_ -> hex))) {
+      forSingleInstance(hexStringRGen.flatMap(hex => addressGen.map(_ -> hex))) {
         case (address, ergoTree) =>
-          withSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
+          forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
             case (header, tx, outputs) =>
               hRepo.insert(header).unsafeRunSync()
               txRepo.insert(tx).unsafeRunSync()

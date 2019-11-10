@@ -16,7 +16,7 @@ class TransactionRepoSpec
 
   property("insert/getMain") {
     withLiveRepos { (headerRepo, txRepo) =>
-      withSingleInstance(headerWithTxsGen(mainChain = true)) {
+      forSingleInstance(headerWithTxsGen(mainChain = true)) {
         case (header, txs) =>
           headerRepo.insert(header).unsafeRunSync()
           txs.foreach { tx =>
@@ -30,7 +30,7 @@ class TransactionRepoSpec
 
   property("getMain (ignore transactions from forks)") {
     withLiveRepos { (headerRepo, txRepo) =>
-      withSingleInstance(headerWithTxsGen(mainChain = false)) {
+      forSingleInstance(headerWithTxsGen(mainChain = false)) {
         case (header, txs) =>
           headerRepo.insert(header).unsafeRunSync()
           txs.foreach { tx =>
@@ -43,7 +43,7 @@ class TransactionRepoSpec
 
   property("getAllMainByIdSubstring") {
     withLiveRepos { (headerRepo, txRepo) =>
-      withSingleInstance(headerWithTxsGen(mainChain = true)) {
+      forSingleInstance(headerWithTxsGen(mainChain = true)) {
         case (header, txs) =>
           headerRepo.insert(header).unsafeRunSync()
           txs.foreach { tx =>
@@ -57,7 +57,7 @@ class TransactionRepoSpec
 
   property("getAllByBlockId") {
     withLiveRepos { (headerRepo, txRepo) =>
-      withSingleInstance(headerWithTxsGen(mainChain = true)) {
+      forSingleInstance(headerWithTxsGen(mainChain = true)) {
         case (header, txs) =>
           headerRepo.insert(header).unsafeRunSync()
           txs.foreach { tx =>
