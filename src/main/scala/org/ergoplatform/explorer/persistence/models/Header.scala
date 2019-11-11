@@ -2,6 +2,8 @@ package org.ergoplatform.explorer.persistence.models
 
 import org.ergoplatform.explorer.{HexString, Id}
 
+/** Entity representing `node_headers` table.
+  */
 final case class Header(
   id: Id,
   parentId: Id,

@@ -2,6 +2,8 @@ package org.ergoplatform.explorer.persistence.models
 
 import org.ergoplatform.explorer.{Address, Id}
 
+/** Entity representing `blocks_info` table.
+  */
 final case class BlockInfo(
   headerId: Id,
   timestamp: Long,
