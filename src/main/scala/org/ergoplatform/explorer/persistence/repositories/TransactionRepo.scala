@@ -28,7 +28,7 @@ trait TransactionRepo[F[_], G[_]] {
     */
   def getAllByBlockId(id: Id): G[Transaction]
 
-  /** Get all transaction related to a given `address`.
+  /** Get all transactions related to a given `address`.
     */
   def getAllRelatedToAddress(
     address: Address,
