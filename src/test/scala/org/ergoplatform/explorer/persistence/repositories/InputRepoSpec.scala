@@ -17,8 +17,9 @@ class InputRepoSpec
 
   property("insert/getAllByTxId") {
     withLiveRepos { (outRepo, inRepo) =>
-      forSingleInstance(extInputWithOutputGen) {
+      forSingleInstance(extInputWithOutputGen()) {
         case (out, input) =>
+          println(input)
           outRepo.insert(out).unsafeRunSync()
           inRepo.getAllByTxId(input.input.txId).unsafeRunSync() shouldBe 'empty
           inRepo.insert(input.input).unsafeRunSync()
@@ -29,7 +30,7 @@ class InputRepoSpec
 
   property("getAllByTxIds") {
     withLiveRepos { (outRepo, inRepo) =>
-      forSingleInstance(Gen.listOfN(5, extInputWithOutputGen)) { outputsWithInputs =>
+      forSingleInstance(Gen.listOfN(5, extInputWithOutputGen())) { outputsWithInputs =>
         outputsWithInputs.foreach {
           case (out, in) =>
             outRepo.insert(out).unsafeRunSync()

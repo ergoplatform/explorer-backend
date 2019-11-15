@@ -18,7 +18,8 @@ object InputQuerySet extends QuerySet {
     "box_id",
     "tx_id",
     "proof_bytes",
-    "extension"
+    "extension",
+    "main_chain"
   )
 
   def getAllByTxId(txId: TxId): ConnectionIO[List[ExtendedInput]] =
@@ -28,6 +29,7 @@ object InputQuerySet extends QuerySet {
          |  i.tx_id,
          |  i.proof_bytes,
          |  i.extension,
+         |  i.main_chain,
          |  o.value,
          |  o.tx_id,
          |  o.address
@@ -46,6 +48,7 @@ object InputQuerySet extends QuerySet {
            |  i.tx_id,
            |  i.proof_bytes,
            |  i.extension,
+           |  i.main_chain,
            |  o.value,
            |  o.tx_id,
            |  o.address

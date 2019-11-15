@@ -94,7 +94,8 @@ CREATE TABLE node_inputs
     box_id      VARCHAR(64) NOT NULL,
     tx_id       VARCHAR(64) NOT NULL,
     proof_bytes VARCHAR     NOT NULL,
-    extension   JSON        NOT NULL
+    extension   JSON        NOT NULL,
+    main_chain  BOOLEAN     NOT NULL
 );
 
 /*
@@ -117,7 +118,8 @@ CREATE TABLE node_outputs
     ergo_tree            VARCHAR     NOT NULL,
     address              VARCHAR     NOT NULL,
     additional_registers JSON        NOT NULL,
-    timestamp            BIGINT      NOT NULL
+    timestamp            BIGINT      NOT NULL,
+    main_chain           BOOLEAN     NOT NULL
 );
 
 CREATE INDEX "node_outputs__box_id" ON node_outputs (box_id);

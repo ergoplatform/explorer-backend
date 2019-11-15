@@ -134,7 +134,7 @@ object Generators {
               .map(_.map(_.copy(headerId = header.id)))
     } yield (header, txs)
 
-  def outputGen: Gen[Output] =
+  def outputGen(mainChain: Boolean): Gen[Output] =
     for {
       boxId   <- boxIdGen
       txId    <- txIdGen
@@ -145,7 +145,7 @@ object Generators {
       address <- addressGen
       regs    <- jsonFieldsGen
       ts      <- Gen.posNum[Long]
-    } yield Output(boxId, txId, value, height, idx, tree, address, regs, ts)
+    } yield Output(boxId, txId, value, height, idx, tree, address, regs, ts, mainChain)
 
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
@@ -153,21 +153,21 @@ object Generators {
     for {
       header <- headerGen.map(_.copy(mainChain = mainChain))
       tx     <- transactionGen.map(_.copy(headerId = header.id))
-      outs   <- Gen.nonEmptyListOf(outputGen).map(_.map(_.copy(txId = tx.id)))
-      extOuts = outs.map(o => ExtendedOutput(o, None, mainChain))
+      outs   <- Gen.nonEmptyListOf(outputGen(mainChain)).map(_.map(_.copy(txId = tx.id)))
+      extOuts = outs.map(o => ExtendedOutput(o, None))
     } yield (header, tx, extOuts)
 
-  def inputGen: Gen[Input] =
+  def inputGen(mainChain: Boolean = true): Gen[Input] =
     for {
       boxId <- boxIdGen
       txId  <- txIdGen
       proof <- hexStringRGen
       ext   <- jsonFieldsGen
-    } yield Input(boxId, txId, proof, ext)
+    } yield Input(boxId, txId, proof, ext, mainChain)
 
-  def extInputWithOutputGen: Gen[(Output, ExtendedInput)] =
-    outputGen.flatMap { out =>
-      inputGen.map { in =>
+  def extInputWithOutputGen(mainChain: Boolean = true): Gen[(Output, ExtendedInput)] =
+    outputGen(mainChain).flatMap { out =>
+      inputGen(mainChain).map { in =>
         val inModified = in.copy(boxId = out.boxId)
         val extIn =
           ExtendedInput(inModified, out.value.some, out.txId.some, out.address.some)
