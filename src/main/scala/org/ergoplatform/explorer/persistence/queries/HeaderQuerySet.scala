@@ -31,16 +31,6 @@ object HeaderQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def update(h: Header): ConnectionIO[Header] =
-    update
-      .withUniqueGeneratedKeys[Header](fields: _*)(h -> h.id)
-
-  def updateMany(list: List[Header]): ConnectionIO[List[Header]] =
-    update
-      .updateManyWithGeneratedKeys[Header](fields: _*)(list.map(h => h -> h.id))
-      .compile
-      .to[List]
-
   def get(id: Id): ConnectionIO[Option[Header]] =
     sql"select * from node_headers where id = $id".query[Header].option
 
@@ -49,6 +39,15 @@ object HeaderQuerySet extends QuerySet {
 
   def getHeightOf(id: Id): ConnectionIO[Option[Int]] =
     sql"select height from node_headers where id = $id".query[Int].option
+
+  def update(h: Header): ConnectionIO[Header] =
+    update.withUniqueGeneratedKeys[Header](fields: _*)(h -> h.id)
+
+  def updateChainStatusById(id: Id)(newChainStatus: Boolean): ConnectionIO[Int] =
+    sql"""
+         |update h set h.main_chain = $newChainStatus from node_headers h
+         |where h.id = $id
+         |""".stripMargin.update.run
 
   private def update: Update[(Header, Id)] =
     Update[(Header, Id)](

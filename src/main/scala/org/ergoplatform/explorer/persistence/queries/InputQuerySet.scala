@@ -5,7 +5,7 @@ import doobie.Fragments
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
-import org.ergoplatform.explorer.TxId
+import org.ergoplatform.explorer.{Id, TxId}
 import org.ergoplatform.explorer.persistence.models.composite.ExtendedInput
 
 object InputQuerySet extends QuerySet {
@@ -60,4 +60,14 @@ object InputQuerySet extends QuerySet {
       .query[ExtendedInput]
       .to[List]
   }
+
+  def updateChainStatusByHeaderId(
+    headerId: Id
+  )(newChainStatus: Boolean): ConnectionIO[Int] =
+    sql"""
+         |update i set i.main_chain = $newChainStatus from node_inputs i
+         |left join node_transactions t on t.id = i.tx_id
+         |left join node_header h on t.header_id = h.id
+         |where h.id = $headerId
+         |""".stripMargin.update.run
 }

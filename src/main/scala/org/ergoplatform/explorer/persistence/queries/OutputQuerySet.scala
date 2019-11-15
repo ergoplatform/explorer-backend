@@ -5,7 +5,7 @@ import org.ergoplatform.explorer.persistence.models.composite.ExtendedOutput
 import doobie.implicits._
 import doobie.refined.implicits._
 import fs2.Stream
-import org.ergoplatform.explorer.{Address, BoxId, HexString}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, Id}
 
 object OutputQuerySet extends QuerySet {
 
@@ -135,4 +135,14 @@ object OutputQuerySet extends QuerySet {
     sql"select address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
       .to[List]
+
+  def updateChainStatusByHeaderId(
+    headerId: Id
+  )(newChainStatus: Boolean): ConnectionIO[Int] =
+    sql"""
+         |update o set o.main_chain = $newChainStatus from node_outputs o
+         |left join node_transactions t on t.id = o.tx_id
+         |left join node_header h on t.header_id = h.id
+         |where h.id = $headerId
+         |""".stripMargin.update.run
 }
