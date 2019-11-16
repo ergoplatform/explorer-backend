@@ -40,17 +40,9 @@ object HeaderQuerySet extends QuerySet {
   def getHeightOf(id: Id): ConnectionIO[Option[Int]] =
     sql"select height from node_headers where id = $id".query[Int].option
 
-  def update(h: Header): ConnectionIO[Header] =
-    update.withUniqueGeneratedKeys[Header](fields: _*)(h -> h.id)
-
   def updateChainStatusById(id: Id)(newChainStatus: Boolean): ConnectionIO[Int] =
     sql"""
-         |update h set h.main_chain = $newChainStatus from node_headers h
+         |update node_headers set main_chain = $newChainStatus from node_headers h
          |where h.id = $id
          |""".stripMargin.update.run
-
-  private def update: Update[(Header, Id)] =
-    Update[(Header, Id)](
-      s"update $tableName set ${fields.map(f => s"$f = ?").mkString(", ")} where id = ?"
-    )
 }

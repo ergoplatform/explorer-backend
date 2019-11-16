@@ -65,9 +65,9 @@ object InputQuerySet extends QuerySet {
     headerId: Id
   )(newChainStatus: Boolean): ConnectionIO[Int] =
     sql"""
-         |update i set i.main_chain = $newChainStatus from node_inputs i
+         |update node_inputs set main_chain = $newChainStatus from node_inputs i
          |left join node_transactions t on t.id = i.tx_id
-         |left join node_header h on t.header_id = h.id
+         |left join node_headers h on t.header_id = h.id
          |where h.id = $headerId
          |""".stripMargin.update.run
 }

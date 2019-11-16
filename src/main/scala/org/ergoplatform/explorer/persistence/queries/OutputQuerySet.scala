@@ -140,9 +140,9 @@ object OutputQuerySet extends QuerySet {
     headerId: Id
   )(newChainStatus: Boolean): ConnectionIO[Int] =
     sql"""
-         |update o set o.main_chain = $newChainStatus from node_outputs o
+         |update node_outputs set main_chain = $newChainStatus from node_outputs o
          |left join node_transactions t on t.id = o.tx_id
-         |left join node_header h on t.header_id = h.id
+         |left join node_headers h on t.header_id = h.id
          |where h.id = $headerId
          |""".stripMargin.update.run
 }
