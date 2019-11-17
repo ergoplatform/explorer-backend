@@ -41,11 +41,9 @@ package object explorer {
     implicit def put: Put[Type] = Put[String].contramap(unwrap(_))
   }
 
-  type Address = String Refined Base58StringP
+  type Address = String Refined Base58Spec
 
-  type HexString = String Refined HexStringP
+  type HexString = String Refined HexStringSpec
 
-  type HexStringP = MatchesRegex[W.`"[0-9a-fA-F]+"`.T]
-
-  type Base58StringP = MatchesRegex[W.`"[1-9A-HJ-NP-Za-km-z]+"`.T]
+  type Base58Spec = MatchesRegex[W.`"[1-9A-HJ-NP-Za-km-z]+"`.T]
 }
