@@ -2,10 +2,12 @@ package org.ergoplatform.explorer.services
 
 import cats.effect.Sync
 import cats.{ApplicativeError, Monad}
+import cats.syntax.functor._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.string.Url
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
 import jawnfs2._
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
@@ -33,8 +35,19 @@ trait ErgoNetworkService[F[_], G[_]] {
 
 object ErgoNetworkService {
 
-  final class Live[F[_]: Sync](client: Client[F], logger: Logger[F], settings: Settings)
-    extends ErgoNetworkService[F, Stream[F, *]] {
+  def apply[F[_]: Sync](
+    client: Client[F],
+    settings: Settings
+  ): F[ErgoNetworkService[F, Stream[F, *]]] =
+    Sync[F]
+      .delay(Slf4jLogger.getLogger[F])
+      .map(logger => new Live[F](client, logger, settings))
+
+  final class Live[F[_]: Sync](
+    client: Client[F],
+    logger: Logger[F],
+    settings: Settings
+  ) extends ErgoNetworkService[F, Stream[F, *]] {
 
     import io.circe.jawn.CirceSupportParser.facade
 
@@ -42,7 +55,7 @@ object ErgoNetworkService {
       retrying { url =>
         client.expect[List[Id]](
           makeGetRequest(s"$url/blocks/at/$height")
-        )(jsonOf(Sync[F], ???))
+        )(jsonOf(Sync[F], implicitly[Decoder[List[Id]]]))
       }
 
     def getFullBlockById(id: Id): F[Option[ApiFullBlock]] =
