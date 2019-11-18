@@ -7,6 +7,8 @@ import doobie.{ConnectionIO, Update}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.persistence.models.Header
 
+/** A set of queries required to implement functionality of production [HeaderRepo].
+ */
 object HeaderQuerySet extends QuerySet {
 
   val tableName: String = "node_headers"

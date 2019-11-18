@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.persistence.models
 import org.ergoplatform.explorer.{Address, Id}
 
 /** Entity representing `blocks_info` table.
+  * Containing main fields from protocol header and full-block stats.
   */
 final case class BlockInfo(
   headerId: Id,

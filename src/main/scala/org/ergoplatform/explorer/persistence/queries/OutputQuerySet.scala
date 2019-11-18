@@ -7,6 +7,8 @@ import doobie.refined.implicits._
 import fs2.Stream
 import org.ergoplatform.explorer.{Address, BoxId, HexString, Id}
 
+/** A set of queries required to implement functionality of production [OutputRepo].
+  */
 object OutputQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.persistence.doobieInstances._

@@ -7,6 +7,8 @@ import org.ergoplatform.explorer.{Address, Id, TxId}
 import org.ergoplatform.explorer.persistence.models.Transaction
 import fs2.Stream
 
+/** A set of queries required to implement functionality of production [TransactionRepo].
+  */
 object TransactionQuerySet extends QuerySet {
 
   val tableName: String = "node_transactions"
