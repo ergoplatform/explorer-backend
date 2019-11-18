@@ -19,7 +19,6 @@ class InputRepoSpec
     withLiveRepos { (outRepo, inRepo) =>
       forSingleInstance(extInputWithOutputGen()) {
         case (out, input) =>
-          println(input)
           outRepo.insert(out).unsafeRunSync()
           inRepo.getAllByTxId(input.input.txId).unsafeRunSync() shouldBe 'empty
           inRepo.insert(input.input).unsafeRunSync()
