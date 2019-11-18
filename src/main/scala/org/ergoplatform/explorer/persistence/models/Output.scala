@@ -14,5 +14,6 @@ final case class Output(
   ergoTree: HexString,
   address: Address,
   additionalRegisters: Json,
-  timestamp: Long
+  timestamp: Long,
+  mainChain: Boolean
 )

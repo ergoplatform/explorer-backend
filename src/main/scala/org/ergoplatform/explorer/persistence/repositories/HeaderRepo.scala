@@ -16,10 +16,6 @@ trait HeaderRepo[F[_]] {
     */
   def insert(h: Header): F[Unit]
 
-  /** Update a header with a given `h.id` according to a new values from `h`.
-    */
-  def update(h: Header): F[Unit]
-
   /** Get header with a given `id`.
     */
   def get(id: Id): F[Option[Header]]
@@ -41,9 +37,6 @@ object HeaderRepo {
 
     def insert(h: Header): F[Unit] =
       QS.insert(h).transact(xa).as(())
-
-    def update(h: Header): F[Unit] =
-      QS.update(h).transact(xa).as(())
 
     def get(id: Id): F[Option[Header]] =
       QS.get(id).transact(xa)

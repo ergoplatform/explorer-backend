@@ -23,17 +23,6 @@ class HeaderRepoSpec
     }
   }
 
-  property("update") {
-    withHeaderRepoLive { repo =>
-      forSingleInstance(headerGen) { header =>
-        repo.insert(header).unsafeRunSync()
-        val header2 = header.copy(height = header.height + 1)
-        repo.update(header2).unsafeRunSync()
-        repo.get(header.id).unsafeRunSync() shouldBe Some(header2)
-      }
-    }
-  }
-
   property("getAllByHeight") {
     withHeaderRepoLive { repo =>
       forSingleInstance(headerGen) { header =>

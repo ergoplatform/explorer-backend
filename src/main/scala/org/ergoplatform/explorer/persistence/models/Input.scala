@@ -9,5 +9,6 @@ final case class Input(
   boxId: BoxId,
   txId: TxId,
   proofBytes: HexString,
-  extension: Json
+  extension: Json,
+  mainChain: Boolean
 )

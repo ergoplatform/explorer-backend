@@ -7,6 +7,8 @@ import doobie.{ConnectionIO, Update}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.persistence.models.Header
 
+/** A set of queries required to implement functionality of production [HeaderRepo].
+ */
 object HeaderQuerySet extends QuerySet {
 
   val tableName: String = "node_headers"
@@ -31,16 +33,6 @@ object HeaderQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def update(h: Header): ConnectionIO[Header] =
-    update
-      .withUniqueGeneratedKeys[Header](fields: _*)(h -> h.id)
-
-  def updateMany(list: List[Header]): ConnectionIO[List[Header]] =
-    update
-      .updateManyWithGeneratedKeys[Header](fields: _*)(list.map(h => h -> h.id))
-      .compile
-      .to[List]
-
   def get(id: Id): ConnectionIO[Option[Header]] =
     sql"select * from node_headers where id = $id".query[Header].option
 
@@ -50,8 +42,9 @@ object HeaderQuerySet extends QuerySet {
   def getHeightOf(id: Id): ConnectionIO[Option[Int]] =
     sql"select height from node_headers where id = $id".query[Int].option
 
-  private def update: Update[(Header, Id)] =
-    Update[(Header, Id)](
-      s"update $tableName set ${fields.map(f => s"$f = ?").mkString(", ")} where id = ?"
-    )
+  def updateChainStatusById(id: Id)(newChainStatus: Boolean): ConnectionIO[Int] =
+    sql"""
+         |update node_headers set main_chain = $newChainStatus from node_headers h
+         |where h.id = $id
+         |""".stripMargin.update.run
 }

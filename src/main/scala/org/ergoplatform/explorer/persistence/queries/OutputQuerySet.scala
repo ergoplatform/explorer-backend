@@ -5,8 +5,10 @@ import org.ergoplatform.explorer.persistence.models.composite.ExtendedOutput
 import doobie.implicits._
 import doobie.refined.implicits._
 import fs2.Stream
-import org.ergoplatform.explorer.{Address, BoxId, HexString}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, Id}
 
+/** A set of queries required to implement functionality of production [OutputRepo].
+  */
 object OutputQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.persistence.doobieInstances._
@@ -22,7 +24,8 @@ object OutputQuerySet extends QuerySet {
     "ergo_tree",
     "address",
     "additional_registers",
-    "timestamp"
+    "timestamp",
+    "main_chain"
   )
 
   def getByBoxId(boxId: BoxId): ConnectionIO[Option[ExtendedOutput]] =
@@ -37,12 +40,10 @@ object OutputQuerySet extends QuerySet {
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
-         |  i.tx_id,
-         |  h.main_chain
+         |  o.main_chain,
+         |  i.tx_id
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |left join node_transactions t on o.tx_id = t.id
-         |left join node_headers h on h.id = t.header_id
          |where o.box_id = $boxId
          |""".stripMargin.query[ExtendedOutput].option
 
@@ -58,12 +59,10 @@ object OutputQuerySet extends QuerySet {
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
-         |  i.tx_id,
-         |  h.main_chain
+         |  o.main_chain,
+         |  i.tx_id
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |left join node_transactions t on o.tx_id = t.id
-         |left join node_headers h on h.id = t.header_id
          |where o.address = $address
          |""".stripMargin.query[ExtendedOutput].stream
 
@@ -81,12 +80,10 @@ object OutputQuerySet extends QuerySet {
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
-         |  i.tx_id,
-         |  h.main_chain
+         |  o.main_chain,
+         |  i.tx_id
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |left join node_transactions t on o.tx_id = t.id
-         |left join node_headers h on h.id = t.header_id
          |where o.ergo_tree = $ergoTree
          |""".stripMargin.query[ExtendedOutput].stream
 
@@ -104,16 +101,12 @@ object OutputQuerySet extends QuerySet {
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
-         |  i.tx_id,
-         |  h.main_chain
+         |  o.main_chain,
+         |  i.tx_id
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |left join node_transactions t_in on o.tx_id = t_in.id
-         |left join node_headers h_in on h_in.id = t_in.header_id
-         |left join node_transactions t on i.tx_id = t.id
-         |left join node_headers h on h.id = t.header_id
-         |where h_in.main_chain = true
-         |  and (i.box_id is null or h.main_chain = false)
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
          |  and o.address = $address
          |""".stripMargin.query[ExtendedOutput].stream
 
@@ -131,16 +124,12 @@ object OutputQuerySet extends QuerySet {
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
-         |  i.tx_id,
-         |  h.main_chain
+         |  o.main_chain,
+         |  i.tx_id
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |left join node_transactions t_in on o.tx_id = t_in.id
-         |left join node_headers h_in on h_in.id = t_in.header_id
-         |left join node_transactions t on i.tx_id = t.id
-         |left join node_headers h on h.id = t.header_id
-         |where h_in.main_chain = true
-         |  and (i.box_id is null or h.main_chain = false)
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[ExtendedOutput].stream
 
@@ -148,4 +137,14 @@ object OutputQuerySet extends QuerySet {
     sql"select address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
       .to[List]
+
+  def updateChainStatusByHeaderId(
+    headerId: Id
+  )(newChainStatus: Boolean): ConnectionIO[Int] =
+    sql"""
+         |update node_outputs set main_chain = $newChainStatus from node_outputs o
+         |left join node_transactions t on t.id = o.tx_id
+         |left join node_headers h on t.header_id = h.id
+         |where h.id = $headerId
+         |""".stripMargin.update.run
 }

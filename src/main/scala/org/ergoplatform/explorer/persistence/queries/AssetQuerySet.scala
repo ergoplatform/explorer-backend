@@ -7,6 +7,8 @@ import fs2.Stream
 import org.ergoplatform.explorer.{Address, AssetId, BoxId}
 import org.ergoplatform.explorer.persistence.models.Asset
 
+/** A set of queries required to implement functionality of production [AssetRepo].
+  */
 object AssetQuerySet extends QuerySet {
 
   val tableName: String = "node_assets"

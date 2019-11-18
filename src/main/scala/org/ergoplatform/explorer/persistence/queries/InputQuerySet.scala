@@ -5,9 +5,11 @@ import doobie.Fragments
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
-import org.ergoplatform.explorer.TxId
+import org.ergoplatform.explorer.{Id, TxId}
 import org.ergoplatform.explorer.persistence.models.composite.ExtendedInput
 
+/** A set of queries required to implement functionality of production [InputRepo].
+  */
 object InputQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.persistence.doobieInstances._
@@ -18,7 +20,8 @@ object InputQuerySet extends QuerySet {
     "box_id",
     "tx_id",
     "proof_bytes",
-    "extension"
+    "extension",
+    "main_chain"
   )
 
   def getAllByTxId(txId: TxId): ConnectionIO[List[ExtendedInput]] =
@@ -28,6 +31,7 @@ object InputQuerySet extends QuerySet {
          |  i.tx_id,
          |  i.proof_bytes,
          |  i.extension,
+         |  i.main_chain,
          |  o.value,
          |  o.tx_id,
          |  o.address
@@ -46,6 +50,7 @@ object InputQuerySet extends QuerySet {
            |  i.tx_id,
            |  i.proof_bytes,
            |  i.extension,
+           |  i.main_chain,
            |  o.value,
            |  o.tx_id,
            |  o.address
@@ -57,4 +62,14 @@ object InputQuerySet extends QuerySet {
       .query[ExtendedInput]
       .to[List]
   }
+
+  def updateChainStatusByHeaderId(
+    headerId: Id
+  )(newChainStatus: Boolean): ConnectionIO[Int] =
+    sql"""
+         |update node_inputs set main_chain = $newChainStatus from node_inputs i
+         |left join node_transactions t on t.id = i.tx_id
+         |left join node_headers h on t.header_id = h.id
+         |where h.id = $headerId
+         |""".stripMargin.update.run
 }
