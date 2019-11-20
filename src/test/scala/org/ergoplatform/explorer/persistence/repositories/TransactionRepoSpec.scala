@@ -48,7 +48,7 @@ class TransactionRepoSpec
           headerRepo.insert(header).unsafeRunSync()
           txs.foreach { tx =>
             txRepo.insert(tx).unsafeRunSync()
-            txRepo.getAllMainByIdSubstring(TxId.unwrap(tx.id).take(8))
+            txRepo.getAllMainByIdSubstring(tx.id.value.take(8))
               .unsafeRunSync() shouldBe List(tx)
           }
       }

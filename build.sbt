@@ -28,6 +28,7 @@ lazy val projectDeps = Seq(
   "org.tpolecat"      %% "doobie-refined"      % doobieVersion,
   "io.circe"          %% "circe-core"          % circeVersion,
   "io.circe"          %% "circe-generic"       % circeVersion,
+  "io.circe"          %% "circe-refined"       % circeVersion,
   "org.http4s"        %% "http4s-dsl"          % http4sVersion,
   "org.http4s"        %% "http4s-blaze-client" % http4sVersion,
   "org.http4s"        %% "http4s-blaze-server" % http4sVersion,

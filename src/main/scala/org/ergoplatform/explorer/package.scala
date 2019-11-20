@@ -5,56 +5,56 @@ import eu.timepit.refined._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.string._
 import io.circe._
-import io.estatico.newtype.NewType
+import io.estatico.newtype.macros.newtype
 
 package object explorer {
 
-  type Id = Id.Type
+  @newtype case class Id(value: String)
 
-  object Id extends NewType.Default[String] {
+  object Id {
     // doobie instances
-    implicit def get: Get[Type] = deriving
-    implicit def put: Put[Type] = deriving
+    implicit def get: Get[Id] = deriving
+    implicit def put: Put[Id] = deriving
 
     // circe instances
-    implicit def encoder: Encoder[Type] = deriving
-    implicit def decoder: Decoder[Type] = deriving
+    implicit def encoder: Encoder[Id] = deriving
+    implicit def decoder: Decoder[Id] = deriving
   }
 
-  type TxId = TxId.Type
+  @newtype case class TxId(value: String)
 
-  object TxId extends NewType.Default[String] {
+  object TxId {
     // doobie instances
-    implicit def get: Get[Type] = deriving
-    implicit def put: Put[Type] = deriving
+    implicit def get: Get[TxId] = deriving
+    implicit def put: Put[TxId] = deriving
 
     // circe instances
-    implicit def encoder: Encoder[Type] = deriving
-    implicit def decoder: Decoder[Type] = deriving
+    implicit def encoder: Encoder[TxId] = deriving
+    implicit def decoder: Decoder[TxId] = deriving
   }
 
-  type BoxId = BoxId.Type
+  @newtype case class BoxId(value: String)
 
-  object BoxId extends NewType.Default[String] {
+  object BoxId {
     // doobie instances
-    implicit def get: Get[Type] = deriving
-    implicit def put: Put[Type] = deriving
+    implicit def get: Get[BoxId] = deriving
+    implicit def put: Put[BoxId] = deriving
 
     // circe instances
-    implicit def encoder: Encoder[Type] = deriving
-    implicit def decoder: Decoder[Type] = deriving
+    implicit def encoder: Encoder[BoxId] = deriving
+    implicit def decoder: Decoder[BoxId] = deriving
   }
 
-  type AssetId = AssetId.Type
+  @newtype case class AssetId(value: String)
 
-  object AssetId extends NewType.Default[String] {
+  object AssetId {
     // doobie instances
-    implicit def get: Get[Type] = deriving
-    implicit def put: Put[Type] = deriving
+    implicit def get: Get[AssetId] = deriving
+    implicit def put: Put[AssetId] = deriving
 
     // circe instances
-    implicit def encoder: Encoder[Type] = deriving
-    implicit def decoder: Decoder[Type] = deriving
+    implicit def encoder: Encoder[AssetId] = deriving
+    implicit def decoder: Decoder[AssetId] = deriving
   }
 
   type Address = String Refined Base58Spec
