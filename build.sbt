@@ -18,7 +18,8 @@ lazy val projectDeps = List(
   dependencies.http4s.deps,
   dependencies.db.deps,
   dependencies.logging.deps,
-  dependencies.newtypes.deps
+  dependencies.newtypes.deps,
+  dependencies.simulacrum.deps
 ).flatten
 
 libraryDependencies ++= projectDeps ++ dependencies.testing.deps ++ dependencies.compilerPlugins

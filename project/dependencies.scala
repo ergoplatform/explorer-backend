@@ -18,6 +18,8 @@ object dependencies {
   val ZioVersion             = "1.0.0-RC16"
   val ZioCatsVersion         = "2.0.0.0-RC6"
 
+  val SimulacrumVersion = "0.19.0"
+
   val Log4Cats = "0.3.0"
   val Logback  = "1.2.3"
   val Slf4j    = "1.7.25"
@@ -88,7 +90,7 @@ object dependencies {
 
   object ergo extends DependencyGroup {
     override def deps: List[ModuleID] = List(
-      "org.ergoplatform"  %% "ergo-wallet" % ErgoWalletVersion
+      "org.ergoplatform" %% "ergo-wallet" % ErgoWalletVersion
     )
   }
 
@@ -137,9 +139,17 @@ object dependencies {
     )
   }
 
+  object simulacrum extends DependencyGroup {
+    override def deps: List[ModuleID] = List(
+      "com.github.mpilquist" %% "simulacrum" % SimulacrumVersion
+    )
+  }
+
   lazy val compilerPlugins: List[ModuleID] =
     List(
-      compilerPlugin("org.typelevel" %% "kind-projector" % KindProjector cross CrossVersion.full),
+      compilerPlugin(
+        "org.typelevel" %% "kind-projector" % KindProjector cross CrossVersion.full
+      ),
       compilerPlugin(
         "org.scalamacros" % "paradise" % MacroParadise cross CrossVersion.full
       )
