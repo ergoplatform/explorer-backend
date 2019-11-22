@@ -51,7 +51,7 @@ class TransactionRepoSpec
           headerRepo.insert(header).runWithIO()
           txs.foreach { tx =>
             txRepo.insert(tx).runWithIO()
-            txRepo.getAllMainByIdSubstring(TxId.unwrap(tx.id).take(8))
+            txRepo.getAllMainByIdSubstring(tx.id.value.take(8))
               .runWithIO() shouldBe List(tx)
           }
       }

@@ -43,7 +43,7 @@ object ErgoNetworkService {
       .delay(Slf4jLogger.getLogger[F])
       .map(logger => new Live[F](client, logger, settings))
 
-  final class Live[F[_]: Sync](
+  final private class Live[F[_]: Sync](
     client: Client[F],
     logger: Logger[F],
     settings: Settings
