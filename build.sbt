@@ -19,7 +19,8 @@ lazy val projectDeps = List(
   dependencies.db.deps,
   dependencies.logging.deps,
   dependencies.newtypes.deps,
-  dependencies.simulacrum.deps
+  dependencies.simulacrum.deps,
+  dependencies.monocle.deps
 ).flatten
 
 libraryDependencies ++= projectDeps ++ dependencies.testing.deps ++ dependencies.compilerPlugins

@@ -1,9 +1,9 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.Functor
 import cats.implicits._
+import doobie.free.implicits._
 import doobie.refined.implicits._
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.{constants, Id}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Header
@@ -27,19 +27,23 @@ trait HeaderRepo[D[_]] {
   /** Get height of a header with a given `id`.
     */
   def getHeightOf(id: Id): D[Option[Int]]
+
+  /** Get height of the best known header.
+    */
+  def getBestHeight: D[Int]
 }
 
 object HeaderRepo {
 
-  def apply[D[_]: LiftConnectionIO: Functor]: HeaderRepo[D] =
+  def apply[D[_]: LiftConnectionIO]: HeaderRepo[D] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO: Functor] extends HeaderRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO] extends HeaderRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{HeaderQuerySet => QS}
 
     def insert(h: Header): D[Unit] =
-      QS.insert(h).liftConnectionIO.void
+      QS.insert(h).void.liftConnectionIO
 
     def get(id: Id): D[Option[Header]] =
       QS.get(id).liftConnectionIO
@@ -49,5 +53,10 @@ object HeaderRepo {
 
     def getHeightOf(id: Id): D[Option[Int]] =
       QS.getHeightOf(id).liftConnectionIO
+
+    def getBestHeight: D[Int] =
+      QS.getBestHeight
+        .map(_.getOrElse(constants.PreGenesisHeight))
+        .liftConnectionIO
   }
 }

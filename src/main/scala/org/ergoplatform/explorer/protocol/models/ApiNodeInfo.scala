@@ -17,8 +17,8 @@ final case class ApiNodeInfo(
   appVersion: String,
   stateRoot: HexString,
   previousFullHeaderId: Id,
-  fullHeight: Long,
-  headersHeight: Long,
+  fullHeight: Int,
+  headersHeight: Int,
   stateVersion: HexString,
   launchTime: Long,
   isMining: Boolean

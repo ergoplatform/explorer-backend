@@ -1,8 +1,8 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.Functor
 import cats.implicits._
 import fs2.Stream
+import doobie.free.implicits._
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Transaction
@@ -47,10 +47,10 @@ trait TransactionRepo[D[_], G[_]] {
 
 object TransactionRepo {
 
-  def apply[D[_]: LiftConnectionIO: Functor]: TransactionRepo[D, Stream[D, *]] =
+  def apply[D[_]: LiftConnectionIO]: TransactionRepo[D, Stream[D, *]] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO: Functor]
+  final private class Live[D[_]: LiftConnectionIO]
     extends TransactionRepo[D, Stream[D, *]] {
 
     import org.ergoplatform.explorer.db.queries.{TransactionQuerySet => QS}
@@ -58,7 +58,7 @@ object TransactionRepo {
     private val liftK = LiftConnectionIO[D].liftConnectionIOK
 
     def insert(tx: Transaction): D[Unit] =
-      QS.insert(tx).liftConnectionIO.void
+      QS.insert(tx).void.liftConnectionIO
 
     def getMain(id: TxId): D[Option[Transaction]] =
       QS.getMain(id).liftConnectionIO

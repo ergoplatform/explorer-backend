@@ -17,6 +17,8 @@ object dependencies {
   val FlywayVersion          = "5.1.1"
   val ZioVersion             = "1.0.0-RC16"
   val ZioCatsVersion         = "2.0.0.0-RC6"
+  val MonocleVersion         = "2.0.0"
+  val TofuVersion            = "0.5.4"
 
   val SimulacrumVersion = "0.19.0"
 
@@ -82,9 +84,22 @@ object dependencies {
     )
   }
 
+  object monocle extends DependencyGroup {
+    override def deps: List[ModuleID] = List(
+      "com.github.julien-truffaut" %% "monocle-core"  % MonocleVersion,
+      "com.github.julien-truffaut" %% "monocle-macro" % MonocleVersion
+    )
+  }
+
   object fs2 extends DependencyGroup {
     override def deps: List[ModuleID] = List(
       "co.fs2" %% "fs2-core" % Fs2Version
+    )
+  }
+
+  object tofu extends DependencyGroup {
+    override def deps: List[ModuleID] = List(
+      "ru.tinkoff" %% "tofu" % TofuVersion
     )
   }
 

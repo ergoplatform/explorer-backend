@@ -1,8 +1,8 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.Functor
 import cats.data.NonEmptyList
 import cats.implicits._
+import doobie.free.implicits._
 import doobie.refined.implicits._
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -30,15 +30,15 @@ trait InputRepo[D[_]] {
 
 object InputRepo {
 
-  def apply[D[_]: LiftConnectionIO: Functor]: InputRepo[D] =
+  def apply[D[_]: LiftConnectionIO]: InputRepo[D] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO: Functor] extends InputRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO] extends InputRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{InputQuerySet => QS}
 
     def insert(input: Input): D[Unit] =
-      QS.insert(input).liftConnectionIO.void
+      QS.insert(input).void.liftConnectionIO
 
     def getAllByTxId(txId: TxId): D[List[ExtendedInput]] =
       QS.getAllByTxId(txId).liftConnectionIO

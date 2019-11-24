@@ -10,7 +10,11 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
 import jawnfs2._
-import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
+import org.ergoplatform.explorer.protocol.models.{
+  ApiFullBlock,
+  ApiNodeInfo,
+  ApiTransaction
+}
 import org.ergoplatform.explorer.{Id, Settings}
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
@@ -19,6 +23,10 @@ import org.http4s.{Method, Request, Uri}
 /** A service providing an access to the Ergo network.
   */
 trait ErgoNetworkService[F[_], G[_]] {
+
+  /** Get height of the best block.
+    */
+  def getBestHeight: F[Int]
 
   /** Get block ids at the given `height`.
     */
@@ -51,24 +59,33 @@ object ErgoNetworkService {
 
     import io.circe.jawn.CirceSupportParser.facade
 
+    def getBestHeight: F[Int] =
+      retrying { uri =>
+        client
+          .expect[ApiNodeInfo](
+            makeGetRequest(s"$uri/info")
+          )(jsonOf(Sync[F], implicitly[Decoder[ApiNodeInfo]]))
+          .map(_.fullHeight)
+      }
+
     def getBlockIdsAtHeight(height: Int): F[List[Id]] =
-      retrying { url =>
+      retrying { uri =>
         client.expect[List[Id]](
-          makeGetRequest(s"$url/blocks/at/$height")
+          makeGetRequest(s"$uri/blocks/at/$height")
         )(jsonOf(Sync[F], implicitly[Decoder[List[Id]]]))
       }
 
     def getFullBlockById(id: Id): F[Option[ApiFullBlock]] =
-      retrying { url =>
+      retrying { uri =>
         client.expectOption[ApiFullBlock](
-          makeGetRequest(s"$url/blocks/$id")
+          makeGetRequest(s"$uri/blocks/$id")
         )(jsonOf(Sync[F], implicitly[Decoder[ApiFullBlock]]))
       }
 
     def getUnconfirmedTransactions: Stream[F, ApiTransaction] =
-      retrying[Stream[F, *], ApiTransaction] { url =>
+      retrying[Stream[F, *], ApiTransaction] { uri =>
         client
-          .stream(makeGetRequest(s"$url/transactions/unconfirmed"))
+          .stream(makeGetRequest(s"$uri/transactions/unconfirmed"))
           .flatMap(_.body.chunks.parseJsonStream)
           .flatMap { json =>
             implicitly[Decoder[ApiTransaction]]
@@ -83,8 +100,8 @@ object ErgoNetworkService {
     private def retrying[G[_]: Monad, A](
       f: String Refined Url => G[A]
     )(implicit G: ApplicativeError[G, Throwable]): G[A] = {
-      def attempt(urls: List[String Refined Url])(i: Int): G[A] =
-        urls match {
+      def attempt(uris: List[String Refined Url])(i: Int): G[A] =
+        uris match {
           case hd :: tl =>
             G.handleErrorWith(f(hd)) { _ =>
               attempt(tl)(i + 1)

@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.Functor
 import cats.syntax.functor._
+import doobie.free.implicits._
 import doobie.refined.implicits._
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -23,15 +23,15 @@ trait AdProofRepo[D[_]] {
 
 object AdProofRepo {
 
-  def apply[D[_]: LiftConnectionIO: Functor]: AdProofRepo[D] =
+  def apply[D[_]: LiftConnectionIO]: AdProofRepo[D] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO: Functor] extends AdProofRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO] extends AdProofRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{AdProofQuerySet => QS}
 
     def insert(proof: AdProof): D[Unit] =
-      QS.insert(proof).liftConnectionIO.void
+      QS.insert(proof).void.liftConnectionIO
 
     def getByHeaderId(headerId: Id): D[Option[AdProof]] =
       QS.getByHeaderId(headerId).liftConnectionIO

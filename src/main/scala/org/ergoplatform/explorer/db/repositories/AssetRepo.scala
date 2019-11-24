@@ -33,16 +33,16 @@ trait AssetRepo[D[_], G[_]] {
 
 object AssetRepo {
 
-  def apply[D[_]: LiftConnectionIO: Functor]: AssetRepo[D, Stream[D, *]] =
+  def apply[D[_]: LiftConnectionIO]: AssetRepo[D, Stream[D, *]] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO: Functor]
+  final private class Live[D[_]: LiftConnectionIO]
     extends AssetRepo[D, Stream[D, *]] {
 
     import org.ergoplatform.explorer.db.queries.{AssetQuerySet => QS}
 
     def insert(asset: Asset): D[Unit] =
-      QS.insert(asset).liftConnectionIO.void
+      QS.insert(asset).void.liftConnectionIO
 
     def getAllByBoxId(boxId: BoxId): D[List[Asset]] =
       QS.getAllByBoxId(boxId).liftConnectionIO

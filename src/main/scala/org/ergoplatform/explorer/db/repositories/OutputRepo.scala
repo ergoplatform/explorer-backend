@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.Functor
 import cats.implicits._
+import doobie.free.implicits._
 import doobie.refined.implicits._
 import fs2.Stream
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -46,10 +46,10 @@ trait OutputRepo[D[_], G[_]] {
 
 object OutputRepo {
 
-  def apply[D[_]: LiftConnectionIO: Functor]: OutputRepo[D, Stream[D, *]] =
+  def apply[D[_]: LiftConnectionIO]: OutputRepo[D, Stream[D, *]] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO: Functor]
+  final private class Live[D[_]: LiftConnectionIO]
     extends OutputRepo[D, Stream[D, *]] {
 
     import org.ergoplatform.explorer.db.queries.{OutputQuerySet => QS}
@@ -57,7 +57,7 @@ object OutputRepo {
     private val liftK = LiftConnectionIO[D].liftConnectionIOK
 
     def insert(output: Output): D[Unit] =
-      QS.insert(output).liftConnectionIO.void
+      QS.insert(output).void.liftConnectionIO
 
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
       QS.getByBoxId(boxId).liftConnectionIO

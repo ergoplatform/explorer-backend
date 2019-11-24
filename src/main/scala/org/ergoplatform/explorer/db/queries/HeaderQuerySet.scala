@@ -8,7 +8,7 @@ import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Header
 
 /** A set of queries required to implement functionality of production [HeaderRepo].
- */
+  */
 object HeaderQuerySet extends QuerySet {
 
   val tableName: String = "node_headers"
@@ -47,4 +47,9 @@ object HeaderQuerySet extends QuerySet {
          |update node_headers set main_chain = $newChainStatus from node_headers h
          |where h.id = $id
          |""".stripMargin.update.run
+
+  def getBestHeight: ConnectionIO[Option[Int]] =
+    sql"SELECT height FROM blocks_info ORDER BY height DESC LIMIT 1"
+      .query[Int]
+      .option
 }

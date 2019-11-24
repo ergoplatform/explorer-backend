@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.Functor
 import cats.implicits._
+import doobie.free.implicits._
 import doobie.refined.implicits._
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -24,16 +24,16 @@ trait BlockExtensionRepo[D[_]] {
 
 object BlockExtensionRepo {
 
-  def apply[D[_]: LiftConnectionIO: Functor]: BlockExtensionRepo[D] =
+  def apply[D[_]: LiftConnectionIO]: BlockExtensionRepo[D] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO: Functor]
+  final private class Live[D[_]: LiftConnectionIO]
     extends BlockExtensionRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{BlockExtensionQuerySet => QS}
 
     def insert(extension: BlockExtension): D[Unit] =
-      QS.insert(extension).liftConnectionIO.void
+      QS.insert(extension).void.liftConnectionIO
 
     def getByHeaderId(headerId: Id): D[Option[BlockExtension]] =
       QS.getByHeaderId(headerId).liftConnectionIO
