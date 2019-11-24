@@ -17,7 +17,8 @@ import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.composite.FlatBlock
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.{BlockchainService, ErgoNetworkService}
-import org.ergoplatform.explorer.{Id, Settings}
+import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.settings.Settings
 
 final class ChainGrabber[F[_]: Monad: Parallel: Logger: Timer](
   lastBlockCache: Ref[F, Option[BlockInfo]],
@@ -76,7 +77,7 @@ final class ChainGrabber[F[_]: Monad: Parallel: Logger: Timer](
                       cachedBlockOpt.pure[F],
                       blockchainService.getBlockInfo(block.header.parentId)
                     )
-      flatBlock <- FlatBlock.fromApi(block, parentOpt).pure[F]
+      flatBlock <- FlatBlock.fromApi(block, parentOpt)(settings.protocol).pure[F]
     } yield ???
 
   private def getScanRange(localHeight: Int, networkHeight: Int): List[Int] =

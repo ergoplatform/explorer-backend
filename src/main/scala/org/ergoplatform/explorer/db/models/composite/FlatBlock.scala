@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.db.models.{
   Transaction
 }
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
+import org.ergoplatform.explorer.settings.ProtocolSettings
 
 final case class FlatBlock(
   header: Header,
@@ -25,5 +26,8 @@ final case class FlatBlock(
 
 object FlatBlock {
 
-  def fromApi(apiBlock: ApiFullBlock, parentInfoOpt: Option[BlockInfo]): FlatBlock = ???
+  def fromApi(
+    apiBlock: ApiFullBlock,
+    parentInfoOpt: Option[BlockInfo]
+  )(protocolSettings: ProtocolSettings): FlatBlock = ???
 }

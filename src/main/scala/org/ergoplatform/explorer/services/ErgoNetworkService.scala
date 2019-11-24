@@ -10,12 +10,9 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
 import jawnfs2._
-import org.ergoplatform.explorer.protocol.models.{
-  ApiFullBlock,
-  ApiNodeInfo,
-  ApiTransaction
-}
-import org.ergoplatform.explorer.{Id, Settings}
+import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
+import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.settings.Settings
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
