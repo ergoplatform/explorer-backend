@@ -10,6 +10,8 @@ object constants {
 
   val PreGenesisHeight = 0
 
+  val GenesisHeight: Int = PreGenesisHeight + 1
+
   val PublicKeyLength = 33
 
   val EpochLength = 1024

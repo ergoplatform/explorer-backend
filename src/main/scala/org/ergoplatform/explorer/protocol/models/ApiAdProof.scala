@@ -4,19 +4,19 @@ import io.circe.{Decoder, HCursor}
 import io.circe.refined._
 import org.ergoplatform.explorer.{HexString, Id}
 
-final case class ApiAdProofs(
+final case class ApiAdProof(
   headerId: Id,
   proofBytes: HexString,
   digest: HexString
 )
 
-object ApiAdProofs {
+object ApiAdProof {
 
-  implicit val decoder: Decoder[ApiAdProofs] = { c: HCursor =>
+  implicit val decoder: Decoder[ApiAdProof] = { c: HCursor =>
     for {
       headerId   <- c.downField("headerId").as[Id]
       proofBytes <- c.downField("proofBytes").as[HexString]
       digest     <- c.downField("digest").as[HexString]
-    } yield ApiAdProofs(headerId, proofBytes, digest)
+    } yield ApiAdProof(headerId, proofBytes, digest)
   }
 }

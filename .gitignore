@@ -5,6 +5,8 @@
 
 /.idea/
 /.ergo_wallet/
+.metals
+.bloop
 /target/
 /project/target/
 /project/project/target

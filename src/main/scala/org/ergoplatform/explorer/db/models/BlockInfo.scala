@@ -1,13 +1,13 @@
 package org.ergoplatform.explorer.db.models
 
-import cats.effect.Sync
+import cats.MonadError
 import cats.syntax.applicative._
 import cats.syntax.applicativeError._
-import cats.syntax.functor._
 import cats.syntax.flatMap._
+import cats.syntax.functor._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
-import org.ergoplatform.explorer.{constants, Address, Id}
+import org.ergoplatform.explorer.{Address, Id, constants}
 import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
@@ -22,13 +22,13 @@ import scala.util.Try
 final case class BlockInfo(
   headerId: Id,
   timestamp: Long,
-  height: Long,
+  height: Int,
   difficulty: Long,
   blockSize: Long,
   blockCoins: Long,
   blockMiningTime: Long,
   txsCount: Long,
-  txsSize: Long,
+  txsSize: Int,
   minerAddress: Address,
   minerReward: Long,
   minerRevenue: Long,
@@ -44,7 +44,7 @@ final case class BlockInfo(
 
 object BlockInfo {
 
-  def fromApi[F[_]: Sync](apiBlock: ApiFullBlock, parentBlockOpt: Option[BlockInfo])(
+  def fromApi[F[_]: MonadError[*[_], Throwable]](apiBlock: ApiFullBlock, parentBlockOpt: Option[BlockInfo])(
     protocolSettings: ProtocolSettings
   ): F[BlockInfo] =
     minerRewardAddress(apiBlock)(protocolSettings).map { minerAddress =>
@@ -81,7 +81,7 @@ object BlockInfo {
           .map(_.totalTxsCount)
           .getOrElse(0L),
         totalCoinsIssued =
-          protocolSettings.emission.issuedCoinsAfterHeight(apiBlock.header.height),
+          protocolSettings.emission.issuedCoinsAfterHeight(apiBlock.header.height.toLong),
         totalMiningTime   = parentBlockOpt.map(_.totalMiningTime).getOrElse(0L) + miningTime,
         totalFees         = parentBlockOpt.map(_.totalFees).getOrElse(0L) + fee,
         totalMinersReward = parentBlockOpt.map(_.totalMinersReward).getOrElse(0L) + reward,
@@ -89,7 +89,7 @@ object BlockInfo {
       )
     }
 
-  private def minerRewardAddress[F[_]: Sync](
+  private def minerRewardAddress[F[_]: MonadError[*[_], Throwable]](
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): F[Address] =
     Base16
@@ -113,7 +113,7 @@ object BlockInfo {
   private def minerRewardAndFee(
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): (Long, Long) = {
-    val emission = protocolSettings.emission.emissionAtHeight(apiBlock.header.height)
+    val emission = protocolSettings.emission.emissionAtHeight(apiBlock.header.height.toLong)
     val reward   = math.min(constants.TeamTreasuryThreshold, emission)
     val fee = apiBlock.transactions.transactions
       .flatMap(_.outputs)

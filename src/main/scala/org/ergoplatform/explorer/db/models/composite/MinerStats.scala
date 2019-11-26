@@ -9,5 +9,5 @@ final case class MinerStats(
   blocksMined: Int,
   minerName: Option[String]
 ) {
-  val verboseName: String = minerName.getOrElse(minerAddress.value.takeRight(8))
+  val verboseName: String = minerName.getOrElse(minerAddress.unwrapped.takeRight(8))
 }

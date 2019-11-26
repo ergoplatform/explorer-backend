@@ -8,7 +8,7 @@ final case class ApiHeader(
   id: Id,
   parentId: Id,
   version: Byte,
-  height: Long,
+  height: Int,
   nBits: Long,
   difficulty: ApiDifficulty,
   timestamp: Long,
@@ -31,7 +31,7 @@ object ApiHeader {
       id               <- c.downField("id").as[Id]
       parentId         <- c.downField("parentId").as[Id]
       version          <- c.downField("version").as[Byte]
-      height           <- c.downField("height").as[Long]
+      height           <- c.downField("height").as[Int]
       nBits            <- c.downField("nBits").as[Long]
       difficulty       <- c.downField("difficulty").as[ApiDifficulty]
       timestamp        <- c.downField("timestamp").as[Long]

@@ -16,6 +16,10 @@ trait TransactionRepo[D[_], G[_]] {
     */
   def insert(tx: Transaction): D[Unit]
 
+  /** Put a given list of transactions to persistence.
+    */
+  def insertMany(txs: List[Transaction]): D[Unit]
+
   /** Get transaction with a given `id` from main-chain.
     */
   def getMain(id: TxId): D[Option[Transaction]]
@@ -59,6 +63,9 @@ object TransactionRepo {
 
     def insert(tx: Transaction): D[Unit] =
       QS.insert(tx).void.liftConnectionIO
+
+    def insertMany(txs: List[Transaction]): D[Unit] =
+      QS.insertMany(txs).void.liftConnectionIO
 
     def getMain(id: TxId): D[Option[Transaction]] =
       QS.getMain(id).liftConnectionIO

@@ -19,6 +19,10 @@ trait InputRepo[D[_]] {
     */
   def insert(input: Input): D[Unit]
 
+  /** Put a given list of inputs to persistence.
+    */
+  def insetMany(inputs: List[Input]): D[Unit]
+
   /** Get all inputs related to a given `txId`.
     */
   def getAllByTxId(txId: TxId): D[List[ExtendedInput]]
@@ -39,6 +43,9 @@ object InputRepo {
 
     def insert(input: Input): D[Unit] =
       QS.insert(input).void.liftConnectionIO
+
+    def insetMany(inputs: List[Input]): D[Unit] =
+      QS.insertMany(inputs).void.liftConnectionIO
 
     def getAllByTxId(txId: TxId): D[List[ExtendedInput]] =
       QS.getAllByTxId(txId).liftConnectionIO

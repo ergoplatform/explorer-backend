@@ -15,8 +15,6 @@ import org.ergoplatform.explorer.db.repositories.{BlockInfoRepo, HeaderRepo}
 trait BlockchainService[F[_]] {
 
   def getBestHeight: F[Int]
-
-  def getBlockInfo(headerId: Id): F[Option[BlockInfo]]
 }
 
 object BlockchainService {
@@ -39,7 +37,5 @@ object BlockchainService {
     def getBestHeight: F[Int] =
       (headerRepo.getBestHeight ||> xa)
         .flatTap(h => Logger[F].trace(s"Reading best height from db: $h"))
-
-    def getBlockInfo(headerId: Id): F[Option[BlockInfo]] = ???
   }
 }

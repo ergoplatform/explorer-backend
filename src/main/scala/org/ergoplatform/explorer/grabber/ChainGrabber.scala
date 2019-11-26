@@ -1,31 +1,44 @@
 package org.ergoplatform.explorer.grabber
 
+import cats.data.NonEmptyList
 import cats.effect.concurrent.Ref
 import cats.effect.{Sync, Timer}
 import cats.instances.list._
+import cats.instances.option._
 import cats.syntax.applicative._
+import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Applicative, Monad, Parallel}
+import cats.{Applicative, FlatMap, Monad, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
+import mouse.anyf._
+import org.ergoplatform.explorer.{Id, constants}
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.composite.FlatBlock
+import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
-import org.ergoplatform.explorer.services.{BlockchainService, ErgoNetworkService}
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.Settings
 
-final class ChainGrabber[F[_]: Monad: Parallel: Logger: Timer](
+final class ChainGrabber[F[_]: Sync: Parallel: Logger: Timer, D[_]: LiftConnectionIO: Monad](
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: Settings,
-  blockchainService: BlockchainService[F],
-  networkService: ErgoNetworkService[F, Stream[F, *]]
-) {
+  networkService: ErgoNetworkService[F, Stream[F, *]],
+  headerRepo: HeaderRepo[D],
+  blockInfoRepo: BlockInfoRepo[D],
+  blockExtensionRepo: BlockExtensionRepo[D],
+  adProofRepo: AdProofRepo[D],
+  txRepo: TransactionRepo[D, Stream[D, *]],
+  inputRepo: InputRepo[D],
+  outputRepo: OutputRepo[D, Stream[D, *]],
+  assetRepo: AssetRepo[D, Stream[D, *]]
+)(xa: D ~> F) {
 
   def run: Stream[F, Unit] =
     Stream(()).repeat
@@ -36,7 +49,7 @@ final class ChainGrabber[F[_]: Monad: Parallel: Logger: Timer](
   private def grab: F[Unit] =
     for {
       networkHeight <- networkService.getBestHeight
-      localHeight   <- blockchainService.getBestHeight
+      localHeight   <- getLastGrabbedBlockHeight
       _             <- Logger[F].info(s"Current network height : $networkHeight")
       _             <- Logger[F].info(s"Current explorer height: $localHeight")
       range         <- getScanRange(localHeight, networkHeight).pure[F]
@@ -46,7 +59,7 @@ final class ChainGrabber[F[_]: Monad: Parallel: Logger: Timer](
   private def grabBlocksFromHeight(
     height: Int,
     existingHeaderIds: List[Id] = List.empty
-  ): F[Unit] =
+  ): F[D[List[BlockInfo]]] =
     for {
       ids <- networkService.getBlockIdsAtHeight(height)
       apiBlocks <- ids
@@ -64,37 +77,75 @@ final class ChainGrabber[F[_]: Monad: Parallel: Logger: Timer](
                      .pure[F]
       _ <- if (ids.size > existingHeaderIds.size) Applicative[F].unit // update
           else Applicative[F].unit
-      blocks <- apiBlocks.map(processBlock).parSequence
-    } yield ()
+      blocks <- apiBlocks.parTraverse(processBlock).map(_.sequence)
+    } yield blocks
 
-  private def processBlock(block: ApiFullBlock): F[BlockInfo] =
-    for {
-      cachedBlockOpt <- lastBlockCache.get
-      parentOpt <- cachedBlockOpt
-                    .exists(_.headerId == block.header.id)
-                    .pure[F]
-                    .ifM(
-                      cachedBlockOpt.pure[F],
-                      blockchainService.getBlockInfo(block.header.parentId)
-                    )
-      flatBlock <- FlatBlock.fromApi(block, parentOpt)(settings.protocol).pure[F]
-    } yield ???
+  private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
+    lastBlockCache.get.flatMap { cachedBlockOpt =>
+      cachedBlockOpt
+        .exists(_.headerId == block.header.id)
+        .pure[F]
+        .ifM(
+          cachedBlockOpt.pure[F],
+          getParentBlockInfo(block.header.parentId)
+        )
+        .flatMap {
+          case None if block.header.height != constants.GenesisHeight =>
+            getHeaderIdsAtHeight(block.header.height).flatMap { existingHeaders =>
+              grabBlocksFromHeight(block.header.height, existingHeaders).map(_.map(_.headOption))
+            }
+          case parentOpt =>
+            parentOpt.pure[D].pure[F]
+        }
+        .flatMap { ??? }
+    }
+
+  private def getLastGrabbedBlockHeight: F[Int] =
+    headerRepo.getBestHeight ||> xa
+
+  private def getHeaderIdsAtHeight(height: Int): F[List[Id]] =
+    (headerRepo.getAllByHeight(height) ||> xa).map(_.map(_.id))
+
+  private def getParentBlockInfo(headerId: Id): F[Option[BlockInfo]] =
+    blockInfoRepo.getByHeaderId(headerId) ||> xa
 
   private def getScanRange(localHeight: Int, networkHeight: Int): List[Int] =
     if (networkHeight == localHeight) List.empty
     else (localHeight + 1 to networkHeight).toList
+
+  private def insetBlock(block: FlatBlock): D[Unit] =
+    headerRepo.insert(block.header) >>
+    blockInfoRepo.insert(block.info) >>
+    blockExtensionRepo.insert(block.extension) >>
+    block.adProofOpt.map(adProofRepo.insert).getOrElse(().pure[D]) >>
+    txRepo.insertMany(block.txs) >>
+    inputRepo.insetMany(block.inputs) >>
+    outputRepo.insertMany(block.outputs) >>
+    assetRepo.insertMany(block.assets)
 }
 
 object ChainGrabber {
 
-  def apply[F[_]: Sync: Parallel: Timer](
+  def apply[F[_]: Sync: Parallel: Timer, D[_]: LiftConnectionIO: Monad](
     settings: Settings,
-    blockchainService: BlockchainService[F],
+    headerRepo: HeaderRepo[D],
     networkService: ErgoNetworkService[F, Stream[F, *]]
-  ): F[ChainGrabber[F]] =
+  )(xa: D ~> F): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).map { cache =>
-        new ChainGrabber[F](cache, settings, blockchainService, networkService)
+        new ChainGrabber[F, D](
+          cache,
+          settings,
+          networkService,
+          HeaderRepo[D],
+          BlockInfoRepo[D],
+          BlockExtensionRepo[D],
+          AdProofRepo[D],
+          TransactionRepo[D],
+          InputRepo[D],
+          OutputRepo[D],
+          AssetRepo[D]
+        )(xa)
       }
     }
 }

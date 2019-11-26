@@ -19,6 +19,10 @@ trait OutputRepo[D[_], G[_]] {
     */
   def insert(output: Output): D[Unit]
 
+  /** Put a given list of  outputs to persistence.
+    */
+  def insertMany(outputs: List[Output]): D[Unit]
+
   /** Get an output with a given `boxId` from persistence.
     */
   def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]]
@@ -58,6 +62,9 @@ object OutputRepo {
 
     def insert(output: Output): D[Unit] =
       QS.insert(output).void.liftConnectionIO
+
+    def insertMany(outputs: List[Output]): D[Unit] =
+      QS.insertMany(outputs).void.liftConnectionIO
 
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
       QS.getByBoxId(boxId).liftConnectionIO

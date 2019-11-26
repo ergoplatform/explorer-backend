@@ -7,7 +7,7 @@ final case class ApiTransaction(
   id: TxId,
   inputs: List[ApiInput],
   outputs: List[ApiOutput],
-  size: Long
+  size: Int
 )
 
 object ApiTransaction {
@@ -17,7 +17,7 @@ object ApiTransaction {
       id      <- c.downField("id").as[TxId]
       inputs  <- c.downField("inputs").as[List[ApiInput]]
       outputs <- c.downField("outputs").as[List[ApiOutput]]
-      size    <- c.downField("size").as[Long]
+      size    <- c.downField("size").as[Int]
     } yield ApiTransaction(id, inputs, outputs, size)
   }
 }

@@ -3,7 +3,7 @@ CREATE TABLE node_headers
     id                VARCHAR(64) PRIMARY KEY,
     parent_id         VARCHAR(64) NOT NULL,
     version           SMALLINT    NOT NULL,
-    height            BIGINT      NOT NULL,
+    height            INTEGER     NOT NULL,
     n_bits            BIGINT      NOT NULL,
     difficulty        BIGINT      NOT NULL,
     timestamp         BIGINT      NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE blocks_info
 (
     header_id              VARCHAR(64) PRIMARY KEY REFERENCES node_headers (id),
     timestamp              BIGINT  NOT NULL,
-    height                 BIGINT  NOT NULL,
+    height                 INTEGER NOT NULL,
     difficulty             BIGINT  NOT NULL,
     block_size             BIGINT  NOT NULL,
     block_coins            BIGINT  NOT NULL,

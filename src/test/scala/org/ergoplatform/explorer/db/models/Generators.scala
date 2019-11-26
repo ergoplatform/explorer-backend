@@ -6,6 +6,7 @@ import eu.timepit.refined.string.HexStringSpec
 import io.circe.Json
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.constraints.Base58Spec
 import org.ergoplatform.explorer.db.models.composite.{ExtendedInput, ExtendedOutput}
 import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
@@ -19,13 +20,16 @@ object Generators {
       .map(x => Base16.encode(Blake2b256.hash(x.mkString)))
 
   def hexStringRGen: Gen[HexString] =
-    hexStringGen.map(x => refineV[HexStringSpec](x).right.get)
+    hexStringGen
+      .map(x => refineV[HexStringSpec](x).right.get)
+      .map(HexString.apply)
 
   def addressGen: Gen[Address] =
     Gen
       .nonEmptyListOf(Gen.alphaNumChar)
       .map(x => Base58.encode(Blake2b256.hash(x.mkString)))
       .map(x => refineV[Base58Spec](x).right.get)
+      .map(Address.apply)
 
   def jsonFieldsGen: Gen[Json] =
     Gen.oneOf(
