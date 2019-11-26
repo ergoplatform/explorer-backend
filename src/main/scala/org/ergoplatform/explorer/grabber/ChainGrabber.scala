@@ -1,8 +1,10 @@
 package org.ergoplatform.explorer.grabber
 
+import java.util.concurrent.TimeUnit
+
 import cats.data.NonEmptyList
 import cats.effect.concurrent.Ref
-import cats.effect.{Sync, Timer}
+import cats.effect.{Clock, Sync, Timer}
 import cats.instances.list._
 import cats.instances.option._
 import cats.syntax.applicative._
@@ -11,13 +13,15 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Applicative, FlatMap, Monad, Parallel, ~>}
+import cats.{~>, Applicative, FlatMap, Monad, MonadError, Parallel, Traverse}
+import doobie.free.connection.ConnectionIO
+import doobie.free.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
-import org.ergoplatform.explorer.{Id, constants}
+import org.ergoplatform.explorer.{constants, Id}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.composite.FlatBlock
@@ -26,7 +30,10 @@ import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.Settings
 
-final class ChainGrabber[F[_]: Sync: Parallel: Logger: Timer, D[_]: LiftConnectionIO: Monad](
+final class ChainGrabber[
+  F[_]: Sync: Parallel: Logger: Timer,
+  D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
+](
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: Settings,
   networkService: ErgoNetworkService[F, Stream[F, *]],
@@ -92,12 +99,21 @@ final class ChainGrabber[F[_]: Sync: Parallel: Logger: Timer, D[_]: LiftConnecti
         .flatMap {
           case None if block.header.height != constants.GenesisHeight =>
             getHeaderIdsAtHeight(block.header.height).flatMap { existingHeaders =>
-              grabBlocksFromHeight(block.header.height, existingHeaders).map(_.map(_.headOption))
+              grabBlocksFromHeight(block.header.height, existingHeaders)
+                .map(_.map(_.headOption))
             }
           case parentOpt =>
             parentOpt.pure[D].pure[F]
         }
-        .flatMap { ??? }
+        .flatMap { blockInfoOptDb =>
+          Clock[F].realTime(TimeUnit.MILLISECONDS).map { ts =>
+            blockInfoOptDb.flatMap { parentBlockInfoOpt =>
+              FlatBlock
+                .fromApi[D](block, parentBlockInfoOpt, ts)(settings.protocol)
+                .flatMap(flatBlock => insetBlock(flatBlock) as flatBlock.info)
+            }
+          }
+        }
     }
 
   private def getLastGrabbedBlockHeight: F[Int] =
@@ -126,7 +142,10 @@ final class ChainGrabber[F[_]: Sync: Parallel: Logger: Timer, D[_]: LiftConnecti
 
 object ChainGrabber {
 
-  def apply[F[_]: Sync: Parallel: Timer, D[_]: LiftConnectionIO: Monad](
+  def apply[
+    F[_]: Sync: Parallel: Timer,
+    D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
+  ](
     settings: Settings,
     headerRepo: HeaderRepo[D],
     networkService: ErgoNetworkService[F, Stream[F, *]]

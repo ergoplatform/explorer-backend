@@ -30,32 +30,31 @@ final case class FlatBlock(
 
 object FlatBlock {
 
-  def fromApi[F[_]: MonadError[*[_], Throwable]: Clock](
+  def fromApi[F[_]: MonadError[*[_], Throwable]](
     apiBlock: ApiFullBlock,
-    parentInfoOpt: Option[BlockInfo]
+    parentInfoOpt: Option[BlockInfo],
+    ts: Long
   )(protocolSettings: ProtocolSettings): F[FlatBlock] =
     BlockInfo
       .fromApi(apiBlock, parentInfoOpt)(protocolSettings)
       .flatMap { blockInfo =>
-        Clock[F].realTime(TimeUnit.NANOSECONDS).flatMap { ts =>
-          implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
-          extractOutputs(apiBlock.transactions, apiBlock.header.mainChain, ts)
-            .map { outputs =>
-              val txs    = extractTxs(apiBlock.transactions, ts)
-              val inputs = extractInputs(apiBlock.transactions, apiBlock.header.mainChain)
-              val assets = extractAssets(apiBlock.transactions)
-              FlatBlock(
-                Header.fromApi(apiBlock.header),
-                blockInfo,
-                BlockExtension.fromApi(apiBlock.extension),
-                apiBlock.adProofs.map(AdProof.fromApi),
-                txs,
-                inputs,
-                outputs,
-                assets
-              )
-            }
-        }
+        implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
+        extractOutputs(apiBlock.transactions, apiBlock.header.mainChain, ts)
+          .map { outputs =>
+            val txs    = extractTxs(apiBlock.transactions, ts)
+            val inputs = extractInputs(apiBlock.transactions, apiBlock.header.mainChain)
+            val assets = extractAssets(apiBlock.transactions)
+            FlatBlock(
+              Header.fromApi(apiBlock.header),
+              blockInfo,
+              BlockExtension.fromApi(apiBlock.extension),
+              apiBlock.adProofs.map(AdProof.fromApi),
+              txs,
+              inputs,
+              outputs,
+              assets
+            )
+          }
       }
 
   private def extractTxs(apiTxs: ApiBlockTransactions, ts: Long): List[Transaction] = {

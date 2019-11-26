@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.{HexString, Id}
 final case class Header(
   id: Id,
   parentId: Id,
-  version: Short,
+  version: Byte,
   height: Int,
   nBits: Long,
   difficulty: BigDecimal,

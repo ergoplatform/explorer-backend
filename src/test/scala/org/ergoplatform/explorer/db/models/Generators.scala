@@ -59,7 +59,7 @@ object Generators {
     for {
       id            <- idGen
       parentId      <- idGen
-      version       <- Gen.posNum[Short]
+      version       <- Gen.posNum[Byte]
       height        <- Gen.posNum[Int]
       nBits         <- Gen.posNum[Long]
       diff          <- Gen.posNum[Long]
