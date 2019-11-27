@@ -1,9 +1,8 @@
 package org.ergoplatform.explorer.db.queries
 
-import cats.implicits._
+import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
-import doobie.{ConnectionIO, Update}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Header
 
@@ -42,7 +41,7 @@ object HeaderQuerySet extends QuerySet {
   def getHeightOf(id: Id): ConnectionIO[Option[Int]] =
     sql"select height from node_headers where id = $id".query[Int].option
 
-  def updateChainStatusById(id: Id)(newChainStatus: Boolean): ConnectionIO[Int] =
+  def updateChainStatusById(id: Id, newChainStatus: Boolean): ConnectionIO[Int] =
     sql"""
          |update node_headers set main_chain = $newChainStatus from node_headers h
          |where h.id = $id

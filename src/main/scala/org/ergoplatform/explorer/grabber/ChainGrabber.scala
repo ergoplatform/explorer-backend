@@ -2,26 +2,20 @@ package org.ergoplatform.explorer.grabber
 
 import java.util.concurrent.TimeUnit
 
-import cats.data.NonEmptyList
 import cats.effect.concurrent.Ref
 import cats.effect.{Clock, Sync, Timer}
 import cats.instances.list._
-import cats.instances.option._
 import cats.syntax.applicative._
-import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, Applicative, FlatMap, Monad, MonadError, Parallel, Traverse}
-import doobie.free.connection.ConnectionIO
-import doobie.free.implicits._
+import cats.{~>, MonadError, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
-import org.ergoplatform.explorer.{constants, Id}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.composite.FlatBlock
@@ -29,6 +23,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.Settings
+import org.ergoplatform.explorer.{constants, Id}
 
 final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
@@ -60,7 +55,11 @@ final class ChainGrabber[
       _             <- Logger[F].info(s"Current network height : $networkHeight")
       _             <- Logger[F].info(s"Current explorer height: $localHeight")
       range         <- getScanRange(localHeight, networkHeight).pure[F]
-      _             <- range.traverse(grabBlocksFromHeight(_))
+      _             <- range.traverse {
+                         grabBlocksFromHeight(_)
+                           .flatMap(_ ||> xa)
+                           .flatTap(blocks => lastBlockCache.update(_ => blocks.headOption))
+                       }
     } yield ()
 
   private def grabBlocksFromHeight(
@@ -79,13 +78,15 @@ final class ChainGrabber[
                           .modify(_ => ids.headOption.contains(block.header.id))
                       }
                     }
-      exStatuses <- existingHeaderIds
-                     .map(id => id -> ids.headOption.contains(id))
-                     .pure[F]
-      _ <- if (ids.size > existingHeaderIds.size) Applicative[F].unit // update
-          else Applicative[F].unit
+      exStatuses = existingHeaderIds.map(id => id -> ids.headOption.contains(id))
+      updatedForks <- exStatuses
+                       .foldLeft(().pure[D]) {
+                         case (acc, (id, status)) =>
+                           acc >> headerRepo.updateChainStatusById(id, status)
+                       }
+                       .pure[F]
       blocks <- apiBlocks.parTraverse(processBlock).map(_.sequence)
-    } yield blocks
+    } yield updatedForks >> blocks
 
   private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
     lastBlockCache.get.flatMap { cachedBlockOpt =>

@@ -31,6 +31,11 @@ trait HeaderRepo[D[_]] {
   /** Get height of the best known header.
     */
   def getBestHeight: D[Int]
+
+  /** Update main chain flag with a given `newChainStatus`
+    * for a header with a given `id`.
+    */
+  def updateChainStatusById(id: Id, newChainStatus: Boolean): D[Unit]
 }
 
 object HeaderRepo {
@@ -58,5 +63,8 @@ object HeaderRepo {
       QS.getBestHeight
         .map(_.getOrElse(constants.PreGenesisHeight))
         .liftConnectionIO
+
+    def updateChainStatusById(id: Id, newChainStatus: Boolean): D[Unit] =
+      QS.updateChainStatusById(id, newChainStatus).void.liftConnectionIO
   }
 }
