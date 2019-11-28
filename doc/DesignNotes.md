@@ -21,5 +21,8 @@ Database access layer is defined in `org.ergoplatform.explorer.db` module and ha
     - `composite` - module containing models which are not mapped to a single db table exactly but consists of a data from several tables
 
 - `queries` - module containing sets of sql queries for each entity for concrete database
-- `repositories` - defines abstract interfaces for accessing entities' data and also their production implementations using `queries` currently.
+- `repositories` - defines abstract interfaces for accessing entities' data and also their production implementations.
+- `services` - defines sets of operations on different domain areas.
+- `protocol`
+    - `models` - models mirroring structure of corresponding objects returned by ergo node REST API. 
 ````

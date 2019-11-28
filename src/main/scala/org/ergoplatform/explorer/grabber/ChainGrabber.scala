@@ -6,11 +6,12 @@ import cats.effect.concurrent.Ref
 import cats.effect.{Clock, Sync, Timer}
 import cats.instances.list._
 import cats.syntax.applicative._
+import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, MonadError, Parallel}
+import cats.{MonadError, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -23,11 +24,14 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.Settings
-import org.ergoplatform.explorer.{constants, Id}
+import org.ergoplatform.explorer.{Exc, Id, constants}
 
+/** Fetches new blocks from the network divide them into
+ * separate entities and finally puts them into db.
+ */
 final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
-  D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
+  D[_]: MonadError[*[_], Throwable]
 ](
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: Settings,
@@ -55,10 +59,13 @@ final class ChainGrabber[
       _             <- Logger[F].info(s"Current network height : $networkHeight")
       _             <- Logger[F].info(s"Current explorer height: $localHeight")
       range         <- getScanRange(localHeight, networkHeight).pure[F]
-      _             <- range.traverse {
-                         grabBlocksFromHeight(_)
+      _             <- range.traverse { height =>
+                         grabBlocksFromHeight(height)
                            .flatMap(_ ||> xa)
-                           .flatTap(blocks => lastBlockCache.update(_ => blocks.headOption))
+                           .flatTap { blocks =>
+                             if (blocks.nonEmpty) lastBlockCache.update(_ => blocks.headOption)
+                             else Exc("No blocks written at height $height").raiseError[F, Unit]
+                           }
                        }
     } yield ()
 
@@ -98,7 +105,7 @@ final class ChainGrabber[
           getParentBlockInfo(block.header.parentId)
         )
         .flatMap {
-          case None if block.header.height != constants.GenesisHeight =>
+          case None if block.header.height != constants.GenesisHeight => // fork
             getHeaderIdsAtHeight(block.header.height).flatMap { existingHeaders =>
               grabBlocksFromHeight(block.header.height, existingHeaders)
                 .map(_.map(_.headOption))
