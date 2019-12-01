@@ -15,7 +15,8 @@ class AdProofRepoSpec
   with RealDbTest
   with ScalaCheckDrivenPropertyChecks {
 
-  import org.ergoplatform.explorer.db.models.Generators._
+  import org.ergoplatform.explorer.commonGenerators._
+  import org.ergoplatform.explorer.db.models.generators._
 
   property("insert/getByHeaderId") {
     withLiveRepos[ConnectionIO] { (headerRepo, repo) =>

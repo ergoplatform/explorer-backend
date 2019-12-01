@@ -12,12 +12,13 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, TestSuite}
 trait RealDbTest extends CatsInstances with BeforeAndAfter with BeforeAndAfterAll {
   self: TestSuite =>
 
-  implicit lazy val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
-    container.driverClassName,
-    container.jdbcUrl,
-    container.username,
-    container.password
-  )
+  implicit lazy val xa: Transactor[IO] =
+    Transactor.fromDriverManager[IO](
+      container.driverClassName,
+      container.jdbcUrl,
+      container.username,
+      container.password
+    )
 
   private lazy val container: PostgreSQLContainer = {
     val c = PostgreSQLContainer("postgres:latest")

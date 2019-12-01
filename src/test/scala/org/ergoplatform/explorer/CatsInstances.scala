@@ -1,10 +1,11 @@
 package org.ergoplatform.explorer
 
-import cats.effect.{ContextShift, IO}
-
-import scala.concurrent.ExecutionContext.Implicits
+import cats.effect.{ContextShift, IO, Timer}
+import doobie.util.ExecutionContexts
 
 trait CatsInstances {
 
-  implicit val cs: ContextShift[IO] = IO.contextShift(Implicits.global)
+  implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContexts.synchronous)
+
+  implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContexts.synchronous)
 }

@@ -37,6 +37,7 @@ object dependencies {
 
   val ScalaTestVersion              = "3.0.8"
   val ScalaCheckVersion             = "1.14.1"
+  val ScalaCheckShapelessVersion    = "1.2.3"
   val TestContainersPostgresVersion = "1.7.3"
   val TestContainersScalaVersion    = "0.18.0"
 
@@ -130,11 +131,12 @@ object dependencies {
 
   object testing extends DependencyGroup {
     override def deps: List[ModuleID] = List(
-      "org.tpolecat"       %% "doobie-scalatest"     % DoobieVersion                 % Test,
-      "org.scalatest"      %% "scalatest"            % ScalaTestVersion              % Test,
-      "org.scalacheck"     %% "scalacheck"           % ScalaCheckVersion             % Test,
-      "org.testcontainers" % "postgresql"            % TestContainersPostgresVersion % Test,
-      "com.dimafeng"       %% "testcontainers-scala" % TestContainersScalaVersion    % Test
+      "org.tpolecat"               %% "doobie-scalatest"          % DoobieVersion                 % Test,
+      "org.scalatest"              %% "scalatest"                 % ScalaTestVersion              % Test,
+      "org.scalacheck"             %% "scalacheck"                % ScalaCheckVersion             % Test,
+      "org.testcontainers"         % "postgresql"                 % TestContainersPostgresVersion % Test,
+      "com.dimafeng"               %% "testcontainers-scala"      % TestContainersScalaVersion    % Test,
+      "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % ScalaCheckShapelessVersion    % Test
     )
   }
 

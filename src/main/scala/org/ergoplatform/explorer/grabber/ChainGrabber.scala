@@ -11,7 +11,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{MonadError, Parallel, ~>}
+import cats.{~>, MonadError, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -24,11 +24,11 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.Settings
-import org.ergoplatform.explorer.{Exc, Id, constants}
+import org.ergoplatform.explorer.{constants, Exc, Id}
 
 /** Fetches new blocks from the network divide them into
- * separate entities and finally puts them into db.
- */
+  * separate entities and finally puts them into db.
+  */
 final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
   D[_]: MonadError[*[_], Throwable]
@@ -50,7 +50,13 @@ final class ChainGrabber[
     Stream(()).repeat
       .covary[F]
       .metered(settings.chainPollInterval)
-      .evalMap(_ => grab)
+      .evalMap { _ =>
+        grab.handleErrorWith { e =>
+          Logger[F].warn(e)(
+            "An error occurred while syncing with the network. Restarting ..."
+          )
+        }
+      }
 
   private def grab: F[Unit] =
     for {
@@ -59,14 +65,14 @@ final class ChainGrabber[
       _             <- Logger[F].info(s"Current network height : $networkHeight")
       _             <- Logger[F].info(s"Current explorer height: $localHeight")
       range         <- getScanRange(localHeight, networkHeight).pure[F]
-      _             <- range.traverse { height =>
-                         grabBlocksFromHeight(height)
-                           .flatMap(_ ||> xa)
-                           .flatTap { blocks =>
-                             if (blocks.nonEmpty) lastBlockCache.update(_ => blocks.headOption)
-                             else Exc("No blocks written at height $height").raiseError[F, Unit]
-                           }
-                       }
+      _ <- range.traverse { height =>
+            grabBlocksFromHeight(height)
+              .flatMap(_ ||> xa)
+              .flatTap { blocks =>
+                if (blocks.nonEmpty) lastBlockCache.update(_ => blocks.headOption)
+                else Exc(s"No blocks written at height $height").raiseError[F, Unit]
+              }
+          }
     } yield ()
 
   private def grabBlocksFromHeight(
@@ -155,7 +161,6 @@ object ChainGrabber {
     D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
   ](
     settings: Settings,
-    headerRepo: HeaderRepo[D],
     networkService: ErgoNetworkService[F, Stream[F, *]]
   )(xa: D ~> F): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>

@@ -12,7 +12,8 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.protocol.models.{ApiBlockTransactions, ApiFullBlock}
 import org.ergoplatform.explorer.settings.ProtocolSettings
-import org.ergoplatform.explorer.{utils, Address}
+import org.ergoplatform.explorer.Address
+import org.ergoplatform.explorer.protocol.utils
 
 /** Flattened representation of a full block from
   * Ergo protocol enriched with statistics.

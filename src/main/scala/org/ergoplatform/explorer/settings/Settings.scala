@@ -7,7 +7,7 @@ import eu.timepit.refined.string.Url
 import scala.concurrent.duration.FiniteDuration
 
 final case class Settings(
-                           chainPollInterval: FiniteDuration,
-                           masterNodesAddresses: NonEmptyList[String Refined Url],
-                           protocol: ProtocolSettings
+  chainPollInterval: FiniteDuration,
+  masterNodesAddresses: NonEmptyList[String Refined Url],
+  protocol: ProtocolSettings
 )

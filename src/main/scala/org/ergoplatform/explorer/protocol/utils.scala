@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer
+package org.ergoplatform.explorer.protocol
 
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import scorex.util.encode.Base16
