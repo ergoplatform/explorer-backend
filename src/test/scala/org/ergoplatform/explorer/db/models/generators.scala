@@ -101,7 +101,8 @@ object generators {
       address <- addressGen
       regs    <- jsonFieldsGen
       ts      <- Gen.posNum[Long]
-    } yield Output(boxId, txId, value, height, idx, tree, address, regs, ts, mainChain)
+    } yield
+      Output(boxId, txId, value, height, idx, tree, address.some, regs, ts, mainChain)
 
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
@@ -126,7 +127,7 @@ object generators {
       inputGen(mainChain).map { in =>
         val inModified = in.copy(boxId = out.boxId)
         val extIn =
-          ExtendedInput(inModified, out.value.some, out.txId.some, out.address.some)
+          ExtendedInput(inModified, out.value.some, out.txId.some, out.addressOpt)
         out -> extIn
       }
     }

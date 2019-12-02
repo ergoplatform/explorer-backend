@@ -5,7 +5,7 @@ CREATE TABLE node_headers
     version           SMALLINT    NOT NULL,
     height            INTEGER     NOT NULL,
     n_bits            BIGINT      NOT NULL,
-    difficulty        BIGINT      NOT NULL,
+    difficulty        NUMERIC     NOT NULL,
     timestamp         BIGINT      NOT NULL,
     state_root        VARCHAR(66) NOT NULL,
     ad_proofs_root    VARCHAR(64) NOT NULL,
@@ -116,7 +116,7 @@ CREATE TABLE node_outputs
     creation_height      INTEGER     NOT NULL,
     index                INTEGER     NOT NULL,
     ergo_tree            VARCHAR     NOT NULL,
-    address              VARCHAR     NOT NULL,
+    address              VARCHAR,
     additional_registers JSON        NOT NULL,
     timestamp            BIGINT      NOT NULL,
     main_chain           BOOLEAN     NOT NULL

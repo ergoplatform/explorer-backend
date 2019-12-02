@@ -12,7 +12,7 @@ final case class Output(
   creationHeight: Int,
   index: Int,
   ergoTree: HexString,
-  address: Address,
+  addressOpt: Option[Address],
   additionalRegisters: Json,
   timestamp: Long,
   mainChain: Boolean

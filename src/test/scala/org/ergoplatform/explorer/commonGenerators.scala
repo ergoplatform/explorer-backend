@@ -7,6 +7,7 @@ import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.constraints.Base58Spec
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.hash.Blake2b256
+import scorex.util.Random
 import scorex.util.encode.{Base16, Base58}
 
 object commonGenerators {
@@ -22,7 +23,7 @@ object commonGenerators {
   def hexStringGen: Gen[String] =
     Gen
       .nonEmptyListOf(Gen.alphaNumChar)
-      .map(x => Base16.encode(Blake2b256.hash(x.mkString)))
+      .map(_ => Base16.encode(Blake2b256.hash(Random.randomBytes().mkString)))
 
   def hexStringRGen: Gen[HexString] =
     hexStringGen

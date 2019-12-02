@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.Sync
+import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.runConnectionIO._
@@ -44,7 +45,7 @@ class OutputRepoSpec
               val matching = outputs.tail
                 .map { extOut =>
                   extOut.copy(
-                    output = extOut.output.copy(address = address, ergoTree = ergoTree)
+                    output = extOut.output.copy(addressOpt = address.some, ergoTree = ergoTree)
                   )
                 }
               matching.foreach { extOut =>
