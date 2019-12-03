@@ -25,4 +25,20 @@ Database access layer is defined in `org.ergoplatform.explorer.db` module and ha
 - `services` - defines sets of operations on different domain areas.
 - `protocol`
     - `models` - models mirroring structure of corresponding objects returned by ergo node REST API. 
-````
+
+#### Chain Grabber
+
+Chain grabber is a module responsible for blockchain synchronization between network and local db, it runs as a separate process and
+operates according to the following workflow:
+
+- Get height of the best block in the network
+- Compare it with the height of the best block in the local db
+- Request block ids at each height from local height to network height
+- Request full block for each id
+- Update chain statuses of existing blocks at this height (in case of fork processing)
+- For each new full block fetched from the network:
+    - Lookup its parent info in the cache or in the database
+        + If parent is not found fetch ids of all existing blocks at previous height and grab new blocks from it
+        + Otherwise split API block into separate db models described above and insert the to the db
+        
+The key feature of grabber is that it performs chain update at either particular height or range of heights (in case of fork processing) atomically.
