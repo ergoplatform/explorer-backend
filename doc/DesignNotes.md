@@ -35,10 +35,10 @@ operates according to the following workflow:
 - Compare it with the height of the best block in the local db
 - Request block ids at each height from local height to network height
 - Request full block for each id
-- Update chain statuses of existing blocks at this height (in case of fork processing)
+- Update chain statuses of existing blocks at this height (old blocks known to explorer at this height are marked as non-best in case of fork processing)
 - For each new full block fetched from the network:
     - Lookup its parent info in the cache or in the database
-        + If parent is not found fetch ids of all existing blocks at previous height and grab new blocks from it
-        + Otherwise split API block into separate db models described above and insert the to the db
+        + If parent is not found fetch ids of all existing blocks from database at previous height and grab unknown before blocks from the network
+        + Otherwise split API block into separate db models described above and insert them to the db
         
-The key feature of grabber is that it performs chain update at either particular height or range of heights (in case of fork processing) atomically.
+The key feature of grabber is that it performs update at either particular height of the single chain or range of heights of all known to explorer chains (in case of fork processing) atomically in order to preserve stable chain consistency in any corner case.

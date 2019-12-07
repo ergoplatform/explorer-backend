@@ -3,10 +3,11 @@ package org.ergoplatform.explorer.db.repositories
 import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
-import org.ergoplatform.explorer.{constants, Id}
+import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Header
+import org.ergoplatform.explorer.protocol.constants
 
 /** [[Header]] data access operations.
   */

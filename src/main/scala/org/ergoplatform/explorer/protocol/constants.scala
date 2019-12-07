@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer
+package org.ergoplatform.explorer.protocol
 
 import org.ergoplatform.ErgoScriptPredef
 import scorex.util.encode.Base16
@@ -6,6 +6,7 @@ import sigmastate.basics.BcDlogGroup
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
+// Ergo protocol constants. See: https://github.com/ergoplatform/ergo/blob/master/src/main/scala/org/ergoplatform/settings/Constants.scala
 object constants {
 
   val PreGenesisHeight = 0

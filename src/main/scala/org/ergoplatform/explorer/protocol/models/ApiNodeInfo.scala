@@ -5,6 +5,9 @@ import io.circe.generic.semiauto._
 import io.circe.refined._
 import org.ergoplatform.explorer.{HexString, Id}
 
+/** A model mirroring NodeInfo entity from Ergo node REST API.
+  * See `NodeInfo` in https://github.com/ergoplatform/ergo/blob/master/src/main/resources/api/openapi.yaml
+  */
 final case class ApiNodeInfo(
   currentTime: Long,
   name: String,

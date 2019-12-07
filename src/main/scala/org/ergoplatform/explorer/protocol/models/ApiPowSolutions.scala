@@ -4,6 +4,9 @@ import io.circe.{Decoder, HCursor}
 import io.circe.refined._
 import org.ergoplatform.explorer.HexString
 
+/** A model mirroring PowSolutions entity from Ergo node REST API.
+  * See `PowSolutions` in https://github.com/ergoplatform/ergo/blob/master/src/main/resources/api/openapi.yaml
+  */
 final case class ApiPowSolutions(pk: HexString, w: HexString, n: HexString, d: String)
 
 object ApiPowSolutions {

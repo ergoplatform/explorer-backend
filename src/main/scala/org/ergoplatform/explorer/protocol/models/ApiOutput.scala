@@ -4,6 +4,9 @@ import io.circe.{Decoder, HCursor, Json}
 import io.circe.refined._
 import org.ergoplatform.explorer.{BoxId, HexString}
 
+/** A model mirroring ErgoTransactionOutput entity from Ergo node REST API.
+  * See `ErgoTransactionOutput` in https://github.com/ergoplatform/ergo/blob/master/src/main/resources/api/openapi.yaml
+  */
 final case class ApiOutput(
   boxId: BoxId,
   value: Long,

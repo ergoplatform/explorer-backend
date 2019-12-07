@@ -11,7 +11,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, MonadError, Parallel}
+import cats.{MonadError, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -21,10 +21,11 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.composite.FlatBlock
 import org.ergoplatform.explorer.db.repositories._
+import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.Settings
-import org.ergoplatform.explorer.{constants, Exc, Id}
+import org.ergoplatform.explorer.{Exc, Id}
 
 /** Fetches new blocks from the network divide them into
   * separate entities and finally puts them into db.

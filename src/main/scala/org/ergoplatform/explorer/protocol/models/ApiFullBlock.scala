@@ -2,6 +2,9 @@ package org.ergoplatform.explorer.protocol.models
 
 import io.circe.{Decoder, HCursor}
 
+/** A model mirroring FullBlock entity from Ergo node REST API.
+  * See `FullBlock` in https://github.com/ergoplatform/ergo/blob/master/src/main/resources/api/openapi.yaml
+  */
 final case class ApiFullBlock(
   header: ApiHeader,
   transactions: ApiBlockTransactions,
