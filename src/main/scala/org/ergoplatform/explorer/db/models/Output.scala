@@ -15,5 +15,5 @@ final case class Output(
   address: Address,
   additionalRegisters: Json,
   timestamp: Long,
-  mainChain: Boolean
+  mainChain: Boolean         // chain status, `true` if this output resides in main chain.
 )

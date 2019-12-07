@@ -9,5 +9,5 @@ final case class Transaction(
   headerId: Id,
   isCoinbase: Boolean,
   timestamp: Long,
-  size: Int
+  size: Int            // transaction size in bytes
 )

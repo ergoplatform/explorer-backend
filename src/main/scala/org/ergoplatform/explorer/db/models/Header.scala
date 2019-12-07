@@ -21,5 +21,5 @@ final case class Header(
   n: HexString,
   d: String,
   votes: String,
-  mainChain: Boolean
+  mainChain: Boolean           // chain status, `true` if this header resides in main chain.
 )
