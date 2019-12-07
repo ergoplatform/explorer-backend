@@ -36,15 +36,15 @@ final class ChainGrabber[
 ](
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: Settings,
-  networkService: ErgoNetworkService[F, Stream[F, *]],
+  networkService: ErgoNetworkService[F, Stream],
   headerRepo: HeaderRepo[D],
   blockInfoRepo: BlockInfoRepo[D],
   blockExtensionRepo: BlockExtensionRepo[D],
   adProofRepo: AdProofRepo[D],
-  txRepo: TransactionRepo[D, Stream[D, *]],
+  txRepo: TransactionRepo[D, Stream],
   inputRepo: InputRepo[D],
-  outputRepo: OutputRepo[D, Stream[D, *]],
-  assetRepo: AssetRepo[D, Stream[D, *]]
+  outputRepo: OutputRepo[D, Stream],
+  assetRepo: AssetRepo[D, Stream]
 )(xa: D ~> F) {
 
   def run: Stream[F, Unit] =
@@ -162,7 +162,7 @@ object ChainGrabber {
     D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
   ](
     settings: Settings,
-    networkService: ErgoNetworkService[F, Stream[F, *]]
+    networkService: ErgoNetworkService[F, Stream]
   )(xa: D ~> F): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).map { cache =>

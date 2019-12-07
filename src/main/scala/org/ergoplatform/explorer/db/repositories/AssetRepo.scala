@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.{Address, AssetId, BoxId}
 
 /** [[Asset]] data access operations.
   */
-trait AssetRepo[D[_], G[_]] {
+trait AssetRepo[D[_], S[_[_], _]] {
 
   /** Put a given `asset` to persistence.
     */
@@ -30,15 +30,15 @@ trait AssetRepo[D[_], G[_]] {
     assetId: AssetId,
     offset: Int,
     limit: Int
-  ): G[Address]
+  ): S[D, Address]
 }
 
 object AssetRepo {
 
-  def apply[D[_]: LiftConnectionIO]: AssetRepo[D, Stream[D, *]] =
+  def apply[D[_]: LiftConnectionIO]: AssetRepo[D, Stream] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO] extends AssetRepo[D, Stream[D, *]] {
+  final private class Live[D[_]: LiftConnectionIO] extends AssetRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{AssetQuerySet => QS}
 

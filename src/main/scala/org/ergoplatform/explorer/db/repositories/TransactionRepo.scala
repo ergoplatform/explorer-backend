@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.{Address, Id, TxId}
 
 /** [[Transaction]] data access operations.
   */
-trait TransactionRepo[D[_], G[_]] {
+trait TransactionRepo[D[_], S[_[_], _]] {
 
   /** Put a given `tx` to persistence.
     */
@@ -30,7 +30,7 @@ trait TransactionRepo[D[_], G[_]] {
 
   /** Get all transactions from block with a given `id`.
     */
-  def getAllByBlockId(id: Id): G[Transaction]
+  def getAllByBlockId(id: Id): S[D, Transaction]
 
   /** Get all transactions related to a given `address`.
     */
@@ -38,7 +38,7 @@ trait TransactionRepo[D[_], G[_]] {
     address: Address,
     offset: Int,
     limit: Int
-  ): G[Transaction]
+  ): S[D, Transaction]
 
   /** Get all transactions appeared in the main-chain after given height.
     */
@@ -46,16 +46,16 @@ trait TransactionRepo[D[_], G[_]] {
     height: Int,
     offset: Int,
     limit: Int
-  ): G[Transaction]
+  ): S[D, Transaction]
 }
 
 object TransactionRepo {
 
-  def apply[D[_]: LiftConnectionIO]: TransactionRepo[D, Stream[D, *]] =
+  def apply[D[_]: LiftConnectionIO]: TransactionRepo[D, Stream] =
     new Live[D]
 
   final private class Live[D[_]: LiftConnectionIO]
-    extends TransactionRepo[D, Stream[D, *]] {
+    extends TransactionRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{TransactionQuerySet => QS}
 

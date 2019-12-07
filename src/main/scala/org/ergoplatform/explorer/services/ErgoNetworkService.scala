@@ -18,7 +18,7 @@ import org.http4s.{Method, Request, Uri}
 
 /** A service providing an access to the Ergo network.
   */
-trait ErgoNetworkService[F[_], G[_]] {
+trait ErgoNetworkService[F[_], S[_[_], _]] {
 
   /** Get height of the best block.
     */
@@ -34,7 +34,7 @@ trait ErgoNetworkService[F[_], G[_]] {
 
   /** Get unconfirmed transactions from UTX pool.
     */
-  def getUnconfirmedTransactions: G[ApiTransaction]
+  def getUnconfirmedTransactions: S[F, ApiTransaction]
 }
 
 object ErgoNetworkService {
@@ -42,7 +42,7 @@ object ErgoNetworkService {
   def apply[F[_]: Sync](
     client: Client[F],
     settings: Settings
-  ): F[ErgoNetworkService[F, Stream[F, *]]] =
+  ): F[ErgoNetworkService[F, Stream]] =
     Sync[F]
       .delay(Slf4jLogger.getLogger[F])
       .map(logger => new Live[F](client, logger, settings))
@@ -51,7 +51,7 @@ object ErgoNetworkService {
     client: Client[F],
     logger: Logger[F],
     settings: Settings
-  ) extends ErgoNetworkService[F, Stream[F, *]] {
+  ) extends ErgoNetworkService[F, Stream] {
 
     import io.circe.jawn.CirceSupportParser.facade
     import org.http4s.circe.CirceEntityDecoder._

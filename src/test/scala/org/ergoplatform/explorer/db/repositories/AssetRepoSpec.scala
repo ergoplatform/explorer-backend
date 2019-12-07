@@ -34,7 +34,7 @@ class AssetRepoSpec
   }
 
   private def withLiveRepo[D[_]: LiftConnectionIO: Sync](
-    body: AssetRepo[D, fs2.Stream[D, *]] => Any
+    body: AssetRepo[D, fs2.Stream] => Any
   ): Any =
     body(db.repositories.AssetRepo[D])
 }

@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 import org.ergoplatform.explorer.services.ErgoNetworkService
 
 final class GrabberTestNetworkService[F[_]: Applicative](var source: Source)
-  extends ErgoNetworkService[F, fs2.Stream[F, *]] {
+  extends ErgoNetworkService[F, fs2.Stream] {
 
   def getBestHeight: F[Int] =
     source.blocksStorage.maxBy(_._1)._1.pure[F]

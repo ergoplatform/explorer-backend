@@ -2,7 +2,6 @@ package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.Sync
 import doobie.free.connection.ConnectionIO
-import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.runConnectionIO._
 import org.ergoplatform.explorer.db.{RealDbTest, repositories}
@@ -74,7 +73,7 @@ class TransactionRepoSpec
   }
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
-    body: (HeaderRepo[D], TransactionRepo[D, fs2.Stream[D, *]]) => Any
+    body: (HeaderRepo[D], TransactionRepo[D, fs2.Stream]) => Any
   ): Any =
     body(repositories.HeaderRepo[D], repositories.TransactionRepo[D])
 }

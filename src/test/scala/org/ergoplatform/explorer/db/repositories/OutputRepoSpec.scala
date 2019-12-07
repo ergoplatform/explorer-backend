@@ -70,8 +70,8 @@ class OutputRepoSpec
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (
       HeaderRepo[D],
-      TransactionRepo[D, fs2.Stream[D, *]],
-      OutputRepo[D, fs2.Stream[D, *]]
+      TransactionRepo[D, fs2.Stream],
+      OutputRepo[D, fs2.Stream]
     ) => Any
   ): Any = {
     val headerRepo = repositories.HeaderRepo[D]

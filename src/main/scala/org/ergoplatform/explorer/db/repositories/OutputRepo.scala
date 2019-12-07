@@ -13,7 +13,7 @@ import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */
-trait OutputRepo[D[_], G[_]] {
+trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Put a given `output` to persistence.
     */
@@ -29,19 +29,19 @@ trait OutputRepo[D[_], G[_]] {
 
   /** Get all outputs with a given `address` from persistence.
     */
-  def getAllByAddress(address: Address): G[ExtendedOutput]
+  def getAllByAddress(address: Address): S[D, ExtendedOutput]
 
   /** Get all outputs with a given `ergoTree` from persistence.
     */
-  def getAllByErgoTree(ergoTree: HexString): G[ExtendedOutput]
+  def getAllByErgoTree(ergoTree: HexString): S[D, ExtendedOutput]
 
   /** Get all unspent main-chain outputs with a given `address` from persistence.
     */
-  def getAllMainUnspentByAddress(address: Address): G[ExtendedOutput]
+  def getAllMainUnspentByAddress(address: Address): S[D, ExtendedOutput]
 
   /** Get all unspent main-chain outputs with a given `ergoTree` from persistence.
     */
-  def getAllMainUnspentByErgoTree(ergoTree: HexString): G[ExtendedOutput]
+  def getAllMainUnspentByErgoTree(ergoTree: HexString): S[D, ExtendedOutput]
 
   /** Search for addresses containing a given `substring`.
     */
@@ -50,11 +50,11 @@ trait OutputRepo[D[_], G[_]] {
 
 object OutputRepo {
 
-  def apply[D[_]: LiftConnectionIO]: OutputRepo[D, Stream[D, *]] =
+  def apply[D[_]: LiftConnectionIO]: OutputRepo[D, Stream] =
     new Live[D]
 
   final private class Live[D[_]: LiftConnectionIO]
-    extends OutputRepo[D, Stream[D, *]] {
+    extends OutputRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{OutputQuerySet => QS}
 

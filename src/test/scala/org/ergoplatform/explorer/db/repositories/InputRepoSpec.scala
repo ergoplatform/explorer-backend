@@ -48,7 +48,7 @@ class InputRepoSpec
   }
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
-    body: (OutputRepo[D, fs2.Stream[D, *]], InputRepo[D]) => Any
+    body: (OutputRepo[D, fs2.Stream], InputRepo[D]) => Any
   ): Any =
     body(repositories.OutputRepo[D], repositories.InputRepo[D])
 }
