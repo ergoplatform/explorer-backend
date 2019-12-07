@@ -10,8 +10,12 @@ import mouse.anyf._
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.{BlockInfoRepo, HeaderRepo}
 
+/** A service providing an access to the blockchain data.
+  */
 trait BlockchainService[F[_]] {
 
+  /** Get height of the best block.
+    */
   def getBestHeight: F[Int]
 }
 
