@@ -11,9 +11,8 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
 import jawnfs2._
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.{Exc, Id}
 import org.ergoplatform.explorer.settings.Settings
-import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
 
@@ -55,13 +54,14 @@ object ErgoNetworkService {
   ) extends ErgoNetworkService[F, Stream[F, *]] {
 
     import io.circe.jawn.CirceSupportParser.facade
+    import org.http4s.circe.CirceEntityDecoder._
 
     def getBestHeight: F[Int] =
       retrying { uri =>
         client
           .expect[ApiNodeInfo](
             makeGetRequest(s"$uri/info")
-          )(jsonOf(Sync[F], implicitly[Decoder[ApiNodeInfo]]))
+          )
           .map(_.fullHeight)
       }
 
@@ -69,14 +69,14 @@ object ErgoNetworkService {
       retrying { uri =>
         client.expect[List[Id]](
           makeGetRequest(s"$uri/blocks/at/$height")
-        )(jsonOf(Sync[F], implicitly[Decoder[List[Id]]]))
+        )
       }
 
     def getFullBlockById(id: Id): F[Option[ApiFullBlock]] =
       retrying { uri =>
         client.expectOption[ApiFullBlock](
           makeGetRequest(s"$uri/blocks/$id")
-        )(jsonOf(Sync[F], implicitly[Decoder[ApiFullBlock]]))
+        )
       }
 
     def getUnconfirmedTransactions: Stream[F, ApiTransaction] =
@@ -88,16 +88,16 @@ object ErgoNetworkService {
             implicitly[Decoder[ApiTransaction]]
               .decodeJson(json)
               .fold(
-                _ => Stream.raiseError[F](new Exception("Json decoding failed")),
+                _ => Stream.raiseError[F](Exc("Json decoding failed")),
                 Stream.emit
               )
           }
       }
 
-    private def retrying[G[_]: Monad, A](
-      f: String Refined Url => G[A]
-    )(implicit G: ApplicativeError[G, Throwable]): G[A] = {
-      def attempt(uris: List[String Refined Url])(i: Int): G[A] =
+    private def retrying[M[_]: Monad, A](
+      f: String Refined Url => M[A]
+    )(implicit G: ApplicativeError[M, Throwable]): M[A] = {
+      def attempt(uris: List[String Refined Url])(i: Int): M[A] =
         uris match {
           case hd :: tl =>
             G.handleErrorWith(f(hd)) { _ =>
