@@ -8,7 +8,7 @@ import doobie.refined.implicits._
 import org.ergoplatform.explorer.{Id, TxId}
 import org.ergoplatform.explorer.db.models.composite.ExtendedInput
 
-/** A set of queries required to implement functionality of production [InputRepo].
+/** A set of queries for doobie implementation of [InputRepo].
   */
 object InputQuerySet extends QuerySet {
 

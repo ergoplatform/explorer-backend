@@ -6,7 +6,7 @@ import doobie.refined.implicits._
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.models.BlockExtension
 
-/** A set of queries required to implement functionality of production [BlockExtensionRepo].
+/** A set of queries for doobie implementation of [BlockExtensionRepo].
   */
 object BlockExtensionQuerySet extends QuerySet {
 

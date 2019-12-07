@@ -6,7 +6,7 @@ import doobie.refined.implicits._
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Header
 
-/** A set of queries required to implement functionality of production [HeaderRepo].
+/** A set of queries for doobie implementation of [HeaderRepo].
   */
 object HeaderQuerySet extends QuerySet {
 

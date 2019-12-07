@@ -7,7 +7,7 @@ import org.ergoplatform.explorer.{Address, Id, TxId}
 import org.ergoplatform.explorer.db.models.Transaction
 import fs2.Stream
 
-/** A set of queries required to implement functionality of production [TransactionRepo].
+/** A set of queries for doobie implementation of [TransactionRepo].
   */
 object TransactionQuerySet extends QuerySet {
 

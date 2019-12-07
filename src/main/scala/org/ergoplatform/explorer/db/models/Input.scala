@@ -10,5 +10,5 @@ final case class Input(
   txId: TxId,
   proofBytes: HexString,
   extension: Json,
-  mainChain: Boolean
+  mainChain: Boolean     // chain status, `true` if this input resides in main chain.
 )
