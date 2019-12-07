@@ -8,6 +8,6 @@ final case class Transaction(
   id: TxId,
   headerId: Id,
   isCoinbase: Boolean,
-  timestamp: Long,
+  timestamp: Long,     // approx time output appeared in the blockchain
   size: Int            // transaction size in bytes
 )
