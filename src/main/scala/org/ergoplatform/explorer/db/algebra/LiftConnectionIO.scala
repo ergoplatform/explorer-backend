@@ -9,6 +9,7 @@ import simulacrum.typeclass
 @typeclass trait LiftConnectionIO[F[_]] {
 
   def liftConnectionIO[A](ca: ConnectionIO[A]): F[A]
+
   // see: https://github.com/typelevel/kind-projector#polymorphic-lambda-values
   def liftConnectionIOK: ConnectionIO ~> F = λ[ConnectionIO ~> F](liftConnectionIO(_))
 }

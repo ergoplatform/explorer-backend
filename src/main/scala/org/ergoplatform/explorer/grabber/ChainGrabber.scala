@@ -66,14 +66,14 @@ final class ChainGrabber[
       _             <- Logger[F].info(s"Current network height : $networkHeight")
       _             <- Logger[F].info(s"Current explorer height: $localHeight")
       range         <- getScanRange(localHeight, networkHeight).pure[F]
-      _ <- range.traverse { height =>
-            grabBlocksFromHeight(height)
-              .flatMap(_ ||> xa)
-              .flatTap { blocks =>
-                if (blocks.nonEmpty) lastBlockCache.update(_ => blocks.headOption)
-                else Exc(s"No blocks written at height $height").raiseError[F, Unit]
-              }
-          }
+      _             <- range.traverse { height =>
+                         grabBlocksFromHeight(height)
+                           .flatMap(_ ||> xa)
+                           .flatTap { blocks =>
+                             if (blocks.nonEmpty) lastBlockCache.update(_ => blocks.headOption)
+                             else Exc(s"No blocks written at height $height").raiseError[F, Unit]
+                           }
+                       }
     } yield ()
 
   private def grabBlocksFromHeight(
