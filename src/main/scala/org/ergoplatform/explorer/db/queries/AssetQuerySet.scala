@@ -7,7 +7,7 @@ import fs2.Stream
 import org.ergoplatform.explorer.{Address, AssetId, BoxId}
 import org.ergoplatform.explorer.db.models.Asset
 
-/** A set of queries required to implement functionality of production [AssetRepo].
+/** A set of queries for doobie implementation of  [AssetRepo].
   */
 object AssetQuerySet extends QuerySet {
 
