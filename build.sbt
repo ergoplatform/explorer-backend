@@ -16,6 +16,7 @@ lazy val projectDeps = List(
   dependencies.fs2.deps,
   dependencies.circe.deps,
   dependencies.http4s.deps,
+  dependencies.tapir.deps,
   dependencies.db.deps,
   dependencies.logging.deps,
   dependencies.newtypes.deps,

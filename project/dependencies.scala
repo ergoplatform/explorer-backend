@@ -5,6 +5,7 @@ object dependencies {
   val ErgoWalletVersion = "master-83d10111-SNAPSHOT"
 
   val Http4sVersion          = "0.21.0-M5"
+  val TapirVersion           = "0.12.7"
   val CirceVersion           = "0.12.3"
   val CirceDerivationVersion = "0.12.0-M7"
   val CatsVersion            = "2.0.0"
@@ -53,6 +54,13 @@ object dependencies {
         "org.http4s" %% "http4s-blaze-client",
         "org.http4s" %% "http4s-circe"
       ).map(_ % Http4sVersion)
+  }
+
+  object tapir extends DependencyGroup {
+    override def deps: List[ModuleID] =
+      List(
+        "com.softwaremill.sttp.tapir" %% "tapir-core"
+      ).map(_ % TapirVersion)
   }
 
   object circe extends DependencyGroup {
