@@ -100,7 +100,8 @@ object ErgoNetworkService {
       def attempt(uris: List[String Refined Url])(i: Int): M[A] =
         uris match {
           case hd :: tl =>
-            G.handleErrorWith(f(hd)) { _ =>
+            G.handleErrorWith(f(hd)) { e =>
+              println(e)
               attempt(tl)(i + 1)
             }
           case Nil =>

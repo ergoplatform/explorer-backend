@@ -93,7 +93,7 @@ CREATE TABLE node_inputs
 (
     box_id      VARCHAR(64) NOT NULL,
     tx_id       VARCHAR(64) NOT NULL,
-    proof_bytes VARCHAR     NOT NULL,
+    proof_bytes VARCHAR,
     extension   JSON        NOT NULL,
     main_chain  BOOLEAN     NOT NULL
 );

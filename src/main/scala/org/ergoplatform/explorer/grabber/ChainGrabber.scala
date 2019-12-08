@@ -70,7 +70,9 @@ final class ChainGrabber[
                          grabBlocksFromHeight(height)
                            .flatMap(_ ||> xa)
                            .flatTap { blocks =>
-                             if (blocks.nonEmpty) lastBlockCache.update(_ => blocks.headOption)
+                             if (blocks.nonEmpty)
+                               lastBlockCache.update(_ => blocks.headOption) >>
+                               Logger[F].info(s"${blocks.size} block grabbed from height $height")
                              else Exc(s"No blocks written at height $height").raiseError[F, Unit]
                            }
                        }

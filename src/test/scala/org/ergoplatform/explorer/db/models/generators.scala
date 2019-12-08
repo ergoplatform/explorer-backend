@@ -120,7 +120,7 @@ object generators {
       txId  <- txIdGen
       proof <- hexStringRGen
       ext   <- jsonFieldsGen
-    } yield Input(boxId, txId, proof, ext, mainChain)
+    } yield Input(boxId, txId, proof.some, ext, mainChain)
 
   def extInputWithOutputGen(mainChain: Boolean = true): Gen[(Output, ExtendedInput)] =
     outputGen(mainChain).flatMap { out =>
