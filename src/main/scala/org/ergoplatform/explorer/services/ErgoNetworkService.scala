@@ -1,18 +1,20 @@
 package org.ergoplatform.explorer.services
 
 import cats.effect.Sync
-import cats.{ApplicativeError, Monad}
 import cats.syntax.functor._
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.string.Url
+import cats.{ApplicativeError, Monad}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
 import jawnfs2._
-import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
-import org.ergoplatform.explorer.{Exc, Id}
+import org.ergoplatform.explorer.protocol.models.{
+  ApiFullBlock,
+  ApiNodeInfo,
+  ApiTransaction
+}
 import org.ergoplatform.explorer.settings.Settings
+import org.ergoplatform.explorer.{Exc, Id, UrlString}
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
 
@@ -43,8 +45,8 @@ object ErgoNetworkService {
     client: Client[F],
     settings: Settings
   ): F[ErgoNetworkService[F, Stream]] =
-    Sync[F]
-      .delay(Slf4jLogger.getLogger[F])
+    Slf4jLogger
+      .create[F]
       .map(logger => new Live[F](client, logger, settings))
 
   final private class Live[F[_]: Sync](
@@ -95,9 +97,9 @@ object ErgoNetworkService {
       }
 
     private def retrying[M[_]: Monad, A](
-      f: String Refined Url => M[A]
+      f: UrlString => M[A]
     )(implicit G: ApplicativeError[M, Throwable]): M[A] = {
-      def attempt(uris: List[String Refined Url])(i: Int): M[A] =
+      def attempt(uris: List[UrlString])(i: Int): M[A] =
         uris match {
           case hd :: tl =>
             G.handleErrorWith(f(hd)) { e =>
