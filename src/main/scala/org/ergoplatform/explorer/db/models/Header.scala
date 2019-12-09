@@ -17,9 +17,9 @@ final case class Header(
   transactionsRoot: HexString,
   extensionHash: HexString,
   minerPk: HexString,
-  w: HexString,
-  n: HexString,
-  d: String,
-  votes: String,
+  w: HexString,                // PoW one time PK
+  n: HexString,                // PoW nonce
+  d: String,                   // PoW distance
+  votes: String,               // hex-encoded votes for a soft-fork and parameters
   mainChain: Boolean           // chain status, `true` if this header resides in main chain.
 )

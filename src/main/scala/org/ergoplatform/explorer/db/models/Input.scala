@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 final case class Input(
   boxId: BoxId,
   txId: TxId,
-  proofBytes: HexString,
-  extension: Json,
+  proofBytes: HexString, // serialized and hex-encoded cryptographic proof
+  extension: Json,       // arbitrary key-value dictionary
   mainChain: Boolean     // chain status, `true` if this input resides in main chain.
 )

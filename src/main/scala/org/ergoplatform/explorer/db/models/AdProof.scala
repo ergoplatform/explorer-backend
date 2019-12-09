@@ -6,6 +6,6 @@ import org.ergoplatform.explorer.{HexString, Id}
   */
 final case class AdProof(
   headerId: Id,
-  proofBytes: HexString,
-  digest: HexString
+  proofBytes: HexString, // serialized and hex-encoded AVL+ tree path
+  digest: HexString      // hex-encoded tree root hash
 )
