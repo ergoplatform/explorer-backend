@@ -9,7 +9,7 @@ import org.ergoplatform.explorer.{HexString, Id}
 final case class BlockExtension(
   headerId: Id,
   digest: HexString,
-  fields: Json
+  fields: Json       // arbitrary key->value dictionary
 )
 
 object BlockExtension {
