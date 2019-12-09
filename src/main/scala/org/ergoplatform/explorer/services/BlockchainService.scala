@@ -24,8 +24,8 @@ object BlockchainService {
   def apply[F[_]: Sync, D[_]: LiftConnectionIO](
     xa: D ~> F
   ): F[BlockchainService[F]] =
-    Sync[F]
-      .suspend(Slf4jLogger.create)
+    Slf4jLogger
+      .create[F]
       .map { implicit logger =>
         new Live(HeaderRepo[D], BlockInfoRepo[D])(xa)
       }

@@ -1,13 +1,15 @@
 package org.ergoplatform.explorer
 
 import cats.data.NonEmptyList
+import cats.instances.try_._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.refineV
-import eu.timepit.refined.string.{Url, ValidByte}
+import eu.timepit.refined.string.ValidByte
 import org.ergoplatform.explorer.settings.{ProtocolSettings, Settings}
 import org.ergoplatform.settings.MonetarySettings
 
 import scala.concurrent.duration._
+import scala.util.Try
 
 trait MainNetConfiguration {
 
@@ -20,6 +22,6 @@ trait MainNetConfiguration {
 
   val monetarySettings = MonetarySettings()
   val protocolSettings = ProtocolSettings(MainNetPrefix, GenesisAddress, monetarySettings)
-  val mainnetNodes     = NonEmptyList.one(refineV[Url]("http://139.59.29.87:9053").right.get)
+  val mainnetNodes     = NonEmptyList.one(UrlString.fromString[Try]("http://139.59.29.87:9053").get)
   val settings         = Settings(1.second, mainnetNodes, protocolSettings)
 }

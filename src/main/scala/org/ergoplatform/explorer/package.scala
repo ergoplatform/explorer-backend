@@ -8,7 +8,7 @@ import doobie.refined.implicits._
 import eu.timepit.refined.refineV
 import eu.timepit.refined.W
 import eu.timepit.refined.api.Refined
-import eu.timepit.refined.string.{HexStringSpec, MatchesRegex}
+import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.{Decoder, Encoder}
 import io.circe.refined._
 import io.estatico.newtype.macros.newtype
@@ -23,6 +23,8 @@ package object explorer {
     type AddressType = String Refined Base58Spec
 
     type HexStringType = String Refined HexStringSpec
+
+    type UrlStringType = String Refined Url
   }
 
   @newtype case class Id(value: String)
@@ -90,7 +92,7 @@ package object explorer {
       s: String
     )(implicit F: ApplicativeError[F, Throwable]): F[Address] =
       refineV[Base58Spec](s)
-        .leftMap[Throwable](e => new Exception(s"Refinement failed: $e"))
+        .leftMap[Throwable](e => Exc(s"Refinement failed: $e"))
         .liftTo[F]
         .map(Address.apply)
   }
@@ -112,8 +114,30 @@ package object explorer {
       s: String
     )(implicit F: ApplicativeError[F, Throwable]): F[HexString] =
       refineV[HexStringSpec](s)
-        .leftMap[Throwable](e => new Exception(s"Refinement failed: $e"))
+        .leftMap[Throwable](e => Exc(s"Refinement failed: $e"))
         .liftTo[F]
         .map(HexString.apply)
+  }
+
+  @newtype case class UrlString(value: UrlStringType) {
+    final def unwrapped: String = value.value
+  }
+
+  object UrlString {
+    // doobie instances
+    implicit def get: Get[UrlString] = deriving
+    implicit def put: Put[UrlString] = deriving
+
+    // circe instances
+    implicit def encoder: Encoder[UrlString] = deriving
+    implicit def decoder: Decoder[UrlString] = deriving
+
+    def fromString[F[_]](
+                          s: String
+                        )(implicit F: ApplicativeError[F, Throwable]): F[UrlString] =
+      refineV[Url](s)
+        .leftMap[Throwable](e => Exc(s"Refinement failed: $e"))
+        .liftTo[F]
+        .map(UrlString.apply)
   }
 }
