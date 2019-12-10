@@ -13,6 +13,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.refined._
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.constraints._
+import sttp.tapir.Codec
 
 package object explorer {
 
@@ -37,6 +38,8 @@ package object explorer {
     // circe instances
     implicit def encoder: Encoder[Id] = deriving
     implicit def decoder: Decoder[Id] = deriving
+
+    implicit def plainCodec: Codec.PlainCodec[Id] = deriving
   }
 
   @newtype case class TxId(value: String)

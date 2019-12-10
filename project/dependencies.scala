@@ -59,7 +59,8 @@ object dependencies {
   object tapir extends DependencyGroup {
     override def deps: List[ModuleID] =
       List(
-        "com.softwaremill.sttp.tapir" %% "tapir-core"
+        "com.softwaremill.sttp.tapir" %% "tapir-core",
+        "com.softwaremill.sttp.tapir" %% "tapir-json-circe"
       ).map(_ % TapirVersion)
   }
 
