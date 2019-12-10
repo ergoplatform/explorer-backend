@@ -18,6 +18,7 @@ import org.ergoplatform.explorer.{Exc, Id, UrlString}
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
 
+// TODO describe G
 /** A service providing an access to the Ergo network.
   */
 trait ErgoNetworkService[F[_], S[_[_], _]] {

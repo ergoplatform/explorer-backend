@@ -8,13 +8,14 @@ import cats.syntax.functor._
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
-import org.ergoplatform.explorer.{Address, Id}
-import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
+import org.ergoplatform.explorer.{Id, Address}
+import org.ergoplatform.{Pay2SAddress, ErgoScriptPredef}
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 
+import scala.beans.BeanDescription
 import scala.util.Try
 
 /** Entity representing `blocks_info` table.
@@ -25,6 +26,7 @@ final case class BlockInfo(
   timestamp: Long,
   height: Int,
   difficulty: Long,
+  @BeanDescription("lks")
   blockSize: Long,           // block size (bytes)
   blockCoins: Long,          // total amount of nERGs in the block
   blockMiningTime: Long,     // block mining time
@@ -45,6 +47,7 @@ final case class BlockInfo(
 
 object BlockInfo {
 
+  // TODO describe what it means when parentBlockOpt is empty?
   def fromApi[F[_]: MonadError[*[_], Throwable]](apiBlock: ApiFullBlock, parentBlockOpt: Option[BlockInfo])(
     protocolSettings: ProtocolSettings
   ): F[BlockInfo] =

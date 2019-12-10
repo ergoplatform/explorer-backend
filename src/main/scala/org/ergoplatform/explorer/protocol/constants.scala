@@ -7,6 +7,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
 // Ergo protocol constants. See: https://github.com/ergoplatform/ergo/blob/master/src/main/scala/org/ergoplatform/settings/Constants.scala
+// TODO describe all constants not mentioned in the url above, or give additional references
 object constants {
 
   val PreGenesisHeight = 0

@@ -6,6 +6,7 @@ import io.circe.Decoder
 /** Wrapper for difficulty value in order to avoid
   * manually importing implicit decoder for it.
   */
+// TODO consider making it AnyVal
 final case class ApiDifficulty(value: BigDecimal)
 
 object ApiDifficulty {

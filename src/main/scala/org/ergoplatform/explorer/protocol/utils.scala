@@ -7,6 +7,7 @@ import sigmastate.serialization.ErgoTreeSerializer
 
 import scala.util.Try
 
+// TODO move this code to sigmastate ErgoAddress
 object utils {
 
   private val treeSerializer: ErgoTreeSerializer = new ErgoTreeSerializer

@@ -37,7 +37,7 @@ final class ChainGrabber[
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: Settings,
   networkService: ErgoNetworkService[F, Stream],
-  headerRepo: HeaderRepo[D],
+  headerRepo: HeaderRepo[D], // TODO put all repos in a single structure
   blockInfoRepo: BlockInfoRepo[D],
   blockExtensionRepo: BlockExtensionRepo[D],
   adProofRepo: AdProofRepo[D],
@@ -84,6 +84,8 @@ final class ChainGrabber[
   ): F[D[List[BlockInfo]]] =
     for {
       ids <- networkService.getBlockIdsAtHeight(height)
+      // Q: should the number of apiBlocks be the same as of ids?
+      //  If not, why it is correct to swallow the blocks in `flatten` below?
       apiBlocks <- ids
                     .filterNot(existingHeaderIds.contains)
                     .parTraverse(networkService.getFullBlockById)
@@ -91,7 +93,7 @@ final class ChainGrabber[
                       _.flatten.map { block =>
                         block
                           .lens(_.header.mainChain)
-                          .modify(_ => ids.headOption.contains(block.header.id))
+                          .modify(_ => ids.headOption.contains(block.header.id)) // Q: Why the flag is calculated like this?
                       }
                     }
       exStatuses = existingHeaderIds.map(id => id -> ids.headOption.contains(id))

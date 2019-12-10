@@ -21,6 +21,7 @@ trait BlockchainService[F[_]] {
 
 object BlockchainService {
 
+  // TODO explain why two different types of effects are used
   def apply[F[_]: Sync, D[_]: LiftConnectionIO](
     xa: D ~> F
   ): F[BlockchainService[F]] =

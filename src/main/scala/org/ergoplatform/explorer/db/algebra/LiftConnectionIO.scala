@@ -10,12 +10,13 @@ import simulacrum.typeclass
 
   def liftConnectionIO[A](ca: ConnectionIO[A]): F[A]
 
-  // see: https://github.com/typelevel/kind-projector#polymorphic-lambda-values
+  /** @see ScalaDoc for [[cats.~>]]
+    *      and also https://github.com/typelevel/kind-projector#polymorphic-lambda-values
+    */
   def liftConnectionIOK: ConnectionIO ~> F = λ[ConnectionIO ~> F](liftConnectionIO(_))
 }
 
 object LiftConnectionIO {
-
   implicit val CIOLiftConnectionIO: LiftConnectionIO[ConnectionIO] =
     new LiftConnectionIO[ConnectionIO] {
       def liftConnectionIO[A](ca: ConnectionIO[A]): ConnectionIO[A] = ca
