@@ -10,7 +10,7 @@ import mouse.anyf._
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.{BlockInfoRepo, HeaderRepo}
-import org.ergoplatform.explorer.http.api.v1.models.BlockSummary
+import org.ergoplatform.explorer.http.api.v0.models.BlockSummary
 
 /** A service providing an access to the blockchain data.
   */

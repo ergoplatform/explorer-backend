@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.http.api.v1.routes
+package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.data.{Kleisli, OptionT}
 import cats.effect.{ContextShift, Sync}
@@ -6,13 +6,13 @@ import cats.syntax.flatMap._
 import cats.syntax.option._
 import org.ergoplatform.explorer.Err
 import org.ergoplatform.explorer.services.BlockchainService
-import org.ergoplatform.explorer.http.api.v1.syntax.applicativeThrow._
+import org.ergoplatform.explorer.http.api.v0.syntax.applicativeThrow._
 import org.http4s.{HttpRoutes, Request, Response}
 import sttp.tapir.server.http4s._
 
 final class BlocksRoutes[F[_]: Sync: ContextShift](service: BlockchainService[F]) {
 
-  import org.ergoplatform.explorer.http.api.v1.defs.{BlocksEndpointDefs => Defs}
+  import org.ergoplatform.explorer.http.api.v0.defs.{BlocksEndpointDefs => Defs}
 
   val routes: Kleisli[OptionT[F, *], Request[F], Response[F]] =
     blockSummaryByIdR

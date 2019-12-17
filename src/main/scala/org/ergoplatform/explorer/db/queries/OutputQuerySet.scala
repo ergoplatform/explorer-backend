@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.queries
 
 import doobie.free.connection.ConnectionIO
-import org.ergoplatform.explorer.db.models.composite.ExtendedOutput
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import doobie.implicits._
 import doobie.refined.implicits._
 import fs2.Stream

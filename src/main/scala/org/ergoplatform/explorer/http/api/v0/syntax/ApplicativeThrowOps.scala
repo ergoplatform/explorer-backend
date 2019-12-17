@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.http.api.v1.syntax
+package org.ergoplatform.explorer.http.api.v0.syntax
 
 import cats.ApplicativeError
 import cats.syntax.applicativeError._

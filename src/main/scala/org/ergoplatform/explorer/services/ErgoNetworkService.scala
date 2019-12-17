@@ -14,7 +14,7 @@ import org.ergoplatform.explorer.protocol.models.{
   ApiTransaction
 }
 import org.ergoplatform.explorer.settings.Settings
-import org.ergoplatform.explorer.{Exc, Id, UrlString}
+import org.ergoplatform.explorer.{Err, Id, UrlString}
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
 
@@ -90,7 +90,7 @@ object ErgoNetworkService {
             implicitly[Decoder[ApiTransaction]]
               .decodeJson(json)
               .fold(
-                _ => Stream.raiseError[F](Exc("Json decoding failed")),
+                _ => Stream.raiseError[F](Err("Json decoding failed")),
                 Stream.emit
               )
           }

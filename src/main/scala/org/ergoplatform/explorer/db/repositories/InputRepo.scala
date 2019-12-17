@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Input
-import org.ergoplatform.explorer.db.models.composite.ExtendedInput
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
 import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[Input]] and [[ExtendedInput]] data access operations.

@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.http.api.v1
+package org.ergoplatform.explorer.http.api.v0
 
 import io.circe.generic.auto._
 import org.ergoplatform.explorer.Err

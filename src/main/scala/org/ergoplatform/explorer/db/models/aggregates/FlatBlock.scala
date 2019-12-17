@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.db.models.composite
+package org.ergoplatform.explorer.db.models.aggregates
 
 import cats.MonadError
 import cats.instances.try_._

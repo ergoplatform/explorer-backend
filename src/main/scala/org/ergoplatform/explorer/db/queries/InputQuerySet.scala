@@ -6,7 +6,7 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
 import org.ergoplatform.explorer.{Id, TxId}
-import org.ergoplatform.explorer.db.models.composite.ExtendedInput
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
 
 /** A set of queries for doobie implementation of [InputRepo].
   */

@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.http.api.v1.models
+package org.ergoplatform.explorer.http.api.v0.models
 
 import org.ergoplatform.explorer.{Address, Id}
 import sttp.tapir.{CodecForOptional, CodecFormat, Schema}

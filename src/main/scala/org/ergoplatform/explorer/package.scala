@@ -13,7 +13,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.refined._
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.constraints._
-import sttp.tapir.Codec
+import sttp.tapir.{Codec, CodecFormat, Schema}
 
 package object explorer {
 
@@ -39,6 +39,7 @@ package object explorer {
     implicit def encoder: Encoder[Id] = deriving
     implicit def decoder: Decoder[Id] = deriving
 
+    // tapir instances
     implicit def plainCodec: Codec.PlainCodec[Id] = deriving
   }
 
@@ -95,7 +96,7 @@ package object explorer {
       s: String
     )(implicit F: ApplicativeError[F, Throwable]): F[Address] =
       refineV[Base58Spec](s)
-        .leftMap[Throwable](e => Exc(s"Refinement failed: $e"))
+        .leftMap[Throwable](e => Err(s"Refinement failed: $e"))
         .liftTo[F]
         .map(Address.apply)
   }
@@ -117,7 +118,7 @@ package object explorer {
       s: String
     )(implicit F: ApplicativeError[F, Throwable]): F[HexString] =
       refineV[HexStringSpec](s)
-        .leftMap[Throwable](e => Exc(s"Refinement failed: $e"))
+        .leftMap[Throwable](e => Err(s"Refinement failed: $e"))
         .liftTo[F]
         .map(HexString.apply)
   }
@@ -139,7 +140,7 @@ package object explorer {
                           s: String
                         )(implicit F: ApplicativeError[F, Throwable]): F[UrlString] =
       refineV[Url](s)
-        .leftMap[Throwable](e => Exc(s"Refinement failed: $e"))
+        .leftMap[Throwable](e => Err(s"Refinement failed: $e"))
         .liftTo[F]
         .map(UrlString.apply)
   }

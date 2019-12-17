@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.db.models.composite
+package org.ergoplatform.explorer.db.models.aggregates
 
 import org.ergoplatform.explorer.db.models.Input
 import org.ergoplatform.explorer.{Address, TxId}

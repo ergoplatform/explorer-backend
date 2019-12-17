@@ -60,7 +60,10 @@ object dependencies {
     override def deps: List[ModuleID] =
       List(
         "com.softwaremill.sttp.tapir" %% "tapir-core",
-        "com.softwaremill.sttp.tapir" %% "tapir-json-circe"
+        "com.softwaremill.sttp.tapir" %% "tapir-json-circe",
+        "com.softwaremill.sttp.tapir" %% "tapir-http4s-server",
+        "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs",
+        "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml"
       ).map(_ % TapirVersion)
   }
 

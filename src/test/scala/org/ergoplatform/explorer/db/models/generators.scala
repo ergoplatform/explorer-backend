@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.db.models
 
 import cats.syntax.option._
 import org.ergoplatform.explorer._
-import org.ergoplatform.explorer.db.models.composite.{ExtendedInput, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
 import org.scalacheck.Gen
 
 object generators {
