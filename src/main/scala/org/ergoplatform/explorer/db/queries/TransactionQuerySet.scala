@@ -47,17 +47,14 @@ object TransactionQuerySet extends QuerySet {
     limit: Int
   ): Stream[ConnectionIO, Transaction] =
     sql"""
-         |select t.id, t.header_id, t.coinbase, t.timestamp, t.size
-         |from node_transactions t left join node_headers h on h.id = t.header_id
-         |where exists (
-         |  select 1
-         |  from node_outputs os
-         |  full join node_inputs i on i.box_id = os.box_id
-         |  where (os.tx_id = t.id and os.address = $address)
-         |    or (i.box_id = os.box_id and i.tx_id = t.id and os.address = $address)
-         |) and h.main_chain = true
+         |select distinct t.id, t.header_id, t.coinbase, t.timestamp, t.size
+         |from node_outputs os
+         |left join node_inputs inp on inp.box_id = os.box_id
+         |left join node_transactions t on (os.tx_id = t.id or inp.tx_id = t.id)
+         |left join node_headers h on  h.id = t.header_id
+         |where os.address = $address and h.main_chain = true
          |order by t.timestamp desc
-         |offset $offset limit $limit
+         |offset ${offset.toLong} limit ${limit.toLong}
          |""".stripMargin.query[Transaction].stream
 
   def getAllMainSince(
