@@ -16,6 +16,7 @@ object AssetQuerySet extends QuerySet {
   val fields: List[String] = List(
     "id",
     "box_id",
+    "header_id",
     "value"
   )
 
@@ -31,12 +32,8 @@ object AssetQuerySet extends QuerySet {
          |select distinct on (o.address) o.address from node_assets a
          |left join node_outputs o on a.box_id = o.box_id
          |left join node_inputs i on o.box_id = i.box_id
-         |left join node_transactions t_in on o.tx_id = t_in.id
-         |left join node_headers h_in on h_in.id = t_in.header_id
-         |left join node_transactions t on i.tx_id = t.id
-         |left join node_headers h on h.id = t.header_id
-         |where h_in.main_chain = true
-         |  and (i.box_id is null or h.main_chain = false)
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
          |  and a.id = $assetId
          |offset $offset limit $limit
          |""".stripMargin.query[Address].stream

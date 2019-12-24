@@ -129,10 +129,11 @@ CREATE INDEX "node_outputs__ts" ON node_outputs (timestamp);
 
 CREATE TABLE node_assets
 (
-    id     VARCHAR(64) NOT NULL,
-    box_id VARCHAR(64) NOT NULL,
-    value  BIGINT      NOT NULL,
-    PRIMARY KEY (id, box_id)
+    id        VARCHAR(64) NOT NULL,
+    box_id    VARCHAR(64) NOT NULL,
+    header_id VARCHAR(64) NOT NULL,
+    value     BIGINT      NOT NULL,
+    PRIMARY KEY (id, box_id, header_id)
 );
 
 CREATE INDEX "node_assets__box_id" ON node_assets (box_id);
