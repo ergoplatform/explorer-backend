@@ -114,5 +114,5 @@ object FlatBlock {
       tx     <- apiTxs.transactions
       out    <- tx.outputs
       assets <- out.assets
-    } yield Asset(assets.tokenId, out.boxId, assets.amount)
+    } yield Asset(assets.tokenId, out.boxId, apiTxs.headerId, assets.amount)
 }

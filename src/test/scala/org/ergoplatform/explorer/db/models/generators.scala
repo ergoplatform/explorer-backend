@@ -136,8 +136,9 @@ object generators {
     for {
       id    <- assetIdGen
       boxId <- boxIdGen
+      headerId <- idGen
       amt   <- Gen.posNum[Long]
-    } yield Asset(id, boxId, amt)
+    } yield Asset(id, boxId, headerId, amt)
 
   def assetsWithBoxIdGen: Gen[(BoxId, List[Asset])] =
     boxIdGen.flatMap { boxId =>
