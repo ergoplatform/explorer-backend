@@ -96,7 +96,7 @@ package object explorer {
       s: String
     )(implicit F: ApplicativeError[F, Throwable]): F[Address] =
       refineV[Base58Spec](s)
-        .leftMap[Throwable](e => Err(s"Refinement failed: $e"))
+        .leftMap[Throwable](Err.RefinementFailed)
         .liftTo[F]
         .map(Address.apply)
   }
@@ -118,7 +118,7 @@ package object explorer {
       s: String
     )(implicit F: ApplicativeError[F, Throwable]): F[HexString] =
       refineV[HexStringSpec](s)
-        .leftMap[Throwable](e => Err(s"Refinement failed: $e"))
+        .leftMap[Throwable](Err.RefinementFailed)
         .liftTo[F]
         .map(HexString.apply)
   }
@@ -140,7 +140,7 @@ package object explorer {
                           s: String
                         )(implicit F: ApplicativeError[F, Throwable]): F[UrlString] =
       refineV[Url](s)
-        .leftMap[Throwable](e => Err(s"Refinement failed: $e"))
+        .leftMap[Throwable](Err.RefinementFailed)
         .liftTo[F]
         .map(UrlString.apply)
   }

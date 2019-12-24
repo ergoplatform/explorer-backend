@@ -1,5 +1,7 @@
 package org.ergoplatform.explorer
 
+import sttp.tapir.Schema
+
 import scala.util.control.NoStackTrace
 
 class Err(msg: String) extends Exception(msg) with NoStackTrace {
@@ -11,7 +13,27 @@ object Err {
 
   def apply(msg: String): Err = new Err(msg)
 
-  final case class NotFound(what: String) extends Err(s"$what not found")
+  abstract class ApiErr(msg: String) extends Err(msg)
 
-  final case class BadInput(details: String) extends Err(s"Bad input: $details")
+  object ApiErr {
+
+    final case class NotFound(what: String) extends ApiErr(s"$what not found")
+
+    final case class BadInput(details: String) extends ApiErr(s"Bad input: $details")
+
+    final case class UnknownErr(msg: String) extends ApiErr(s"Unknown error: $msg")
+
+    private val unknownErrorS = implicitly[Schema[UnknownErr]]
+    private val notFoundS     = implicitly[Schema[NotFound]]
+    private val badInputS     = implicitly[Schema[BadInput]]
+    implicit val schema: Schema[ApiErr] =
+      Schema.oneOf[ApiErr, String](_.getMessage, _.toString)(
+        "unknownError" -> unknownErrorS,
+        "notFound"     -> notFoundS,
+        "badInput"     -> badInputS
+      )
+  }
+
+  final case class RefinementFailed(details: String)
+    extends Err(s"Refinement failed: $details")
 }

@@ -4,19 +4,19 @@ import cats.ApplicativeError
 import cats.syntax.applicativeError._
 import cats.syntax.either._
 import cats.syntax.functor._
-import org.ergoplatform.explorer.Err
+import org.ergoplatform.explorer.Err.ApiErr
 
 final class ApplicativeThrowOps[
   F[_]: ApplicativeError[*[_], Throwable],
   A
 ](fa: F[A]) {
 
-  def either: F[Either[Err, A]] =
-    fa.map(Either.right[Err, A])
+  def either: F[Either[ApiErr, A]] =
+    fa.map(Either.right[ApiErr, A])
       .handleError {
-        case e: Err =>
+        case e: ApiErr =>
           Either.left(e)
         case e =>
-          Either.left(Err(e.getMessage))
+          Either.left(ApiErr.UnknownErr(e.getMessage))
       }
 }
