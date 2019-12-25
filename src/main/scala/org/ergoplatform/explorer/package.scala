@@ -3,17 +3,15 @@ package org.ergoplatform
 import cats.ApplicativeError
 import cats.syntax.either._
 import cats.syntax.functor._
-import doobie.util.{Get, Put}
 import doobie.refined.implicits._
-import eu.timepit.refined.refineV
-import eu.timepit.refined.W
+import doobie.util.{Get, Put}
 import eu.timepit.refined.api.Refined
+import eu.timepit.refined.{refineV, W}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.{Decoder, Encoder}
-import io.circe.refined._
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.constraints._
-import sttp.tapir.{Codec, CodecFormat, Schema}
+import sttp.tapir.Codec
 
 package object explorer {
 
@@ -137,8 +135,8 @@ package object explorer {
     implicit def decoder: Decoder[UrlString] = deriving
 
     def fromString[F[_]](
-                          s: String
-                        )(implicit F: ApplicativeError[F, Throwable]): F[UrlString] =
+      s: String
+    )(implicit F: ApplicativeError[F, Throwable]): F[UrlString] =
       refineV[Url](s)
         .leftMap[Throwable](Err.RefinementFailed)
         .liftTo[F]
