@@ -4,7 +4,7 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
 import fs2.Stream
-import org.ergoplatform.explorer.{Address, AssetId, BoxId}
+import org.ergoplatform.explorer.{Address, BoxId, TokenId}
 import org.ergoplatform.explorer.db.models.Asset
 
 /** A set of queries for doobie implementation of  [AssetRepo].
@@ -14,7 +14,7 @@ object AssetQuerySet extends QuerySet {
   val tableName: String = "node_assets"
 
   val fields: List[String] = List(
-    "id",
+    "token_id",
     "box_id",
     "header_id",
     "value"
@@ -24,7 +24,7 @@ object AssetQuerySet extends QuerySet {
     sql"select * from node_assets where box_id = $boxId".query[Asset].to[List]
 
   def getAllHoldingAddresses(
-    assetId: AssetId,
+    tokenId: TokenId,
     offset: Int,
     limit: Int
   ): Stream[ConnectionIO, Address] =
@@ -34,7 +34,7 @@ object AssetQuerySet extends QuerySet {
          |left join node_inputs i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
-         |  and a.id = $assetId
+         |  and a.token_id = $tokenId
          |offset $offset limit $limit
          |""".stripMargin.query[Address].stream
 }

@@ -1,19 +1,16 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import org.ergoplatform.explorer.{Address, Id}
-import sttp.tapir.{CodecForOptional, CodecFormat, Schema}
+import sttp.tapir.Schema
+import sttp.tapir.generic.Derived
 
-final case class BlockSummary(id: Id, address: Address)
+final case class BlockSummary(info: FullBlockInfo, references: BlockReferencesInfo)
 
 object BlockSummary {
 
-  import sttp.tapir.json.circe._
-  import io.circe.generic.auto._
-
-  implicit val codec: CodecForOptional[BlockSummary, CodecFormat.Json, _] =
-    implicitly[CodecForOptional[BlockSummary, CodecFormat.Json, _]]
-
   implicit val schema: Schema[BlockSummary] =
-    implicitly[Schema[BlockSummary]]
-      .modify(_.id)(_.description("Id of the block"))
+    implicitly[Derived[Schema[BlockSummary]]].value
+      .modify(_.info)(_.description("Full block info"))
+      .modify(_.references)(
+        _.description("References to previous and next (if exists) blocks")
+      )
 }

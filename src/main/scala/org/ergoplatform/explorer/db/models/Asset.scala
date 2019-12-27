@@ -1,11 +1,11 @@
 package org.ergoplatform.explorer.db.models
 
-import org.ergoplatform.explorer.{AssetId, BoxId, Id}
+import org.ergoplatform.explorer.{BoxId, Id, TokenId}
 
 /** Entity representing `node_assets` table.
   */
 final case class Asset(
-  id: AssetId,
+  tokenId: TokenId,
   boxId: BoxId,
   headerId: Id,
   amount: Long

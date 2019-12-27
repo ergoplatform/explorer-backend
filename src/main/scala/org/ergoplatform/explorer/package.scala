@@ -13,7 +13,11 @@ import io.circe.{Decoder, Encoder}
 import io.circe.refined._
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.constraints._
-import sttp.tapir.Codec
+import sttp.tapir.{Codec, Schema}
+import sttp.tapir.json.circe._
+import io.circe.generic.auto._
+import org.ergoplatform.explorer.http.api.v0.models.AssetInfo
+import sttp.tapir.generic.Derived
 
 package object explorer {
 
@@ -41,6 +45,8 @@ package object explorer {
 
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[Id] = deriving
+    implicit def jsonCodec: Codec.JsonCodec[Id] =
+      implicitly[Codec.JsonCodec[String]].map(Id.apply)(_.value)
   }
 
   @newtype case class TxId(value: String)
@@ -53,6 +59,11 @@ package object explorer {
     // circe instances
     implicit def encoder: Encoder[TxId] = deriving
     implicit def decoder: Decoder[TxId] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[TxId] = deriving
+    implicit def jsonCodec: Codec.JsonCodec[TxId] =
+      implicitly[Codec.JsonCodec[String]].map(TxId.apply)(_.value)
   }
 
   @newtype case class BoxId(value: String)
@@ -65,18 +76,30 @@ package object explorer {
     // circe instances
     implicit def encoder: Encoder[BoxId] = deriving
     implicit def decoder: Decoder[BoxId] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[BoxId] = deriving
+    implicit def jsonCodec: Codec.JsonCodec[BoxId] =
+      implicitly[Codec.JsonCodec[String]].map(BoxId.apply)(_.value)
   }
 
-  @newtype case class AssetId(value: String)
+  @newtype case class TokenId(value: String)
 
-  object AssetId {
+  object TokenId {
     // doobie instances
-    implicit def get: Get[AssetId] = deriving
-    implicit def put: Put[AssetId] = deriving
+    implicit def get: Get[TokenId] = deriving
+    implicit def put: Put[TokenId] = deriving
 
     // circe instances
-    implicit def encoder: Encoder[AssetId] = deriving
-    implicit def decoder: Decoder[AssetId] = deriving
+    implicit def encoder: Encoder[TokenId] = deriving
+    implicit def decoder: Decoder[TokenId] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[TokenId] = deriving
+    implicit def jsonCodec: Codec.JsonCodec[TokenId] =
+      implicitly[Codec.JsonCodec[String]].map(TokenId.apply)(_.value)
+    implicit def schema: Schema[TokenId] =
+      jsonCodec.meta.schema
   }
 
   @newtype case class Address(value: AddressType) {

@@ -6,7 +6,7 @@ import fs2.Stream
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
-import org.ergoplatform.explorer.{Address, AssetId, BoxId}
+import org.ergoplatform.explorer.{Address, BoxId, TokenId}
 
 /** [[Asset]] data access operations.
   */
@@ -27,7 +27,7 @@ trait AssetRepo[D[_], S[_[_], _]] {
   /** Get all addresses holding an asset with a given `assetId`.
     */
   def getAllHoldingAddresses(
-    assetId: AssetId,
+    tokenId: TokenId,
     offset: Int,
     limit: Int
   ): S[D, Address]
@@ -52,11 +52,11 @@ object AssetRepo {
       QS.getAllByBoxId(boxId).liftConnectionIO
 
     def getAllHoldingAddresses(
-      assetId: AssetId,
+      tokenId: TokenId,
       offset: Int,
       limit: Int
     ): Stream[D, Address] =
-      QS.getAllHoldingAddresses(assetId, offset, limit)
+      QS.getAllHoldingAddresses(tokenId, offset, limit)
         .translate(LiftConnectionIO[D].liftConnectionIOK)
   }
 }

@@ -11,7 +11,6 @@ object BlocksEndpointDefs {
 
   def blockSummaryById: Endpoint[Id, ApiErr, BlockSummary, Nothing] =
     baseEndpointDef
-      .in(PathPrefix)
-      .in(path[Id])
+      .in(PathPrefix / path[Id])
       .out(jsonBody[BlockSummary])
 }
