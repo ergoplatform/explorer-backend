@@ -4,6 +4,7 @@ import org.ergoplatform.explorer.Err.ApiErr
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.http.api.v0.models.BlockSummary
 import sttp.tapir._
+import sttp.tapir.json.circe._
 
 object BlocksEndpointDefs {
 

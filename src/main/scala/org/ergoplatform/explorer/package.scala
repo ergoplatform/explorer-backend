@@ -1,23 +1,20 @@
 package org.ergoplatform
 
 import cats.ApplicativeError
+import cats.instances.either._
 import cats.syntax.either._
 import cats.syntax.functor._
-import doobie.util.{Get, Put}
 import doobie.refined.implicits._
-import eu.timepit.refined.refineV
-import eu.timepit.refined.W
+import doobie.util.{Get, Put}
 import eu.timepit.refined.api.Refined
+import eu.timepit.refined.{W, refineV}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import io.circe.{Decoder, Encoder}
 import io.circe.refined._
+import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.constraints._
-import sttp.tapir.{Codec, Schema}
 import sttp.tapir.json.circe._
-import io.circe.generic.auto._
-import org.ergoplatform.explorer.http.api.v0.models.AssetInfo
-import sttp.tapir.generic.Derived
+import sttp.tapir.{Codec, DecodeResult, Schema}
 
 package object explorer {
 
@@ -47,6 +44,8 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[Id] = deriving
     implicit def jsonCodec: Codec.JsonCodec[Id] =
       implicitly[Codec.JsonCodec[String]].map(Id.apply)(_.value)
+    implicit def schema: Schema[Id] =
+      jsonCodec.meta.schema.description("Modifier ID")
   }
 
   @newtype case class TxId(value: String)
@@ -64,6 +63,8 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[TxId] = deriving
     implicit def jsonCodec: Codec.JsonCodec[TxId] =
       implicitly[Codec.JsonCodec[String]].map(TxId.apply)(_.value)
+    implicit def schema: Schema[TxId] =
+      jsonCodec.meta.schema.description("Transaction ID")
   }
 
   @newtype case class BoxId(value: String)
@@ -81,6 +82,8 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[BoxId] = deriving
     implicit def jsonCodec: Codec.JsonCodec[BoxId] =
       implicitly[Codec.JsonCodec[String]].map(BoxId.apply)(_.value)
+    implicit def schema: Schema[BoxId] =
+      jsonCodec.meta.schema.description("Box ID")
   }
 
   @newtype case class TokenId(value: String)
@@ -99,7 +102,7 @@ package object explorer {
     implicit def jsonCodec: Codec.JsonCodec[TokenId] =
       implicitly[Codec.JsonCodec[String]].map(TokenId.apply)(_.value)
     implicit def schema: Schema[TokenId] =
-      jsonCodec.meta.schema
+      jsonCodec.meta.schema.description("Token ID")
   }
 
   @newtype case class Address(value: AddressType) {
@@ -114,6 +117,20 @@ package object explorer {
     // circe instances
     implicit def encoder: Encoder[Address] = deriving
     implicit def decoder: Decoder[Address] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[Address] =
+      implicitly[Codec.PlainCodec[String]].mapDecode(s =>
+        fromString[Either[Throwable, *]](s)
+          .fold(DecodeResult.Error(s, _), DecodeResult.Value(_))
+      )(_.unwrapped)
+    implicit def jsonCodec: Codec.JsonCodec[Address] =
+      implicitly[Codec.JsonCodec[String]].mapDecode(s =>
+        fromString[Either[Throwable, *]](s)
+          .fold(DecodeResult.Error(s, _), DecodeResult.Value(_))
+      )(_.unwrapped)
+    implicit def schema: Schema[Address] =
+      jsonCodec.meta.schema.description("Ergo Address")
 
     def fromString[F[_]](
       s: String
@@ -136,6 +153,20 @@ package object explorer {
     // circe instances
     implicit def encoder: Encoder[HexString] = deriving
     implicit def decoder: Decoder[HexString] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[HexString] =
+      implicitly[Codec.PlainCodec[String]].mapDecode(s =>
+        fromString[Either[Throwable, *]](s)
+          .fold(DecodeResult.Error(s, _), DecodeResult.Value(_))
+      )(_.unwrapped)
+    implicit def jsonCodec: Codec.JsonCodec[HexString] =
+      implicitly[Codec.JsonCodec[String]].mapDecode(s =>
+        fromString[Either[Throwable, *]](s)
+          .fold(DecodeResult.Error(s, _), DecodeResult.Value(_))
+      )(_.unwrapped)
+    implicit def schema: Schema[HexString] =
+      jsonCodec.meta.schema.description("Hex-encoded string")
 
     def fromString[F[_]](
       s: String
@@ -160,8 +191,8 @@ package object explorer {
     implicit def decoder: Decoder[UrlString] = deriving
 
     def fromString[F[_]](
-                          s: String
-                        )(implicit F: ApplicativeError[F, Throwable]): F[UrlString] =
+      s: String
+    )(implicit F: ApplicativeError[F, Throwable]): F[UrlString] =
       refineV[Url](s)
         .leftMap[Throwable](Err.RefinementFailed)
         .liftTo[F]
