@@ -24,7 +24,7 @@ object OutputInfo {
   implicit val schema: Schema[OutputInfo] =
     implicitly[Derived[Schema[OutputInfo]]].value
 
-  implicit private def jsonSchema: Schema[Json] =
+  implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
         SchemaType.SObjectInfo("AdditionalRegisters"),

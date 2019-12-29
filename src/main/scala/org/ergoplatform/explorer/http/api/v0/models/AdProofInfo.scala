@@ -2,13 +2,14 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
+import org.ergoplatform.explorer.{HexString, Id}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
 final case class AdProofInfo(
-  headerId: String,
-  proofBytes: String,
-  digest: String
+  headerId: Id,
+  proofBytes: HexString,
+  digest: HexString
 )
 
 object AdProofInfo {
@@ -17,4 +18,7 @@ object AdProofInfo {
 
   implicit val schema: Schema[AdProofInfo] =
     implicitly[Derived[Schema[AdProofInfo]]].value
+      .modify(_.headerId)(_.description("Id of the corresponding header"))
+      .modify(_.proofBytes)(_.description("Hex-encoded serialized AD proof"))
+      .modify(_.digest)(_.description("Hex-encoded AD proof digest"))
 }

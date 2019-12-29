@@ -14,4 +14,6 @@ object BlockReferencesInfo {
 
   implicit val schema: Schema[BlockReferencesInfo] =
     implicitly[Derived[Schema[BlockReferencesInfo]]].value
+      .modify(_.previousId)(_.description("ID of the previous block"))
+      .modify(_.nextId)(_.description("ID of the next block (if one exists)"))
 }
