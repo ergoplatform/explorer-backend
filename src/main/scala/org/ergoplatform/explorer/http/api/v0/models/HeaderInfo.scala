@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
+import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.{HexString, Id}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
@@ -11,13 +12,13 @@ final case class HeaderInfo(
   parentId: Id,
   version: Short,
   height: Int,
-  difficulty: Long,
+  difficulty: BigDecimal,
   adProofsRoot: HexString,
   stateRoot: HexString,
   transactionsRoot: HexString,
   timestamp: Long,
   nBits: Long,
-  size: Long,
+  size: Int,
   extensionHash: HexString,
   powSolutions: PowSolutionInfo,
   votes: String
@@ -42,4 +43,24 @@ object HeaderInfo {
       .modify(_.size)(_.description("Size of the header in bytes"))
       .modify(_.extensionHash)(_.description("Hex-encoded hash of the corresponding extension"))
       .modify(_.votes)(_.description("Block votes (3 bytes)"))
+
+  def apply(h: Header, size: Int): HeaderInfo = {
+    val powSolutions = PowSolutionInfo(h.minerPk, h.w, h.n, h.d)
+    new HeaderInfo(
+      h.id,
+      h.parentId,
+      h.version.toShort,
+      h.height,
+      h.difficulty,
+      h.adProofsRoot,
+      h.stateRoot,
+      h.transactionsRoot,
+      h.timestamp,
+      h.nBits,
+      size,
+      h.extensionHash,
+      powSolutions,
+      h.votes
+    )
+  }
 }

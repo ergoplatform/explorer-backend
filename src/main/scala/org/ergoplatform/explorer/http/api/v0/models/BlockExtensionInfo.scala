@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
+import org.ergoplatform.explorer.db.models.BlockExtension
 import org.ergoplatform.explorer.{HexString, Id}
 import sttp.tapir.{Schema, SchemaType}
 import sttp.tapir.generic.Derived
@@ -27,5 +28,12 @@ object BlockExtensionInfo {
         SchemaType.SObjectInfo("ExtensionFields"),
         Schema(SchemaType.SString)
       )
+    )
+
+  def apply(blockExtension: BlockExtension): BlockExtensionInfo =
+    BlockExtensionInfo(
+      blockExtension.headerId,
+      blockExtension.digest,
+      blockExtension.fields
     )
 }

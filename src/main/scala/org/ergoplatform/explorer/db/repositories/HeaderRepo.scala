@@ -21,6 +21,10 @@ trait HeaderRepo[D[_]] {
     */
   def get(id: Id): D[Option[Header]]
 
+  /** Get header with a given `parentId`.
+    */
+  def getByParentId(parentId: Id): D[Option[Header]]
+
   /** Get all headers at the given `height`.
     */
   def getAllByHeight(height: Int): D[List[Header]]
@@ -53,6 +57,8 @@ object HeaderRepo {
 
     def get(id: Id): D[Option[Header]] =
       QS.get(id).liftConnectionIO
+
+    def getByParentId(parentId: Id): D[Option[Header]] = ???
 
     def getAllByHeight(height: Int): D[List[Header]] =
       QS.getAllByHeight(height).liftConnectionIO

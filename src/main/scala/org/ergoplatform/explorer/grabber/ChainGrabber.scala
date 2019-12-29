@@ -140,7 +140,7 @@ final class ChainGrabber[
     (headerRepo.getAllByHeight(height) ||> xa).map(_.map(_.id))
 
   private def getParentBlockInfo(headerId: Id): F[Option[BlockInfo]] =
-    blockInfoRepo.getByHeaderId(headerId) ||> xa
+    blockInfoRepo.get(headerId) ||> xa
 
   private def getScanRange(localHeight: Int, networkHeight: Int): List[Int] =
     if (networkHeight == localHeight) List.empty

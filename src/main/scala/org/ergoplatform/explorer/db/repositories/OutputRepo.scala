@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
@@ -8,7 +9,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, HexString}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
@@ -42,6 +43,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
   /** Get all unspent main-chain outputs with a given `ergoTree` from persistence.
     */
   def getAllMainUnspentByErgoTree(ergoTree: HexString): S[D, ExtendedOutput]
+
+  /** Get all outputs related to a given list of `txId`.
+   */
+  def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]]
 
   /** Search for addresses containing a given `substring`.
     */
@@ -80,6 +85,8 @@ object OutputRepo {
 
     def getAllMainUnspentByErgoTree(ergoTree: HexString): Stream[D, ExtendedOutput] =
       QS.getAllMainUnspentByErgoTree(ergoTree).translate(liftK)
+
+    def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]] = ???
 
     def searchAddressesBySubstring(substring: String): D[List[Address]] =
       QS.searchAddressesBySubstring(substring).liftConnectionIO

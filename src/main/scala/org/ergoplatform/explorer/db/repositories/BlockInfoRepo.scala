@@ -17,7 +17,11 @@ trait BlockInfoRepo[D[_]] {
 
   /** Get block info with a given `headerId`.
     */
-  def getByHeaderId(headerId: Id): D[Option[BlockInfo]]
+  def get(id: Id): D[Option[BlockInfo]]
+
+  /** Get size in bytes of the block with the given `id`.
+    */
+  def getBlockSize(id: Id): D[Option[Int]]
 }
 
 object BlockInfoRepo {
@@ -32,7 +36,9 @@ object BlockInfoRepo {
     def insert(blockInfo: BlockInfo): D[Unit] =
       QS.insert(blockInfo).void.liftConnectionIO
 
-    def getByHeaderId(headerId: Id): D[Option[BlockInfo]] =
-      QS.getBlockInfo(headerId).liftConnectionIO
+    def get(id: Id): D[Option[BlockInfo]] =
+      QS.getBlockInfo(id).liftConnectionIO
+
+    def getBlockSize(id: Id): D[Option[Int]] = ???
   }
 }

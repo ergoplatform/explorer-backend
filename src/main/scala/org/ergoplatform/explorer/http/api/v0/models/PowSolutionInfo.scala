@@ -6,7 +6,7 @@ import org.ergoplatform.explorer.HexString
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
-final case class PowSolutionInfo(pk: HexString, w: String, n: String, d: String)
+final case class PowSolutionInfo(pk: HexString, w: HexString, n: HexString, d: String)
 
 object PowSolutionInfo {
 
