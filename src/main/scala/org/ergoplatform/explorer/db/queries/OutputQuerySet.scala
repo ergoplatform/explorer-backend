@@ -1,11 +1,13 @@
 package org.ergoplatform.explorer.db.queries
 
+import cats.data.NonEmptyList
 import doobie.free.connection.ConnectionIO
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import doobie.Fragments
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
 import doobie.implicits._
 import doobie.refined.implicits._
 import fs2.Stream
-import org.ergoplatform.explorer.{Address, BoxId, HexString, Id}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TxId}
 
 /** A set of queries for doobie implementation of [OutputRepo].
   */
@@ -132,6 +134,50 @@ object OutputQuerySet extends QuerySet {
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[ExtendedOutput].stream
+
+  def getAllByTxId(txId: TxId): ConnectionIO[List[ExtendedOutput]] =
+    sql"""
+         |select distinct on (i.box_id)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  i.tx_id
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.tx_id = $txId
+         |""".stripMargin.query[ExtendedOutput].to[List]
+
+  def getAllByTxIds(
+    txIds: NonEmptyList[TxId]
+  ): ConnectionIO[List[ExtendedOutput]] = {
+    val q =
+      sql"""
+           |select distinct on (i.box_id)
+           |  o.box_id,
+           |  o.tx_id,
+           |  o.value,
+           |  o.creation_height,
+           |  o.index,
+           |  o.ergo_tree,
+           |  o.address,
+           |  o.additional_registers,
+           |  o.timestamp,
+           |  o.main_chain,
+           |  i.tx_id
+           |from node_outputs o
+           |left join node_inputs i on o.box_id = i.box_id
+           |""".stripMargin
+    (q ++ Fragments.in(fr"where o.tx_id", txIds))
+      .query[ExtendedOutput]
+      .to[List]
+  }
 
   def searchAddressesBySubstring(substring: String): ConnectionIO[List[Address]] =
     sql"select address from node_outputs where address like ${"%" + substring + "%"}"

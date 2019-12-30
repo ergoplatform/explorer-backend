@@ -86,7 +86,8 @@ object OutputRepo {
     def getAllMainUnspentByErgoTree(ergoTree: HexString): Stream[D, ExtendedOutput] =
       QS.getAllMainUnspentByErgoTree(ergoTree).translate(liftK)
 
-    def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]] = ???
+    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
+      QS.getAllByTxIds(txIds).liftConnectionIO
 
     def searchAddressesBySubstring(substring: String): D[List[Address]] =
       QS.searchAddressesBySubstring(substring).liftConnectionIO

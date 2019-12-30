@@ -56,9 +56,8 @@ object InputQuerySet extends QuerySet {
            |  o.address
            |from node_inputs i
            |join node_outputs o on i.box_id = o.box_id
-           |where
            |""".stripMargin
-    (q ++ Fragments.in(fr"i.tx_id", txsId))
+    (q ++ Fragments.in(fr"where i.tx_id", txsId))
       .query[ExtendedInput]
       .to[List]
   }

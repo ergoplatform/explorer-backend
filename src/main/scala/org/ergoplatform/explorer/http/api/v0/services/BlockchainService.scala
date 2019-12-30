@@ -85,21 +85,21 @@ object BlockchainService {
       (headerRepo.getBestHeight ||> xa)
         .flatTap(h => Logger[F].trace(s"Reading best height from db: $h"))
 
-    def getBlockSummaryById(id: Id): F[Option[BlockSummary]] =
-      (for {
-        blockInfoOpt <- getFullBlockInfo(id)
-        parentOpt <- blockInfoOpt
-                      .flatTraverse(h => headerRepo.getByParentId(h.headerInfo.id))
-                      .asStream
-        referencesOpt = blockInfoOpt
-          .map(
-            blockInfo =>
-              BlockReferencesInfo(blockInfo.headerInfo.parentId, parentOpt.map(_.id))
-          )
-      } yield
-        (blockInfoOpt, referencesOpt).mapN { (blockInfo, refs) =>
-          BlockSummary(blockInfo, refs)
-        }).translate(xa).compile.last.map(_.flatten)
+    def getBlockSummaryById(id: Id): F[Option[BlockSummary]] = {
+      val summary =
+        for {
+          blockInfoOpt <- getFullBlockInfo(id)
+          parentOpt <- blockInfoOpt
+                        .flatTraverse(h => headerRepo.getByParentId(h.headerInfo.id))
+                        .asStream
+        } yield
+          blockInfoOpt.map { blockInfo =>
+            val refs = BlockReferencesInfo(blockInfo.headerInfo.parentId, parentOpt.map(_.id))
+            BlockSummary(blockInfo, refs)
+          }
+
+      summary.translate(xa).compile.last.map(_.flatten)
+    }
 
     def getBlocks(paging: Paging): fs2.Stream[F, BlockInfo] = ???
 
