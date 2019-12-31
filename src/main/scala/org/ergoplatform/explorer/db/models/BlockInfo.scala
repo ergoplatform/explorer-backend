@@ -25,10 +25,10 @@ final case class BlockInfo(
   timestamp: Long,
   height: Int,
   difficulty: Long,
-  blockSize: Long,           // block size (bytes)
+  blockSize: Int,            // block size (bytes)
   blockCoins: Long,          // total amount of nERGs in the block
   blockMiningTime: Long,     // block mining time
-  txsCount: Long,            // number of txs in the block
+  txsCount: Int,             // number of txs in the block
   txsSize: Int,              // total size of all transactions in this block (bytes)
   minerAddress: Address,
   minerReward: Long,         // total amount of nERGs miner received from coinbase
@@ -69,7 +69,7 @@ object BlockInfo {
         blockMiningTime = apiBlock.header.timestamp - parentBlockOpt
           .map(_.timestamp)
           .getOrElse(0L),
-        txsCount     = apiBlock.transactions.transactions.length.toLong,
+        txsCount     = apiBlock.transactions.transactions.length,
         txsSize      = apiBlock.transactions.transactions.map(_.size).sum,
         minerAddress = minerAddress,
         minerReward  = reward,

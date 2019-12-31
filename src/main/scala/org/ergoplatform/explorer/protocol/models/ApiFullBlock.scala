@@ -10,7 +10,7 @@ final case class ApiFullBlock(
   transactions: ApiBlockTransactions,
   extension: ApiBlockExtension,
   adProofs: Option[ApiAdProof],
-  size: Long
+  size: Int
 )
 
 object ApiFullBlock {
@@ -24,7 +24,7 @@ object ApiFullBlock {
                    case Left(_)       => Right(None)
                    case Right(proofs) => Right(Some(proofs))
                  }
-      size <- c.downField("size").as[Long]
+      size <- c.downField("size").as[Int]
     } yield ApiFullBlock(header, transactions, extension, adProofs, size)
   }
 }

@@ -14,7 +14,7 @@ import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.constraints._
 import sttp.tapir.json.circe._
-import sttp.tapir.{Codec, DecodeResult, Schema}
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 
 package object explorer {
 
@@ -120,15 +120,15 @@ package object explorer {
 
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[Address] =
-      implicitly[Codec.PlainCodec[String]].mapDecode(s =>
-        fromString[Either[Throwable, *]](s)
-          .fold(DecodeResult.Error(s, _), DecodeResult.Value(_))
-      )(_.unwrapped)
+      deriveCodec[String, CodecFormat.TextPlain, Address](
+        fromString[Either[Throwable, *]](_),
+        _.unwrapped
+      )
     implicit def jsonCodec: Codec.JsonCodec[Address] =
-      implicitly[Codec.JsonCodec[String]].mapDecode(s =>
-        fromString[Either[Throwable, *]](s)
-          .fold(DecodeResult.Error(s, _), DecodeResult.Value(_))
-      )(_.unwrapped)
+      deriveCodec[String, CodecFormat.Json, Address](
+        fromString[Either[Throwable, *]](_),
+        _.unwrapped
+      )
     implicit def schema: Schema[Address] =
       jsonCodec.meta.schema.description("Ergo Address")
 
@@ -156,15 +156,17 @@ package object explorer {
 
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[HexString] =
-      implicitly[Codec.PlainCodec[String]].mapDecode(s =>
-        fromString[Either[Throwable, *]](s)
-          .fold(DecodeResult.Error(s, _), DecodeResult.Value(_))
-      )(_.unwrapped)
+      deriveCodec[String, CodecFormat.TextPlain, HexString](
+        fromString[Either[Throwable, *]](_),
+        _.unwrapped
+      )
+
     implicit def jsonCodec: Codec.JsonCodec[HexString] =
-      implicitly[Codec.JsonCodec[String]].mapDecode(s =>
-        fromString[Either[Throwable, *]](s)
-          .fold(DecodeResult.Error(s, _), DecodeResult.Value(_))
-      )(_.unwrapped)
+      deriveCodec[String, CodecFormat.Json, HexString](
+        fromString[Either[Throwable, *]](_),
+        _.unwrapped
+      )
+
     implicit def schema: Schema[HexString] =
       jsonCodec.meta.schema.description("Hex-encoded string")
 
@@ -198,4 +200,12 @@ package object explorer {
         .liftTo[F]
         .map(UrlString.apply)
   }
+
+  private def deriveCodec[A, CF <: CodecFormat, T](
+    at: A => Either[Throwable, T],
+    ta: T => A
+  )(implicit c: Codec[A, CF, String]): Codec[T, CF, String] =
+    c.mapDecode { x =>
+      at(x).fold(DecodeResult.Error(x.toString, _), DecodeResult.Value(_))
+    }(ta)
 }

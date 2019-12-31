@@ -9,7 +9,7 @@ import org.ergoplatform.explorer.db.models.BlockInfo
 
 /** [[BlockInfo]] data access operations.
   */
-trait BlockInfoRepo[D[_]] {
+trait BlockInfoRepo[D[_], S[_[_], _]] {
 
   /** Put a given `blockInfo` to persistence.
     */
@@ -19,6 +19,10 @@ trait BlockInfoRepo[D[_]] {
     */
   def get(id: Id): D[Option[BlockInfo]]
 
+  /** Get slice of the main chain.
+    */
+  def getSlice(offset: Int, limit: Int): S[D, BlockInfo]
+
   /** Get size in bytes of the block with the given `id`.
     */
   def getBlockSize(id: Id): D[Option[Int]]
@@ -26,10 +30,10 @@ trait BlockInfoRepo[D[_]] {
 
 object BlockInfoRepo {
 
-  def apply[D[_]: LiftConnectionIO]: BlockInfoRepo[D] =
+  def apply[D[_]: LiftConnectionIO]: BlockInfoRepo[D, fs2.Stream] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO] extends BlockInfoRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO] extends BlockInfoRepo[D, fs2.Stream] {
 
     import org.ergoplatform.explorer.db.queries.{BlockInfoQuerySet => QS}
 
@@ -38,6 +42,8 @@ object BlockInfoRepo {
 
     def get(id: Id): D[Option[BlockInfo]] =
       QS.getBlockInfo(id).liftConnectionIO
+
+    def getSlice(offset: Int, limit: Int): fs2.Stream[D, BlockInfo] = ???
 
     def getBlockSize(id: Id): D[Option[Int]] = ???
   }

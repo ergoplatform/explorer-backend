@@ -70,7 +70,7 @@ object BlockchainService {
     D[_]: MonadError[*[_], Throwable]
   ](
     headerRepo: HeaderRepo[D],
-    blockInfoRepo: BlockInfoRepo[D],
+    blockInfoRepo: BlockInfoRepo[D, fs2.Stream],
     transactionRepo: TransactionRepo[D, fs2.Stream],
     blockExtensionRepo: BlockExtensionRepo[D],
     adProofRepo: AdProofRepo[D],
@@ -101,7 +101,8 @@ object BlockchainService {
       summary.translate(xa).compile.last.map(_.flatten)
     }
 
-    def getBlocks(paging: Paging): fs2.Stream[F, BlockInfo] = ???
+    def getBlocks(paging: Paging): Stream[F, BlockInfo] =
+      blockInfoRepo.getSlice(paging.offset, paging.limit).map(BlockInfo.apply).translate(xa)
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {

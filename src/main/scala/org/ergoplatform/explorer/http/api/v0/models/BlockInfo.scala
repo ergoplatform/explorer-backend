@@ -26,8 +26,26 @@ object BlockInfo {
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
       .modify(_.timestamp)(_.description("Timestamp the block was created"))
-      .modify(_.transactionsCount)(_.description("Number of transactions included in the block"))
+      .modify(_.transactionsCount)(
+        _.description("Number of transactions included in the block")
+      )
       .modify(_.size)(_.description("Overall size of the block in bytes"))
       .modify(_.difficulty)(_.description("Block difficulty"))
-      .modify(_.minerReward)(_.description("The amount of nanoErgs miner received as a reward for block"))
+      .modify(_.minerReward)(
+        _.description("The amount of nanoErgs miner received as a reward for block")
+      )
+
+  def apply(blockInfo: org.ergoplatform.explorer.db.models.BlockInfo): BlockInfo = {
+    val minerName = "" // todo:
+    new BlockInfo(
+      id                = blockInfo.headerId,
+      height            = blockInfo.height,
+      timestamp         = blockInfo.timestamp,
+      transactionsCount = blockInfo.txsCount,
+      miner             = MinerInfo(blockInfo.minerAddress, minerName),
+      size              = blockInfo.blockSize,
+      difficulty        = blockInfo.difficulty,
+      minerReward       = blockInfo.minerReward
+    )
+  }
 }
