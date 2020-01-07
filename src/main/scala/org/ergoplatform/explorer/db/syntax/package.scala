@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.db.algebra
+package org.ergoplatform.explorer.db
 
 package object syntax {
 

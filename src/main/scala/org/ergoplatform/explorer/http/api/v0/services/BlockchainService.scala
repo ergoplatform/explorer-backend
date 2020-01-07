@@ -8,7 +8,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{~>, Monad, MonadError}
+import cats.{~>, Monad}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -117,6 +117,7 @@ object BlockchainService {
                 case (acc, tx) => tx +: acc
               }
         blockSizeOpt <- blockInfoRepo.getBlockSize(id).asStream
+        bestHeight   <- headerRepo.getBestHeight.asStream
         txIdsNel = txs.map(_.id).toNel.liftTo[D](Err.InconsistentDbData("Empty txs"))
         inputs  <- txIdsNel.flatMap(inputRepo.getAllByTxIds).asStream
         outputs <- txIdsNel.flatMap(outputRepo.getAllByTxIds).asStream
@@ -131,10 +132,11 @@ object BlockchainService {
       } yield
         (headerOpt, blockSizeOpt, extensionOpt)
           .mapN { (header, size, ext) =>
+            val numConfirmations = bestHeight - header.height
             FullBlockInfo(
               header,
               txs,
-              0,
+              numConfirmations,
               inputs,
               outputsWithAssets,
               ext,
