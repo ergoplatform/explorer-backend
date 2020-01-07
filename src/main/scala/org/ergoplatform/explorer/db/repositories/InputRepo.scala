@@ -6,7 +6,7 @@ import doobie.free.implicits._
 import doobie.refined.implicits._
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Input
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
 import org.ergoplatform.explorer.db.doobieInstances._

@@ -34,6 +34,9 @@ object Err {
       )
   }
 
+  final case class InconsistentDbData(details: String)
+    extends Err(s"Inconsistent blockchain data in db: $details")
+
   final case class RefinementFailed(details: String)
     extends Err(s"Refinement failed: $details")
 }

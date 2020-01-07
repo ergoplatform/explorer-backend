@@ -4,7 +4,7 @@ import cats.implicits._
 import doobie.implicits._
 import fs2.Stream
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.{Address, BoxId, TokenId}
 

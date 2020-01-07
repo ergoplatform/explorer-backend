@@ -4,7 +4,7 @@ import cats.syntax.functor._
 import doobie.free.implicits._
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.BlockInfo
 
 /** [[BlockInfo]] data access operations.

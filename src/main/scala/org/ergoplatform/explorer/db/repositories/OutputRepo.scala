@@ -6,7 +6,7 @@ import doobie.free.implicits._
 import doobie.refined.implicits._
 import fs2.Stream
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.algebra.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}

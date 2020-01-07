@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.db.algebra.syntax
+package org.ergoplatform.explorer.db.syntax
 
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
