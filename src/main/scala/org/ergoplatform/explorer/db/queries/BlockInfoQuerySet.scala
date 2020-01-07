@@ -37,4 +37,14 @@ object BlockInfoQuerySet extends QuerySet {
     sql"select * from blocks_info where header_id = $headerId"
       .query[BlockInfo]
       .option
+
+  def getMany(offset: Int, limit: Int): fs2.Stream[ConnectionIO, BlockInfo] =
+    sql"select * from blocks_info offset $offset limit $limit"
+      .query[BlockInfo]
+      .stream
+
+  def getBlockSize(id: Id): ConnectionIO[Option[Int]] =
+    sql"select block_size from blocks_info where id = $id"
+      .query[Int]
+      .option
 }

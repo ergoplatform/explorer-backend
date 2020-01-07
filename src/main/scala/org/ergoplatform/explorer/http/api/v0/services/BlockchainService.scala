@@ -9,7 +9,7 @@ import cats.syntax.list._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.syntax.apply._
-import cats.{~>, Monad, MonadError}
+import cats.{~>, MonadError}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -48,7 +48,7 @@ object BlockchainService {
 
   def apply[F[_]: Sync, D[_]: LiftConnectionIO: MonadError[*[_], Throwable]](
     xa: D ~> F
-  ): F[BlockchainService[F, fs2.Stream]] =
+  ): F[BlockchainService[F, Stream]] =
     Slf4jLogger
       .create[F]
       .map { implicit logger =>
@@ -70,8 +70,8 @@ object BlockchainService {
     D[_]: MonadError[*[_], Throwable]
   ](
     headerRepo: HeaderRepo[D],
-    blockInfoRepo: BlockInfoRepo[D, fs2.Stream],
-    transactionRepo: TransactionRepo[D, fs2.Stream],
+    blockInfoRepo: BlockInfoRepo[D, Stream],
+    transactionRepo: TransactionRepo[D, Stream],
     blockExtensionRepo: BlockExtensionRepo[D],
     adProofRepo: AdProofRepo[D],
     txRepo: TransactionRepo[D, Stream],
@@ -79,7 +79,7 @@ object BlockchainService {
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
   )(xa: D ~> F)
-    extends BlockchainService[F, fs2.Stream] {
+    extends BlockchainService[F, Stream] {
 
     def getBestHeight: F[Int] =
       (headerRepo.getBestHeight ||> xa)
@@ -102,7 +102,7 @@ object BlockchainService {
     }
 
     def getBlocks(paging: Paging): Stream[F, BlockInfo] =
-      blockInfoRepo.getSlice(paging.offset, paging.limit).map(BlockInfo.apply).translate(xa)
+      blockInfoRepo.getMany(paging.offset, paging.limit).map(BlockInfo.apply).translate(xa)
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {

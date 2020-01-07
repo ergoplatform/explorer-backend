@@ -21,7 +21,7 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
 
   /** Get slice of the main chain.
     */
-  def getSlice(offset: Int, limit: Int): S[D, BlockInfo]
+  def getMany(offset: Int, limit: Int): S[D, BlockInfo]
 
   /** Get size in bytes of the block with the given `id`.
     */
@@ -43,8 +43,10 @@ object BlockInfoRepo {
     def get(id: Id): D[Option[BlockInfo]] =
       QS.getBlockInfo(id).liftConnectionIO
 
-    def getSlice(offset: Int, limit: Int): fs2.Stream[D, BlockInfo] = ???
+    def getMany(offset: Int, limit: Int): fs2.Stream[D, BlockInfo] =
+      QS.getMany(offset, limit).translate(LiftConnectionIO[D].liftConnectionIOK)
 
-    def getBlockSize(id: Id): D[Option[Int]] = ???
+    def getBlockSize(id: Id): D[Option[Int]] =
+      QS.getBlockSize(id).liftConnectionIO
   }
 }
