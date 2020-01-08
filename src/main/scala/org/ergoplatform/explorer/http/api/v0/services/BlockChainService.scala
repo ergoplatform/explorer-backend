@@ -30,7 +30,7 @@ import org.ergoplatform.explorer.{Err, Id}
 
 /** A service providing an access to the blockchain data.
   */
-trait BlockchainService[F[_], S[_[_], _]] {
+trait BlockChainService[F[_], S[_[_], _]] {
 
   /** Get height of the best block.
     */
@@ -45,12 +45,12 @@ trait BlockchainService[F[_], S[_[_], _]] {
   def getBlocks(paging: Paging): S[F, BlockInfo]
 }
 
-object BlockchainService {
+object BlockChainService {
 
   def apply[
     F[_]: Sync,
     D[_]: LiftConnectionIO: Raise[*[_], Err.InconsistentDbData]: Monad
-  ](xa: D ~> F): F[BlockchainService[F, Stream]] =
+  ](xa: D ~> F): F[BlockChainService[F, Stream]] =
     Slf4jLogger
       .create[F]
       .map { implicit logger =>
@@ -81,7 +81,7 @@ object BlockchainService {
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
   )(xa: D ~> F)
-    extends BlockchainService[F, Stream] {
+    extends BlockChainService[F, Stream] {
 
     def getBestHeight: F[Int] =
       (headerRepo.getBestHeight ||> xa)

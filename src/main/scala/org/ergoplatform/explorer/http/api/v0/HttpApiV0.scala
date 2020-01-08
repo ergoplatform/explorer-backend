@@ -6,7 +6,7 @@ import org.ergoplatform.explorer.Err
 import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.http.api.v0.routes.BlocksRoutes
-import org.ergoplatform.explorer.http.api.v0.services.BlockchainService
+import org.ergoplatform.explorer.http.api.v0.services.BlockChainService
 import org.ergoplatform.explorer.settings.HttpSettings
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
@@ -19,10 +19,10 @@ object HttpApiV0 {
     D[_]: LiftConnectionIO: Raise[*[_], Err.InconsistentDbData]: Monad
   ](settings: HttpSettings)(xa: D ~> F): Resource[F, Server[F]] =
     for {
-      blockchainService <- Resource.liftF(BlockchainService(xa))
+      blockChainService <- Resource.liftF(BlockChainService(xa))
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
-               .withHttpApp(Router("/" -> BlocksRoutes(blockchainService)).orNotFound)
+               .withHttpApp(Router("/" -> BlocksRoutes(blockChainService)).orNotFound)
                .resource
     } yield http
 }
