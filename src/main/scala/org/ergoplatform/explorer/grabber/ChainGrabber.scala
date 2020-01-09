@@ -11,12 +11,15 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{MonadError, Parallel, ~>}
+import cats.{Monad, MonadError, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
+import org.ergoplatform.explorer.Err.ProcessingErr
+import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
@@ -25,14 +28,13 @@ import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.Settings
-import org.ergoplatform.explorer.{Err, Id}
 
 /** Fetches new blocks from the network divide them into
   * separate entities and finally puts them into db.
   */
 final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
-  D[_]: MonadError[*[_], Throwable]
+  D[_]: Raise[*[_], ProcessingErr]: Monad
 ](
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: Settings,
@@ -73,7 +75,7 @@ final class ChainGrabber[
                              if (blocks.nonEmpty)
                                lastBlockCache.update(_ => blocks.headOption) >>
                                Logger[F].info(s"${blocks.size} block grabbed from height $height")
-                             else Err(s"No blocks written at height $height").raiseError[F, Unit]
+                             else ProcessingErr.NoBlocksWritten(height = height).raiseError[F, Unit]
                            }
                        }
     } yield ()

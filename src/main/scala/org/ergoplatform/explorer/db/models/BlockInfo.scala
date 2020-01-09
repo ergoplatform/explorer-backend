@@ -1,15 +1,17 @@
 package org.ergoplatform.explorer.db.models
 
-import cats.MonadError
+import cats.Monad
 import cats.syntax.applicative._
-import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import org.ergoplatform.explorer.Err.ProcessingErr
+import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, Id}
 import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
+import org.ergoplatform.explorer.syntax.raise._
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -45,9 +47,10 @@ final case class BlockInfo(
 
 object BlockInfo {
 
-  def fromApi[F[_]: MonadError[*[_], Throwable]](apiBlock: ApiFullBlock, parentBlockOpt: Option[BlockInfo])(
-    protocolSettings: ProtocolSettings
-  ): F[BlockInfo] =
+  def fromApi[F[_]: Raise[*[_], ProcessingErr]: Monad](
+    apiBlock: ApiFullBlock,
+    parentBlockOpt: Option[BlockInfo]
+  )(protocolSettings: ProtocolSettings): F[BlockInfo] =
     minerRewardAddress(apiBlock)(protocolSettings).map { minerAddress =>
       val (reward, fee) = minerRewardAndFee(apiBlock)(protocolSettings)
       val coinBaseValue = reward + fee
@@ -83,14 +86,18 @@ object BlockInfo {
           .getOrElse(0L),
         totalCoinsIssued =
           protocolSettings.emission.issuedCoinsAfterHeight(apiBlock.header.height.toLong),
-        totalMiningTime   = parentBlockOpt.map(_.totalMiningTime).getOrElse(0L) + miningTime,
-        totalFees         = parentBlockOpt.map(_.totalFees).getOrElse(0L) + fee,
-        totalMinersReward = parentBlockOpt.map(_.totalMinersReward).getOrElse(0L) + reward,
-        totalCoinsInTxs   = parentBlockOpt.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins
+        totalMiningTime = parentBlockOpt
+          .map(_.totalMiningTime)
+          .getOrElse(0L) + miningTime,
+        totalFees = parentBlockOpt.map(_.totalFees).getOrElse(0L) + fee,
+        totalMinersReward = parentBlockOpt
+          .map(_.totalMinersReward)
+          .getOrElse(0L) + reward,
+        totalCoinsInTxs = parentBlockOpt.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins
       )
     }
 
-  private def minerRewardAddress[F[_]: MonadError[*[_], Throwable]](
+  private def minerRewardAddress[F[_]: Raise[*[_], ProcessingErr]: Monad](
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): F[Address] =
     Base16
@@ -98,7 +105,10 @@ object BlockInfo {
       .flatMap { bytes =>
         Try(GroupElementSerializer.parse(SigmaSerializer.startReader(bytes)))
       }
-      .fold[F[EcPointType]](_.raiseError, _.pure[F])
+      .fold[F[EcPointType]](
+        e => ProcessingErr.EcPointDecodingFailed(e.getMessage).raise,
+        _.pure[F]
+      )
       .flatMap { x =>
         val minerPk = ProveDlog(x)
         val rewardScript =

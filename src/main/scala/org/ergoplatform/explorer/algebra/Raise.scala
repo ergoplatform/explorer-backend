@@ -5,7 +5,7 @@ import cats.syntax.applicativeError._
 
 /** A type class allowing to signal business errors of type `E`.
   */
-trait Raise[F[_], E <: Throwable] {
+trait Raise[F[_], -E <: Throwable] {
 
   def raise[A](e: E): F[A]
 }

@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-import cats.ApplicativeError
+import cats.Applicative
 import cats.instances.either._
 import cats.syntax.either._
 import cats.syntax.functor._
@@ -12,6 +12,9 @@ import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
+import org.ergoplatform.explorer.Err.ProcessingErr
+import org.ergoplatform.explorer.algebra.Raise
+import org.ergoplatform.explorer.syntax.either._
 import org.ergoplatform.explorer.constraints._
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
@@ -132,12 +135,12 @@ package object explorer {
     implicit def schema: Schema[Address] =
       jsonCodec.meta.schema.description("Ergo Address")
 
-    def fromString[F[_]](
-      s: String
-    )(implicit F: ApplicativeError[F, Throwable]): F[Address] =
+    def fromString[
+      F[_]: Raise[*[_], ProcessingErr.RefinementFailed]: Applicative
+    ](s: String): F[Address] =
       refineV[Base58Spec](s)
-        .leftMap[Throwable](Err.RefinementFailed)
-        .liftTo[F]
+        .leftMap(ProcessingErr.RefinementFailed)
+        .liftToRaise[F]
         .map(Address.apply)
   }
 
@@ -170,12 +173,12 @@ package object explorer {
     implicit def schema: Schema[HexString] =
       jsonCodec.meta.schema.description("Hex-encoded string")
 
-    def fromString[F[_]](
-      s: String
-    )(implicit F: ApplicativeError[F, Throwable]): F[HexString] =
+    def fromString[
+      F[_]: Raise[*[_], ProcessingErr.RefinementFailed]: Applicative
+    ](s: String): F[HexString] =
       refineV[HexStringSpec](s)
-        .leftMap[Throwable](Err.RefinementFailed)
-        .liftTo[F]
+        .leftMap(ProcessingErr.RefinementFailed)
+        .liftToRaise[F]
         .map(HexString.apply)
   }
 
@@ -192,12 +195,12 @@ package object explorer {
     implicit def encoder: Encoder[UrlString] = deriving
     implicit def decoder: Decoder[UrlString] = deriving
 
-    def fromString[F[_]](
-      s: String
-    )(implicit F: ApplicativeError[F, Throwable]): F[UrlString] =
+    def fromString[
+      F[_]: Raise[*[_], ProcessingErr.RefinementFailed]: Applicative
+    ](s: String): F[UrlString] =
       refineV[Url](s)
-        .leftMap[Throwable](Err.RefinementFailed)
-        .liftTo[F]
+        .leftMap(ProcessingErr.RefinementFailed)
+        .liftToRaise[F]
         .map(UrlString.apply)
   }
 

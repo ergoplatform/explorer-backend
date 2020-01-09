@@ -1,6 +1,8 @@
 package org.ergoplatform.explorer
 
-import sttp.tapir.Schema
+import sttp.tapir.{CodecForOptional, CodecFormat, Schema}
+import sttp.tapir.json.circe._
+import io.circe.generic.auto._
 
 import scala.util.control.NoStackTrace
 
@@ -23,6 +25,9 @@ object Err {
 
     final case class UnknownErr(msg: String) extends ApiErr(s"Unknown error: $msg")
 
+    implicit val codec: CodecForOptional[ApiErr, CodecFormat.Json, _] =
+      implicitly[CodecForOptional[ApiErr, CodecFormat.Json, _]]
+
     private val unknownErrorS = implicitly[Schema[UnknownErr]]
     private val notFoundS     = implicitly[Schema[NotFound]]
     private val badInputS     = implicitly[Schema[BadInput]]
@@ -34,9 +39,20 @@ object Err {
       )
   }
 
+  abstract class ProcessingErr(msg: String) extends Err(msg)
+
+  object ProcessingErr {
+
+    final case class NoBlocksWritten(height: Int)
+      extends ProcessingErr(s"No blocks written at height $height")
+
+    final case class RefinementFailed(details: String)
+      extends ProcessingErr(s"Refinement failed: $details")
+
+    final case class EcPointDecodingFailed(details: String)
+      extends ProcessingErr(s"EcPoint decoding failed: $details")
+  }
+
   final case class InconsistentDbData(details: String)
     extends Err(s"Inconsistent blockchain data in db: $details")
-
-  final case class RefinementFailed(details: String)
-    extends Err(s"Refinement failed: $details")
 }
