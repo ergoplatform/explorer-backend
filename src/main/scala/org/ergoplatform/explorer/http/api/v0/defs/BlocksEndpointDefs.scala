@@ -12,7 +12,7 @@ object BlocksEndpointDefs {
 
   private val PathPrefix = "blocks"
 
-  def endpoints =
+  def endpoints: List[Endpoint[_, _, _, _]] =
     getBlocksDef :: getBlockSummaryByIdDef :: Nil
 
   def getBlocksDef: Endpoint[Paging, ApiErr, Items[BlockInfo], Nothing] =

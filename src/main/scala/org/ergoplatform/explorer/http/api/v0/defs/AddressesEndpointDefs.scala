@@ -12,7 +12,7 @@ object AddressesEndpointDefs {
 
   private val PathPrefix = "addresses"
 
-  def endpoints =
+  def endpoints: List[Endpoint[_, _, _, _]] =
     getAddressDef :: getTxsByAddressDef :: getAssetHoldersDef :: Nil
 
   def getAddressDef: Endpoint[Address, ApiErr, AddressInfo, Nothing] =
