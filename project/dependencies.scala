@@ -183,4 +183,63 @@ object dependencies {
         "org.scalamacros" % "paradise" % MacroParadise cross CrossVersion.full
       )
     )
+
+  lazy val core: List[ModuleID] = List(
+    dependencies.ergo.deps,
+    dependencies.cats.deps,
+    dependencies.fs2.deps,
+    dependencies.circe.deps,
+    dependencies.http4s.deps,
+    dependencies.tapir.deps,
+    dependencies.db.deps,
+    dependencies.logging.deps,
+    dependencies.newtypes.deps,
+    dependencies.simulacrum.deps,
+    dependencies.monocle.deps
+  ).flatten
+
+  lazy val api: List[ModuleID] = List(
+    dependencies.ergo.deps,
+    dependencies.cats.deps,
+    dependencies.zio.deps,
+    dependencies.fs2.deps,
+    dependencies.circe.deps,
+    dependencies.http4s.deps,
+    dependencies.tapir.deps,
+    dependencies.db.deps,
+    dependencies.logging.deps,
+    dependencies.newtypes.deps,
+    dependencies.simulacrum.deps,
+    dependencies.monocle.deps
+  ).flatten
+
+  lazy val grabber: List[ModuleID] = List(
+    dependencies.ergo.deps,
+    dependencies.cats.deps,
+    dependencies.zio.deps,
+    dependencies.fs2.deps,
+    dependencies.circe.deps,
+    dependencies.http4s.deps,
+    dependencies.tapir.deps,
+    dependencies.db.deps,
+    dependencies.logging.deps,
+    dependencies.newtypes.deps,
+    dependencies.simulacrum.deps,
+    dependencies.monocle.deps
+  ).flatten
+
+  lazy val utxWatcher: List[ModuleID] = List(
+    dependencies.ergo.deps,
+    dependencies.cats.deps,
+    dependencies.zio.deps,
+    dependencies.fs2.deps,
+    dependencies.circe.deps,
+    dependencies.http4s.deps,
+    dependencies.tapir.deps,
+    dependencies.db.deps,
+    dependencies.logging.deps,
+    dependencies.newtypes.deps,
+    dependencies.simulacrum.deps,
+    dependencies.monocle.deps
+  ).flatten
 }

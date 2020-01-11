@@ -1,32 +1,51 @@
-name := "explorer-backend"
+lazy val commonSettings = Seq(
+  scalacOptions ++= commonScalacOptions,
+  scalaVersion := "2.12.10",
+  organization := "org.ergoplatform",
+  version := "0.0.1",
+  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers += Resolver.sonatypeRepo("snapshots")
+)
 
-organization := "org.ergoplatform"
+lazy val syncConfig = project
+  .in(file("."))
+  .withId("explorer-backend")
+  .settings(commonSettings)
+  .settings(moduleName := "explorer-backend", name := "ExplorerBackend")
+  .aggregate(core, httpApi, grabber, utxWatcher)
 
-version := "0.0.1"
+lazy val core = utils
+  .mkModule("explorer-core", "ExplorerCore")
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= dependencies.core ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+  )
 
-scalaVersion := "2.12.10"
+lazy val httpApi = utils
+  .mkModule("explorer-api", "ExplorerApi")
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= dependencies.api ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+  )
+  .dependsOn(core)
 
-resolvers += Resolver.sonatypeRepo("public")
-resolvers += Resolver.sonatypeRepo("snapshots")
+lazy val grabber = utils
+  .mkModule("chain-grabber", "ChainGrabber")
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= dependencies.grabber ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+  )
+  .dependsOn(core)
 
-lazy val projectDeps = List(
-  dependencies.ergo.deps,
-  dependencies.cats.deps,
-  dependencies.zio.deps,
-  dependencies.fs2.deps,
-  dependencies.circe.deps,
-  dependencies.http4s.deps,
-  dependencies.tapir.deps,
-  dependencies.db.deps,
-  dependencies.logging.deps,
-  dependencies.newtypes.deps,
-  dependencies.simulacrum.deps,
-  dependencies.monocle.deps
-).flatten
+lazy val utxWatcher = utils
+  .mkModule("utx-watcher", "UtxWatcher")
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= dependencies.utxWatcher ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+  )
+  .dependsOn(core)
 
-libraryDependencies ++= projectDeps ++ dependencies.testing.deps ++ dependencies.compilerPlugins
-
-scalacOptions ++= Seq(
+lazy val commonScalacOptions = List(
   "-deprecation",
   "-encoding",
   "UTF-8",
