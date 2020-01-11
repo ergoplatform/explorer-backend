@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
+import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.http.api.v0.models.AddressInfo.{Summary, Transactions}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
@@ -14,7 +15,7 @@ final case class AddressInfo(
 object AddressInfo {
 
   // Mirroring APIv0 structure to avoid handwriting codecs and schemas
-  final case class Summary(id: AddressInfo)
+  final case class Summary(id: Address)
 
   final case class Transactions(
     confirmed: Int,

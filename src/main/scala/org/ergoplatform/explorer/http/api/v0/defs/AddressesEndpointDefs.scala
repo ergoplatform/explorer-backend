@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.defs
 
 import org.ergoplatform.explorer.{Address, TokenId}
 import org.ergoplatform.explorer.Err.ApiErr
-import org.ergoplatform.explorer.http.api.models.Paging
+import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, TransactionInfo}
 import sttp.tapir._
@@ -20,11 +20,11 @@ object AddressesEndpointDefs {
       .in(PathPrefix / path[Address])
       .out(jsonBody[AddressInfo])
 
-  def getTxsByAddressDef: Endpoint[(Address, Paging), ApiErr, List[TransactionInfo], Nothing] =
+  def getTxsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[TransactionInfo], Nothing] =
     baseEndpointDef
       .in(PathPrefix / path[Address] / "transactions")
       .in(paging)
-      .out(jsonBody[List[TransactionInfo]])
+      .out(jsonBody[Items[TransactionInfo]])
 
   def getAssetHoldersDef: Endpoint[(TokenId, Paging), ApiErr, List[Address], Nothing] =
     baseEndpointDef
