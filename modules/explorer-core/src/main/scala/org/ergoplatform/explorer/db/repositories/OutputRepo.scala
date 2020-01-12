@@ -20,7 +20,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def insert(output: Output): D[Unit]
 
-  /** Put a given list of  outputs to persistence.
+  /** Put a given list of outputs to persistence.
     */
   def insertMany(outputs: List[Output]): D[Unit]
 

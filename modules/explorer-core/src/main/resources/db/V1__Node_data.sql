@@ -39,8 +39,7 @@ CREATE TABLE node_ad_proofs
     digest      VARCHAR NOT NULL
 );
 
-/*
-    Block stats
+/* Block stats
  */
 CREATE TABLE blocks_info
 (
@@ -48,11 +47,11 @@ CREATE TABLE blocks_info
     timestamp              BIGINT  NOT NULL,
     height                 INTEGER NOT NULL,
     difficulty             BIGINT  NOT NULL,
-    block_size             BIGINT  NOT NULL,
+    block_size             INTEGER NOT NULL,
     block_coins            BIGINT  NOT NULL,
     block_mining_time      BIGINT  NOT NULL,
-    txs_count              BIGINT  NOT NULL,
-    txs_size               BIGINT  NOT NULL,
+    txs_count              INTEGER NOT NULL,
+    txs_size               INTEGER NOT NULL,
     miner_address          VARCHAR NOT NULL,
     miner_reward           BIGINT  NOT NULL,
     miner_revenue          BIGINT  NOT NULL,
@@ -66,8 +65,7 @@ CREATE TABLE blocks_info
     total_coins_in_txs     BIGINT  NOT NULL
 );
 
-/*
-    Stats table indexes. By height and ts.
+/* Stats table indexes. By height and ts.
  */
 CREATE INDEX "blocks_info__height" ON node_headers (height);
 CREATE INDEX "blocks_info__ts" ON node_headers (timestamp);
@@ -78,16 +76,15 @@ CREATE TABLE node_transactions
     header_id VARCHAR(64) REFERENCES node_headers (id),
     coinbase  BOOLEAN     NOT NULL,
     timestamp BIGINT      NOT NULL,
-    size      BIGINT      NOT NULL,
+    size      INTEGER     NOT NULL,
     PRIMARY KEY (id, header_id)
 );
 
 CREATE INDEX "node_transactions__header_id" ON node_transactions (header_id);
 CREATE INDEX "node_transactions__timestamp" ON node_transactions (timestamp);
 
-/*
-    Table that represents inputs in ergo transactions.
-    Has tx_id field that point to the tx where this input was spent.
+/* Table that represents inputs in ergo transactions.
+ * Has tx_id field that point to the tx where this input was spent.
  */
 CREATE TABLE node_inputs
 (
@@ -98,15 +95,11 @@ CREATE TABLE node_inputs
     main_chain  BOOLEAN     NOT NULL
 );
 
-/*
-    Indexes that being used by inputs table.
- */
 CREATE INDEX "node_inputs__tx_id" ON node_inputs (tx_id);
 CREATE INDEX "node_inputs__box_id" ON node_inputs (box_id);
 
-/*
-    Table that represents outputs in ergo transactions.
-    Has tx_id field that point to the tx where this output was created.
+/* Table that represents outputs in ergo transactions.
+ * Has tx_id field pointing to the tx which created this output.
  */
 CREATE TABLE node_outputs
 (
@@ -133,13 +126,66 @@ CREATE TABLE node_assets
     box_id    VARCHAR(64) NOT NULL,
     header_id VARCHAR(64) NOT NULL,
     value     BIGINT      NOT NULL,
-    PRIMARY KEY (id, box_id, header_id)
+    PRIMARY KEY (token_id, box_id, header_id)
 );
 
 CREATE INDEX "node_assets__box_id" ON node_assets (box_id);
+CREATE INDEX "node_assets__token_id" ON node_assets (token_id);
 
-/*
-    Table for storing names for known miners.
+/* Unconfirmed transactions.
+ */
+CREATE TABLE node_u_transactions
+(
+    id                 VARCHAR(64) PRIMARY KEY,
+    creation_timestamp BIGINT  NOT NULL,
+    size               INTEGER NOT NULL
+);
+
+/* Inputs containing in unconfirmed transactions.
+ */
+CREATE TABLE node_u_inputs
+(
+    box_id      VARCHAR(64) NOT NULL,
+    tx_id       VARCHAR(64) NOT NULL,
+    proof_bytes VARCHAR,
+    extension   JSON        NOT NULL,
+    PRIMARY KEY (box_id, tx_id)
+);
+
+CREATE INDEX "node_inputs__tx_id" ON node_u_inputs (tx_id);
+CREATE INDEX "node_u_inputs__box_id" ON node_u_inputs (box_id);
+
+/* Outputs containing in unconfirmed transactions.
+ */
+CREATE TABLE node_u_outputs
+(
+    box_id               VARCHAR(64) PRIMARY KEY,
+    tx_id                VARCHAR(64) NOT NULL,
+    value                BIGINT      NOT NULL,
+    creation_height      INTEGER     NOT NULL,
+    index                INTEGER     NOT NULL,
+    ergo_tree            VARCHAR     NOT NULL,
+    address              VARCHAR,
+    additional_registers JSON        NOT NULL
+);
+
+CREATE INDEX "node_u_outputs__box_id" ON node_u_outputs (box_id);
+CREATE INDEX "node_u_outputs__tx_id" ON node_u_outputs (tx_id);
+CREATE INDEX "node_u_outputs__address" ON node_u_outputs (address);
+
+/* Inputs containing in unconfirmed outputs.
+ */
+CREATE TABLE node_u_assets
+(
+    token_id VARCHAR(64) NOT NULL,
+    box_id   VARCHAR(64) NOT NULL,
+    value    BIGINT      NOT NULL,
+    PRIMARY KEY (token_id, box_id)
+);
+
+CREATE INDEX "node_u_assets__box_id" ON node_u_assets (box_id);
+
+/* Verbose names for known miners.
  */
 CREATE TABLE known_miners
 (

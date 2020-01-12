@@ -4,8 +4,8 @@ import io.circe.Decoder
 import org.ergoplatform.explorer.TxId
 
 /** A model mirroring ErgoTransaction entity from Ergo node REST API.
- * See `ErgoTransaction` in https://github.com/ergoplatform/ergo/blob/master/src/main/resources/api/openapi.yaml
- */
+  * See `ErgoTransaction` in https://github.com/ergoplatform/ergo/blob/master/src/main/resources/api/openapi.yaml
+  */
 final case class ApiTransaction(
   id: TxId,
   inputs: List[ApiInput],
