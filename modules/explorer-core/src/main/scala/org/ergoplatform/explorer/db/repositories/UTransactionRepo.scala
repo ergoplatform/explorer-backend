@@ -17,19 +17,11 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
     */
   def get(id: TxId): D[Option[UTransaction]]
 
-  /** Get all unconfirmed transactions related to the given `address`.
-    */
-  def getByAddress(address: Address): S[D, UTransaction]
-
   /** Get all unconfirmed transactions related to the given `ergoTree`.
     */
-  def getByErgoTree(ergoTree: HexString): S[D, UTransaction]
-
-  /** Get all outputs containing in unconfirmed transactions.
-    */
-  def getAllUnconfirmedOutputs: S[D, UOutput]
-
-  /** Get all inputs containing in unconfirmed transactions.
-    */
-  def getAllUnconfirmedInputs: S[D, UInput]
+  def getAllRelatedToErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int
+  ): S[D, UTransaction]
 }
