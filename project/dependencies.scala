@@ -20,7 +20,7 @@ object dependencies {
   val ZioVersion             = "1.0.0-RC16"
   val ZioCatsVersion         = "2.0.0.0-RC6"
   val MonocleVersion         = "2.0.0"
-  val TofuVersion            = "0.5.4"
+  val TofuVersion            = "0.6.1"
 
   val SimulacrumVersion = "0.19.0"
 
@@ -114,7 +114,7 @@ object dependencies {
 
   object tofu extends DependencyGroup {
     override def deps: List[ModuleID] = List(
-      "ru.tinkoff" %% "tofu" % TofuVersion
+      "ru.tinkoff" %% "tofu-core" % TofuVersion
     )
   }
 
@@ -187,61 +187,61 @@ object dependencies {
     )
 
   lazy val core: List[ModuleID] = List(
-    dependencies.ergo.deps,
-    dependencies.cats.deps,
-    dependencies.fs2.deps,
-    dependencies.circe.deps,
-    dependencies.http4s.deps,
-    dependencies.tapir.deps,
-    dependencies.db.deps,
-    dependencies.logging.deps,
-    dependencies.newtypes.deps,
-    dependencies.simulacrum.deps,
-    dependencies.monocle.deps
+    ergo.deps,
+    cats.deps,
+    fs2.deps,
+    circe.deps,
+    http4s.deps,
+    tapir.deps,
+    db.deps,
+    logging.deps,
+    newtypes.deps,
+    simulacrum.deps,
+    monocle.deps
   ).flatten
 
   lazy val api: List[ModuleID] = List(
-    dependencies.ergo.deps,
-    dependencies.cats.deps,
-    dependencies.zio.deps,
-    dependencies.fs2.deps,
-    dependencies.circe.deps,
-    dependencies.http4s.deps,
-    dependencies.tapir.deps,
-    dependencies.db.deps,
-    dependencies.logging.deps,
-    dependencies.newtypes.deps,
-    dependencies.simulacrum.deps,
-    dependencies.monocle.deps
+    ergo.deps,
+    cats.deps,
+    zio.deps,
+    fs2.deps,
+    circe.deps,
+    http4s.deps,
+    tapir.deps,
+    db.deps,
+    logging.deps,
+    newtypes.deps,
+    simulacrum.deps,
+    monocle.deps
   ).flatten
 
   lazy val grabber: List[ModuleID] = List(
-    dependencies.ergo.deps,
-    dependencies.cats.deps,
-    dependencies.zio.deps,
-    dependencies.fs2.deps,
-    dependencies.circe.deps,
-    dependencies.http4s.deps,
-    dependencies.tapir.deps,
-    dependencies.db.deps,
-    dependencies.logging.deps,
-    dependencies.newtypes.deps,
-    dependencies.simulacrum.deps,
-    dependencies.monocle.deps
+    ergo.deps,
+    cats.deps,
+    zio.deps,
+    fs2.deps,
+    circe.deps,
+    http4s.deps,
+    tapir.deps,
+    db.deps,
+    logging.deps,
+    newtypes.deps,
+    simulacrum.deps,
+    monocle.deps
   ).flatten
 
   lazy val utxWatcher: List[ModuleID] = List(
-    dependencies.ergo.deps,
-    dependencies.cats.deps,
-    dependencies.zio.deps,
-    dependencies.fs2.deps,
-    dependencies.circe.deps,
-    dependencies.http4s.deps,
-    dependencies.tapir.deps,
-    dependencies.db.deps,
-    dependencies.logging.deps,
-    dependencies.newtypes.deps,
-    dependencies.simulacrum.deps,
-    dependencies.monocle.deps
+    ergo.deps,
+    cats.deps,
+    zio.deps,
+    fs2.deps,
+    circe.deps,
+    http4s.deps,
+    tapir.deps,
+    db.deps,
+    logging.deps,
+    newtypes.deps,
+    simulacrum.deps,
+    monocle.deps
   ).flatten
 }
