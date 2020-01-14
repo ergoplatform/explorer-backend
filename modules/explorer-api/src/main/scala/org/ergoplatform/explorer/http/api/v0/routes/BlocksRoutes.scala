@@ -8,7 +8,7 @@ import cats.syntax.semigroupk._
 import org.ergoplatform.explorer.Err.ApiErr
 import org.ergoplatform.explorer.http.api.models.Items
 import org.ergoplatform.explorer.http.api.v0.services.BlockChainService
-import org.ergoplatform.explorer.http.api.v0.syntax.applicativeThrow._
+import org.ergoplatform.explorer.http.api.syntax.applicativeThrow._
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 

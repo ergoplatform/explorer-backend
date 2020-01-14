@@ -11,6 +11,7 @@ object dependencies {
   val CatsVersion            = "2.0.0"
   val CatsEffectVersion      = "2.0.0"
   val CatsMtlVersion         = "0.7.0"
+  val CatsMeowMtl            = "0.4.0"
   val CatsTaglessVersion     = "0.10"
   val MouseVersion           = "0.23"
   val Fs2Version             = "2.0.1"
@@ -84,6 +85,7 @@ object dependencies {
       "org.typelevel" %% "cats-core"           % CatsVersion,
       "org.typelevel" %% "cats-effect"         % CatsEffectVersion,
       "org.typelevel" %% "cats-mtl-core"       % CatsMtlVersion,
+      "com.olegpy"    %% "meow-mtl-core"       % CatsMeowMtl,
       "org.typelevel" %% "cats-tagless-macros" % CatsTaglessVersion,
       "org.typelevel" %% "cats-tagless-core"   % CatsTaglessVersion,
       "org.typelevel" %% "mouse"               % MouseVersion

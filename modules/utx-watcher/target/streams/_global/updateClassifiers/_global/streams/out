@@ -1,0 +1,4 @@
+[debug] "not up to date. inChanged = true, force = false
+[debug] Updating ProjectRef(uri("file:/Users/i.oskin/Library/Mobile%20Documents/com~apple~CloudDocs/Ergo/Source/explorer-backend/"), "utx-watcher")...
+[debug] Done updating ProjectRef(uri("file:/Users/i.oskin/Library/Mobile%20Documents/com~apple~CloudDocs/Ergo/Source/explorer-backend/"), "utx-watcher")
+[warn] There may be incompatibilities among your library dependencies; run 'evicted' to see detailed eviction warnings.

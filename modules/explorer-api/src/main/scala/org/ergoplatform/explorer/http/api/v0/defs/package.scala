@@ -23,7 +23,7 @@ package object defs {
             StatusCode.BadRequest,
             jsonBody[ApiErr.BadInput].description("Bad request")
           ),
-          statusDefaultMapping(jsonBody[ApiErr].description("Unknown error"))
+          statusDefaultMapping(jsonBody[ApiErr.UnknownErr].description("Unknown error"))
         )
-      )
+      ).asInstanceOf[Endpoint[Unit, ApiErr, Unit, Nothing]]
 }
