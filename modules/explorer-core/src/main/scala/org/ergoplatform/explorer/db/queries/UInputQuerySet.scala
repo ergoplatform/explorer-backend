@@ -2,11 +2,14 @@ package org.ergoplatform.explorer.db.queries
 
 import doobie.ConnectionIO
 import doobie.implicits._
+import doobie.refined.implicits._
 import fs2.Stream
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.UInput
 
 object UInputQuerySet extends QuerySet {
+
+  import org.ergoplatform.explorer.db.doobieInstances._
 
   val tableName: String = "node_u_inputs"
 

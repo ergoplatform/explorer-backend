@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.syntax.functor._
+import cats.implicits._
+import doobie.free.implicits._
 import fs2.Stream
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction

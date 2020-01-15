@@ -3,10 +3,13 @@ package org.ergoplatform.explorer.db.queries
 import fs2.Stream
 import doobie._
 import doobie.implicits._
+import doobie.refined.implicits._
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.UOutput
 
 object UOutputQuerySet extends QuerySet {
+
+  import org.ergoplatform.explorer.db.doobieInstances._
 
   val tableName: String = "node_u_outputs"
 

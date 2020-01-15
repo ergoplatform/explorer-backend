@@ -1,11 +1,14 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.syntax.functor._
+import cats.implicits._
+import doobie.free.implicits._
+import doobie.refined.implicits._
 import fs2.Stream
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UInput
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[UInput]] data access operations.
   */

@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.syntax.functor._
+import doobie.implicits._
 import org.ergoplatform.explorer.BoxId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UAsset
