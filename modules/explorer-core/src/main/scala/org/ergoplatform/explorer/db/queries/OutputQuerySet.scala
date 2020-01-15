@@ -1,13 +1,13 @@
 package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
-import doobie.free.connection.ConnectionIO
 import doobie.Fragments
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
+import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
 import fs2.Stream
-import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TxId}
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer._
 
 /** A set of queries for doobie implementation of [OutputRepo].
   */
