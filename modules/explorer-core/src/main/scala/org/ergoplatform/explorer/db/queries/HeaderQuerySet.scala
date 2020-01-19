@@ -35,6 +35,9 @@ object HeaderQuerySet extends QuerySet {
   def get(id: Id): ConnectionIO[Option[Header]] =
     sql"select * from node_headers where id = $id".query[Header].option
 
+  def getByParentId(parentId: Id): ConnectionIO[Option[Header]] =
+    sql"select * from node_headers where parent_id = $parentId".query[Header].option
+
   def getAllByHeight(height: Int): ConnectionIO[List[Header]] =
     sql"select * from node_headers where height = $height".query[Header].to[List]
 

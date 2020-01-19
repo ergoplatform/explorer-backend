@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.implicits._
 import fs2.Stream
@@ -23,6 +24,10 @@ trait AssetRepo[D[_], S[_[_], _]] {
   /** Get all assets belonging to a given `boxId`.
     */
   def getAllByBoxId(boxId: BoxId): D[List[Asset]]
+
+  /** Get all assets belonging to a given list of `boxId`.
+   */
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]]
 
   /** Get all addresses holding an asset with a given `assetId`.
     */
@@ -50,6 +55,9 @@ object AssetRepo {
 
     def getAllByBoxId(boxId: BoxId): D[List[Asset]] =
       QS.getAllByBoxId(boxId).liftConnectionIO
+
+    def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]] =
+      QS.getAllByBoxIds(boxIds).liftConnectionIO
 
     def getAllHoldingAddresses(
       tokenId: TokenId,

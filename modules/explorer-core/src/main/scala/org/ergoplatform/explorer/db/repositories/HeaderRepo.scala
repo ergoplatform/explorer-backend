@@ -58,7 +58,8 @@ object HeaderRepo {
     def get(id: Id): D[Option[Header]] =
       QS.get(id).liftConnectionIO
 
-    def getByParentId(parentId: Id): D[Option[Header]] = ???
+    def getByParentId(parentId: Id): D[Option[Header]] =
+      QS.getByParentId(parentId).liftConnectionIO
 
     def getAllByHeight(height: Int): D[List[Header]] =
       QS.getAllByHeight(height).liftConnectionIO

@@ -32,24 +32,24 @@ object TransactionInfo {
       )
       .modify(_.confirmationsQty)(_.description("Number of transaction confirmations"))
 
-  def apply(
+  def batch(
     numConfirmations: Int,
     txs: List[Transaction],
     inputs: List[ExtendedInput],
-    outputs: List[(ExtendedOutput, List[Asset])]
-  ): List[TransactionInfo] =
+    outputs: List[ExtendedOutput],
+    assets: List[Asset]
+  ): List[TransactionInfo] = {
+    val grouppedAssets = assets.groupBy(_.boxId)
     txs.map { tx =>
       val relatedInputs = inputs
         .filter(_.input.txId == tx.id)
         .map(InputInfo.apply)
-      val relatedOutputs = outputs
-        .filter(_._1.output.txId == tx.id)
-        .map {
-          case (out, assets) =>
-            OutputInfo(out, assets)
-        }
+      val relatedOutputs = outputs.map { out =>
+        OutputInfo(out, grouppedAssets.get(out.output.boxId).toList.flatten)
+      }
       val id = tx.id
       val ts = tx.timestamp
       apply(id, tx.headerId, ts, numConfirmations, relatedInputs, relatedOutputs)
     }
+  }
 }

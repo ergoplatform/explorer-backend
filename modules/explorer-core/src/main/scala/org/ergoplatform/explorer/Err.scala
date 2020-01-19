@@ -55,4 +55,13 @@ object Err {
 
   final case class InconsistentDbData(details: String)
     extends Err(s"Inconsistent blockchain data in db: $details")
+
+  final case class AddressDecodingFailed(
+    address: Address,
+    reasonOpt: Option[String] = None
+  ) extends Err(
+      s"Failed to decode address: `$address`" + reasonOpt
+        .map(s => s", reason: $s")
+        .getOrElse("")
+    )
 }

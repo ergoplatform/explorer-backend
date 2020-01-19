@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.syntax.functor._
 import doobie.implicits._
 import org.ergoplatform.explorer.BoxId
@@ -22,6 +23,10 @@ trait UAssetRepo[D[_]] {
   /** Get all assets belonging to a given `boxId`.
     */
   def getAllByBoxId(boxId: BoxId): D[List[UAsset]]
+
+  /** Get all assets belonging to a given list of `boxId`.
+   */
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[UAsset]]
 }
 
 object UAssetRepo {
@@ -41,5 +46,8 @@ object UAssetRepo {
 
     def getAllByBoxId(boxId: BoxId): D[List[UAsset]] =
       QS.getAllByBoxId(boxId).liftConnectionIO
+
+    def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[UAsset]] =
+      QS.getAllByBoxIds(boxIds).liftConnectionIO
   }
 }

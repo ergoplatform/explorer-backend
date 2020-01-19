@@ -1,7 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.effect.Sync
-import cats.instances.list._
 import cats.instances.option._
 import cats.syntax.apply._
 import cats.syntax.flatMap._
@@ -114,19 +113,15 @@ object BlockChainService {
       for {
         headerOpt <- headerRepo.get(id).asStream
         txs <- transactionRepo.getAllByBlockId(id).fold(List.empty[Transaction]) {
-                case (acc, tx) => tx +: acc
-              }
+                 case (acc, tx) => tx +: acc
+               }
         blockSizeOpt <- blockInfoRepo.getBlockSize(id).asStream
         bestHeight   <- headerRepo.getBestHeight.asStream
-        txIdsNel = txs.map(_.id).toNel.liftTo[D](Err.InconsistentDbData("Empty txs"))
-        inputs  <- txIdsNel.flatMap(inputRepo.getAllByTxIds).asStream
-        outputs <- txIdsNel.flatMap(outputRepo.getAllByTxIds).asStream
-        outputsWithAssets <- outputs
-                              .traverse(
-                                out =>
-                                  assetRepo.getAllByBoxId(out.output.boxId).map(out -> _)
-                              )
-                              .asStream
+        txIdsNel     <- txs.map(_.id).toNel.liftTo[D](Err.InconsistentDbData("Empty txs")).asStream
+        inputs       <- inputRepo.getAllByTxIds(txIdsNel).asStream
+        outputs      <- outputRepo.getAllByTxIds(txIdsNel).asStream
+        boxIdsNel    <- outputs.map(_.output.boxId).toNel.liftTo[D](Err.InconsistentDbData("Empty outputs")).asStream
+        assets       <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream
       } yield
@@ -138,7 +133,8 @@ object BlockChainService {
               txs,
               numConfirmations,
               inputs,
-              outputsWithAssets,
+              outputs,
+              assets,
               ext,
               adProofsOpt,
               size

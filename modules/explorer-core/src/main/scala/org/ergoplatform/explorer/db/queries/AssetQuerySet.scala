@@ -1,7 +1,9 @@
 package org.ergoplatform.explorer.db.queries
 
+import cats.data.NonEmptyList
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
+import doobie.Fragments
 import doobie.refined.implicits._
 import fs2.Stream
 import org.ergoplatform.explorer.{Address, BoxId, TokenId}
@@ -22,6 +24,11 @@ object AssetQuerySet extends QuerySet {
 
   def getAllByBoxId(boxId: BoxId): ConnectionIO[List[Asset]] =
     sql"select * from node_assets where box_id = $boxId".query[Asset].to[List]
+
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): ConnectionIO[List[Asset]] =
+    (sql"select * from node_assets" ++ Fragments.in(fr"where box_id", boxIds))
+      .query[Asset]
+      .to[List]
 
   def getAllHoldingAddresses(
     tokenId: TokenId,

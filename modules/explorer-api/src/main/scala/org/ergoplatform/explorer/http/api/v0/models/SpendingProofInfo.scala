@@ -5,7 +5,7 @@ import org.ergoplatform.explorer.HexString
 import sttp.tapir.generic.Derived
 import sttp.tapir.{Schema, SchemaType}
 
-final case class SpendingProofInfo(proofBytes: HexString, extension: Json)
+final case class SpendingProofInfo(proofBytes: Option[HexString], extension: Json)
 
 object SpendingProofInfo {
 
