@@ -1,9 +1,11 @@
 package org.ergoplatform.explorer.protocol
 
-import cats.Applicative
+import cats.{Applicative, Functor, Monad}
 import cats.syntax.either._
+import cats.syntax.flatMap._
 import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.{Address, Err}
+import org.ergoplatform.explorer.HexString
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import org.ergoplatform.explorer.syntax.either._
 import scorex.util.encode.Base16
@@ -32,4 +34,9 @@ object utils {
       .toEither
       .leftMap(e => Err.AddressDecodingFailed(address, Option(e.getMessage)))
       .liftToRaise
+
+  @inline def addressToErgoTreeHex[F[_]: Raise[*[_], Err]: Monad](
+    address: Address
+  )(implicit enc: ErgoAddressEncoder): F[HexString] =
+    addressToErgoTree[F](address).flatMap(tree => HexString.fromString(Base16.encode(tree.bytes)))
 }

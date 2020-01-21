@@ -53,12 +53,7 @@ class OutputRepoSpec
               }
               oRepo.insert(nonMatching.output).runWithIO()
               oRepo
-                .getAllByAddress(address)
-                .compile
-                .toList
-                .runWithIO() should contain theSameElementsAs matching
-              oRepo
-                .getAllByErgoTree(ergoTree)
+                .getByErgoTree(ergoTree, 0, Int.MaxValue)
                 .compile
                 .toList
                 .runWithIO() should contain theSameElementsAs matching

@@ -1,11 +1,15 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.~>
+import cats.{Monad, ~>}
+import cats.syntax.functor._
 import fs2.Stream
+import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, OutputRepo, TransactionRepo}
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, TransactionInfo}
-import org.ergoplatform.explorer.{Address, TokenId}
+import org.ergoplatform.explorer.protocol.utils
+import org.ergoplatform.explorer.{Address, Err, TokenId}
 
 /** A service providing an access to the addresses data.
   */
@@ -26,14 +30,15 @@ trait AddressesService[F[_], S[_[_], _]] {
 
 object AddressesService {
 
-  final private class Live[F[_], D[_]](
+  final private class Live[F[_], D[_]: Raise[*[_], Err]: Monad](
     transactionRepo: TransactionRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
-  )(xa: D ~> F)
+  )(xa: D ~> F)(implicit e: ErgoAddressEncoder)
     extends AddressesService[F, Stream] {
 
-    def getAddressInfo(address: Address): F[Option[AddressInfo]] = ???
+    def getAddressInfo(address: Address): F[Option[AddressInfo]] =
+      ???
 
     def getTxsInfoByAddress(
       address: Address,

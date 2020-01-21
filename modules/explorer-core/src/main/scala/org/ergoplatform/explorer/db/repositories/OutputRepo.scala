@@ -28,24 +28,28 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]]
 
-  /** Get all outputs with a given `address` from persistence.
-    */
-  def getAllByAddress(address: Address): S[D, ExtendedOutput]
-
   /** Get all outputs with a given `ergoTree` from persistence.
     */
-  def getAllByErgoTree(ergoTree: HexString): S[D, ExtendedOutput]
+  def getAllByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]]
 
-  /** Get all unspent main-chain outputs with a given `address` from persistence.
+  /** Get outputs with a given `ergoTree` from persistence.
     */
-  def getAllMainUnspentByAddress(address: Address): S[D, ExtendedOutput]
+  def getByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
 
   /** Get all unspent main-chain outputs with a given `ergoTree` from persistence.
     */
-  def getAllMainUnspentByErgoTree(ergoTree: HexString): S[D, ExtendedOutput]
+  def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]]
+
+  /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
+    */
+  def getMainUnspentByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int
+  ): S[D, ExtendedOutput]
 
   /** Get all outputs related to a given list of `txId`.
-   */
+    */
   def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]]
 
   /** Search for addresses containing a given `substring`.
@@ -58,8 +62,7 @@ object OutputRepo {
   def apply[D[_]: LiftConnectionIO]: OutputRepo[D, Stream] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO]
-    extends OutputRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO] extends OutputRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{OutputQuerySet => QS}
 
@@ -74,17 +77,25 @@ object OutputRepo {
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
       QS.getByBoxId(boxId).liftConnectionIO
 
-    def getAllByAddress(address: Address): Stream[D, ExtendedOutput] =
-      QS.getAllByAddress(address).translate(liftK)
+    def getAllByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
+      QS.getAllByErgoTree(ergoTree).liftConnectionIO
 
-    def getAllByErgoTree(ergoTree: HexString): Stream[D, ExtendedOutput] =
-      QS.getAllByErgoTree(ergoTree).translate(liftK)
+    def getByErgoTree(
+      ergoTree: HexString,
+      offset: Int,
+      limit: Int
+    ): Stream[D, ExtendedOutput] =
+      QS.getByErgoTree(ergoTree, offset, limit).translate(liftK)
 
-    def getAllMainUnspentByAddress(address: Address): Stream[D, ExtendedOutput] =
-      QS.getAllMainUnspentByAddress(address).translate(liftK)
+    def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
+      QS.getAllMainUnspentByErgoTree(ergoTree).liftConnectionIO
 
-    def getAllMainUnspentByErgoTree(ergoTree: HexString): Stream[D, ExtendedOutput] =
-      QS.getAllMainUnspentByErgoTree(ergoTree).translate(liftK)
+    def getMainUnspentByErgoTree(
+      ergoTree: HexString,
+      offset: Int,
+      limit: Int
+    ): Stream[D, ExtendedOutput] =
+      QS.getMainUnspentByErgoTree(ergoTree, offset, limit).translate(liftK)
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
       QS.getAllByTxIds(txIds).liftConnectionIO

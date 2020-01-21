@@ -49,7 +49,9 @@ object OutputQuerySet extends QuerySet {
          |where o.box_id = $boxId
          |""".stripMargin.query[ExtendedOutput].option
 
-  def getAllByAddress(address: Address): Stream[ConnectionIO, ExtendedOutput] =
+  def getAllByErgoTree(
+    ergoTree: HexString
+  ): ConnectionIO[List[ExtendedOutput]] =
     sql"""
          |select
          |  o.box_id,
@@ -65,11 +67,13 @@ object OutputQuerySet extends QuerySet {
          |  i.tx_id
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |where o.address = $address
-         |""".stripMargin.query[ExtendedOutput].stream
+         |where o.ergo_tree = $ergoTree
+         |""".stripMargin.query[ExtendedOutput].to[List]
 
-  def getAllByErgoTree(
-    ergoTree: HexString
+  def getByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int
   ): Stream[ConnectionIO, ExtendedOutput] =
     sql"""
          |select
@@ -87,11 +91,12 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.ergo_tree = $ergoTree
+         |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput].stream
 
-  def getAllMainUnspentByAddress(
-    address: Address
-  ): Stream[ConnectionIO, ExtendedOutput] =
+  def getAllMainUnspentByErgoTree(
+    ergoTree: HexString
+  ): ConnectionIO[List[ExtendedOutput]] =
     sql"""
          |select
          |  o.box_id,
@@ -109,11 +114,13 @@ object OutputQuerySet extends QuerySet {
          |left join node_inputs i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
-         |  and o.address = $address
-         |""".stripMargin.query[ExtendedOutput].stream
+         |  and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[ExtendedOutput].to[List]
 
-  def getAllMainUnspentByErgoTree(
-    ergoTree: HexString
+  def getMainUnspentByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int
   ): Stream[ConnectionIO, ExtendedOutput] =
     sql"""
          |select
@@ -133,6 +140,7 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
+         |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput].stream
 
   def getAllByTxId(txId: TxId): ConnectionIO[List[ExtendedOutput]] =

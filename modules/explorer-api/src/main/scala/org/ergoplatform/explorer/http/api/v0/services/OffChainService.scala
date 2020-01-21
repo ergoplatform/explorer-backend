@@ -5,23 +5,15 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{~>, Monad}
+import cats.{Monad, ~>}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.algebra.Raise
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.repositories.{
-  UAssetRepo,
-  UInputRepo,
-  UOutputRepo,
-  UTransactionRepo
-}
-import org.ergoplatform.explorer.http.api.v0.models.{
-  UInputInfo,
-  UOutputInfo,
-  UTransactionInfo
-}
+import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
+import org.ergoplatform.explorer.http.api.v0.models.{UInputInfo, UOutputInfo, UTransactionInfo}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.{Address, Err, HexString, TxId}
 import org.ergoplatform.explorer.syntax.streamEffect._
@@ -54,6 +46,11 @@ trait OffChainService[F[_], S[_[_], _]] {
 }
 
 object OffChainService {
+
+  def apply[F[_], D[_]: Raise[*[_], Err]: Monad: LiftConnectionIO](xa: D ~> F)(
+    implicit e: ErgoAddressEncoder
+  ): OffChainService[F, Stream] =
+    new Live(UTransactionRepo[D], UInputRepo[D], UOutputRepo[D], UAssetRepo[D])(xa)
 
   final private class Live[F[_], D[_]: Raise[*[_], Err]: Monad](
     txRepo: UTransactionRepo[D, Stream],
