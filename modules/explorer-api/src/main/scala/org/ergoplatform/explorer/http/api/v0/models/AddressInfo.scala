@@ -26,6 +26,27 @@ object AddressInfo {
     totalTokensBalance: List[AssetInfo]
   )
 
+  def apply(
+    address: Address,
+    confirmed: Int,
+    totalReceived: BigDecimal,
+    confirmedBalance: Long,
+    totalBalance: Long,
+    confirmedTokensBalance: List[AssetInfo],
+    totalTokensBalance: List[AssetInfo]
+  ): AddressInfo =
+    new AddressInfo(
+      Summary(address),
+      Transactions(
+        confirmed,
+        totalReceived,
+        confirmedBalance,
+        totalBalance,
+        confirmedTokensBalance,
+        totalTokensBalance
+      )
+    )
+
   implicit private lazy val summaryCodec: Codec[Summary] = deriveCodec
   implicit private val txsCodec: Codec[Transactions]     = deriveCodec
   implicit val codec: Codec[AddressInfo]                 = deriveCodec

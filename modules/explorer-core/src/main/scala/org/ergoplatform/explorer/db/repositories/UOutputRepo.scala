@@ -4,7 +4,7 @@ import fs2.Stream
 import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
-import org.ergoplatform.explorer.TxId
+import org.ergoplatform.explorer.{HexString, TxId}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.UOutput
@@ -29,6 +29,14 @@ trait UOutputRepo[D[_], S[_[_], _]] {
   /** Get all unconfirmed outputs related to transaction with a given `txId`.
     */
   def getAllByTxId(txId: TxId): D[List[UOutput]]
+
+  /** Get all unconfirmed outputs belonging to the given `ergoTree`.
+    */
+  def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]]
+
+  /** Get all unspent unconfirmed outputs belonging to the given `ergoTree`.
+   */
+  def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]]
 }
 
 object UOutputRepo {
@@ -51,5 +59,11 @@ object UOutputRepo {
 
     def getAllByTxId(txId: TxId): D[List[UOutput]] =
       QS.getAllByTxId(txId).liftConnectionIO
+
+    def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]] =
+      QS.getAllByErgoTree(ergoTree).liftConnectionIO
+
+    def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]] =
+      QS.getAllUnspentByErgoTree(ergoTree).liftConnectionIO
   }
 }
