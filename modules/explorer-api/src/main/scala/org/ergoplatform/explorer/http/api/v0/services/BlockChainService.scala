@@ -7,25 +7,20 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{~>, Monad}
+import cats.{Monad, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
-import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{
-  BlockInfo,
-  BlockReferencesInfo,
-  BlockSummary,
-  FullBlockInfo
-}
+import org.ergoplatform.explorer.http.api.v0.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
 import org.ergoplatform.explorer.syntax.streamEffect._
-import org.ergoplatform.explorer.syntax.option._
 import org.ergoplatform.explorer.{Err, Id}
+import tofu.Raise.ContravariantRaise
+import tofu.syntax.raise._
 
 /** A service providing an access to the blockchain data.
   */
@@ -48,7 +43,7 @@ object BlockChainService {
 
   def apply[
     F[_]: Sync,
-    D[_]: LiftConnectionIO: Raise[*[_], Err.InconsistentDbData]: Monad
+    D[_]: LiftConnectionIO: ContravariantRaise[*[_], Err.InconsistentDbData]: Monad
   ](xa: D ~> F): F[BlockChainService[F, Stream]] =
     Slf4jLogger
       .create[F]
@@ -68,7 +63,7 @@ object BlockChainService {
 
   final private class Live[
     F[_]: Sync: Logger,
-    D[_]: Raise[*[_], Err.InconsistentDbData]: Monad
+    D[_]: ContravariantRaise[*[_], Err.InconsistentDbData]: Monad
   ](
     headerRepo: HeaderRepo[D],
     blockInfoRepo: BlockInfoRepo[D, Stream],
@@ -117,10 +112,10 @@ object BlockChainService {
                }
         blockSizeOpt <- blockInfoRepo.getBlockSize(id).asStream
         bestHeight   <- headerRepo.getBestHeight.asStream
-        txIdsNel     <- txs.map(_.id).toNel.liftTo[D](Err.InconsistentDbData("Empty txs")).asStream
+        txIdsNel     <- txs.map(_.id).toNel.orRaise[D](Err.InconsistentDbData("Empty txs")).asStream
         inputs       <- inputRepo.getAllByTxIds(txIdsNel).asStream
         outputs      <- outputRepo.getAllByTxIds(txIdsNel).asStream
-        boxIdsNel    <- outputs.map(_.output.boxId).toNel.liftTo[D](Err.InconsistentDbData("Empty outputs")).asStream
+        boxIdsNel    <- outputs.map(_.output.boxId).toNel.orRaise[D](Err.InconsistentDbData("Empty outputs")).asStream
         assets       <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream

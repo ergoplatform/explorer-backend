@@ -32,17 +32,17 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     */
   def getAllByBlockId(id: Id): S[D, Transaction]
 
-  /** Get all transactions related to a given `address`.
+  /** Get transactions related to a given `address`.
     */
-  def getAllRelatedToAddress(
+  def getRelatedToAddress(
     address: Address,
     offset: Int,
     limit: Int
   ): S[D, Transaction]
 
-  /** Get all transactions appeared in the main-chain after given height.
+  /** Get transactions appeared in the main-chain after given height.
     */
-  def getAllMainSince(
+  def getMainSince(
     height: Int,
     offset: Int,
     limit: Int
@@ -76,14 +76,14 @@ object TransactionRepo {
     def getAllByBlockId(id: Id): Stream[D, Transaction] =
       QS.getAllByBlockId(id).translate(liftK)
 
-    def getAllRelatedToAddress(
+    def getRelatedToAddress(
       address: Address,
       offset: Int,
       limit: Int
     ): Stream[D, Transaction] =
       QS.getAllRelatedToAddress(address, offset, limit).translate(liftK)
 
-    def getAllMainSince(
+    def getMainSince(
       height: Int,
       offset: Int,
       limit: Int

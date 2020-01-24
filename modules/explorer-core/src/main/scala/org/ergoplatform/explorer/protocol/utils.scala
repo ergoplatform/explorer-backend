@@ -1,16 +1,15 @@
 package org.ergoplatform.explorer.protocol
 
-import cats.{Applicative, Functor, Monad}
 import cats.syntax.either._
 import cats.syntax.flatMap._
-import org.ergoplatform.explorer.algebra.Raise
-import org.ergoplatform.explorer.{Address, Err}
-import org.ergoplatform.explorer.HexString
+import cats.{Applicative, Monad}
+import org.ergoplatform.explorer.{Address, Err, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
-import org.ergoplatform.explorer.syntax.either._
 import scorex.util.encode.Base16
 import sigmastate.Values.ErgoTree
 import sigmastate.serialization.ErgoTreeSerializer
+import tofu.Raise.ContravariantRaise
+import tofu.syntax.raise._
 
 import scala.util.Try
 
@@ -25,7 +24,7 @@ object utils {
       enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
     }
 
-  @inline def addressToErgoTree[F[_]: Raise[*[_], Err.AddressDecodingFailed]: Applicative](
+  @inline def addressToErgoTree[F[_]: ContravariantRaise[*[_], Err.AddressDecodingFailed]: Applicative](
     address: Address
   )(implicit enc: ErgoAddressEncoder): F[ErgoTree] =
     enc
@@ -33,9 +32,9 @@ object utils {
       .map(_.script)
       .toEither
       .leftMap(e => Err.AddressDecodingFailed(address, Option(e.getMessage)))
-      .liftToRaise
+      .toRaise
 
-  @inline def addressToErgoTreeHex[F[_]: Raise[*[_], Err]: Monad](
+  @inline def addressToErgoTreeHex[F[_]: ContravariantRaise[*[_], Err]: Monad](
     address: Address
   )(implicit enc: ErgoAddressEncoder): F[HexString] =
     addressToErgoTree[F](address).flatMap(tree => HexString.fromString(Base16.encode(tree.bytes)))

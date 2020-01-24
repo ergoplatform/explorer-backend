@@ -13,11 +13,12 @@ import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.Err.ProcessingErr
-import org.ergoplatform.explorer.algebra.Raise
-import org.ergoplatform.explorer.syntax.either._
 import org.ergoplatform.explorer.constraints._
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
+import tofu.Raise
+import tofu.Raise.ContravariantRaise
+import tofu.syntax.raise._
 
 package object explorer {
 
@@ -136,11 +137,11 @@ package object explorer {
       jsonCodec.meta.schema.description("Ergo Address")
 
     def fromString[
-      F[_]: Raise[*[_], ProcessingErr.RefinementFailed]: Applicative
+      F[_]: ContravariantRaise[*[_], ProcessingErr.RefinementFailed]: Applicative
     ](s: String): F[Address] =
       refineV[Base58Spec](s)
         .leftMap(ProcessingErr.RefinementFailed)
-        .liftToRaise[F]
+        .toRaise[F]
         .map(Address.apply)
   }
 
@@ -174,11 +175,11 @@ package object explorer {
       jsonCodec.meta.schema.description("Hex-encoded string")
 
     def fromString[
-      F[_]: Raise[*[_], ProcessingErr.RefinementFailed]: Applicative
+      F[_]: ContravariantRaise[*[_], ProcessingErr.RefinementFailed]: Applicative
     ](s: String): F[HexString] =
       refineV[HexStringSpec](s)
         .leftMap(ProcessingErr.RefinementFailed)
-        .liftToRaise[F]
+        .toRaise[F]
         .map(HexString.apply)
   }
 
@@ -196,11 +197,11 @@ package object explorer {
     implicit def decoder: Decoder[UrlString] = deriving
 
     def fromString[
-      F[_]: Raise[*[_], ProcessingErr.RefinementFailed]: Applicative
+      F[_]: ContravariantRaise[*[_], ProcessingErr.RefinementFailed]: Applicative
     ](s: String): F[UrlString] =
       refineV[Url](s)
         .leftMap(ProcessingErr.RefinementFailed)
-        .liftToRaise[F]
+        .toRaise[F]
         .map(UrlString.apply)
   }
 

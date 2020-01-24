@@ -19,7 +19,6 @@ import monocle.macros.syntax.lens._
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.ProcessingErr
 import org.ergoplatform.explorer.Id
-import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
@@ -28,13 +27,14 @@ import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.Settings
+import tofu.Raise.ContravariantRaise
 
 /** Fetches new blocks from the network divide them into
   * separate entities and finally puts them into db.
   */
 final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
-  D[_]: Raise[*[_], ProcessingErr]: Monad
+  D[_]: ContravariantRaise[*[_], ProcessingErr]: Monad
 ](
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: Settings,

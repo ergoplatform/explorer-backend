@@ -18,7 +18,7 @@ object versions {
   val ZioVersion             = "1.0.0-RC16"
   val ZioCatsVersion         = "2.0.0.0-RC6"
   val MonocleVersion         = "2.0.0"
-  val TofuVersion            = "0.6.1"
+  val TofuVersion            = "0.6.2"
 
   val SimulacrumVersion = "0.19.0"
 

@@ -5,17 +5,17 @@ import cats.syntax.applicative._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.ergoplatform.explorer.Err.ProcessingErr
-import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, Id}
 import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
-import org.ergoplatform.explorer.syntax.raise._
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import tofu.Raise.ContravariantRaise
+import tofu.syntax.raise._
 
 import scala.util.Try
 
@@ -47,7 +47,7 @@ final case class BlockInfo(
 
 object BlockInfo {
 
-  def fromApi[F[_]: Raise[*[_], ProcessingErr]: Monad](
+  def fromApi[F[_]: ContravariantRaise[*[_], ProcessingErr]: Monad](
     apiBlock: ApiFullBlock,
     parentBlockOpt: Option[BlockInfo]
   )(protocolSettings: ProtocolSettings): F[BlockInfo] =
@@ -97,7 +97,7 @@ object BlockInfo {
       )
     }
 
-  private def minerRewardAddress[F[_]: Raise[*[_], ProcessingErr]: Monad](
+  private def minerRewardAddress[F[_]: ContravariantRaise[*[_], ProcessingErr]: Monad](
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): F[Address] =
     Base16

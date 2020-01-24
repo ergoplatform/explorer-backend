@@ -9,7 +9,6 @@ import cats.{Monad, ~>}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
@@ -17,8 +16,9 @@ import org.ergoplatform.explorer.http.api.v0.models.{UInputInfo, UOutputInfo, UT
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.{Address, Err, HexString, TxId}
 import org.ergoplatform.explorer.syntax.streamEffect._
-import org.ergoplatform.explorer.syntax.option._
 import scorex.util.encode.Base16
+import tofu.Raise.ContravariantRaise
+import tofu.syntax.raise._
 
 /** A service providing an access to unconfirmed transactions data.
   */
@@ -47,12 +47,12 @@ trait OffChainService[F[_], S[_[_], _]] {
 
 object OffChainService {
 
-  def apply[F[_], D[_]: Raise[*[_], Err]: Monad: LiftConnectionIO](xa: D ~> F)(
+  def apply[F[_], D[_]: ContravariantRaise[*[_], Err]: Monad: LiftConnectionIO](xa: D ~> F)(
     implicit e: ErgoAddressEncoder
   ): OffChainService[F, Stream] =
     new Live(UTransactionRepo[D], UInputRepo[D], UOutputRepo[D], UAssetRepo[D])(xa)
 
-  final private class Live[F[_], D[_]: Raise[*[_], Err]: Monad](
+  final private class Live[F[_], D[_]: ContravariantRaise[*[_], Err]: Monad](
     txRepo: UTransactionRepo[D, Stream],
     inRepo: UInputRepo[D, Stream],
     outRepo: UOutputRepo[D, Stream],
@@ -91,7 +91,7 @@ object OffChainService {
       for {
         ins       <- inRepo.getAllByTxId(tx.id)
         outs      <- outRepo.getAllByTxId(tx.id)
-        boxIdsNel <- outs.map(_.boxId).toNel.liftTo[D](Err.InconsistentDbData("Empty outputs"))
+        boxIdsNel <- outs.map(_.boxId).toNel.orRaise[D](Err.InconsistentDbData("Empty outputs"))
         assets    <- assetRepo.getAllByBoxIds(boxIdsNel)
       } yield UTransactionInfo(tx, ins, outs, assets)
   }

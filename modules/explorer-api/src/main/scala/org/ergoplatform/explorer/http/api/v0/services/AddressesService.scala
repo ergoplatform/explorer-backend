@@ -5,21 +5,17 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{~>, Monad}
+import cats.{Monad, ~>}
 import mouse.anyf._
 import fs2.Stream
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.algebra.Raise
 import org.ergoplatform.explorer.db.models.{Asset, UAsset}
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{
-  AddressInfo,
-  AssetInfo,
-  TransactionInfo
-}
+import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetInfo, TransactionInfo}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.{Address, Err, TokenId}
+import tofu.Raise.ContravariantRaise
 
 /** A service providing an access to the addresses data.
   */
@@ -40,7 +36,7 @@ trait AddressesService[F[_], S[_[_], _]] {
 
 object AddressesService {
 
-  final private class Live[F[_], D[_]: Raise[*[_], Err]: Monad](
+  final private class Live[F[_], D[_]: ContravariantRaise[*[_], Err]: Monad](
     transactionRepo: TransactionRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],
