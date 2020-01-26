@@ -119,6 +119,6 @@ object AddressesService {
       } yield result).translate(xa)
 
     def getAssetHoldersAddresses(tokenId: TokenId, paging: Paging): Stream[F, Address] =
-      ???
+      assetRepo.getAllHoldingAddresses(tokenId, paging.offset, paging.limit).translate(xa)
   }
 }
