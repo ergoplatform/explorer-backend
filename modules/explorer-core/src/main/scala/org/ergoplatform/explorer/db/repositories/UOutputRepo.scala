@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import fs2.Stream
 import cats.implicits._
 import doobie.free.implicits._
@@ -30,6 +31,10 @@ trait UOutputRepo[D[_], S[_[_], _]] {
     */
   def getAllByTxId(txId: TxId): D[List[UOutput]]
 
+  /** Get all unconfirmed outputs related to transaction with a given list of `txId`.
+   */
+  def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UOutput]]
+
   /** Get all unconfirmed outputs belonging to the given `ergoTree`.
     */
   def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]]
@@ -59,6 +64,9 @@ object UOutputRepo {
 
     def getAllByTxId(txId: TxId): D[List[UOutput]] =
       QS.getAllByTxId(txId).liftConnectionIO
+
+    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UOutput]] =
+      QS.getAllByTxIds(txIds).liftConnectionIO
 
     def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]] =
       QS.getAllByErgoTree(ergoTree).liftConnectionIO

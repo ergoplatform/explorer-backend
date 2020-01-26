@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.protocol
 import cats.syntax.either._
 import cats.syntax.flatMap._
 import cats.{Applicative, Monad}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.{Address, Err, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import scorex.util.encode.Base16
@@ -24,14 +25,14 @@ object utils {
       enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
     }
 
-  @inline def addressToErgoTree[F[_]: ContravariantRaise[*[_], Err.AddressDecodingFailed]: Applicative](
+  @inline def addressToErgoTree[F[_]: ContravariantRaise[*[_], AddressDecodingFailed]: Applicative](
     address: Address
   )(implicit enc: ErgoAddressEncoder): F[ErgoTree] =
     enc
       .fromString(address.unwrapped)
       .map(_.script)
       .toEither
-      .leftMap(e => Err.AddressDecodingFailed(address, Option(e.getMessage)))
+      .leftMap(e => AddressDecodingFailed(address, Option(e.getMessage)))
       .toRaise
 
   @inline def addressToErgoTreeHex[F[_]: ContravariantRaise[*[_], Err]: Monad](

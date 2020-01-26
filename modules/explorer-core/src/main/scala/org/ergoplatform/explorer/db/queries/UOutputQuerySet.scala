@@ -1,9 +1,11 @@
 package org.ergoplatform.explorer.db.queries
 
+import cats.data.NonEmptyList
 import fs2.Stream
 import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.Fragments.in
 import org.ergoplatform.explorer.{HexString, TxId}
 import org.ergoplatform.explorer.db.models.UOutput
 
@@ -29,6 +31,9 @@ object UOutputQuerySet extends QuerySet {
 
   def getAllByTxId(txId: TxId): ConnectionIO[List[UOutput]] =
     sql"select * from node_u_outputs where tx_id = $txId".query[UOutput].to[List]
+
+  def getAllByTxIds(txIds: NonEmptyList[TxId]): ConnectionIO[List[UOutput]] =
+    in(sql"select * from node_u_outputs where tx_id", txIds).query[UOutput].to[List]
 
   def getAllByErgoTree(ergoTree: HexString): ConnectionIO[List[UOutput]] =
     sql"select * from node_u_outputs where ergo_tree = $ergoTree".query[UOutput].to[List]

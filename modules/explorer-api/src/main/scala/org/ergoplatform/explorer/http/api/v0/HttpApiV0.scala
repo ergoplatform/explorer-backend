@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.http.api.v0
 
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import cats.{Monad, ~>}
-import org.ergoplatform.explorer.Err
+import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.http.api.v0.routes.BlocksRoutes
 import org.ergoplatform.explorer.http.api.v0.services.BlockChainService
@@ -16,7 +16,7 @@ object HttpApiV0 {
 
   def apply[
     F[_]: ConcurrentEffect: ContextShift: Timer,
-    D[_]: LiftConnectionIO: ContravariantRaise[*[_], Err.InconsistentDbData]: Monad
+    D[_]: LiftConnectionIO: ContravariantRaise[*[_], InconsistentDbData]: Monad
   ](settings: HttpSettings)(xa: D ~> F): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(xa))

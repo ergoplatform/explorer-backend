@@ -48,6 +48,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, ExtendedOutput]
 
+  /** Get all outputs related to a given `txId`.
+   */
+  def getAllByTxId(txId: TxId): D[List[ExtendedOutput]]
+
   /** Get all outputs related to a given list of `txId`.
     */
   def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]]
@@ -96,6 +100,9 @@ object OutputRepo {
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).translate(liftK)
+
+    def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
+      QS.getAllByTxId(txId).liftConnectionIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
       QS.getAllByTxIds(txIds).liftConnectionIO

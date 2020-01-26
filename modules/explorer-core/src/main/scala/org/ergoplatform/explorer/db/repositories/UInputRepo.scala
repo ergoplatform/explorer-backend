@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
@@ -29,6 +30,10 @@ trait UInputRepo[D[_], S[_[_], _]] {
   /** Get all inputs related to transaction with a given `txId`.
     */
   def getAllByTxId(txId: TxId): D[List[UInput]]
+
+  /** Get all inputs related to transaction with a given list of `txId`.
+   */
+  def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UInput]]
 }
 
 object UInputRepo {
@@ -51,5 +56,8 @@ object UInputRepo {
 
     def getAllByTxId(txId: TxId): D[List[UInput]] =
       QS.getAllByTxId(txId).liftConnectionIO
+
+    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UInput]] =
+      QS.getAllByTxIxs(txIds).liftConnectionIO
   }
 }

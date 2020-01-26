@@ -39,16 +39,30 @@ object TransactionInfo {
     assets: List[Asset]
   ): List[TransactionInfo] = {
     val grouppedAssets = assets.groupBy(_.boxId)
-    txs.map { case (tx, numConfirmations) =>
-      val relatedInputs = inputs
-        .filter(_.input.txId == tx.id)
-        .map(InputInfo.apply)
-      val relatedOutputs = outputs.map { out =>
-        OutputInfo(out, grouppedAssets.get(out.output.boxId).toList.flatten)
-      }
-      val id = tx.id
-      val ts = tx.timestamp
-      apply(id, tx.headerId, ts, numConfirmations, relatedInputs, relatedOutputs)
+    txs.map {
+      case (tx, numConfirmations) =>
+        val relatedInputs = inputs
+          .filter(_.input.txId == tx.id)
+          .map(InputInfo.apply)
+        val relatedOutputs = outputs.map { out =>
+          OutputInfo(out, grouppedAssets.get(out.output.boxId).toList.flatten)
+        }
+        val id = tx.id
+        val ts = tx.timestamp
+        apply(id, tx.headerId, ts, numConfirmations, relatedInputs, relatedOutputs)
     }
+  }
+
+  def apply(
+    tx: Transaction,
+    numConfirmations: Int,
+    inputs: List[ExtendedInput],
+    outputs: List[ExtendedOutput],
+    assets: List[Asset]
+  ): TransactionInfo = {
+    val grouppedAssets = assets.groupBy(_.boxId)
+    val ins = inputs.map(InputInfo.apply)
+    val outs = outputs.map(out => OutputInfo(out, grouppedAssets.get(out.output.boxId).toList.flatten))
+    apply(tx.id, tx.headerId, tx.timestamp, numConfirmations, ins, outs)
   }
 }

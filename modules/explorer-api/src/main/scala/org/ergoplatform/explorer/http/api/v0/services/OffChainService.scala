@@ -9,6 +9,7 @@ import cats.{Monad, ~>}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
@@ -91,7 +92,7 @@ object OffChainService {
       for {
         ins       <- inRepo.getAllByTxId(tx.id)
         outs      <- outRepo.getAllByTxId(tx.id)
-        boxIdsNel <- outs.map(_.boxId).toNel.orRaise[D](Err.InconsistentDbData("Empty outputs"))
+        boxIdsNel <- outs.map(_.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs"))
         assets    <- assetRepo.getAllByBoxIds(boxIdsNel)
       } yield UTransactionInfo(tx, ins, outs, assets)
   }
