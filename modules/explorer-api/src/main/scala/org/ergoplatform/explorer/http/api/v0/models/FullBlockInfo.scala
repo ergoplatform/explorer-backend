@@ -32,7 +32,7 @@ object FullBlockInfo {
     adProof: Option[AdProof],
     blockSize: Int
   ): FullBlockInfo = {
-    val txsInfo     = TransactionInfo.batch(numConfirmations, txs, inputs, outputs, assets)
+    val txsInfo     = TransactionInfo.batch(txs.map(_ -> numConfirmations), inputs, outputs, assets)
     val headerInfo  = HeaderInfo(h, blockSize)
     val adProofInfo = adProof.map { AdProofInfo.apply }
     val blockExtensionInfo = BlockExtensionInfo(extension)

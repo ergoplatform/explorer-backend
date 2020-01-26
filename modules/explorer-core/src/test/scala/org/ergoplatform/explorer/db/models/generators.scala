@@ -77,10 +77,11 @@ object generators {
     for {
       id       <- txIdGen
       headerId <- idGen
+      height   <- Gen.posNum[Int]
       coinbase <- Gen.oneOf(true, false)
       ts       <- Gen.posNum[Long]
       size     <- Gen.posNum[Int]
-    } yield Transaction(id, headerId, coinbase, ts, size)
+    } yield Transaction(id, headerId, height, coinbase, ts, size)
 
   def headerWithTxsGen(mainChain: Boolean): Gen[(Header, List[Transaction])] =
     for {
@@ -134,10 +135,10 @@ object generators {
 
   def assetGen: Gen[Asset] =
     for {
-      id    <- assetIdGen
-      boxId <- boxIdGen
+      id       <- assetIdGen
+      boxId    <- boxIdGen
       headerId <- idGen
-      amt   <- Gen.posNum[Long]
+      amt      <- Gen.posNum[Long]
     } yield Asset(id, boxId, headerId, amt)
 
   def assetsWithBoxIdGen: Gen[(BoxId, List[Asset])] =

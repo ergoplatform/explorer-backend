@@ -2,5 +2,5 @@ package org.ergoplatform.explorer
 
 package object syntax {
 
-  object streamEffect extends StreamEffectSyntax
+  object stream extends StreamEffectSyntax with StreamOptionSyntax
 }

@@ -15,7 +15,7 @@ import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutpu
 import org.ergoplatform.explorer.http.api.v0.models.{UInputInfo, UOutputInfo, UTransactionInfo}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.{Address, Err, HexString, TxId}
-import org.ergoplatform.explorer.syntax.streamEffect._
+import org.ergoplatform.explorer.syntax.stream._
 import scorex.util.encode.Base16
 import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._

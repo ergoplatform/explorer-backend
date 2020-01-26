@@ -41,7 +41,7 @@ object FlatBlock {
         implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
 
         val outs   = extractOutputs(apiBlock.transactions, apiBlock.header.mainChain, ts)
-        val txs    = extractTxs(apiBlock.transactions, ts)
+        val txs    = extractTxs(apiBlock.transactions, ts, blockInfo.height)
         val inputs = extractInputs(apiBlock.transactions, apiBlock.header.mainChain)
         val assets = extractAssets(apiBlock.transactions)
         FlatBlock(
@@ -56,12 +56,12 @@ object FlatBlock {
         )
       }
 
-  private def extractTxs(apiTxs: ApiBlockTransactions, ts: Long): List[Transaction] = {
+  private def extractTxs(apiTxs: ApiBlockTransactions, ts: Long, height: Int): List[Transaction] = {
     val txs = apiTxs.transactions
     val coinbaseTxOpt = txs.lastOption
-      .map(tx => Transaction(tx.id, apiTxs.headerId, isCoinbase = true, ts, txs.last.size))
+      .map(tx => Transaction(tx.id, apiTxs.headerId, height, isCoinbase = true, ts, txs.last.size))
     val restTxs = txs.init
-      .map(tx => Transaction(tx.id, apiTxs.headerId, isCoinbase = false, ts, tx.size))
+      .map(tx => Transaction(tx.id, apiTxs.headerId, height, isCoinbase = false, ts, tx.size))
     coinbaseTxOpt.toList ++ restTxs
   }
 

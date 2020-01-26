@@ -7,7 +7,8 @@ import org.ergoplatform.explorer.{Id, TxId}
 final case class Transaction(
   id: TxId,
   headerId: Id,
+  inclusionHeight: Int,
   isCoinbase: Boolean,
-  timestamp: Long,     // approx time output appeared in the blockchain
-  size: Int            // transaction size in bytes
+  timestamp: Long, // approx time output appeared in the blockchain
+  size: Int // transaction size in bytes
 )

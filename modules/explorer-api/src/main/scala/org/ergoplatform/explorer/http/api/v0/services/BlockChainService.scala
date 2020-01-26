@@ -17,7 +17,7 @@ import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
-import org.ergoplatform.explorer.syntax.streamEffect._
+import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{Err, Id}
 import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
