@@ -8,15 +8,14 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
 import jawnfs2._
-import org.ergoplatform.explorer.protocol.models.{
-  ApiFullBlock,
-  ApiNodeInfo,
-  ApiTransaction
-}
+import org.ergoplatform.explorer.Err.ProcessingErr.TransactionDecodingFailed
+import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
 import org.ergoplatform.explorer.settings.Settings
 import org.ergoplatform.explorer.{Err, Id, UrlString}
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
+import tofu.Raise.ContravariantRaise
+import tofu.syntax.raise._
 
 /** A service providing an access to the Ergo network.
   */
@@ -49,7 +48,7 @@ object ErgoNetworkService {
       .create[F]
       .map(logger => new Live[F](client, logger, settings))
 
-  final private class Live[F[_]: Sync](
+  final private class Live[F[_]: Sync: ContravariantRaise[*[_], TransactionDecodingFailed]](
     client: Client[F],
     logger: Logger[F],
     settings: Settings
@@ -90,7 +89,7 @@ object ErgoNetworkService {
             implicitly[Decoder[ApiTransaction]]
               .decodeJson(json)
               .fold(
-                _ => Stream.raiseError[F](Err("Json decoding failed")),
+                _ => Stream.eval(TransactionDecodingFailed(json.noSpaces).raise),
                 Stream.emit
               )
           }

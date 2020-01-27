@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.protocol
 import cats.syntax.either._
 import cats.syntax.flatMap._
 import cats.{Applicative, Monad}
+import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.{Address, Err, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
@@ -35,8 +36,10 @@ object utils {
       .leftMap(e => AddressDecodingFailed(address, Option(e.getMessage)))
       .toRaise
 
-  @inline def addressToErgoTreeHex[F[_]: ContravariantRaise[*[_], Err]: Monad](
-    address: Address
-  )(implicit enc: ErgoAddressEncoder): F[HexString] =
+  @inline def addressToErgoTreeHex[
+    F[_]: ContravariantRaise[*[_], AddressDecodingFailed]
+        : ContravariantRaise[*[_], RefinementFailed]
+        : Monad
+  ](address: Address)(implicit enc: ErgoAddressEncoder): F[HexString] =
     addressToErgoTree[F](address).flatMap(tree => HexString.fromString(Base16.encode(tree.bytes)))
 }

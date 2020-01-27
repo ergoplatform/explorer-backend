@@ -1,69 +1,43 @@
 package org.ergoplatform.explorer
 
-import sttp.tapir.{CodecForOptional, CodecFormat, Schema}
-import sttp.tapir.json.circe._
-import io.circe.generic.auto._
-
 import scala.util.control.NoStackTrace
 
-class Err(msg: String) extends Exception(msg) with NoStackTrace {
-
+trait Err extends Exception with NoStackTrace {
+  def msg: String
   override def getMessage: String = msg
 }
 
 object Err {
 
-  def apply(msg: String): Err = new Err(msg)
-
-  abstract class ApiErr(msg: String) extends Err(msg)
-
-  object ApiErr {
-
-    final case class NotFound(what: String) extends ApiErr(s"$what not found")
-
-    final case class BadInput(details: String) extends ApiErr(s"Bad input: $details")
-
-    final case class UnknownErr(msg: String) extends ApiErr(s"Unknown error: $msg")
-
-    implicit val codec: CodecForOptional[ApiErr, CodecFormat.Json, _] =
-      implicitly[CodecForOptional[ApiErr, CodecFormat.Json, _]]
-
-    private val unknownErrorS = implicitly[Schema[UnknownErr]]
-    private val notFoundS     = implicitly[Schema[NotFound]]
-    private val badInputS     = implicitly[Schema[BadInput]]
-    implicit val schema: Schema[ApiErr] =
-      Schema.oneOf[ApiErr, String](_.getMessage, _.toString)(
-        "unknownError" -> unknownErrorS,
-        "notFound"     -> notFoundS,
-        "badInput"     -> badInputS
-      )
+  final case class RefinementFailed(details: String) extends Err {
+    val msg: String = s"Refinement failed: $details"
   }
 
-  abstract class ProcessingErr(msg: String) extends Err(msg)
+  abstract class ProcessingErr(val msg: String) extends Err
 
   object ProcessingErr {
 
     final case class NoBlocksWritten(height: Int)
       extends ProcessingErr(s"No blocks written at height $height")
 
-    final case class RefinementFailed(details: String)
-      extends ProcessingErr(s"Refinement failed: $details")
-
     final case class EcPointDecodingFailed(details: String)
       extends ProcessingErr(s"EcPoint decoding failed: $details")
+
+    final case class TransactionDecodingFailed(json: String)
+      extends ProcessingErr(s"Failed to decode transaction from json: $json")
   }
 
-  abstract class RequestProcessingErr(msg: String) extends Err(msg)
+  abstract class RequestProcessingErr(val msg: String) extends Err
 
   object RequestProcessingErr {
 
     final case class InconsistentDbData(details: String)
-      extends Err(s"Inconsistent blockchain data in db: $details")
+      extends RequestProcessingErr(s"Inconsistent blockchain data in db: $details")
 
     final case class AddressDecodingFailed(
       address: Address,
       reasonOpt: Option[String] = None
-    ) extends Err(
+    ) extends RequestProcessingErr(
         s"Failed to decode address: `$address`" + reasonOpt
           .map(s => s", reason: $s")
           .getOrElse("")

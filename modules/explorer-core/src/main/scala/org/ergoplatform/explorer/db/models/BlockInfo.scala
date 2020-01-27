@@ -4,7 +4,7 @@ import cats.Monad
 import cats.syntax.applicative._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import org.ergoplatform.explorer.Err.ProcessingErr
+import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
@@ -47,7 +47,11 @@ final case class BlockInfo(
 
 object BlockInfo {
 
-  def fromApi[F[_]: ContravariantRaise[*[_], ProcessingErr]: Monad](
+  def fromApi[
+    F[_]: ContravariantRaise[*[_], ProcessingErr]
+        : ContravariantRaise[*[_], RefinementFailed]
+        : Monad
+  ](
     apiBlock: ApiFullBlock,
     parentBlockOpt: Option[BlockInfo]
   )(protocolSettings: ProtocolSettings): F[BlockInfo] =
@@ -97,7 +101,11 @@ object BlockInfo {
       )
     }
 
-  private def minerRewardAddress[F[_]: ContravariantRaise[*[_], ProcessingErr]: Monad](
+  private def minerRewardAddress[
+    F[_]: ContravariantRaise[*[_], ProcessingErr]
+        : ContravariantRaise[*[_], RefinementFailed]
+        : Monad
+  ](
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): F[Address] =
     Base16

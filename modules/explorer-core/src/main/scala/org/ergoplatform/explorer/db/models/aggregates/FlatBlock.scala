@@ -5,7 +5,7 @@ import cats.instances.try_._
 import cats.syntax.functor._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
-import org.ergoplatform.explorer.Err.ProcessingErr
+import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.protocol.models.{ApiBlockTransactions, ApiFullBlock}
 import org.ergoplatform.explorer.protocol.utils
@@ -30,7 +30,11 @@ final case class FlatBlock(
 
 object FlatBlock {
 
-  def fromApi[F[_]: ContravariantRaise[*[_], ProcessingErr]: Monad](
+  def fromApi[
+    F[_]: ContravariantRaise[*[_], ProcessingErr]
+        : ContravariantRaise[*[_], RefinementFailed]
+        : Monad
+  ](
     apiBlock: ApiFullBlock,
     parentInfoOpt: Option[BlockInfo],
     ts: Long

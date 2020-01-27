@@ -4,7 +4,7 @@ import cats.ApplicativeError
 import cats.syntax.applicativeError._
 import cats.syntax.either._
 import cats.syntax.functor._
-import org.ergoplatform.explorer.Err.ApiErr
+import org.ergoplatform.explorer.http.api.ApiErr
 
 final class ApplicativeThrowOps[
   F[_]: ApplicativeError[*[_], Throwable],

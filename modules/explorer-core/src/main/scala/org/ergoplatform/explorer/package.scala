@@ -12,7 +12,7 @@ import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
-import org.ergoplatform.explorer.Err.ProcessingErr
+import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.constraints._
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
@@ -137,10 +137,10 @@ package object explorer {
       jsonCodec.meta.schema.description("Ergo Address")
 
     def fromString[
-      F[_]: ContravariantRaise[*[_], ProcessingErr.RefinementFailed]: Applicative
+      F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[Address] =
       refineV[Base58Spec](s)
-        .leftMap(ProcessingErr.RefinementFailed)
+        .leftMap(RefinementFailed)
         .toRaise[F]
         .map(Address.apply)
   }
@@ -175,10 +175,10 @@ package object explorer {
       jsonCodec.meta.schema.description("Hex-encoded string")
 
     def fromString[
-      F[_]: ContravariantRaise[*[_], ProcessingErr.RefinementFailed]: Applicative
+      F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[HexString] =
       refineV[HexStringSpec](s)
-        .leftMap(ProcessingErr.RefinementFailed)
+        .leftMap(RefinementFailed)
         .toRaise[F]
         .map(HexString.apply)
   }
@@ -197,10 +197,10 @@ package object explorer {
     implicit def decoder: Decoder[UrlString] = deriving
 
     def fromString[
-      F[_]: ContravariantRaise[*[_], ProcessingErr.RefinementFailed]: Applicative
+      F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[UrlString] =
       refineV[Url](s)
-        .leftMap(ProcessingErr.RefinementFailed)
+        .leftMap(RefinementFailed)
         .toRaise[F]
         .map(UrlString.apply)
   }

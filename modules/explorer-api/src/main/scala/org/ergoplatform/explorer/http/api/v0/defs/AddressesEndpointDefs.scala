@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.defs
 
+import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.{Address, TokenId}
-import org.ergoplatform.explorer.Err.ApiErr
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, TransactionInfo}

@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0
 
 import io.circe.generic.auto._
-import org.ergoplatform.explorer.Err.ApiErr
+import org.ergoplatform.explorer.http.api.ApiErr
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._

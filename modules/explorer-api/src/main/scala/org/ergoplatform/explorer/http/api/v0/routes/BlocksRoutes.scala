@@ -5,7 +5,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.semigroupk._
-import org.ergoplatform.explorer.Err.ApiErr
+import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.models.Items
 import org.ergoplatform.explorer.http.api.v0.services.BlockChainService
 import org.ergoplatform.explorer.http.api.syntax.applicativeThrow._

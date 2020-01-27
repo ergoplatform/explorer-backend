@@ -17,7 +17,7 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
-import org.ergoplatform.explorer.Err.ProcessingErr
+import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
@@ -34,7 +34,9 @@ import tofu.Raise.ContravariantRaise
   */
 final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
-  D[_]: ContravariantRaise[*[_], ProcessingErr]: Monad
+  D[_]: ContravariantRaise[*[_], ProcessingErr]
+      : ContravariantRaise[*[_], RefinementFailed]
+      : Monad
 ](
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: Settings,
