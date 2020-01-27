@@ -18,6 +18,7 @@ object ApiSpendingProof {
       // here decoding of refined type field value has to be handled manually as node API
       // may return an empty string (instead of `null`) which fails the refinement.
       proofBytes <- c.downField("proofBytes").as[String].flatMap { s =>
+                      // TODO create an utility method for this specific conversion (use comments above for ScalaDoc)
                       HexString.fromString[Either[Throwable, *]](s) match {
                         case Left(_) => Right[DecodingFailure, Option[HexString]](none)
                         case r @ Right(_) =>

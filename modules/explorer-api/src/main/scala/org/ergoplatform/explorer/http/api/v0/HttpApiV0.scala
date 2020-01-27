@@ -12,6 +12,7 @@ import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
 import tofu.Raise.ContravariantRaise
 
+// TODO scaladoc
 object HttpApiV0 {
 
   def apply[
