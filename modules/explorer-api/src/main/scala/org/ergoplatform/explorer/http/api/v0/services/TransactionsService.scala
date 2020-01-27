@@ -1,22 +1,19 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.syntax.list._
+import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import cats.syntax.applicative._
+import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.instances.list._
-import cats.{~>, Monad}
-import mouse.anyf._
+import cats.{Monad, ~>}
 import fs2.Stream
+import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, UTransactionInfo}
-import org.ergoplatform.explorer.protocol.utils
+import org.ergoplatform.explorer.http.api.v0.models.TransactionInfo
 import org.ergoplatform.explorer.syntax.stream._
-import org.ergoplatform.explorer.{Address, Err, TxId}
-import tofu.Raise.ContravariantRaise
+import org.ergoplatform.explorer.{Address, TxId}
 
 /** A service providing an access to the transactions data.
   */
@@ -29,24 +26,16 @@ trait TransactionsService[F[_], S[_[_], _]] {
   /** Get transactions related to a given `address`.
     */
   def getTxsInfoByAddress(address: Address, paging: Paging): S[F, TransactionInfo]
-
-  /** Get unconfirmed transactions related to a given `address`.
-    */
-  def getUnconfirmedTxsByAddress(address: Address, paging: Paging): S[F, UTransactionInfo]
 }
 
 object TransactionsService {
 
-  final private class Live[F[_], D[_]: ContravariantRaise[*[_], Err]: Monad](
+  final private class Live[F[_], D[_]: Monad](
     headerRepo: HeaderRepo[D],
     transactionRepo: TransactionRepo[D, Stream],
-    uTransactionRepo: UTransactionRepo[D, Stream],
     inputRepo: InputRepo[D],
-    uInputRepo: UInputRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream],
-    uOutputRepo: UOutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
-    uAssetRepo: UAssetRepo[D]
   )(xa: D ~> F)(implicit e: ErgoAddressEncoder)
     extends TransactionsService[F, Stream] {
 
@@ -82,22 +71,5 @@ object TransactionsService {
                    .emits(TransactionInfo.batch(txsWithHeights, ins, outs, assets))
                    .covary[D]
       } yield txInfo).translate(xa)
-
-    def getUnconfirmedTxsByAddress(
-      address: Address,
-      paging: Paging
-    ): Stream[F, UTransactionInfo] =
-      (for {
-        ergoTree <- utils.addressToErgoTreeHex(address).asStream
-        txChunk <- uTransactionRepo
-                    .getAllRelatedToErgoTree(ergoTree, paging.offset, paging.limit)
-                    .chunkN(100)
-        txIdsNel  <- txChunk.map(_.id).toList.toNel.toStream.covary[D]
-        ins       <- uInputRepo.getAllByTxIds(txIdsNel).asStream
-        outs      <- uOutputRepo.getAllByTxIds(txIdsNel).asStream
-        boxIdsNel <- outs.map(_.boxId).toNel.toStream.covary[D]
-        assets    <- uAssetRepo.getAllByBoxIds(boxIdsNel).asStream
-        utxInfo   <- Stream.emits(UTransactionInfo.batch(txChunk.toList, ins, outs, assets))
-      } yield utxInfo).translate(xa)
   }
 }

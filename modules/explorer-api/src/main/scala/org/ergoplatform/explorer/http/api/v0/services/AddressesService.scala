@@ -5,21 +5,18 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{~>, Monad}
+import cats.{Monad, ~>}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.Err.RefinementFailed
+import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.db.models.{Asset, UAsset}
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{
-  AddressInfo,
-  AssetInfo,
-  TransactionInfo
-}
+import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetInfo}
 import org.ergoplatform.explorer.protocol.utils
-import org.ergoplatform.explorer.syntax.stream._
-import org.ergoplatform.explorer.{Address, Err, TokenId}
+import org.ergoplatform.explorer.{Address, TokenId}
 import tofu.Raise.ContravariantRaise
 
 /** A service providing an access to the addresses data.
@@ -37,7 +34,12 @@ trait AddressesService[F[_], S[_[_], _]] {
 
 object AddressesService {
 
-  final private class Live[F[_], D[_]: ContravariantRaise[*[_], Err]: Monad](
+  final private class Live[
+    F[_],
+    D[_]: ContravariantRaise[*[_], AddressDecodingFailed]
+        : ContravariantRaise[*[_], RefinementFailed]
+        : Monad
+  ](
     outputRepo: OutputRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],

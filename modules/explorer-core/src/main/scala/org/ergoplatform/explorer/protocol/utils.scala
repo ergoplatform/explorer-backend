@@ -5,7 +5,7 @@ import cats.syntax.flatMap._
 import cats.{Applicative, Monad}
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
-import org.ergoplatform.explorer.{Address, Err, HexString}
+import org.ergoplatform.explorer.{Address, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import scorex.util.encode.Base16
 import sigmastate.Values.ErgoTree
