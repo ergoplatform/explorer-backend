@@ -7,6 +7,7 @@ import fs2.Stream
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, TokenId}
 
 /** [[Asset]] data access operations.
@@ -36,6 +37,16 @@ trait AssetRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, Address]
+
+  /** Get boxes where all tokens where issued
+    * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
+    */
+  def getAllIssuingBoxes: D[List[ExtendedOutput]]
+
+  /** Get boxes where given tokens where issued
+    * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
+    */
+//  def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): D[List[ExtendedOutput]]
 }
 
 object AssetRepo {
@@ -66,5 +77,8 @@ object AssetRepo {
     ): Stream[D, Address] =
       QS.getAllHoldingAddresses(tokenId, offset, limit)
         .translate(LiftConnectionIO[D].liftConnectionIOK)
+
+    override def getAllIssuingBoxes: D[List[ExtendedOutput]] =
+      QS.getAllIssuingBoxes.liftConnectionIO
   }
 }
