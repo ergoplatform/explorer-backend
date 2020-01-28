@@ -153,7 +153,7 @@ CREATE TABLE node_u_inputs
     PRIMARY KEY (box_id, tx_id)
 );
 
-CREATE INDEX "node_inputs__tx_id" ON node_u_inputs (tx_id);
+CREATE INDEX "node_u_inputs__tx_id" ON node_u_inputs (tx_id);
 CREATE INDEX "node_u_inputs__box_id" ON node_u_inputs (box_id);
 
 /* Outputs containing in unconfirmed transactions.
