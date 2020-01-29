@@ -8,6 +8,7 @@ import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.syntax.runConnectionIO._
+import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -49,7 +50,7 @@ class AssetRepoSpec
             assetRepo.insert(token).runWithIO()
             outputRepo.insert(out).runWithIO()
             // use issued token in new output
-            val outUsingToken = outputGen(true).sample.get
+            val outUsingToken = outputGen(true).retryUntil(_ => true).sample.get
             assetRepo.insert(token.copy(boxId = outUsingToken.boxId)).runWithIO()
             outputRepo.insert(outUsingToken).runWithIO()
         }
