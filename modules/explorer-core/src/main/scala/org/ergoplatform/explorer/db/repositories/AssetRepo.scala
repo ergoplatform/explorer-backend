@@ -27,7 +27,7 @@ trait AssetRepo[D[_], S[_[_], _]] {
   def getAllByBoxId(boxId: BoxId): D[List[Asset]]
 
   /** Get all assets belonging to a given list of `boxId`.
-   */
+    */
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]]
 
   /** Get all addresses holding an asset with a given `assetId`.
