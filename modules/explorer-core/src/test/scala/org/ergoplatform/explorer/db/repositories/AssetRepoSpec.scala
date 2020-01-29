@@ -36,7 +36,7 @@ class AssetRepoSpec
 
   property("insert/getIssuingBoxes") {
     withLiveRepos[ConnectionIO] { (assetRepo, outputRepo, inputRepo) =>
-      assetRepo.getAllIssuingBoxes.runWithIO() shouldBe empty
+      assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() shouldBe empty
 
       val out   = outputGen(true).sample.get
       val asset = assetGen.sample.get.copy(boxId = out.boxId)
@@ -47,7 +47,7 @@ class AssetRepoSpec
       assetRepo.insert(asset).runWithIO()
       outputRepo.insert(out).runWithIO()
 
-      assetRepo.getAllIssuingBoxes.runWithIO() should
+      assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() should
       contain theSameElementsAs List(ExtendedOutput(out, None))
     }
   }
