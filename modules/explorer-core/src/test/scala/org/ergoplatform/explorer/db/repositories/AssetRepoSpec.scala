@@ -40,9 +40,14 @@ class AssetRepoSpec
         case (input, out, asset) =>
           assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() shouldBe empty
 
+          // issue a token
           inputRepo.insert(input).runWithIO()
           assetRepo.insert(asset).runWithIO()
           outputRepo.insert(out).runWithIO()
+          // use issued token in new output
+          val outUsingToken = outputGen(true).sample.get
+          assetRepo.insert(asset.copy(boxId = outUsingToken.boxId)).runWithIO()
+          outputRepo.insert(outUsingToken).runWithIO()
 
           assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() should
           contain theSameElementsAs List(ExtendedOutput(out, None))
