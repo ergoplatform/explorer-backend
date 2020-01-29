@@ -36,19 +36,17 @@ class AssetRepoSpec
 
   property("insert/getIssuingBoxes") {
     withLiveRepos[ConnectionIO] { (assetRepo, outputRepo, inputRepo) =>
-      assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() shouldBe empty
+      forSingleInstance(issueTokenGen) {
+        case (input, out, asset) =>
+          assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() shouldBe empty
 
-      val out   = outputGen(true).sample.get
-      val asset = assetGen.sample.get.copy(boxId = out.boxId)
-      import io.estatico.newtype.ops._
-      val inputBoxId = asset.tokenId.toString.coerce[BoxId]
-      val input      = inputGen(true).sample.get.copy(txId = out.txId, boxId = inputBoxId)
-      inputRepo.insert(input).runWithIO()
-      assetRepo.insert(asset).runWithIO()
-      outputRepo.insert(out).runWithIO()
+          inputRepo.insert(input).runWithIO()
+          assetRepo.insert(asset).runWithIO()
+          outputRepo.insert(out).runWithIO()
 
-      assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() should
-      contain theSameElementsAs List(ExtendedOutput(out, None))
+          assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() should
+          contain theSameElementsAs List(ExtendedOutput(out, None))
+      }
     }
   }
 
