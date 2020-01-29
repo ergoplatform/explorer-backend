@@ -46,7 +46,7 @@ trait AssetRepo[D[_], S[_[_], _]] {
   /** Get boxes where given tokens where issued
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
-//  def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): D[List[ExtendedOutput]]
+  def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): D[List[ExtendedOutput]]
 }
 
 object AssetRepo {
@@ -80,5 +80,10 @@ object AssetRepo {
 
     override def getAllIssuingBoxes: Stream[D, ExtendedOutput] =
       QS.getAllIssuingBoxes.translate(LiftConnectionIO[D].liftConnectionIOK)
+
+    override def getIssuingBoxes(
+      tokenIds: NonEmptyList[TokenId]
+    ): D[List[ExtendedOutput]] =
+      QS.getIssuingBoxes(tokenIds).liftConnectionIO
   }
 }

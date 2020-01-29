@@ -75,4 +75,32 @@ object AssetQuerySet extends QuerySet {
          |  and a.token_id = i_issued.box_id
          |""".stripMargin.query[ExtendedOutput].stream
 
+  def getIssuingBoxes(
+    tokenIds: NonEmptyList[TokenId]
+  ): ConnectionIO[List[ExtendedOutput]] =
+    (sql"""
+          |select
+          |  o.box_id,
+          |  o.tx_id,
+          |  o.value,
+          |  o.creation_height,
+          |  o.index,
+          |  o.ergo_tree,
+          |  o.address,
+          |  o.additional_registers,
+          |  o.timestamp,
+          |  o.main_chain,
+          |  i_spent.tx_id
+          |from node_outputs o
+          |left join node_assets a on o.box_id = a.box_id
+          |left join node_inputs i_spent on o.box_id = i_spent.box_id
+          |left join node_inputs i_issued on a.token_id = i_issued.box_id
+          |where o.main_chain = true
+          |  and i_issued.tx_id = o.tx_id
+          |  and o.box_id = a.box_id
+          |  and a.token_id = i_issued.box_id
+          |""".stripMargin ++ Fragments.in(fr"and a.token_id", tokenIds))
+      .query[ExtendedOutput]
+      .to[List]
+
 }

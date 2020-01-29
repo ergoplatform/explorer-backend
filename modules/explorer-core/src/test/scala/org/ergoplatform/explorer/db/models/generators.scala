@@ -199,4 +199,7 @@ object generators {
                 _.copy(txId = out.txId, boxId = token.tokenId.toString.coerce[BoxId])
               )
     } yield (input, out, token)
+
+  def issueTokensGen(num: Int): Gen[List[(Input, Output, Asset)]] =
+    Gen.listOfN(num, issueTokenGen)
 }
