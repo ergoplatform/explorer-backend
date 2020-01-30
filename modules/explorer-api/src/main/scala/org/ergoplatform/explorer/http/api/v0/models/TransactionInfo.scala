@@ -60,9 +60,8 @@ object TransactionInfo {
     outputs: List[ExtendedOutput],
     assets: List[Asset]
   ): TransactionInfo = {
-    val grouppedAssets = assets.groupBy(_.boxId)
-    val ins = inputs.map(InputInfo.apply)
-    val outs = outputs.map(out => OutputInfo(out, grouppedAssets.get(out.output.boxId).toList.flatten))
+    val ins  = inputs.map(InputInfo.apply)
+    val outs = OutputInfo.batch(outputs, assets)
     apply(tx.id, tx.headerId, tx.timestamp, numConfirmations, ins, outs)
   }
 }

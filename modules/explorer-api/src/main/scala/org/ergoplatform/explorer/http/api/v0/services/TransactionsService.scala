@@ -5,7 +5,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{Monad, ~>}
+import cats.{~>, Monad}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
@@ -35,7 +35,7 @@ object TransactionsService {
     transactionRepo: TransactionRepo[D, Stream],
     inputRepo: InputRepo[D],
     outputRepo: OutputRepo[D, Stream],
-    assetRepo: AssetRepo[D, Stream],
+    assetRepo: AssetRepo[D, Stream]
   )(xa: D ~> F)(implicit e: ErgoAddressEncoder)
     extends TransactionsService[F, Stream] {
 
@@ -47,8 +47,8 @@ object TransactionsService {
         boxIdsNel = outs.map(_.output.boxId).toNel
         assets     <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
         bestHeight <- headerRepo.getBestHeight
-        txInfo = txOpt.map(
-          tx => TransactionInfo(tx, bestHeight - tx.inclusionHeight, ins, outs, assets)
+        txInfo = txOpt.map(tx =>
+          TransactionInfo(tx, bestHeight - tx.inclusionHeight, ins, outs, assets)
         )
       } yield txInfo) ||> xa
 
