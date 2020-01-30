@@ -21,11 +21,10 @@ object HttpApiV0 {
   ](settings: HttpSettings)(xa: D ~> F): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(xa))
-      assetsService     <- Resource.liftF(AssetsService(xa))
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
                .withHttpApp(Router("/" -> BlocksRoutes(blockChainService)).orNotFound)
-               .withHttpApp(Router("/" -> AssetsRoutes(assetsService)).orNotFound)
+               .withHttpApp(Router("/" -> AssetsRoutes(AssetsService(xa))).orNotFound)
                .resource
     } yield http
 }

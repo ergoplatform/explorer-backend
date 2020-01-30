@@ -1,13 +1,9 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.data.NonEmptyList
-import cats.effect.Sync
-import cats.syntax.functor._
 import cats.syntax.list._
 import cats.{~>, Monad}
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -35,19 +31,15 @@ trait AssetsService[F[_], S[_[_], _]] {
 object AssetsService {
 
   def apply[
-    F[_]: Sync,
+    F[_],
     D[_]: LiftConnectionIO: ContravariantRaise[*[_], InconsistentDbData]: Monad
-  ](xa: D ~> F): F[AssetsService[F, Stream]] =
-    Slf4jLogger
-      .create[F]
-      .map { implicit logger =>
-        new Live(
-          AssetRepo[D]
-        )(xa)
-      }
+  ](
+    xa: D ~> F
+  ): AssetsService[F, Stream] =
+    new Live(AssetRepo[D])(xa)
 
   final private class Live[
-    F[_]: Sync: Logger,
+    F[_],
     D[_]: ContravariantRaise[*[_], InconsistentDbData]: Monad
   ](
     assetRepo: AssetRepo[D, Stream]
