@@ -7,7 +7,7 @@ import cats.syntax.functor._
 import doobie.refined.implicits._
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.Refined
-import eu.timepit.refined.{W, refineV}
+import eu.timepit.refined.{refineV, W}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
@@ -51,8 +51,10 @@ package object explorer {
 
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[Id] = deriving
+
     implicit def jsonCodec: Codec.JsonCodec[Id] =
       implicitly[Codec.JsonCodec[String]].map(Id.apply)(_.value)
+
     implicit def schema: Schema[Id] =
       jsonCodec.meta.schema.description("Modifier ID")
   }
@@ -70,8 +72,10 @@ package object explorer {
 
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[TxId] = deriving
+
     implicit def jsonCodec: Codec.JsonCodec[TxId] =
       implicitly[Codec.JsonCodec[String]].map(TxId.apply)(_.value)
+
     implicit def schema: Schema[TxId] =
       jsonCodec.meta.schema.description("Transaction ID")
   }
@@ -93,8 +97,10 @@ package object explorer {
 
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[BoxId] = deriving
+
     implicit def jsonCodec: Codec.JsonCodec[BoxId] =
       implicitly[Codec.JsonCodec[String]].map(BoxId.apply)(_.value)
+
     implicit def schema: Schema[BoxId] =
       jsonCodec.meta.schema.description("Box ID")
   }
@@ -116,8 +122,10 @@ package object explorer {
 
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[TokenId] = deriving
+
     implicit def jsonCodec: Codec.JsonCodec[TokenId] =
       implicitly[Codec.JsonCodec[String]].map(TokenId.apply)(_.value)
+
     implicit def schema: Schema[TokenId] =
       jsonCodec.meta.schema.description("Token ID")
   }
@@ -141,11 +149,13 @@ package object explorer {
         fromString[Either[Throwable, *]](_),
         _.unwrapped
       )
+
     implicit def jsonCodec: Codec.JsonCodec[Address] =
       deriveCodec[String, CodecFormat.Json, Address](
         fromString[Either[Throwable, *]](_),
         _.unwrapped
       )
+
     implicit def schema: Schema[Address] =
       jsonCodec.meta.schema.description("Ergo Address")
 
@@ -216,6 +226,21 @@ package object explorer {
         .leftMap(RefinementFailed)
         .toRaise[F]
         .map(UrlString.apply)
+  }
+
+  @newtype case class ContractAttributes(value: Map[String, String])
+
+  object ContractAttributes {
+    // circe instances
+    implicit def encoder: Encoder[ContractAttributes] = deriving
+    implicit def decoder: Decoder[ContractAttributes] = deriving
+
+    implicit def jsonCodec: Codec.JsonCodec[ContractAttributes] =
+      implicitly[Codec.JsonCodec[Map[String, String]]]
+        .map(ContractAttributes.apply)(_.value)
+
+    implicit def schema: Schema[ContractAttributes] =
+      jsonCodec.meta.schema.description("ContractAttributes")
   }
 
   private def deriveCodec[A, CF <: CodecFormat, T](
