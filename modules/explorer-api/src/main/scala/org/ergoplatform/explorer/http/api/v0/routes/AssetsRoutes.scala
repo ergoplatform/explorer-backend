@@ -1,0 +1,30 @@
+package org.ergoplatform.explorer.http.api.v0.routes
+
+import cats.effect.{ContextShift, Sync}
+import org.ergoplatform.explorer.http.api.syntax.applicativeThrow._
+import org.ergoplatform.explorer.http.api.v0.services.AssetsService
+import org.http4s.HttpRoutes
+import sttp.tapir.server.http4s._
+
+final class AssetsRoutes[F[_]: Sync: ContextShift](
+  service: AssetsService[F, fs2.Stream]
+) {
+
+  import org.ergoplatform.explorer.http.api.v0.defs.AssetsEndpointDefs._
+
+  val routes: HttpRoutes[F] =
+    getAllIssuingBoxesR
+
+  private def getAllIssuingBoxesR: HttpRoutes[F] =
+    getAllIssuingBoxesDef.toRoutes { _ =>
+      service.getAllIssuingBoxes.compile.toList.either
+    }
+}
+
+object AssetsRoutes {
+
+  def apply[F[_]: Sync: ContextShift](
+    service: AssetsService[F, fs2.Stream]
+  ): HttpRoutes[F] =
+    new AssetsRoutes(service).routes
+}

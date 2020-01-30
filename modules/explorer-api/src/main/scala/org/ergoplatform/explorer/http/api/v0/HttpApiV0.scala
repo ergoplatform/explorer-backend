@@ -1,11 +1,11 @@
 package org.ergoplatform.explorer.http.api.v0
 
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
-import cats.{Monad, ~>}
+import cats.{~>, Monad}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.http.api.v0.routes.BlocksRoutes
-import org.ergoplatform.explorer.http.api.v0.services.BlockChainService
+import org.ergoplatform.explorer.http.api.v0.routes.{AssetsRoutes, BlocksRoutes}
+import org.ergoplatform.explorer.http.api.v0.services.{AssetsService, BlockChainService}
 import org.ergoplatform.explorer.settings.HttpSettings
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
@@ -21,9 +21,11 @@ object HttpApiV0 {
   ](settings: HttpSettings)(xa: D ~> F): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(xa))
+      assetsService     <- Resource.liftF(AssetsService(xa))
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
                .withHttpApp(Router("/" -> BlocksRoutes(blockChainService)).orNotFound)
+               .withHttpApp(Router("/" -> AssetsRoutes(assetsService)).orNotFound)
                .resource
     } yield http
 }
