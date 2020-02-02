@@ -66,6 +66,10 @@ package object explorer {
     implicit def get: Get[TxId] = deriving
     implicit def put: Put[TxId] = deriving
 
+    // quill instances
+    implicit val encodeTxId = MappedEncoding[TxId, String](_.value)
+    implicit val decodeTxId = MappedEncoding[String, TxId](TxId.apply(_))
+
     // circe instances
     implicit def encoder: Encoder[TxId] = deriving
     implicit def decoder: Decoder[TxId] = deriving
@@ -139,6 +143,12 @@ package object explorer {
     implicit def get: Get[Address] = deriving
     implicit def put: Put[Address] = deriving
 
+    // quill instances
+    implicit val encodeAddress = MappedEncoding[Address, String](_.unwrapped)
+
+    implicit val decodeAddress =
+      MappedEncoding[String, Address](s => Address(refineV[Base58Spec](s).right.get))
+
     // circe instances
     implicit def encoder: Encoder[Address] = deriving
     implicit def decoder: Decoder[Address] = deriving
@@ -176,6 +186,14 @@ package object explorer {
     // doobie instances
     implicit def get: Get[HexString] = deriving
     implicit def put: Put[HexString] = deriving
+
+    // quill instances
+    implicit val encodeHexString = MappedEncoding[HexString, String](_.unwrapped)
+
+    implicit val decodeHexString =
+      MappedEncoding[String, HexString](s =>
+        HexString(refineV[HexStringSpec](s).right.get)
+      )
 
     // circe instances
     implicit def encoder: Encoder[HexString] = deriving

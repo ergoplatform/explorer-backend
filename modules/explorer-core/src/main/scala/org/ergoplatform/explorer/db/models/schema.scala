@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.db.models
 
 import io.getquill.{idiom => _, _}
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 
 object schema {
 
@@ -35,4 +36,14 @@ object schema {
     )
   }
 
+  val Inputs = quote {
+    querySchema[Input](
+      "node_inputs",
+      _.boxId      -> "box_id",
+      _.txId       -> "tx_id",
+      _.proofBytes -> "proof_bytes",
+      _.extension  -> "extension",
+      _.mainChain  -> "main_chain"
+    )
+  }
 }

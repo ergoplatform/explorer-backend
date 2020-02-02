@@ -42,5 +42,8 @@ object Err {
           .map(s => s", reason: $s")
           .getOrElse("")
       )
+
+    final case class DexSellOrderAttributesFailed(details: String)
+      extends RequestProcessingErr(details)
   }
 }
