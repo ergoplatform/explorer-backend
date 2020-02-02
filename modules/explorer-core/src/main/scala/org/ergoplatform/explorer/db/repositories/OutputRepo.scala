@@ -1,5 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
+import java.sql.Types
+
 import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.free.implicits._
@@ -9,8 +11,10 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.schema.ctx._
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
+import org.ergoplatform.explorer.db.quillCodecs._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */
@@ -46,6 +50,14 @@ trait OutputRepo[D[_], S[_[_], _]] {
     ergoTree: HexString,
     offset: Int,
     limit: Int
+  ): S[D, ExtendedOutput]
+
+  /** Get all unspent main-chain outputs that are protected with given ergo tree template
+    * see [[https://github.com/ScorexFoundation/sigmastate-interpreter/issues/264]]
+    * [[http://github.com/ScorexFoundation/sigmastate-interpreter/blob/633efcfd47f2fa4aa240eee2f774cc033cc241a5/sigmastate/src/main/scala/sigmastate/Values.scala#L828-L828]]
+    */
+  def getAllMainUnspentByErgoTreeTemplate(
+    ergoTreeTemplate: HexString
   ): S[D, ExtendedOutput]
 
   /** Get all outputs related to a given `txId`.
@@ -108,6 +120,17 @@ object OutputRepo {
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
+
+    override def getAllMainUnspentByErgoTreeTemplate(
+      ergoTreeTemplate: HexString
+    ): Stream[D, ExtendedOutput] =
+      stream(
+        QS.getMainUnspentByErgoTreeTemplate(
+          ergoTreeTemplate,
+          offset = 0,
+          limit  = Int.MaxValue
+        )
+      ).translate(liftK)
 
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO

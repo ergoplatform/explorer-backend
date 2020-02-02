@@ -1,11 +1,14 @@
 package org.ergoplatform.explorer.db.queries
 
+import java.sql.Types
+
 import cats.data.NonEmptyList
 import doobie.Fragments
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.util.update.Update0
+import io.circe.Json
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
 
@@ -14,6 +17,8 @@ import org.ergoplatform.explorer._
 object OutputQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.db.doobieInstances._
+  import org.ergoplatform.explorer.db.models.schema
+  import org.ergoplatform.explorer.db.models.schema.ctx._
 
   val tableName: String = "node_outputs"
 
@@ -97,6 +102,29 @@ object OutputQuerySet extends QuerySet {
          |  and o.ergo_tree = $ergoTree
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
+
+  def getMainUnspentByErgoTreeTemplate(
+    ergoTreeTemplate: HexString,
+    offset: Int,
+    limit: Int
+  ) =
+    quote {
+      schema.Outputs
+        .leftJoin(schema.Inputs)
+        .on((o, i) => i.boxId == o.boxId)
+        .filter(_._1.mainChain == true)
+        .filter {
+          case (o, _) =>
+            infix"${o.ergoTree} like %${lift(ergoTreeTemplate.unwrapped)}"
+              .as[Boolean]
+        }
+        .filter {
+          case (_, i) => i.map(_.boxId).isEmpty || !i.getOrNull.mainChain
+        }
+        .drop(lift(offset))
+        .take(lift(limit))
+        .map { case (o, i) => ExtendedOutput(o, i.map(_.txId)) }
+    }
 
   def getAllByTxId(txId: TxId): Query0[ExtendedOutput] =
     sql"""
