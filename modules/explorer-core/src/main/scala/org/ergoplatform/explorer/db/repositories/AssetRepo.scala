@@ -8,6 +8,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.schema.ctx._
 import org.ergoplatform.explorer.{Address, BoxId, TokenId}
 
 /** [[Asset]] data access operations.
@@ -65,10 +66,10 @@ object AssetRepo {
       QS.insertMany(assets).void.liftConnectionIO
 
     def getAllByBoxId(boxId: BoxId): D[List[Asset]] =
-      QS.getAllByBoxId(boxId).to[List].liftConnectionIO
+      run(QS.getAllByBoxId(boxId)).liftConnectionIO
 
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]] =
-      QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
+      run(QS.getAllByBoxIds(boxIds)).liftConnectionIO
 
     def getAllHoldingAddresses(
       tokenId: TokenId,

@@ -9,6 +9,7 @@ object dependencies {
   }
 
   object http4s extends DependencyGroup {
+
     override def deps: List[ModuleID] =
       List(
         "org.http4s" %% "http4s-dsl",
@@ -19,6 +20,7 @@ object dependencies {
   }
 
   object tapir extends DependencyGroup {
+
     override def deps: List[ModuleID] =
       List(
         "com.softwaremill.sttp.tapir" %% "tapir-core",
@@ -30,6 +32,7 @@ object dependencies {
   }
 
   object circe extends DependencyGroup {
+
     override def deps: List[ModuleID] =
       List(
         "io.circe" %% "circe-core",
@@ -42,6 +45,7 @@ object dependencies {
   }
 
   object cats extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "org.typelevel" %% "cats-core"           % CatsVersion,
       "org.typelevel" %% "cats-effect"         % CatsEffectVersion,
@@ -54,6 +58,7 @@ object dependencies {
   }
 
   object zio extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "dev.zio" %% "zio"              % ZioVersion,
       "dev.zio" %% "zio-interop-cats" % ZioCatsVersion
@@ -61,6 +66,7 @@ object dependencies {
   }
 
   object monocle extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "com.github.julien-truffaut" %% "monocle-core"  % MonocleVersion,
       "com.github.julien-truffaut" %% "monocle-macro" % MonocleVersion
@@ -68,24 +74,28 @@ object dependencies {
   }
 
   object fs2 extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "co.fs2" %% "fs2-core" % Fs2Version
     )
   }
 
   object tofu extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "ru.tinkoff" %% "tofu-core" % TofuVersion
     )
   }
 
   object ergo extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "org.ergoplatform" %% "ergo-wallet" % ErgoWalletVersion
     )
   }
 
   object logging extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "ch.qos.logback"    % "logback-classic" % Logback,
       "org.slf4j"         % "slf4j-api"       % Slf4j,
@@ -94,17 +104,20 @@ object dependencies {
   }
 
   object db extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "org.tpolecat" %% "doobie-core"      % DoobieVersion,
       "org.tpolecat" %% "doobie-postgres"  % DoobieVersion,
       "org.tpolecat" %% "doobie-scalatest" % DoobieVersion,
       "org.tpolecat" %% "doobie-hikari"    % DoobieVersion,
       "org.tpolecat" %% "doobie-refined"   % DoobieVersion,
+      "org.tpolecat" %% "doobie-quill"     % DoobieVersion,
       "org.flywaydb" % "flyway-core"       % FlywayVersion
     )
   }
 
   object testing extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "org.tpolecat"               %% "doobie-scalatest"          % DoobieVersion                 % Test,
       "org.scalatest"              %% "scalatest"                 % ScalaTestVersion              % Test,
@@ -116,6 +129,7 @@ object dependencies {
   }
 
   object newtypes extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "org.scalaz"  %% "deriving-macro" % DerivingVersion,
       "io.estatico" %% "newtype"        % NewtypeVersion,
@@ -125,6 +139,7 @@ object dependencies {
   }
 
   object config extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "com.github.pureconfig" %% "pureconfig"             % PureConfigVersion,
       "com.github.pureconfig" %% "pureconfig-cats-effect" % PureConfigVersion
@@ -132,6 +147,7 @@ object dependencies {
   }
 
   object simulacrum extends DependencyGroup {
+
     override def deps: List[ModuleID] = List(
       "com.github.mpilquist" %% "simulacrum" % SimulacrumVersion
     )

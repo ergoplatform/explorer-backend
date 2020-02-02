@@ -12,6 +12,7 @@ import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
+import io.getquill.{idiom => _, _}
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.constraints._
 import sttp.tapir.json.circe._
@@ -39,6 +40,10 @@ package object explorer {
     // doobie instances
     implicit def get: Get[Id] = deriving
     implicit def put: Put[Id] = deriving
+
+    // quill instances
+    implicit val encodeId = MappedEncoding[Id, String](_.toString)
+    implicit val decodeId = MappedEncoding[String, Id](Id.apply(_))
 
     // circe instances
     implicit def encoder: Encoder[Id] = deriving
@@ -78,6 +83,10 @@ package object explorer {
     implicit def get: Get[BoxId] = deriving
     implicit def put: Put[BoxId] = deriving
 
+    // quill instances
+    implicit val encodeBoxId = MappedEncoding[BoxId, String](_.toString)
+    implicit val decodeBoxId = MappedEncoding[String, BoxId](BoxId.apply(_))
+
     // circe instances
     implicit def encoder: Encoder[BoxId] = deriving
     implicit def decoder: Decoder[BoxId] = deriving
@@ -96,6 +105,10 @@ package object explorer {
     // doobie instances
     implicit def get: Get[TokenId] = deriving
     implicit def put: Put[TokenId] = deriving
+
+    // quill instances
+    implicit val encodeTokenId = MappedEncoding[TokenId, String](_.toString)
+    implicit val decodeTokenId = MappedEncoding[String, TokenId](TokenId.apply(_))
 
     // circe instances
     implicit def encoder: Encoder[TokenId] = deriving

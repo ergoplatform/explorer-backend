@@ -14,6 +14,8 @@ import org.ergoplatform.explorer.db.models.Asset
 object AssetQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.db.doobieInstances._
+  import org.ergoplatform.explorer.db.models.schema
+  import org.ergoplatform.explorer.db.models.schema.ctx._
 
   val tableName: String = "node_assets"
 
@@ -24,12 +26,15 @@ object AssetQuerySet extends QuerySet {
     "value"
   )
 
-  def getAllByBoxId(boxId: BoxId): Query0[Asset] =
-    sql"select * from node_assets where box_id = $boxId".query[Asset]
+  def getAllByBoxId(boxId: BoxId) =
+    quote {
+      schema.Assets.filter(_.boxId == lift(boxId))
+    }
 
-  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): Query0[Asset] =
-    (sql"select * from node_assets" ++ Fragments.in(fr"where box_id", boxIds))
-      .query[Asset]
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]) =
+    quote {
+      schema.Assets.filter(a => liftQuery(boxIds.toList).contains(a.boxId))
+    }
 
   def getAllHoldingAddresses(
     tokenId: TokenId,
