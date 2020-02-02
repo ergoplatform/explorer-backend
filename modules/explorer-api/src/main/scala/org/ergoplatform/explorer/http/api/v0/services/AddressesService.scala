@@ -11,6 +11,7 @@ import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{Asset, UAsset}
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
@@ -33,6 +34,20 @@ trait AddressesService[F[_], S[_[_], _]] {
 }
 
 object AddressesService {
+
+  def apply[
+    F[_],
+    D[_]: ContravariantRaise[*[_], AddressDecodingFailed]
+        : ContravariantRaise[*[_], RefinementFailed]
+        : Monad
+        : LiftConnectionIO
+  ](xa: D ~> F)(implicit e: ErgoAddressEncoder): AddressesService[F, Stream] =
+    new Live(
+      OutputRepo[D],
+      UOutputRepo[D],
+      AssetRepo[D],
+      UAssetRepo[D]
+    )(xa)
 
   final private class Live[
     F[_],
