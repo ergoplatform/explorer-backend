@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.http.api.v0
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import cats.{~>, Monad}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.{
+  DexBuyOrderAttributesFailed,
   DexSellOrderAttributesFailed,
   InconsistentDbData
 }
@@ -28,7 +29,10 @@ object HttpApiV0 {
 
   def apply[
     F[_]: ConcurrentEffect: ContextShift: Timer,
-    D[_]: ContravariantRaise[*[_], InconsistentDbData]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: Monad: LiftConnectionIO
+    D[_]: ContravariantRaise[*[_], InconsistentDbData]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: ContravariantRaise[
+      *[_],
+      DexBuyOrderAttributesFailed
+    ]: Monad: LiftConnectionIO
   ](settings: HttpSettings)(xa: D ~> F): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(xa))

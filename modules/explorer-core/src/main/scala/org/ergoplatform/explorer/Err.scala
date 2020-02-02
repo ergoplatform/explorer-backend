@@ -45,5 +45,8 @@ object Err {
 
     final case class DexSellOrderAttributesFailed(details: String)
       extends RequestProcessingErr(details)
+
+    final case class DexBuyOrderAttributesFailed(details: String)
+      extends RequestProcessingErr(details)
   }
 }
