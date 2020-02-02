@@ -2,10 +2,10 @@ package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
 import doobie.Fragments
-import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
-import fs2.Stream
+import doobie.util.query.Query0
+import doobie.util.update.Update0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
 
@@ -30,7 +30,7 @@ object OutputQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def getByBoxId(boxId: BoxId): ConnectionIO[Option[ExtendedOutput]] =
+  def getByBoxId(boxId: BoxId): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -47,34 +47,13 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.box_id = $boxId
-         |""".stripMargin.query[ExtendedOutput].option
-
-  def getAllByErgoTree(
-    ergoTree: HexString
-  ): ConnectionIO[List[ExtendedOutput]] =
-    sql"""
-         |select
-         |  o.box_id,
-         |  o.tx_id,
-         |  o.value,
-         |  o.creation_height,
-         |  o.index,
-         |  o.ergo_tree,
-         |  o.address,
-         |  o.additional_registers,
-         |  o.timestamp,
-         |  o.main_chain,
-         |  i.tx_id
-         |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
-         |where o.ergo_tree = $ergoTree
-         |""".stripMargin.query[ExtendedOutput].to[List]
+         |""".stripMargin.query[ExtendedOutput]
 
   def getByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
-  ): Stream[ConnectionIO, ExtendedOutput] =
+  ): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -91,37 +70,13 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.ergo_tree = $ergoTree
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput].stream
-
-  def getAllMainUnspentByErgoTree(
-    ergoTree: HexString
-  ): ConnectionIO[List[ExtendedOutput]] =
-    sql"""
-         |select
-         |  o.box_id,
-         |  o.tx_id,
-         |  o.value,
-         |  o.creation_height,
-         |  o.index,
-         |  o.ergo_tree,
-         |  o.address,
-         |  o.additional_registers,
-         |  o.timestamp,
-         |  o.main_chain,
-         |  i.tx_id
-         |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
-         |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
-         |  and o.ergo_tree = $ergoTree
-         |""".stripMargin.query[ExtendedOutput].to[List]
+         |""".stripMargin.query[ExtendedOutput]
 
   def getMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
-  ): Stream[ConnectionIO, ExtendedOutput] =
+  ): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -141,9 +96,9 @@ object OutputQuerySet extends QuerySet {
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
          |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput].stream
+         |""".stripMargin.query[ExtendedOutput]
 
-  def getAllByTxId(txId: TxId): ConnectionIO[List[ExtendedOutput]] =
+  def getAllByTxId(txId: TxId): Query0[ExtendedOutput] =
     sql"""
          |select distinct on (i.box_id)
          |  o.box_id,
@@ -160,11 +115,11 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.tx_id = $txId
-         |""".stripMargin.query[ExtendedOutput].to[List]
+         |""".stripMargin.query[ExtendedOutput]
 
   def getAllByTxIds(
     txIds: NonEmptyList[TxId]
-  ): ConnectionIO[List[ExtendedOutput]] = {
+  ): Query0[ExtendedOutput] = {
     val q =
       sql"""
            |select distinct on (i.box_id)
@@ -184,21 +139,17 @@ object OutputQuerySet extends QuerySet {
            |""".stripMargin
     (q ++ Fragments.in(fr"where o.tx_id", txIds))
       .query[ExtendedOutput]
-      .to[List]
   }
 
-  def searchAddressesBySubstring(substring: String): ConnectionIO[List[Address]] =
+  def searchAddressesBySubstring(substring: String): Query0[Address] =
     sql"select address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
-      .to[List]
 
-  def updateChainStatusByHeaderId(
-    headerId: Id
-  )(newChainStatus: Boolean): ConnectionIO[Int] =
+  def updateChainStatusByHeaderId(headerId: Id)(newChainStatus: Boolean): Update0 =
     sql"""
          |update node_outputs set main_chain = $newChainStatus from node_outputs o
          |left join node_transactions t on t.id = o.tx_id
          |left join node_headers h on t.header_id = h.id
          |where h.id = $headerId
-         |""".stripMargin.update.run
+         |""".stripMargin.update
 }

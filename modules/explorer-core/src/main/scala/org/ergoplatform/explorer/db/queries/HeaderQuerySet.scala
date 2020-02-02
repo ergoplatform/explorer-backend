@@ -1,8 +1,9 @@
 package org.ergoplatform.explorer.db.queries
 
-import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.util.query.Query0
+import doobie.util.update.Update0
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Header
 
@@ -32,26 +33,25 @@ object HeaderQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def get(id: Id): ConnectionIO[Option[Header]] =
-    sql"select * from node_headers where id = $id".query[Header].option
+  def get(id: Id): Query0[Header] =
+    sql"select * from node_headers where id = $id".query[Header]
 
-  def getByParentId(parentId: Id): ConnectionIO[Option[Header]] =
-    sql"select * from node_headers where parent_id = $parentId".query[Header].option
+  def getByParentId(parentId: Id): Query0[Header] =
+    sql"select * from node_headers where parent_id = $parentId".query[Header]
 
-  def getAllByHeight(height: Int): ConnectionIO[List[Header]] =
-    sql"select * from node_headers where height = $height".query[Header].to[List]
+  def getAllByHeight(height: Int): Query0[Header] =
+    sql"select * from node_headers where height = $height".query[Header]
 
-  def getHeightOf(id: Id): ConnectionIO[Option[Int]] =
-    sql"select height from node_headers where id = $id".query[Int].option
+  def getHeightOf(id: Id): Query0[Int] =
+    sql"select height from node_headers where id = $id".query[Int]
 
-  def updateChainStatusById(id: Id, newChainStatus: Boolean): ConnectionIO[Int] =
+  def updateChainStatusById(id: Id, newChainStatus: Boolean): Update0 =
     sql"""
          |update node_headers set main_chain = $newChainStatus from node_headers h
          |where h.id = $id
-         |""".stripMargin.update.run
+         |""".stripMargin.update
 
-  def getBestHeight: ConnectionIO[Option[Int]] =
+  def getBestHeight: Query0[Int] =
     sql"SELECT height FROM blocks_info ORDER BY height DESC LIMIT 1"
       .query[Int]
-      .option
 }

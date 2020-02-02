@@ -48,9 +48,9 @@ object InputRepo {
       QS.insertMany(inputs).void.liftConnectionIO
 
     def getAllByTxId(txId: TxId): D[List[ExtendedInput]] =
-      QS.getAllByTxId(txId).liftConnectionIO
+      QS.getAllByTxId(txId).to[List].liftConnectionIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedInput]] =
-      QS.getAllByTxIds(txIds).liftConnectionIO
+      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
   }
 }

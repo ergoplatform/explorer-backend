@@ -47,7 +47,7 @@ object UTransactionRepo {
       QS.insertMany(txs).void.liftConnectionIO
 
     def get(id: TxId): D[Option[UTransaction]] =
-      QS.get(id).liftConnectionIO
+      QS.get(id).option.liftConnectionIO
 
     def getAllRelatedToErgoTree(
       ergoTree: HexString,
@@ -55,6 +55,7 @@ object UTransactionRepo {
       limit: Int
     ): Stream[D, UTransaction] =
       QS.getAllRelatedToErgoTree(ergoTree, offset, limit)
+        .stream
         .translate(LiftConnectionIO[D].liftConnectionIOK)
   }
 }

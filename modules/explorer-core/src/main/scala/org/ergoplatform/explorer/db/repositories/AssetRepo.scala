@@ -65,10 +65,10 @@ object AssetRepo {
       QS.insertMany(assets).void.liftConnectionIO
 
     def getAllByBoxId(boxId: BoxId): D[List[Asset]] =
-      QS.getAllByBoxId(boxId).liftConnectionIO
+      QS.getAllByBoxId(boxId).to[List].liftConnectionIO
 
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]] =
-      QS.getAllByBoxIds(boxIds).liftConnectionIO
+      QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
 
     def getAllHoldingAddresses(
       tokenId: TokenId,
@@ -76,14 +76,15 @@ object AssetRepo {
       limit: Int
     ): Stream[D, Address] =
       QS.getAllHoldingAddresses(tokenId, offset, limit)
+        .stream
         .translate(LiftConnectionIO[D].liftConnectionIOK)
 
     override def getAllIssuingBoxes: Stream[D, ExtendedOutput] =
-      QS.getAllIssuingBoxes.translate(LiftConnectionIO[D].liftConnectionIOK)
+      QS.getAllIssuingBoxes.stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     override def getIssuingBoxes(
       tokenIds: NonEmptyList[TokenId]
     ): D[List[ExtendedOutput]] =
-      QS.getIssuingBoxes(tokenIds).liftConnectionIO
+      QS.getIssuingBoxes(tokenIds).to[List].liftConnectionIO
   }
 }

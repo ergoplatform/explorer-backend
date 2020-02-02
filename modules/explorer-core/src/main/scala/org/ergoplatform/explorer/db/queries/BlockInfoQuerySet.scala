@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.db.queries
 
 import doobie.implicits._
 import doobie.refined.implicits._
-import doobie.free.connection.ConnectionIO
+import doobie.util.query.Query0
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.models.BlockInfo
 
@@ -33,18 +33,15 @@ object BlockInfoQuerySet extends QuerySet {
     "total_coins_in_txs"
   )
 
-  def getBlockInfo(headerId: Id): ConnectionIO[Option[BlockInfo]] =
+  def getBlockInfo(headerId: Id): Query0[BlockInfo] =
     sql"select * from blocks_info where header_id = $headerId"
       .query[BlockInfo]
-      .option
 
-  def getMany(offset: Int, limit: Int): fs2.Stream[ConnectionIO, BlockInfo] =
+  def getMany(offset: Int, limit: Int): Query0[BlockInfo] =
     sql"select * from blocks_info offset $offset limit $limit"
       .query[BlockInfo]
-      .stream
 
-  def getBlockSize(id: Id): ConnectionIO[Option[Int]] =
+  def getBlockSize(id: Id): Query0[Int] =
     sql"select block_size from blocks_info where id = $id"
       .query[Int]
-      .option
 }

@@ -1,11 +1,10 @@
 package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
-import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.Fragments
 import doobie.refined.implicits._
-import fs2.Stream
+import doobie.util.query.Query0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, TokenId}
 import org.ergoplatform.explorer.db.models.Asset
@@ -25,19 +24,18 @@ object AssetQuerySet extends QuerySet {
     "value"
   )
 
-  def getAllByBoxId(boxId: BoxId): ConnectionIO[List[Asset]] =
-    sql"select * from node_assets where box_id = $boxId".query[Asset].to[List]
+  def getAllByBoxId(boxId: BoxId): Query0[Asset] =
+    sql"select * from node_assets where box_id = $boxId".query[Asset]
 
-  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): ConnectionIO[List[Asset]] =
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): Query0[Asset] =
     (sql"select * from node_assets" ++ Fragments.in(fr"where box_id", boxIds))
       .query[Asset]
-      .to[List]
 
   def getAllHoldingAddresses(
     tokenId: TokenId,
     offset: Int,
     limit: Int
-  ): Stream[ConnectionIO, Address] =
+  ): Query0[Address] =
     sql"""
          |select distinct on (o.address) o.address from node_assets a
          |left join node_outputs o on a.box_id = o.box_id
@@ -46,12 +44,12 @@ object AssetQuerySet extends QuerySet {
          |  and (i.box_id is null or i.main_chain = false)
          |  and a.token_id = $tokenId
          |offset $offset limit $limit
-         |""".stripMargin.query[Address].stream
+         |""".stripMargin.query[Address]
 
   /** Get boxes where tokens where issued
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
-  def getAllIssuingBoxes: Stream[ConnectionIO, ExtendedOutput] =
+  def getAllIssuingBoxes: Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -73,11 +71,11 @@ object AssetQuerySet extends QuerySet {
          |  and i_issued.tx_id = o.tx_id
          |  and o.box_id = a.box_id
          |  and a.token_id = i_issued.box_id
-         |""".stripMargin.query[ExtendedOutput].stream
+         |""".stripMargin.query[ExtendedOutput]
 
   def getIssuingBoxes(
     tokenIds: NonEmptyList[TokenId]
-  ): ConnectionIO[List[ExtendedOutput]] =
+  ): Query0[ExtendedOutput] =
     (sql"""
           |select
           |  o.box_id,
@@ -101,6 +99,5 @@ object AssetQuerySet extends QuerySet {
           |  and a.token_id = i_issued.box_id
           |""".stripMargin ++ Fragments.in(fr"and a.token_id", tokenIds))
       .query[ExtendedOutput]
-      .to[List]
 
 }

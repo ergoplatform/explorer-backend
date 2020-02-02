@@ -32,7 +32,7 @@ trait UInputRepo[D[_], S[_[_], _]] {
   def getAllByTxId(txId: TxId): D[List[UInput]]
 
   /** Get all inputs related to transaction with a given list of `txId`.
-   */
+    */
   def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UInput]]
 }
 
@@ -52,12 +52,12 @@ object UInputRepo {
       QS.insertMany(inputs).void.liftConnectionIO
 
     def getAll(offset: Int, limit: Int): Stream[D, UInput] =
-      QS.getAll(offset, limit).translate(LiftConnectionIO[D].liftConnectionIOK)
+      QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def getAllByTxId(txId: TxId): D[List[UInput]] =
-      QS.getAllByTxId(txId).liftConnectionIO
+      QS.getAllByTxId(txId).to[List].liftConnectionIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UInput]] =
-      QS.getAllByTxIxs(txIds).liftConnectionIO
+      QS.getAllByTxIxs(txIds).to[List].liftConnectionIO
   }
 }

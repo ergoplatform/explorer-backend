@@ -45,9 +45,9 @@ object UAssetRepo {
       QS.insertMany(assets).void.liftConnectionIO
 
     def getAllByBoxId(boxId: BoxId): D[List[UAsset]] =
-      QS.getAllByBoxId(boxId).liftConnectionIO
+      QS.getAllByBoxId(boxId).to[List].liftConnectionIO
 
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[UAsset]] =
-      QS.getAllByBoxIds(boxIds).liftConnectionIO
+      QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
   }
 }

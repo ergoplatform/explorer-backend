@@ -46,13 +46,13 @@ object AssetsService {
   )(xa: D ~> F)
     extends AssetsService[F, Stream] {
 
-    override def getAllIssuingBoxes: Stream[F, OutputInfo] =
+    def getAllIssuingBoxes: Stream[F, OutputInfo] =
       (for {
         extOut <- assetRepo.getAllIssuingBoxes
         assets <- assetRepo.getAllByBoxId(extOut.output.boxId).asStream
       } yield OutputInfo(extOut, assets)).translate(xa)
 
-    override def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): Stream[F, OutputInfo] =
+    def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): Stream[F, OutputInfo] =
       (for {
         extOuts <- assetRepo.getIssuingBoxes(tokenIds).asStream
         boxIdsNel <- extOuts

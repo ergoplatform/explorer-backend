@@ -56,23 +56,23 @@ object HeaderRepo {
       QS.insert(h).void.liftConnectionIO
 
     def get(id: Id): D[Option[Header]] =
-      QS.get(id).liftConnectionIO
+      QS.get(id).option.liftConnectionIO
 
     def getByParentId(parentId: Id): D[Option[Header]] =
-      QS.getByParentId(parentId).liftConnectionIO
+      QS.getByParentId(parentId).option.liftConnectionIO
 
     def getAllByHeight(height: Int): D[List[Header]] =
-      QS.getAllByHeight(height).liftConnectionIO
+      QS.getAllByHeight(height).to[List].liftConnectionIO
 
     def getHeightOf(id: Id): D[Option[Int]] =
-      QS.getHeightOf(id).liftConnectionIO
+      QS.getHeightOf(id).option.liftConnectionIO
 
     def getBestHeight: D[Int] =
-      QS.getBestHeight
+      QS.getBestHeight.option
         .map(_.getOrElse(constants.PreGenesisHeight))
         .liftConnectionIO
 
     def updateChainStatusById(id: Id, newChainStatus: Boolean): D[Unit] =
-      QS.updateChainStatusById(id, newChainStatus).void.liftConnectionIO
+      QS.updateChainStatusById(id, newChainStatus).run.void.liftConnectionIO
   }
 }

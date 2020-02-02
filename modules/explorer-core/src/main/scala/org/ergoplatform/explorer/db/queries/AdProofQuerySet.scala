@@ -1,8 +1,8 @@
 package org.ergoplatform.explorer.db.queries
 
-import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.util.query.Query0
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.models.AdProof
 
@@ -18,8 +18,7 @@ object AdProofQuerySet extends QuerySet {
     "digest"
   )
 
-  def getByHeaderId(headerId: Id): ConnectionIO[Option[AdProof]] =
+  def getByHeaderId(headerId: Id): Query0[AdProof] =
     sql"select header_id, proof_bytes, digest from node_ad_proofs where header_id = $headerId"
       .query[AdProof]
-      .option
 }

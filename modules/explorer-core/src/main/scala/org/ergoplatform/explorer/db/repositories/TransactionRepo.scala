@@ -54,8 +54,7 @@ object TransactionRepo {
   def apply[D[_]: LiftConnectionIO]: TransactionRepo[D, Stream] =
     new Live[D]
 
-  final private class Live[D[_]: LiftConnectionIO]
-    extends TransactionRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO] extends TransactionRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{TransactionQuerySet => QS}
 
@@ -68,26 +67,26 @@ object TransactionRepo {
       QS.insertMany(txs).void.liftConnectionIO
 
     def getMain(id: TxId): D[Option[Transaction]] =
-      QS.getMain(id).liftConnectionIO
+      QS.getMain(id).option.liftConnectionIO
 
     def getAllMainByIdSubstring(idStr: String): D[List[Transaction]] =
-      QS.getAllMainByIdSubstring(idStr).liftConnectionIO
+      QS.getAllMainByIdSubstring(idStr).to[List].liftConnectionIO
 
     def getAllByBlockId(id: Id): Stream[D, Transaction] =
-      QS.getAllByBlockId(id).translate(liftK)
+      QS.getAllByBlockId(id).stream.translate(liftK)
 
     def getRelatedToAddress(
       address: Address,
       offset: Int,
       limit: Int
     ): Stream[D, Transaction] =
-      QS.getAllRelatedToAddress(address, offset, limit).translate(liftK)
+      QS.getAllRelatedToAddress(address, offset, limit).stream.translate(liftK)
 
     def getMainSince(
       height: Int,
       offset: Int,
       limit: Int
     ): Stream[D, Transaction] =
-      QS.getAllMainSince(height, offset, limit).translate(liftK)
+      QS.getAllMainSince(height, offset, limit).stream.translate(liftK)
   }
 }

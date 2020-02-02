@@ -1,11 +1,10 @@
 package org.ergoplatform.explorer.db.queries
 
-import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.util.query.Query0
 import org.ergoplatform.explorer.{Address, Id, TxId}
 import org.ergoplatform.explorer.db.models.Transaction
-import fs2.Stream
 
 /** A set of queries for doobie implementation of [TransactionRepo].
   */
@@ -22,31 +21,31 @@ object TransactionQuerySet extends QuerySet {
     "size"
   )
 
-  def getMain(id: TxId): ConnectionIO[Option[Transaction]] =
+  def getMain(id: TxId): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |left join node_headers h on h.id = t.header_id
          |where h.main_chain = true and t.id = $id
-         |""".stripMargin.query[Transaction].option
+         |""".stripMargin.query[Transaction]
 
-  def getAllMainByIdSubstring(idStr: String): ConnectionIO[List[Transaction]] =
+  def getAllMainByIdSubstring(idStr: String): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |left join node_headers h on h.id = t.header_id
          |where t.id like ${s"%$idStr%"} and h.main_chain = true
-         |""".stripMargin.query[Transaction].to[List]
+         |""".stripMargin.query[Transaction]
 
-  def getAllByBlockId(id: Id): Stream[ConnectionIO, Transaction] =
+  def getAllByBlockId(id: Id): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |where header_id = $id
-         |""".stripMargin.query[Transaction].stream
+         |""".stripMargin.query[Transaction]
 
   def getAllRelatedToAddress(
     address: Address,
     offset: Int,
     limit: Int
-  ): Stream[ConnectionIO, Transaction] =
+  ): Query0[Transaction] =
     sql"""
          |select distinct t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size
          |from node_outputs os
@@ -56,18 +55,18 @@ object TransactionQuerySet extends QuerySet {
          |where os.address = $address and h.main_chain = true
          |order by t.timestamp desc
          |offset ${offset.toLong} limit ${limit.toLong}
-         |""".stripMargin.query[Transaction].stream
+         |""".stripMargin.query[Transaction]
 
   def getAllMainSince(
     height: Int,
     offset: Int,
     limit: Int
-  ): Stream[ConnectionIO, Transaction] =
+  ): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |left join node_headers h on h.id = t.header_id
          |where h.height >= $height and h.main_chain = true
          |order by t.timestamp desc
          |offset $offset limit $limit
-         |""".stripMargin.query[Transaction].stream
+         |""".stripMargin.query[Transaction]
 }

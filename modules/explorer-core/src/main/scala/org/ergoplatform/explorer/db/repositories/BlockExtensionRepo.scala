@@ -36,6 +36,6 @@ object BlockExtensionRepo {
       QS.insert(extension).void.liftConnectionIO
 
     def getByHeaderId(headerId: Id): D[Option[BlockExtension]] =
-      QS.getByHeaderId(headerId).liftConnectionIO
+      QS.getByHeaderId(headerId).option.liftConnectionIO
   }
 }

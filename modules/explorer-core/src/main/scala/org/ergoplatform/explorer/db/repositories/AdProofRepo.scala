@@ -34,6 +34,6 @@ object AdProofRepo {
       QS.insert(proof).void.liftConnectionIO
 
     def getByHeaderId(headerId: Id): D[Option[AdProof]] =
-      QS.getByHeaderId(headerId).liftConnectionIO
+      QS.getByHeaderId(headerId).option.liftConnectionIO
   }
 }

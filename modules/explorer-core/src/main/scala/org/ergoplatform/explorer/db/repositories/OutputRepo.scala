@@ -49,7 +49,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
   ): S[D, ExtendedOutput]
 
   /** Get all outputs related to a given `txId`.
-   */
+    */
   def getAllByTxId(txId: TxId): D[List[ExtendedOutput]]
 
   /** Get all outputs related to a given list of `txId`.
@@ -79,35 +79,39 @@ object OutputRepo {
       QS.insertMany(outputs).void.liftConnectionIO
 
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
-      QS.getByBoxId(boxId).liftConnectionIO
+      QS.getByBoxId(boxId).option.liftConnectionIO
 
     def getAllByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
-      QS.getAllByErgoTree(ergoTree).liftConnectionIO
+      QS.getByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue)
+        .to[List]
+        .liftConnectionIO
 
     def getByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
-      QS.getByErgoTree(ergoTree, offset, limit).translate(liftK)
+      QS.getByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
     def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
-      QS.getAllMainUnspentByErgoTree(ergoTree).liftConnectionIO
+      QS.getMainUnspentByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue)
+        .to[List]
+        .liftConnectionIO
 
     def getMainUnspentByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
-      QS.getMainUnspentByErgoTree(ergoTree, offset, limit).translate(liftK)
+      QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
-      QS.getAllByTxId(txId).liftConnectionIO
+      QS.getAllByTxId(txId).to[List].liftConnectionIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
-      QS.getAllByTxIds(txIds).liftConnectionIO
+      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
 
     def searchAddressesBySubstring(substring: String): D[List[Address]] =
-      QS.searchAddressesBySubstring(substring).liftConnectionIO
+      QS.searchAddressesBySubstring(substring).to[List].liftConnectionIO
   }
 }

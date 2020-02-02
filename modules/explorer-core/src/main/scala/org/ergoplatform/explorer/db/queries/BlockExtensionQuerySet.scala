@@ -1,8 +1,8 @@
 package org.ergoplatform.explorer.db.queries
 
-import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.util.query.Query0
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.models.BlockExtension
 
@@ -20,8 +20,7 @@ object BlockExtensionQuerySet extends QuerySet {
     "fields"
   )
 
-  def getByHeaderId(headerId: Id): ConnectionIO[Option[BlockExtension]] =
+  def getByHeaderId(headerId: Id): Query0[BlockExtension] =
     sql"select * from node_extensions where header_id = $headerId"
       .query[BlockExtension]
-      .option
 }

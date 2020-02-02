@@ -41,12 +41,12 @@ object BlockInfoRepo {
       QS.insert(blockInfo).void.liftConnectionIO
 
     def get(id: Id): D[Option[BlockInfo]] =
-      QS.getBlockInfo(id).liftConnectionIO
+      QS.getBlockInfo(id).option.liftConnectionIO
 
     def getMany(offset: Int, limit: Int): fs2.Stream[D, BlockInfo] =
-      QS.getMany(offset, limit).translate(LiftConnectionIO[D].liftConnectionIOK)
+      QS.getMany(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def getBlockSize(id: Id): D[Option[Int]] =
-      QS.getBlockSize(id).liftConnectionIO
+      QS.getBlockSize(id).option.liftConnectionIO
   }
 }

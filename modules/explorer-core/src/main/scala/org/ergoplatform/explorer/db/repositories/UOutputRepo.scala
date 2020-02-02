@@ -32,7 +32,7 @@ trait UOutputRepo[D[_], S[_[_], _]] {
   def getAllByTxId(txId: TxId): D[List[UOutput]]
 
   /** Get all unconfirmed outputs related to transaction with a given list of `txId`.
-   */
+    */
   def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UOutput]]
 
   /** Get all unconfirmed outputs belonging to the given `ergoTree`.
@@ -40,7 +40,7 @@ trait UOutputRepo[D[_], S[_[_], _]] {
   def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]]
 
   /** Get all unspent unconfirmed outputs belonging to the given `ergoTree`.
-   */
+    */
   def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]]
 }
 
@@ -60,18 +60,18 @@ object UOutputRepo {
       QS.insertMany(outputs).void.liftConnectionIO
 
     def getAll(offset: Int, limit: Int): Stream[D, UOutput] =
-      QS.getAll(offset, limit).translate(LiftConnectionIO[D].liftConnectionIOK)
+      QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def getAllByTxId(txId: TxId): D[List[UOutput]] =
-      QS.getAllByTxId(txId).liftConnectionIO
+      QS.getAllByTxId(txId).to[List].liftConnectionIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UOutput]] =
-      QS.getAllByTxIds(txIds).liftConnectionIO
+      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
 
     def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]] =
-      QS.getAllByErgoTree(ergoTree).liftConnectionIO
+      QS.getAllByErgoTree(ergoTree).to[List].liftConnectionIO
 
     def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]] =
-      QS.getAllUnspentByErgoTree(ergoTree).liftConnectionIO
+      QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
   }
 }
