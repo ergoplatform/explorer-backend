@@ -7,6 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 
 final case class Settings(
   chainPollInterval: FiniteDuration,
+  utxPoolPollInterval: FiniteDuration,
   masterNodesAddresses: NonEmptyList[UrlString],
   protocol: ProtocolSettings
 )

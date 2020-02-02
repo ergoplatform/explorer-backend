@@ -20,9 +20,9 @@ object utils {
   private val treeSerializer: ErgoTreeSerializer = new ErgoTreeSerializer
 
   @inline def ergoTreeToAddress(
-    ergoTree: String
+    ergoTree: HexString
   )(implicit enc: ErgoAddressEncoder): Try[ErgoAddress] =
-    Base16.decode(ergoTree).flatMap { bytes =>
+    Base16.decode(ergoTree.unwrapped).flatMap { bytes =>
       enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
     }
 

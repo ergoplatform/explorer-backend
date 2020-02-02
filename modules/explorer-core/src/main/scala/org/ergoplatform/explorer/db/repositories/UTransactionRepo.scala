@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.free.implicits._
 import fs2.Stream
@@ -18,6 +19,10 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
     */
   def insertMany(txs: List[UTransaction]): D[Unit]
 
+  /** Drop all transactions with the given list of `ids`.
+    */
+  def dropMany(ids: NonEmptyList[TxId]): D[Int]
+
   /** Get unconfirmed transaction with a given `id`.
     */
   def get(id: TxId): D[Option[UTransaction]]
@@ -29,6 +34,10 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, UTransaction]
+
+  /** Get ids of all unconfirmed transactions.
+    */
+  def getAllIds: D[List[TxId]]
 }
 
 object UTransactionRepo {
@@ -46,6 +55,9 @@ object UTransactionRepo {
     def insertMany(txs: List[UTransaction]): D[Unit] =
       QS.insertMany(txs).void.liftConnectionIO
 
+    def dropMany(ids: NonEmptyList[TxId]): D[Int] =
+      QS.dropMany(ids).run.liftConnectionIO
+
     def get(id: TxId): D[Option[UTransaction]] =
       QS.get(id).option.liftConnectionIO
 
@@ -57,5 +69,7 @@ object UTransactionRepo {
       QS.getAllRelatedToErgoTree(ergoTree, offset, limit)
         .stream
         .translate(LiftConnectionIO[D].liftConnectionIOK)
+
+    def getAllIds: D[List[TxId]] = ???
   }
 }

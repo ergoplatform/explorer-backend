@@ -96,7 +96,7 @@ object FlatBlock {
         .map {
           case (o, index) =>
             val addressOpt = utils
-              .ergoTreeToAddress(o.ergoTree.unwrapped)
+              .ergoTreeToAddress(o.ergoTree)
               .map(_.toString)
               .flatMap(Address.fromString[Try])
               .toOption

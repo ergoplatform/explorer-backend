@@ -1,8 +1,11 @@
 package org.ergoplatform.explorer.db.queries
 
+import cats.data.NonEmptyList
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
+import doobie.Fragments.in
+import doobie.util.update.Update0
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.{HexString, TxId}
 
@@ -15,6 +18,9 @@ object UTransactionQuerySet extends QuerySet {
     "creation_timestamp",
     "size"
   )
+
+  def dropMany(ids: NonEmptyList[TxId]): Update0 =
+    in(sql"delete from node_u_transactions where id", ids).update
 
   def get(id: TxId): Query0[UTransaction] =
     sql"select * from node_u_transactions where id = $id".query[UTransaction]

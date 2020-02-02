@@ -23,5 +23,5 @@ trait MainNetConfiguration {
   val monetarySettings = MonetarySettings()
   val protocolSettings = ProtocolSettings(MainNetPrefix, GenesisAddress, monetarySettings)
   val mainnetNodes     = NonEmptyList.one(UrlString.fromString[Try]("http://139.59.29.87:9053").get)
-  val settings         = Settings(1.second, mainnetNodes, protocolSettings)
+  val settings         = Settings(1.second, 1.second, mainnetNodes, protocolSettings)
 }
