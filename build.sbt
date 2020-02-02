@@ -7,6 +7,8 @@ lazy val commonSettings = Seq(
   resolvers += Resolver.sonatypeRepo("snapshots")
 )
 
+lazy val allConfigDependency = "compile->compile;test->test"
+
 lazy val syncConfig = project
   .in(file("."))
   .withId("explorer-backend")
@@ -35,7 +37,7 @@ lazy val grabber = utils
   .settings(
     libraryDependencies ++= dependencies.grabber ++ dependencies.testing.deps ++ dependencies.compilerPlugins
   )
-  .dependsOn(core)
+  .dependsOn(core % allConfigDependency)
 
 lazy val utxWatcher = utils
   .mkModule("utx-watcher", "UtxWatcher")

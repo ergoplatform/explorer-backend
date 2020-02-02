@@ -47,4 +47,10 @@ object OutputInfo {
       o.spentByOpt,
       o.output.mainChain
     )
+
+  def batch(outputs: List[ExtendedOutput], assets: List[Asset]): List[OutputInfo] = {
+    val groupedAssets = assets.groupBy(_.boxId)
+    outputs
+      .map(out => OutputInfo(out, groupedAssets.get(out.output.boxId).toList.flatten))
+  }
 }

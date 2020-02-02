@@ -1,9 +1,6 @@
 language: scala
 # Use container-based infrastructure
 sudo: required
-branches:
-  only:
-    - master
 jdk:
   - openjdk9
 scala:

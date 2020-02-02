@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.db.models
 
 import cats.syntax.option._
+import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
 import org.scalacheck.Gen
@@ -28,26 +29,25 @@ object generators {
       d             <- Gen.posNum[Double].map(_.toString)
       votes         <- hexStringGen
       mainChain     <- Gen.oneOf(List(true, false))
-    } yield
-      Header(
-        id,
-        parentId,
-        version,
-        height,
-        nBits,
-        diff,
-        ts,
-        stateRoot,
-        adProofsRoot,
-        extensionHash,
-        txsRoot,
-        minerPk,
-        w,
-        n,
-        d,
-        votes,
-        mainChain
-      )
+    } yield Header(
+      id,
+      parentId,
+      version,
+      height,
+      nBits,
+      diff,
+      ts,
+      stateRoot,
+      adProofsRoot,
+      extensionHash,
+      txsRoot,
+      minerPk,
+      w,
+      n,
+      d,
+      votes,
+      mainChain
+    )
 
   def adProofGen: Gen[AdProof] =
     for {
@@ -102,8 +102,18 @@ object generators {
       address <- addressGen
       regs    <- jsonFieldsGen
       ts      <- Gen.posNum[Long]
-    } yield
-      Output(boxId, txId, value, height, idx, tree, address.some, regs, ts, mainChain)
+    } yield Output(
+      boxId,
+      txId,
+      value,
+      height,
+      idx,
+      tree,
+      address.some,
+      regs,
+      ts,
+      mainChain
+    )
 
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
@@ -180,4 +190,16 @@ object generators {
                          }
                        }
     } yield (h, txsIn ++ txsOut, inputs, outs)
+
+  def issueTokenGen: Gen[(Input, Output, Asset)] =
+    for {
+      out   <- outputGen(true)
+      token <- assetGen.map(_.copy(boxId = out.boxId))
+      input <- inputGen(true).map(
+                _.copy(txId = out.txId, boxId = token.tokenId.toString.coerce[BoxId])
+              )
+    } yield (input, out, token)
+
+  def issueTokensGen(num: Int): Gen[List[(Input, Output, Asset)]] =
+    Gen.listOfN(num, issueTokenGen)
 }
