@@ -58,70 +58,6 @@ object DexService {
   )(xa: D ~> F)
     extends DexService[F, Stream] {
 
-    private val sellContractTemplate: HexString = HexString
-      .fromString[Try](
-        "eb027300d1eded91b1a57301e6c6b2a5730200040ed801d60193e4c6b2a5730300040ec5a7eded92c1b2a57304007305720193c2b2a5730600d07307"
-      )
-      .get
-
-    private val buyContractTemplate: HexString = HexString
-      .fromString[Try](
-        "eb027300d1eded91b1a57301e6c6b2a5730200040ed803d601e4c6b2a5730300020c4d0ed602eded91b172017304938cb27201730500017306928cb27201730700027308d60393e4c6b2a5730900040ec5a7eded720293c2b2a5730a00d0730b7203"
-      )
-      .get
-
-    private val treeSerializer: ErgoTreeSerializer = new ErgoTreeSerializer
-
-    // TODO: extract?
-    @inline def sellContractAttributes[
-      F[_]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: Applicative
-    ](ergoTree: HexString): F[ContractAttributes] =
-      Base16
-        .decode(ergoTree.unwrapped)
-        .toOption
-        .flatMap { bytes =>
-          val tree = treeSerializer.deserializeErgoTree(bytes)
-          tree.constants.lift(5).collect {
-            case Values.ConstantNode(value, SLong) =>
-              ContractAttributes(Map("tokenPrice" -> value.asInstanceOf[Long].toString))
-          }
-        }
-        .orRaise[F](
-          DexSellOrderAttributesFailed(
-            s"Cannot extract tokenPrice from sell order ergo tree $ergoTree"
-          )
-        )
-
-    @inline def buyContractAttributes[
-      F[_]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]: Applicative
-    ](ergoTree: HexString): F[ContractAttributes] =
-      Base16
-        .decode(ergoTree.unwrapped)
-        .toOption
-        .flatMap { bytes =>
-          val tree = treeSerializer.deserializeErgoTree(bytes)
-          for {
-            tokenId <- tree.constants.lift(6).collect {
-                        case ByteArrayConstant(coll) => coll.toArray
-                      }
-            tokenAmount <- tree.constants.lift(8).collect {
-                            case Values.ConstantNode(value, SLong) =>
-                              value.asInstanceOf[Long]
-                          }
-
-          } yield ContractAttributes(
-            Map(
-              "tokenId"     -> Base16.encode(tokenId),
-              "tokenAmount" -> tokenAmount.toString
-            )
-          )
-        }
-        .orRaise[F](
-          DexBuyOrderAttributesFailed(
-            s"Cannot extract token info from buy order ergo tree $ergoTree"
-          )
-        )
-
     override def getUnspentSellOrders(tokenId: TokenId): Stream[F, OutputInfo] =
       (
         for {
@@ -152,4 +88,68 @@ object DexService {
       )).translate(xa)
 
   }
+
+  val sellContractTemplate: HexString = HexString
+    .fromString[Try](
+      "eb027300d1eded91b1a57301e6c6b2a5730200040ed801d60193e4c6b2a5730300040ec5a7eded92c1b2a57304007305720193c2b2a5730600d07307"
+    )
+    .get
+
+  val buyContractTemplate: HexString = HexString
+    .fromString[Try](
+      "eb027300d1eded91b1a57301e6c6b2a5730200040ed803d601e4c6b2a5730300020c4d0ed602eded91b172017304938cb27201730500017306928cb27201730700027308d60393e4c6b2a5730900040ec5a7eded720293c2b2a5730a00d0730b7203"
+    )
+    .get
+
+  private val treeSerializer: ErgoTreeSerializer = new ErgoTreeSerializer
+
+  @inline def sellContractAttributes[
+    F[_]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: Applicative
+  ](ergoTree: HexString): F[ContractAttributes] =
+    Base16
+      .decode(ergoTree.unwrapped)
+      .toOption
+      .flatMap { bytes =>
+        val tree = treeSerializer.deserializeErgoTree(bytes)
+        tree.constants.lift(5).collect {
+          case Values.ConstantNode(value, SLong) =>
+            ContractAttributes(Map("tokenPrice" -> value.asInstanceOf[Long].toString))
+        }
+      }
+      .orRaise[F](
+        DexSellOrderAttributesFailed(
+          s"Cannot extract tokenPrice from sell order ergo tree $ergoTree"
+        )
+      )
+
+  @inline def buyContractAttributes[
+    F[_]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]: Applicative
+  ](ergoTree: HexString): F[ContractAttributes] =
+    Base16
+      .decode(ergoTree.unwrapped)
+      .toOption
+      .flatMap { bytes =>
+        val tree = treeSerializer.deserializeErgoTree(bytes)
+        for {
+          tokenId <- tree.constants.lift(6).collect {
+                      case ByteArrayConstant(coll) => coll.toArray
+                    }
+          tokenAmount <- tree.constants.lift(8).collect {
+                          case Values.ConstantNode(value, SLong) =>
+                            value.asInstanceOf[Long]
+                        }
+
+        } yield ContractAttributes(
+          Map(
+            "tokenId"     -> Base16.encode(tokenId),
+            "tokenAmount" -> tokenAmount.toString
+          )
+        )
+      }
+      .orRaise[F](
+        DexBuyOrderAttributesFailed(
+          s"Cannot extract token info from buy order ergo tree $ergoTree"
+        )
+      )
+
 }
