@@ -37,4 +37,7 @@ object UTransactionQuerySet extends QuerySet {
          |left join node_outputs o on o.box_id = ui.box_id
          |where uo.ergo_tree = $ergoTree or o.ergo_tree = $ergoTree
          |""".stripMargin.query[UTransaction]
+
+  def getAllIds: Query0[TxId] =
+    sql"select id from node_u_transactions".query[TxId]
 }

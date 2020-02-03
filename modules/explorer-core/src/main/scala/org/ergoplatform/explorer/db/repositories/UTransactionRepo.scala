@@ -70,6 +70,7 @@ object UTransactionRepo {
         .stream
         .translate(LiftConnectionIO[D].liftConnectionIOK)
 
-    def getAllIds: D[List[TxId]] = ???
+    def getAllIds: D[List[TxId]] =
+      QS.getAllIds.to[List].liftConnectionIO
   }
 }
