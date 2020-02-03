@@ -9,6 +9,7 @@ import cats.{~>, Monad}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.TransactionInfo
@@ -29,6 +30,17 @@ trait TransactionsService[F[_], S[_[_], _]] {
 }
 
 object TransactionsService {
+
+  def apply[F[_], D[_]: Monad: LiftConnectionIO](
+    xa: D ~> F
+  )(implicit e: ErgoAddressEncoder): TransactionsService[F, Stream] =
+    new Live(
+      HeaderRepo[D],
+      TransactionRepo[D],
+      InputRepo[D],
+      OutputRepo[D],
+      AssetRepo[D]
+    )(xa)
 
   final private class Live[F[_], D[_]: Monad](
     headerRepo: HeaderRepo[D],
