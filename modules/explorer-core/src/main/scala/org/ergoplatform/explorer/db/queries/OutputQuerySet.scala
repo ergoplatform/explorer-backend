@@ -11,13 +11,13 @@ import doobie.util.update.Update0
 import io.circe.Json
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.db.models.{Input, Output}
 
 /** A set of queries for doobie implementation of [OutputRepo].
   */
 object OutputQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.db.doobieInstances._
-  import org.ergoplatform.explorer.db.models.schema
   import org.ergoplatform.explorer.db.models.schema.ctx._
 
   val tableName: String = "node_outputs"
@@ -109,8 +109,8 @@ object OutputQuerySet extends QuerySet {
     limit: Int
   ) =
     quote {
-      schema.Outputs
-        .leftJoin(schema.Inputs)
+      query[Output]
+        .leftJoin(query[Input])
         .on((o, i) => i.boxId == o.boxId)
         .filter(_._1.mainChain == true)
         .filter {

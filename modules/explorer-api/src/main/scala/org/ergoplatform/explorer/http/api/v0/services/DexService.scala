@@ -47,14 +47,14 @@ object DexService {
   ](
     xa: D ~> F
   ): DexService[F, Stream] =
-    new Live(AssetRepo[D], OutputRepo[D])(xa)
+    new Live(AssetRepo[D], DexOrdersRepo[D])(xa)
 
   final private class Live[
     F[_],
     D[_]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]: Monad
   ](
     assetRepo: AssetRepo[D, Stream],
-    outputRepo: OutputRepo[D, Stream]
+    dexOrdersRepo: DexOrdersRepo[D, Stream]
   )(xa: D ~> F)
     extends DexService[F, Stream] {
 
@@ -122,14 +122,12 @@ object DexService {
           )
         )
 
-    // TODO: extract from OutputRepo to DexRepo and filter by tokenId in SQL
-    // TODO: introduce aggregate models for sell/buy orders
-
     override def getUnspentSellOrders(tokenId: TokenId): Stream[F, OutputInfo] =
       (
-        (for {
-          sellOrder <- outputRepo
-                        .getAllMainUnspentByErgoTreeTemplate(
+        for {
+          sellOrder <- dexOrdersRepo
+                        .getAllMainUnspentSellOrderByTokenId(
+                          tokenId,
                           sellContractTemplate
                         )
           assets        <- assetRepo.getAllByBoxId(sellOrder.output.boxId).asStream
@@ -138,31 +136,20 @@ object DexService {
           sellOrder,
           assets,
           Some(contractAttrs)
-        )).filter(
-            _.assets.headOption.map(_.tokenId).contains(tokenId)
-          )
         )
-        .translate(xa)
+      ).translate(xa)
 
-    override def getUnspentBuyOrders(tokenId: TokenId): Stream[F, OutputInfo] = (
+    override def getUnspentBuyOrders(tokenId: TokenId): Stream[F, OutputInfo] =
       (for {
-        buyOrder <- outputRepo
-                     .getAllMainUnspentByErgoTreeTemplate(
-                       buyContractTemplate
-                     )
+        buyOrder <- dexOrdersRepo
+                     .getAllMainUnspentBuyOrderByTokenId(tokenId, buyContractTemplate)
         assets        <- assetRepo.getAllByBoxId(buyOrder.output.boxId).asStream
         contractAttrs <- buyContractAttributes(buyOrder.output.ergoTree).asStream
       } yield OutputInfo(
         buyOrder,
         assets,
         Some(contractAttrs)
-      )).filter(
-          _.contractAttributes.exists(
-            _.value.get("tokenId").contains(tokenId.value)
-          )
-        )
-        .translate(xa)
-      )
+      )).translate(xa)
 
   }
 }
