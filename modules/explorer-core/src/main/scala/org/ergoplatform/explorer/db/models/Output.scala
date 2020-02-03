@@ -18,3 +18,22 @@ final case class Output(
   timestamp: Long, // approx time output appeared in the blockchain
   mainChain: Boolean // chain status, `true` if this output resides in main chain
 ) extends Embedded
+
+object Output {
+
+  import schema.ctx._
+
+  val quillSchemaMeta = schemaMeta[Output](
+    "node_outputs",
+    _.boxId               -> "box_id",
+    _.txId                -> "tx_id",
+    _.value               -> "value",
+    _.creationHeight      -> "creation_height",
+    _.index               -> "index",
+    _.ergoTree            -> "ergo_tree",
+    _.addressOpt          -> "address",
+    _.additionalRegisters -> "additional_registers",
+    _.timestamp           -> "timestamp",
+    _.mainChain           -> "main_chain"
+  )
+}
