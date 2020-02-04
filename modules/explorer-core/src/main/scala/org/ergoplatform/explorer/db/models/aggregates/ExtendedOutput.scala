@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.models.aggregates
 
+import io.getquill.Embedded
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.Output
 
@@ -8,4 +9,4 @@ import org.ergoplatform.explorer.db.models.Output
 final case class ExtendedOutput(
   output: Output,
   spentByOpt: Option[TxId]
-)
+) extends Embedded
