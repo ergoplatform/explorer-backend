@@ -106,24 +106,27 @@ object OutputQuerySet extends QuerySet {
     ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
-  ) =
-    quote {
-      query[Output]
-        .leftJoin(query[Input])
-        .on((o, i) => i.boxId == o.boxId)
-        .filter(_._1.mainChain == true)
-        .filter {
-          case (o, _) =>
-            infix"${o.ergoTree} like %${lift(ergoTreeTemplate.unwrapped)}"
-              .as[Boolean]
-        }
-        .filter {
-          case (_, i) => i.map(_.boxId).isEmpty || !i.getOrNull.mainChain
-        }
-        .drop(lift(offset))
-        .take(lift(limit))
-        .map { case (o, i) => ExtendedOutput(o, i.map(_.txId)) }
-    }
+  ): Query0[ExtendedOutput] =
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  i.tx_id
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
+         |offset $offset limit $limit
+         |""".stripMargin.query[ExtendedOutput]
 
   def getAllByTxId(txId: TxId): Query0[ExtendedOutput] =
     sql"""

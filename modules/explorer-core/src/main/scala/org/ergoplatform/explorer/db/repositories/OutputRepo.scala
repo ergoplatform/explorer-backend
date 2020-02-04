@@ -122,13 +122,13 @@ object OutputRepo {
     override def getAllMainUnspentByErgoTreeTemplate(
       ergoTreeTemplate: HexString
     ): Stream[D, ExtendedOutput] =
-      stream(
-        QS.getMainUnspentByErgoTreeTemplate(
+      QS.getMainUnspentByErgoTreeTemplate(
           ergoTreeTemplate,
           offset = 0,
           limit  = Int.MaxValue
         )
-      ).translate(liftK)
+        .stream
+        .translate(liftK)
 
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO

@@ -51,14 +51,14 @@ object DexOrdersRepo {
     override def getAllMainUnspentSellOrderByTokenId(
       tokenId: TokenId
     ): Stream[D, DexSellOrderOutput] =
-      stream(
-        QS.getMainUnspentSellOrderByTokenId(
+      QS.getMainUnspentSellOrderByTokenId(
           tokenId,
           sellContractTemplate,
           0,
           Int.MaxValue
         )
-      ).map(eOut =>
+        .stream
+        .map(eOut =>
           DexSellOrderOutput(
             eOut,
             getTokenPriceFromSellOrderTree(eOut.output.ergoTree).get
@@ -71,9 +71,9 @@ object DexOrdersRepo {
     override def getAllMainUnspentBuyOrderByTokenId(
       tokenId: TokenId
     ): Stream[D, DexBuyOrderOutput] =
-      stream(
-        QS.getMainUnspentBuyOrderByTokenId(tokenId, buyContractTemplate, 0, Int.MaxValue)
-      ).map(eOut =>
+      QS.getMainUnspentBuyOrderByTokenId(tokenId, buyContractTemplate, 0, Int.MaxValue)
+        .stream
+        .map(eOut =>
           DexBuyOrderOutput(eOut, getTokenInfoFromBuyOrderTree(eOut.output.ergoTree).get)
         )
         .translate(liftK)
