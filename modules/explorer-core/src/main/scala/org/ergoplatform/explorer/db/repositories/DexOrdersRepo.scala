@@ -80,12 +80,16 @@ object DexOrdersRepo {
 
   }
 
+  /** template for the buyer contract as of http://github.com/ScorexFoundation/sigmastate-interpreter/blob/42e55cbfd093252b8005e4607970764dd6610cbe/contract-verification/src/main/scala/sigmastate/verification/contract/AssetsAtomicExchange.scala#L33-L45
+    */
   val sellContractTemplate: HexString = HexString
     .fromString[Try](
       "eb027300d1eded91b1a57301e6c6b2a5730200040ed801d60193e4c6b2a5730300040ec5a7eded92c1b2a57304007305720193c2b2a5730600d07307"
     )
     .get
 
+  /** template for the buyer contract as of http://github.com/ScorexFoundation/sigmastate-interpreter/blob/42e55cbfd093252b8005e4607970764dd6610cbe/contract-verification/src/main/scala/sigmastate/verification/contract/AssetsAtomicExchange.scala#L12-L32
+    */
   val buyContractTemplate: HexString = HexString
     .fromString[Try](
       "eb027300d1eded91b1a57301e6c6b2a5730200040ed803d601e4c6b2a5730300020c4d0ed602eded91b172017304938cb27201730500017306928cb27201730700027308d60393e4c6b2a5730900040ec5a7eded720293c2b2a5730a00d0730b7203"
@@ -100,6 +104,7 @@ object DexOrdersRepo {
       .flatMap { bytes =>
         val tree = treeSerializer.deserializeErgoTree(bytes)
         tree.constants
+        // assuming buyer contract from http://github.com/ScorexFoundation/sigmastate-interpreter/blob/42e55cbfd093252b8005e4607970764dd6610cbe/contract-verification/src/main/scala/sigmastate/verification/contract/AssetsAtomicExchange.scala#L33-L45
           .lift(5)
           .collect {
             case Values.ConstantNode(value, SLong) =>
@@ -121,6 +126,7 @@ object DexOrdersRepo {
       bytes <- Base16.decode(ergoTree.unwrapped)
       tree = treeSerializer.deserializeErgoTree(bytes)
       tokenId <- tree.constants
+                // assuming seller contract from http://github.com/ScorexFoundation/sigmastate-interpreter/blob/42e55cbfd093252b8005e4607970764dd6610cbe/contract-verification/src/main/scala/sigmastate/verification/contract/AssetsAtomicExchange.scala#L33-L45
                   .lift(6)
                   .collect {
                     case ByteArrayConstant(coll) =>
