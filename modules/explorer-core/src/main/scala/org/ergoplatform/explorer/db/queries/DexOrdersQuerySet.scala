@@ -9,7 +9,6 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 object DexOrdersQuerySet {
 
   import org.ergoplatform.explorer.db.doobieInstances._
-  import org.ergoplatform.explorer.db.models.schema.ctx._
 
   def getMainUnspentSellOrderByTokenId(
     tokenId: TokenId,

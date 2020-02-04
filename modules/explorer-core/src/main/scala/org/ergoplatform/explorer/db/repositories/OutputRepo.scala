@@ -11,10 +11,8 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.db.models.schema.ctx._
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
-import org.ergoplatform.explorer.db.quillCodecs._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */

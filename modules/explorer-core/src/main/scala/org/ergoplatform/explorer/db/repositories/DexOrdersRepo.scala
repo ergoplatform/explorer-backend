@@ -12,8 +12,6 @@ import org.ergoplatform.explorer.db.models.aggregates.{
   DexSellOrderOutput,
   ExtendedOutput
 }
-import org.ergoplatform.explorer.db.models.schema.ctx._
-import org.ergoplatform.explorer.db.quillCodecs._
 import org.ergoplatform.explorer.{HexString, TokenId}
 import scorex.util.encode.Base16
 import sigmastate.Values.ByteArrayConstant

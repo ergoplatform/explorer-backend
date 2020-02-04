@@ -10,16 +10,3 @@ final case class Asset(
   headerId: Id,
   amount: Long
 )
-
-object Asset {
-
-  import schema.ctx._
-
-  val quillSchemaMeta = schemaMeta[Asset](
-    "node_assets",
-    _.tokenId  -> "token_id",
-    _.boxId    -> "box_id",
-    _.headerId -> "header_id",
-    _.amount   -> "value"
-  )
-}

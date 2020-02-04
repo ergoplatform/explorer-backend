@@ -18,7 +18,6 @@ import org.ergoplatform.explorer.db.models.{Input, Output}
 object OutputQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.db.doobieInstances._
-  import org.ergoplatform.explorer.db.models.schema.ctx._
 
   val tableName: String = "node_outputs"
 
