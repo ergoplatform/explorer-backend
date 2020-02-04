@@ -8,6 +8,7 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
   */
 object DexOrdersQuerySet {
 
+  import org.ergoplatform.explorer.db.doobieInstances._
   import org.ergoplatform.explorer.db.models.schema.ctx._
 
   def getMainUnspentSellOrderByTokenId(
@@ -24,10 +25,10 @@ object DexOrdersQuerySet {
         }
         .leftJoin(query[Input])
         .on { case ((out, _), i) => i.boxId == out.boxId }
-        .filter { case ((out, a), i) => out.mainChain }
+        .filter { case ((out, _), _) => out.mainChain }
         .filter {
           case ((out, _), _) =>
-            infix"${out.ergoTree} like %${lift(ergoTreeTemplate.unwrapped)}"
+            infix"${out.ergoTree} like ${lift("%" + ergoTreeTemplate.unwrapped)}"
               .as[Boolean]
         }
         .filter {
@@ -53,12 +54,12 @@ object DexOrdersQuerySet {
       .filter { case (out, _) => out.mainChain }
       .filter {
         case (out, _) =>
-          infix"${out.ergoTree} like %${lift(ergoTreeTemplate.unwrapped)}"
+          infix"${out.ergoTree} like ${lift("%" + ergoTreeTemplate.unwrapped)}"
             .as[Boolean]
       }
       .filter {
         case (out, _) =>
-          infix"${out.ergoTree} like %${lift(tokenId.value)}%"
+          infix"${out.ergoTree} like ${lift("%" + tokenId.value + "%")}"
             .as[Boolean]
       }
       .filter {

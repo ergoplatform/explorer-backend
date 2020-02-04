@@ -1,10 +1,13 @@
 package org.ergoplatform.explorer.db.models
 
 import cats.syntax.option._
+import cats.instances.try_._
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
 import org.scalacheck.Gen
+
+import scala.util.Try
 
 object generators {
 
@@ -91,14 +94,14 @@ object generators {
               .map(_.map(_.copy(headerId = header.id)))
     } yield (header, txs)
 
-  def outputGen(mainChain: Boolean): Gen[Output] =
+  def outputGen(mainChain: Boolean, ergoTreeGen: Gen[HexString]): Gen[Output] =
     for {
       boxId   <- boxIdGen
       txId    <- txIdGen
       value   <- Gen.posNum[Long]
       height  <- Gen.posNum[Int]
       idx     <- Gen.posNum[Int]
-      tree    <- hexStringRGen
+      tree    <- ergoTreeGen
       address <- addressGen
       regs    <- jsonFieldsGen
       ts      <- Gen.posNum[Long]
@@ -114,6 +117,8 @@ object generators {
       ts,
       mainChain
     )
+
+  def outputGen(mainChain: Boolean): Gen[Output] = outputGen(mainChain, hexStringRGen)
 
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
@@ -202,4 +207,22 @@ object generators {
 
   def issueTokensGen(num: Int): Gen[List[(Input, Output, Asset)]] =
     Gen.listOfN(num, issueTokenGen)
+
+  private val sellOrderErgoTree: HexString = HexString
+    .fromString[Try](
+      "100808cd036ba5cfbc03ea2471fdf02737f64dbcd58c34461a7ec1e586dcd713dacbf89a1204020402040204020580c2d72f040208cd036ba5cfbc03ea2471fdf02737f64dbcd58c34461a7ec1e586dcd713dacbf89a12eb027300d1eded91b1a57301e6c6b2a5730200040ed801d60193e4c6b2a5730300040ec5a7eded92c1b2a57304007305720193c2b2a5730600d07307"
+    )
+    .get
+
+  def dexSellOrderErgoTreeGen: Gen[HexString] = Gen.const(sellOrderErgoTree)
+
+  def dexSellOrderGen: Gen[(Output, Asset)] =
+    for {
+      out   <- outputGen(mainChain = true, dexSellOrderErgoTreeGen)
+      token <- assetGen.map(_.copy(boxId = out.boxId))
+    } yield (out, token)
+
+  def dexSellOrdersGen(num: Int): Gen[List[(Output, Asset)]] =
+    Gen.listOfN(num, dexSellOrderGen)
+
 }
