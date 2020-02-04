@@ -3,11 +3,12 @@ package org.ergoplatform.explorer.db.repositories
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import doobie.ConnectionIO
-import org.ergoplatform.explorer.{db, BoxId}
+import org.ergoplatform.explorer.{db, BoxId, TokenId}
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.syntax.runConnectionIO._
+import org.http4s.Credentials.Token
 import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -22,7 +23,7 @@ class DexOrdersRepoSpec
   import org.ergoplatform.explorer.db.models.generators._
 
   property("insert/getUnspentSellOrders") {
-    withLiveRepos[ConnectionIO] { (assetRepo, outputRepo, inputRepo, dexOrdersRepo) =>
+    withLiveRepos[ConnectionIO] { (assetRepo, outputRepo, _, dexOrdersRepo) =>
       forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
         val arbTokenId = assetIdGen.retryUntil(_ => true).sample.get
         dexOrdersRepo
@@ -47,6 +48,42 @@ class DexOrdersRepoSpec
               .head shouldEqual ExtendedOutput(out, None)
         }
 
+        dexOrdersRepo
+          .getAllMainUnspentSellOrderByTokenId(arbTokenId)
+          .compile
+          .toList
+          .runWithIO() shouldBe empty
+      }
+    }
+  }
+
+  property("insert/getUnspentBuyOrders") {
+    withLiveRepos[ConnectionIO] { (_, outputRepo, _, dexOrdersRepo) =>
+      forSingleInstance(dexBuyOrderGen) { buyOrder =>
+        val arbTokenId = assetIdGen.retryUntil(_ => true).sample.get
+        dexOrdersRepo
+          .getAllMainUnspentBuyOrderByTokenId(arbTokenId)
+          .compile
+          .toList
+          .runWithIO() shouldBe empty
+
+        outputRepo.insert(buyOrder).runWithIO()
+
+        val tokenHardcodedInContract =
+          TokenId("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1")
+
+        dexOrdersRepo
+          .getAllMainUnspentBuyOrderByTokenId(tokenHardcodedInContract)
+          .compile
+          .toList
+          .runWithIO()
+          .head shouldEqual ExtendedOutput(buyOrder, None)
+
+        dexOrdersRepo
+          .getAllMainUnspentBuyOrderByTokenId(arbTokenId)
+          .compile
+          .toList
+          .runWithIO() shouldBe empty
       }
     }
   }
