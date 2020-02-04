@@ -2,7 +2,11 @@ package org.ergoplatform.explorer.http.api.v0.defs
 
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.http.api.ApiErr
-import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
+import org.ergoplatform.explorer.http.api.v0.models.{
+  DexBuyOrderInfo,
+  DexSellOrderInfo,
+  OutputInfo
+}
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
@@ -13,13 +17,14 @@ object DexEndpointsDefs {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getUnspentSellOrdersDef :: getUnspentBuyOrdersDef :: Nil
 
-  def getUnspentSellOrdersDef: Endpoint[TokenId, ApiErr, List[OutputInfo], Nothing] =
+  def getUnspentSellOrdersDef
+    : Endpoint[TokenId, ApiErr, List[DexSellOrderInfo], Nothing] =
     baseEndpointDef
       .in(PathPrefix / "tokens" / path[TokenId] / "unspentSellOrders")
-      .out(jsonBody[List[OutputInfo]])
+      .out(jsonBody[List[DexSellOrderInfo]])
 
-  def getUnspentBuyOrdersDef: Endpoint[TokenId, ApiErr, List[OutputInfo], Nothing] =
+  def getUnspentBuyOrdersDef: Endpoint[TokenId, ApiErr, List[DexBuyOrderInfo], Nothing] =
     baseEndpointDef
       .in(PathPrefix / "tokens" / path[TokenId] / "unspentBuyOrders")
-      .out(jsonBody[List[OutputInfo]])
+      .out(jsonBody[List[DexBuyOrderInfo]])
 }

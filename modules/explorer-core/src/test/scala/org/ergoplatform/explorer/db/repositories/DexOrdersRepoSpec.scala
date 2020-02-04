@@ -6,7 +6,11 @@ import doobie.ConnectionIO
 import org.ergoplatform.explorer.{db, BoxId, TokenId}
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.aggregates.{
+  DexBuyOrderOutput,
+  DexSellOrderOutput,
+  ExtendedOutput
+}
 import org.ergoplatform.explorer.db.syntax.runConnectionIO._
 import org.http4s.Credentials.Token
 import org.scalacheck.Gen
@@ -40,12 +44,15 @@ class DexOrdersRepoSpec
 
         sellOrders.foreach {
           case (out, asset) =>
+            val expectedSellOrder = DexSellOrderOutput(
+              ExtendedOutput(out, None),
+              DexOrdersRepo.getTokenPriceFromSellOrderTree(out.ergoTree).get
+            )
             dexOrdersRepo
               .getAllMainUnspentSellOrderByTokenId(asset.tokenId)
               .compile
               .toList
-              .runWithIO()
-              .head shouldEqual ExtendedOutput(out, None)
+              .runWithIO() should contain theSameElementsAs List(expectedSellOrder)
         }
 
         dexOrdersRepo
@@ -72,12 +79,16 @@ class DexOrdersRepoSpec
         val tokenHardcodedInContract =
           TokenId("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1")
 
+        val expectedBuyOrder = DexBuyOrderOutput(
+          ExtendedOutput(buyOrder, None),
+          DexOrdersRepo.getTokenInfoFromBuyOrderTree(buyOrder.ergoTree).get
+        )
+
         dexOrdersRepo
           .getAllMainUnspentBuyOrderByTokenId(tokenHardcodedInContract)
           .compile
           .toList
-          .runWithIO()
-          .head shouldEqual ExtendedOutput(buyOrder, None)
+          .runWithIO() should contain theSameElementsAs List(expectedBuyOrder)
 
         dexOrdersRepo
           .getAllMainUnspentBuyOrderByTokenId(arbTokenId)

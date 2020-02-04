@@ -246,21 +246,6 @@ package object explorer {
         .map(UrlString.apply)
   }
 
-  @newtype case class ContractAttributes(value: Map[String, String])
-
-  object ContractAttributes {
-    // circe instances
-    implicit def encoder: Encoder[ContractAttributes] = deriving
-    implicit def decoder: Decoder[ContractAttributes] = deriving
-
-    implicit def jsonCodec: Codec.JsonCodec[ContractAttributes] =
-      implicitly[Codec.JsonCodec[Map[String, String]]]
-        .map(ContractAttributes.apply)(_.value)
-
-    implicit def schema: Schema[ContractAttributes] =
-      jsonCodec.meta.schema.description("ContractAttributes")
-  }
-
   private def deriveCodec[A, CF <: CodecFormat, T](
     at: A => Either[Throwable, T],
     ta: T => A
