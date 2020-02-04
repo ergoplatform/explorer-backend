@@ -63,8 +63,7 @@ object DexService {
         for {
           sellOrder <- dexOrdersRepo
                         .getAllMainUnspentSellOrderByTokenId(
-                          tokenId,
-                          sellContractTemplate
+                          tokenId
                         )
           assets        <- assetRepo.getAllByBoxId(sellOrder.output.boxId).asStream
           contractAttrs <- sellContractAttributes(sellOrder.output.ergoTree).asStream
@@ -78,7 +77,7 @@ object DexService {
     override def getUnspentBuyOrders(tokenId: TokenId): Stream[F, OutputInfo] =
       (for {
         buyOrder <- dexOrdersRepo
-                     .getAllMainUnspentBuyOrderByTokenId(tokenId, buyContractTemplate)
+                     .getAllMainUnspentBuyOrderByTokenId(tokenId)
         assets        <- assetRepo.getAllByBoxId(buyOrder.output.boxId).asStream
         contractAttrs <- buyContractAttributes(buyOrder.output.ergoTree).asStream
       } yield OutputInfo(
@@ -88,18 +87,6 @@ object DexService {
       )).translate(xa)
 
   }
-
-  val sellContractTemplate: HexString = HexString
-    .fromString[Try](
-      "eb027300d1eded91b1a57301e6c6b2a5730200040ed801d60193e4c6b2a5730300040ec5a7eded92c1b2a57304007305720193c2b2a5730600d07307"
-    )
-    .get
-
-  val buyContractTemplate: HexString = HexString
-    .fromString[Try](
-      "eb027300d1eded91b1a57301e6c6b2a5730200040ed803d601e4c6b2a5730300020c4d0ed602eded91b172017304938cb27201730500017306928cb27201730700027308d60393e4c6b2a5730900040ec5a7eded720293c2b2a5730a00d0730b7203"
-    )
-    .get
 
   private val treeSerializer: ErgoTreeSerializer = new ErgoTreeSerializer
 
