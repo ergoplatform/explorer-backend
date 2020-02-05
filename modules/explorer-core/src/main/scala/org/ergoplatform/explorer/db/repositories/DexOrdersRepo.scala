@@ -1,24 +1,16 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.instances.try_._
 import eu.timepit.refined._
-import eu.timepit.refined.api.RefType
-import eu.timepit.refined.boolean._
-import eu.timepit.refined.char._
-import eu.timepit.refined.collection._
-import eu.timepit.refined.generic._
 import eu.timepit.refined.string._
 import fs2.Stream
 import org.ergoplatform.explorer.Err.DexErr.{
   DexBuyOrderAttributesFailed,
   DexSellOrderAttributesFailed
 }
-import org.ergoplatform.explorer.constraints.HexStringType
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.{
   DexBuyOrderOutput,
-  DexSellOrderOutput,
-  ExtendedOutput
+  DexSellOrderOutput
 }
 import org.ergoplatform.explorer.{HexString, TokenId}
 import scorex.util.encode.Base16
