@@ -231,7 +231,7 @@ object generators {
   /** from http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/test/resources/mockwebserver/node_responses/response_Box_AAE_buyer_contract.json#L4-L4
     * which was generated with http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/main/scala-2.12/org/ergoplatform/appkit/ergotool/dex/CreateBuyOrderCmd.scala#L56-L56
     */
-  private val buyOrderErgoTree: HexString = HexString
+  val buyOrderErgoTree: HexString = HexString
     .fromString[Try](
       "100c08cd036ba5cfbc03ea2471fdf02737f64dbcd58c34461a7ec1e586dcd713dacbf89a12040004000400040004000e2021f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1040005780400040008cd036ba5cfbc03ea2471fdf02737f64dbcd58c34461a7ec1e586dcd713dacbf89a12eb027300d1eded91b1a57301e6c6b2a5730200040ed803d601e4c6b2a5730300020c4d0ed602eded91b172017304938cb27201730500017306928cb27201730700027308d60393e4c6b2a5730900040ec5a7eded720293c2b2a5730a00d0730b7203"
     )

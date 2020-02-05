@@ -77,7 +77,7 @@ class DexOrdersRepoSpec
         outputRepo.insert(buyOrder).runWithIO()
 
         val tokenHardcodedInContract =
-          TokenId("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1")
+          DexContracts.getTokenInfoFromBuyOrderTree(buyOrderErgoTree).get.tokenId
 
         val expectedBuyOrder = DexBuyOrderOutput(
           ExtendedOutput(buyOrder, None),
