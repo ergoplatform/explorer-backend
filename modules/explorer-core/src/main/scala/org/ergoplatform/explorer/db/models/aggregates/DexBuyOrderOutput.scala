@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.models.aggregates
 
 import org.ergoplatform.explorer.TokenId
-import org.ergoplatform.explorer.db.repositories.DexOrdersRepo.TokenInfo
+import org.ergoplatform.explorer.db.DexContracts
 
 final case class DexBuyOrderOutput(
   extOutput: ExtendedOutput,
@@ -11,6 +11,9 @@ final case class DexBuyOrderOutput(
 
 object DexBuyOrderOutput {
 
-  def apply(extOutput: ExtendedOutput, tokenInfo: TokenInfo): DexBuyOrderOutput =
+  def apply(
+    extOutput: ExtendedOutput,
+    tokenInfo: DexContracts.TokenInfo
+  ): DexBuyOrderOutput =
     new DexBuyOrderOutput(extOutput, tokenInfo.tokenId, tokenInfo.amount)
 }

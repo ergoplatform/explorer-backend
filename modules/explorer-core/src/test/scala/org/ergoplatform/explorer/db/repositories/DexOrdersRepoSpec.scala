@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.effect.Sync
 import doobie.ConnectionIO
 import org.ergoplatform.explorer.{db, BoxId, TokenId}
-import org.ergoplatform.explorer.db.{repositories, RealDbTest}
+import org.ergoplatform.explorer.db.{repositories, DexContracts, RealDbTest}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.{
   DexBuyOrderOutput,
@@ -46,7 +46,7 @@ class DexOrdersRepoSpec
           case (out, asset) =>
             val expectedSellOrder = DexSellOrderOutput(
               ExtendedOutput(out, None),
-              DexOrdersRepo.getTokenPriceFromSellOrderTree(out.ergoTree).get
+              DexContracts.getTokenPriceFromSellOrderTree(out.ergoTree).get
             )
             dexOrdersRepo
               .getAllMainUnspentSellOrderByTokenId(asset.tokenId)
@@ -81,7 +81,7 @@ class DexOrdersRepoSpec
 
         val expectedBuyOrder = DexBuyOrderOutput(
           ExtendedOutput(buyOrder, None),
-          DexOrdersRepo.getTokenInfoFromBuyOrderTree(buyOrder.ergoTree).get
+          DexContracts.getTokenInfoFromBuyOrderTree(buyOrder.ergoTree).get
         )
 
         dexOrdersRepo
