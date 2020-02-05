@@ -42,11 +42,15 @@ object Err {
           .map(s => s", reason: $s")
           .getOrElse("")
       )
+  }
 
-    final case class DexSellOrderAttributesFailed(details: String)
-      extends RequestProcessingErr(details)
+  abstract class DexErr(val msg: String) extends Err
 
-    final case class DexBuyOrderAttributesFailed(details: String)
-      extends RequestProcessingErr(details)
+  object DexErr {
+
+    final case class DexSellOrderAttributesFailed(details: String) extends DexErr(details)
+
+    final case class DexBuyOrderAttributesFailed(details: String) extends DexErr(details)
+
   }
 }

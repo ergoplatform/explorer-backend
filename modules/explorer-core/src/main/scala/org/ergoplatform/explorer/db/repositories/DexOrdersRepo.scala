@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.db.repositories
 
 import cats.instances.try_._
 import fs2.Stream
-import org.ergoplatform.explorer.Err.RequestProcessingErr.{
+import org.ergoplatform.explorer.Err.DexErr.{
   DexBuyOrderAttributesFailed,
   DexSellOrderAttributesFailed
 }
