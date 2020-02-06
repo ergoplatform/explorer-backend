@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.{~>, Monad}
 import fs2.Stream
+import org.ergoplatform.explorer.Err.DexErr
 import org.ergoplatform.explorer.Err.DexErr.{
   DexBuyOrderAttributesFailed,
   DexSellOrderAttributesFailed
@@ -33,10 +34,7 @@ object DexService {
     F[_],
     D[_]: LiftConnectionIO: Monad: ContravariantRaise[
       *[_],
-      DexSellOrderAttributesFailed
-    ]: ContravariantRaise[
-      *[_],
-      DexBuyOrderAttributesFailed
+      DexErr
     ]: ContravariantRaise[
       *[_],
       Base16DecodingFailed

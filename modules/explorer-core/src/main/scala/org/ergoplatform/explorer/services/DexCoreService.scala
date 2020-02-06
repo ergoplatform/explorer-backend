@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.services
 
 import cats.Monad
 import fs2.Stream
+import org.ergoplatform.explorer.Err.DexErr
 import org.ergoplatform.explorer.Err.DexErr.{
   DexBuyOrderAttributesFailed,
   DexSellOrderAttributesFailed
@@ -43,10 +44,7 @@ object DexCoreService {
 
   def apply[F[_]: LiftConnectionIO: Monad: ContravariantRaise[
     *[_],
-    DexSellOrderAttributesFailed
-  ]: ContravariantRaise[
-    *[_],
-    DexBuyOrderAttributesFailed
+    DexErr
   ]: ContravariantRaise[
     *[_],
     Base16DecodingFailed
@@ -55,10 +53,7 @@ object DexCoreService {
 
   final private class Live[F[_]: Monad: ContravariantRaise[
     *[_],
-    DexSellOrderAttributesFailed
-  ]: ContravariantRaise[
-    *[_],
-    DexBuyOrderAttributesFailed
+    DexErr
   ]: ContravariantRaise[
     *[_],
     Base16DecodingFailed
