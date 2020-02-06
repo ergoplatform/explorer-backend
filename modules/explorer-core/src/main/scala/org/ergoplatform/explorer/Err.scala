@@ -1,5 +1,7 @@
 package org.ergoplatform.explorer
 
+import scorex.util.encode.Base16
+
 import scala.util.control.NoStackTrace
 
 trait Err extends Exception with NoStackTrace {
@@ -39,6 +41,24 @@ object Err {
       reasonOpt: Option[String] = None
     ) extends RequestProcessingErr(
         s"Failed to decode address: `$address`" + reasonOpt
+          .map(s => s", reason: $s")
+          .getOrElse("")
+      )
+
+    final case class Base16DecodingFailed(
+      hexString: HexString,
+      reasonOpt: Option[String] = None
+    ) extends RequestProcessingErr(
+        s"Failed to decode Base16: `$hexString`" + reasonOpt
+          .map(s => s", reason: $s")
+          .getOrElse("")
+      )
+
+    final case class ErgoTreeDeserializationFailed(
+      bytes: Array[Byte],
+      reasonOpt: Option[String] = None
+    ) extends RequestProcessingErr(
+        s"Failed to deserialize ergo tree from: `${Base16.encode(bytes)}`" + reasonOpt
           .map(s => s", reason: $s")
           .getOrElse("")
       )

@@ -2,11 +2,20 @@ package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.{~>, Monad}
 import fs2.Stream
+import org.ergoplatform.explorer.Err.DexErr.{
+  DexBuyOrderAttributesFailed,
+  DexSellOrderAttributesFailed
+}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.{
+  Base16DecodingFailed,
+  ErgoTreeDeserializationFailed
+}
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.v0.models.{DexBuyOrderInfo, DexSellOrderInfo}
 import org.ergoplatform.explorer.syntax.stream._
+import tofu.Raise.ContravariantRaise
 
 /** A service providing an access to the DEX data.
   */
@@ -21,7 +30,19 @@ object DexService {
 
   def apply[
     F[_],
-    D[_]: LiftConnectionIO: Monad
+    D[_]: LiftConnectionIO: Monad: ContravariantRaise[
+      *[_],
+      DexSellOrderAttributesFailed
+    ]: ContravariantRaise[
+      *[_],
+      DexBuyOrderAttributesFailed
+    ]: ContravariantRaise[
+      *[_],
+      Base16DecodingFailed
+    ]: ContravariantRaise[
+      *[_],
+      ErgoTreeDeserializationFailed
+    ]
   ](
     xa: D ~> F
   ): DexService[F, Stream] =

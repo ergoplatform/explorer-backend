@@ -4,7 +4,11 @@ import cats.syntax.either._
 import cats.syntax.flatMap._
 import cats.{Applicative, Monad}
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
+import org.ergoplatform.explorer.Err.RequestProcessingErr.{
+  AddressDecodingFailed,
+  Base16DecodingFailed,
+  ErgoTreeDeserializationFailed
+}
 import org.ergoplatform.explorer.{Address, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import scorex.util.encode.Base16
@@ -37,9 +41,28 @@ object utils {
       .toRaise
 
   @inline def addressToErgoTreeHex[
-    F[_]: ContravariantRaise[*[_], AddressDecodingFailed]
-        : ContravariantRaise[*[_], RefinementFailed]
-        : Monad
+    F[_]: ContravariantRaise[*[_], AddressDecodingFailed]: ContravariantRaise[*[_], RefinementFailed]: Monad
   ](address: Address)(implicit enc: ErgoAddressEncoder): F[HexString] =
-    addressToErgoTree[F](address).flatMap(tree => HexString.fromString(Base16.encode(tree.bytes)))
+    addressToErgoTree[F](address).flatMap(tree =>
+      HexString.fromString(Base16.encode(tree.bytes))
+    )
+
+  @inline def hexStringBase16ToBytes[
+    F[_]: ContravariantRaise[*[_], Base16DecodingFailed]: Applicative
+  ](s: HexString): F[Array[Byte]] =
+    Base16
+      .decode(s.unwrapped)
+      .toEither
+      .leftMap(e => Base16DecodingFailed(s, Option(e.getMessage)))
+      .toRaise
+
+  @inline def bytesToErgoTree[
+    F[_]: ContravariantRaise[*[_], ErgoTreeDeserializationFailed]: Applicative
+  ](bytes: Array[Byte]): F[ErgoTree] =
+    Try {
+      treeSerializer.deserializeErgoTree(bytes)
+    }.toEither
+      .leftMap(e => ErgoTreeDeserializationFailed(bytes, Option(e.getMessage)))
+      .toRaise
+
 }

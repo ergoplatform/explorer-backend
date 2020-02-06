@@ -3,7 +3,11 @@ package org.ergoplatform.explorer.http.api.v0
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import cats.{~>, Monad}
 import org.ergoplatform.explorer.Err.DexErr
-import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
+import org.ergoplatform.explorer.Err.RequestProcessingErr.{
+  Base16DecodingFailed,
+  ErgoTreeDeserializationFailed,
+  InconsistentDbData
+}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.http.api.v0.routes.{
   AssetsRoutes,
@@ -26,7 +30,13 @@ object HttpApiV0 {
 
   def apply[
     F[_]: ConcurrentEffect: ContextShift: Timer,
-    D[_]: ContravariantRaise[*[_], InconsistentDbData]: ContravariantRaise[*[_], DexErr]: Monad: LiftConnectionIO
+    D[_]: ContravariantRaise[*[_], InconsistentDbData]: ContravariantRaise[*[_], DexErr]: ContravariantRaise[
+      *[_],
+      Base16DecodingFailed
+    ]: ContravariantRaise[
+      *[_],
+      ErgoTreeDeserializationFailed
+    ]: Monad: LiftConnectionIO
   ](settings: HttpSettings)(xa: D ~> F): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(xa))

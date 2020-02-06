@@ -1,8 +1,8 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.data.NonEmptyList
 import cats.effect.Sync
 import doobie.ConnectionIO
+import org.ergoplatform.explorer.db.DexContracts.TokenInfo
 import org.ergoplatform.explorer.{db, BoxId, TokenId}
 import org.ergoplatform.explorer.db.{repositories, DexContracts, RealDbTest}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -12,8 +12,6 @@ import org.ergoplatform.explorer.db.models.aggregates.{
   ExtendedOutput
 }
 import org.ergoplatform.explorer.db.syntax.runConnectionIO._
-import org.http4s.Credentials.Token
-import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -46,7 +44,7 @@ class DexOrdersRepoSpec
           case (out, asset) =>
             val expectedSellOrder = DexSellOrderOutput(
               ExtendedOutput(out, None),
-              DexContracts.getTokenPriceFromSellOrderTree(out.ergoTree).get
+              50000000L
             )
             dexOrdersRepo
               .getAllMainUnspentSellOrderByTokenId(asset.tokenId)
@@ -76,16 +74,17 @@ class DexOrdersRepoSpec
 
         outputRepo.insert(buyOrder).runWithIO()
 
-        val tokenHardcodedInContract =
-          DexContracts.getTokenInfoFromBuyOrderTree(buyOrderErgoTree).get.tokenId
+        val tokenEmbeddedInContract =
+          TokenId("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1")
 
+        val tokenAmountEmbeddedInContract = 60L
         val expectedBuyOrder = DexBuyOrderOutput(
           ExtendedOutput(buyOrder, None),
-          DexContracts.getTokenInfoFromBuyOrderTree(buyOrder.ergoTree).get
+          TokenInfo(tokenEmbeddedInContract, tokenAmountEmbeddedInContract)
         )
 
         dexOrdersRepo
-          .getAllMainUnspentBuyOrderByTokenId(tokenHardcodedInContract)
+          .getAllMainUnspentBuyOrderByTokenId(tokenEmbeddedInContract)
           .compile
           .toList
           .runWithIO() should contain theSameElementsAs List(expectedBuyOrder)
