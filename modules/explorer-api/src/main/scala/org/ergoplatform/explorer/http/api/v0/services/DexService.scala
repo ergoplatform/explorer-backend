@@ -14,6 +14,7 @@ import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.v0.models.{DexBuyOrderInfo, DexSellOrderInfo}
+import org.ergoplatform.explorer.services.DexCoreService
 import org.ergoplatform.explorer.syntax.stream._
 import tofu.Raise.ContravariantRaise
 
@@ -46,21 +47,21 @@ object DexService {
   ](
     xa: D ~> F
   ): DexService[F, Stream] =
-    new Live(AssetRepo[D], DexOrdersRepo[D])(xa)
+    new Live(AssetRepo[D], DexCoreService[D])(xa)
 
   final private class Live[
     F[_],
     D[_]: Monad
   ](
     assetRepo: AssetRepo[D, Stream],
-    dexOrdersRepo: DexOrdersRepo[D, Stream]
+    dexCoreService: DexCoreService[D, Stream]
   )(xa: D ~> F)
     extends DexService[F, Stream] {
 
     override def getUnspentSellOrders(tokenId: TokenId): Stream[F, DexSellOrderInfo] =
       (
         for {
-          sellOrderOut <- dexOrdersRepo
+          sellOrderOut <- dexCoreService
                            .getAllMainUnspentSellOrderByTokenId(
                              tokenId
                            )
@@ -71,7 +72,7 @@ object DexService {
     override def getUnspentBuyOrders(tokenId: TokenId): Stream[F, DexBuyOrderInfo] =
       (
         for {
-          buyOrder <- dexOrdersRepo
+          buyOrder <- dexCoreService
                        .getAllMainUnspentBuyOrderByTokenId(tokenId)
           assets <- assetRepo.getAllByBoxId(buyOrder.extOutput.output.boxId).asStream
         } yield DexBuyOrderInfo(buyOrder, assets)

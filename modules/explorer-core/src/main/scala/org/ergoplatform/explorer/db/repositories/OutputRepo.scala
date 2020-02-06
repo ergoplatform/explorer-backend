@@ -7,11 +7,12 @@ import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import fs2.Stream
+import org.ergoplatform.explorer.db.DexContracts
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
+import org.ergoplatform.explorer.db.models.aggregates.{DexSellOrderOutput, ExtendedOutput}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
@@ -73,6 +74,19 @@ trait OutputRepo[D[_], S[_[_], _]] {
   def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal]
 
   def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal]
+
+  /** Get all unspent main-chain DEX sell orders
+    */
+  def getAllMainUnspentSellOrderByTokenId(
+    tokenId: TokenId
+  ): S[D, ExtendedOutput]
+
+  /** Get all unspent main-chain DEX buy orders
+    */
+  def getAllMainUnspentBuyOrderByTokenId(
+    tokenId: TokenId
+  ): S[D, ExtendedOutput]
+
 }
 
 object OutputRepo {
@@ -144,5 +158,30 @@ object OutputRepo {
 
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
       QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
+
+    override def getAllMainUnspentSellOrderByTokenId(
+      tokenId: TokenId
+    ): Stream[D, ExtendedOutput] =
+      QS.getMainUnspentSellOrderByTokenId(
+          tokenId,
+          DexContracts.sellContractTemplate,
+          0,
+          Int.MaxValue
+        )
+        .stream
+        .translate(liftK)
+
+    override def getAllMainUnspentBuyOrderByTokenId(
+      tokenId: TokenId
+    ): Stream[D, ExtendedOutput] =
+      QS.getMainUnspentBuyOrderByTokenId(
+          tokenId,
+          DexContracts.buyContractTemplate,
+          0,
+          Int.MaxValue
+        )
+        .stream
+        .translate(liftK)
+
   }
 }
