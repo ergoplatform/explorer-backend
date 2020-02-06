@@ -64,7 +64,7 @@ object Err {
       )
   }
 
-  abstract class DexErr(val msg: String) extends Err
+  abstract class DexErr(override val msg: String) extends RequestProcessingErr(msg)
 
   object DexErr {
 

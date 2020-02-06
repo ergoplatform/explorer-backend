@@ -3,10 +3,6 @@ package org.ergoplatform.explorer.services
 import cats.Monad
 import fs2.Stream
 import org.ergoplatform.explorer.Err.DexErr
-import org.ergoplatform.explorer.Err.DexErr.{
-  DexBuyOrderAttributesFailed,
-  DexSellOrderAttributesFailed
-}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.{
   Base16DecodingFailed,
   ErgoTreeDeserializationFailed
