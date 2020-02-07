@@ -6,6 +6,7 @@ import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.BlockInfo
+import org.ergoplatform.explorer.db.models.aggregates.ChartPoint
 
 /** [[BlockInfo]] data access operations.
   */
@@ -26,6 +27,26 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
   /** Get size in bytes of the block with the given `id`.
     */
   def getBlockSize(id: Id): D[Option[Int]]
+
+  def totalDifficultySince(ts: Long): D[Long]
+
+  def circulatingSupplySince(ts: Long): D[Long]
+
+  def totalCoinsSince(ts: Long): D[List[ChartPoint]]
+
+  def avgBlockSizeSince(ts: Long): D[List[ChartPoint]]
+
+  def avgTxsQtySince(ts: Long): D[List[ChartPoint]]
+
+  def totalTxsQtySince(ts: Long): D[List[ChartPoint]]
+
+  def totalBlockChainSizeSince(ts: Long): D[List[ChartPoint]]
+
+  def avgDifficultiesSince(ts: Long): D[List[ChartPoint]]
+
+  def totalDifficultiesSince(ts: Long): D[List[ChartPoint]]
+
+  def totalMinerRevenueSince(ts: Long): D[List[ChartPoint]]
 }
 
 object BlockInfoRepo {
@@ -48,5 +69,35 @@ object BlockInfoRepo {
 
     def getBlockSize(id: Id): D[Option[Int]] =
       QS.getBlockSize(id).option.liftConnectionIO
+
+    def totalDifficultySince(ts: Long): D[Long] =
+      QS.totalDifficultySince(ts).unique.liftConnectionIO
+
+    def circulatingSupplySince(ts: Long): D[Long] =
+      QS.circulatingSupplySince(ts).unique.liftConnectionIO
+
+    def totalCoinsSince(ts: Long): D[List[ChartPoint]] =
+      QS.totalCoinsSince(ts).to[List].liftConnectionIO
+
+    def avgBlockSizeSince(ts: Long): D[List[ChartPoint]] =
+      QS.avgBlockSizeSince(ts).to[List].liftConnectionIO
+
+    def avgTxsQtySince(ts: Long): D[List[ChartPoint]] =
+      QS.avgTxsQtySince(ts).to[List].liftConnectionIO
+
+    def totalTxsQtySince(ts: Long): D[List[ChartPoint]] =
+      QS.totalTxsQtySince(ts).to[List].liftConnectionIO
+
+    def totalBlockChainSizeSince(ts: Long): D[List[ChartPoint]] =
+      QS.totalBlockChainSizeSince(ts).to[List].liftConnectionIO
+
+    def avgDifficultiesSince(ts: Long): D[List[ChartPoint]] =
+      QS.avgDifficultiesSince(ts).to[List].liftConnectionIO
+
+    def totalDifficultiesSince(ts: Long): D[List[ChartPoint]] =
+      QS.totalDifficultiesSince(ts).to[List].liftConnectionIO
+
+    def totalMinerRevenueSince(ts: Long): D[List[ChartPoint]] =
+      QS.totalMinerRevenueSince(ts).to[List].liftConnectionIO
   }
 }

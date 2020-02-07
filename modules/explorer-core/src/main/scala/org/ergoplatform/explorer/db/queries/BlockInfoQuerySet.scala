@@ -5,6 +5,7 @@ import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.models.BlockInfo
+import org.ergoplatform.explorer.db.models.aggregates.ChartPoint
 
 object BlockInfoQuerySet extends QuerySet {
 
@@ -44,4 +45,73 @@ object BlockInfoQuerySet extends QuerySet {
   def getBlockSize(id: Id): Query0[Int] =
     sql"select block_size from blocks_info where id = $id"
       .query[Int]
+
+  def totalDifficultySince(ts: Long): Query0[Long] =
+    sql"""
+         |select coalesce(cast(sum(difficulty) as bigint), 0) from blocks_info
+         |where timestamp >= $ts
+         |""".stripMargin.query[Long]
+
+  def circulatingSupplySince(ts: Long): Query0[Long] =
+    sql"""
+         |select coalesce(cast(sum(o.value) as bigint), 0) from node_transactions t
+         |right join node_outputs o on t.id = o.tx_id
+         |where t.timestamp >= $ts
+         |""".stripMargin.query[Long]
+
+  def totalCoinsSince(ts: Long): Query0[ChartPoint] =
+    sql"""
+         |select min(timestamp) as t, cast(max(total_coins_issued) as bigint) from blocks_info
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |group by date order by t asc
+         |""".stripMargin.query[ChartPoint]
+
+  def avgBlockSizeSince(ts: Long): Query0[ChartPoint] =
+    sql"""
+         |select min(timestamp) as t, cast(avg(block_size) as bigint) from blocks_info
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |group by date order by t asc
+         |""".stripMargin.query[ChartPoint]
+
+  def avgTxsQtySince(ts: Long): Query0[ChartPoint] =
+    sql"""
+         |select min(timestamp) as t, cast(avg(txs_count) as bigint) from blocks_info
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |group by date order by t asc
+         |""".stripMargin.query[ChartPoint]
+
+  def totalTxsQtySince(ts: Long): Query0[ChartPoint] =
+    sql"""
+         |select min(timestamp) as t, cast(sum(txs_count) as bigint) from blocks_info
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |group by date order by t asc
+         |""".stripMargin.query[ChartPoint]
+
+  def totalBlockChainSizeSince(ts: Long): Query0[ChartPoint] =
+    sql"""
+         |select min(timestamp) as t, cast(max(block_chain_total_size) as bigint) from blocks_info
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |group by date order by t asc
+         |""".stripMargin.query[ChartPoint]
+
+  def avgDifficultiesSince(ts: Long): Query0[ChartPoint] =
+    sql"""
+         |select min(timestamp) as t, cast(avg(difficulty) as bigint) from blocks_info
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |group by date order by t asc
+         |""".stripMargin.query[ChartPoint]
+
+  def totalDifficultiesSince(ts: Long): Query0[ChartPoint] =
+    sql"""
+         |select min(timestamp) as t, cast(sum(difficulty) as bigint) from blocks_info
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |group by date order by t asc
+         |""".stripMargin.query[ChartPoint]
+
+  def totalMinerRevenueSince(ts: Long): Query0[ChartPoint] =
+    sql"""
+         |select min(timestamp) as t, cast(sum(miner_revenue) as bigint) from blocks_info
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |group by date order by t asc
+         |""".stripMargin.query[ChartPoint]
 }
