@@ -152,4 +152,19 @@ object OutputQuerySet extends QuerySet {
          |left join node_headers h on t.header_id = h.id
          |where h.id = $headerId
          |""".stripMargin.update
+
+  def sumOfAllUnspentOutputsSince(ts: Long): Query0[BigDecimal] =
+    sql"""
+         |select coalesce(cast(sum(o.value) as bigint), 0)
+         |from node_outputs o left join node_inputs i on o.box_id = i.box_id
+         |where i.box_id is null and o.timestamp >= $ts
+         |""".stripMargin.query[BigDecimal]
+
+  def estimatedOutputsSince(ts: Long)(genesisAddress: Address): Query0[BigDecimal] =
+    sql"""
+         |select coalesce(cast(sum(o.value) as decimal), 0)
+         |from node_outputs o
+         |left join node_inputs i on (o.box_id = i.box_id and i.box_id is null)
+         |where o.address <> '$genesisAddress' and o.timestamp >= $ts
+         |""".query[BigDecimal]
 }

@@ -59,6 +59,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
   /** Search for addresses containing a given `substring`.
     */
   def searchAddressesBySubstring(substring: String): D[List[Address]]
+
+  def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal]
+
+  def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal]
 }
 
 object OutputRepo {
@@ -113,5 +117,11 @@ object OutputRepo {
 
     def searchAddressesBySubstring(substring: String): D[List[Address]] =
       QS.searchAddressesBySubstring(substring).to[List].liftConnectionIO
+
+    def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal] =
+      QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnectionIO
+
+    def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
+      QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
   }
 }
