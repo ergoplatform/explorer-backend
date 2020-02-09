@@ -2,7 +2,11 @@ package org.ergoplatform.explorer.services
 
 import cats.effect.IO
 import org.ergoplatform.explorer.db.DexContracts
-import org.ergoplatform.explorer.db.models.aggregates.{DexSellOrderOutput, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{
+  DexBuyOrderOutput,
+  DexSellOrderOutput,
+  ExtendedOutput
+}
 import org.ergoplatform.explorer.db.repositories.TestOutputRepo
 import org.ergoplatform.explorer.db.repositories.TestOutputRepo.Source
 import org.scalatest.{Matchers, PropSpec}
@@ -38,4 +42,23 @@ class DexCoreServiceSpec
     }
   }
 
+  property("Buy orders (enrich ExtendedOutput with token info)") {
+    forAll(dexBuyOrderGen) { buyOrder =>
+      val buyOrderExt = ExtendedOutput(buyOrder, None)
+      val source      = Source(List.empty, List(buyOrderExt))
+      val outRepo     = new TestOutputRepo[IO](source)
+
+      val dexCoreService = DexCoreService[IO](outRepo)
+      val expectedTokenInfo =
+        DexContracts.getTokenInfoFromBuyOrderTree[IO](buyOrder.ergoTree).unsafeRunSync()
+      val expectedBuyOrder =
+        DexBuyOrderOutput(buyOrderExt, expectedTokenInfo)
+      val res = dexCoreService
+        .getAllMainUnspentBuyOrderByTokenId(expectedTokenInfo.tokenId)
+        .compile
+        .toList
+        .unsafeRunSync()
+      res should contain theSameElementsAs (List(expectedBuyOrder))
+    }
+  }
 }

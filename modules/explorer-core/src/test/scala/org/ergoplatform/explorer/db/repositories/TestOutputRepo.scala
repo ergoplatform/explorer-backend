@@ -1,14 +1,11 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.Applicative
-import cats.syntax.applicative._
 import cats.data.NonEmptyList
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId, TxId}
-import org.ergoplatform.explorer.db.models.{Asset, Output}
+import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.TestOutputRepo.Source
-import org.ergoplatform.explorer.syntax.stream._
+import org.ergoplatform.explorer._
 
 final class TestOutputRepo[F[_]: Applicative](val source: Source)
   extends OutputRepo[F, fs2.Stream] {
@@ -59,7 +56,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
 
   override def getAllMainUnspentBuyOrderByTokenId(
     tokenId: TokenId
-  ): fs2.Stream[F, ExtendedOutput] = ???
+  ): fs2.Stream[F, ExtendedOutput] = fs2.Stream.emits(source.buyOrders)
 }
 
 object TestOutputRepo {
