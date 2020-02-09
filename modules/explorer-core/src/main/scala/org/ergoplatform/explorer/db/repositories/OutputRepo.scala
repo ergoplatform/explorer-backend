@@ -39,11 +39,15 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all unspent main-chain outputs with a given `ergoTree` from persistence.
     */
-  def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]]
+  def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): D[List[BoxId]]
+
+  /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
+    */
+  def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
-  def getMainUnspentByErgoTree(
+  def getAllMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
@@ -54,7 +58,9 @@ trait OutputRepo[D[_], S[_[_], _]] {
     * [[http://github.com/ScorexFoundation/sigmastate-interpreter/blob/633efcfd47f2fa4aa240eee2f774cc033cc241a5/sigmastate/src/main/scala/sigmastate/Values.scala#L828-L828]]
     */
   def getAllMainUnspentByErgoTreeTemplate(
-    ergoTreeTemplate: HexString
+    ergoTreeTemplate: HexString,
+    offset: Int,
+    limit: Int
   ): S[D, ExtendedOutput]
 
   /** Get all outputs related to a given `txId`.
@@ -65,6 +71,22 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]]
 
+  /** Get all unspent main-chain DEX sell orders
+    */
+  def getAllMainUnspentSellOrderByTokenId(
+    tokenId: TokenId,
+    offset: Int,
+    limit: Int
+  ): S[D, ExtendedOutput]
+
+  /** Get all unspent main-chain DEX buy orders
+    */
+  def getAllMainUnspentBuyOrderByTokenId(
+    tokenId: TokenId,
+    offset: Int,
+    limit: Int
+  ): S[D, ExtendedOutput]
+
   /** Search for addresses containing a given `substring`.
     */
   def searchAddressesBySubstring(substring: String): D[List[Address]]
@@ -72,19 +94,6 @@ trait OutputRepo[D[_], S[_[_], _]] {
   def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal]
 
   def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal]
-
-  /** Get all unspent main-chain DEX sell orders
-    */
-  def getAllMainUnspentSellOrderByTokenId(
-    tokenId: TokenId
-  ): S[D, ExtendedOutput]
-
-  /** Get all unspent main-chain DEX buy orders
-    */
-  def getAllMainUnspentBuyOrderByTokenId(
-    tokenId: TokenId
-  ): S[D, ExtendedOutput]
-
 }
 
 object OutputRepo {
@@ -119,12 +128,15 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
-    def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
-      QS.getMainUnspentByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue)
+    def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): D[List[BoxId]] =
+      QS.getAllMainUnspentIdsByErgoTree(ergoTree)
         .to[List]
         .liftConnectionIO
 
-    def getMainUnspentByErgoTree(
+    def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long] =
+      QS.sumOfAllMainUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+
+    def getAllMainUnspentByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int
@@ -132,13 +144,11 @@ object OutputRepo {
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
     def getAllMainUnspentByErgoTreeTemplate(
-      ergoTreeTemplate: HexString
+      ergoTreeTemplate: HexString,
+      offset: Int,
+      limit: Int
     ): Stream[D, ExtendedOutput] =
-      QS.getMainUnspentByErgoTreeTemplate(
-          ergoTreeTemplate,
-          offset = 0,
-          limit  = Int.MaxValue
-        )
+      QS.getMainUnspentByErgoTreeTemplate(ergoTreeTemplate, offset, limit)
         .stream
         .translate(liftK)
 
@@ -157,26 +167,30 @@ object OutputRepo {
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
       QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
 
-    override def getAllMainUnspentSellOrderByTokenId(
-      tokenId: TokenId
+    def getAllMainUnspentSellOrderByTokenId(
+      tokenId: TokenId,
+      offset: Int,
+      limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentSellOrderByTokenId(
           tokenId,
           dex.sellContractTemplate,
-          0,
-          Int.MaxValue
+          offset,
+          limit
         )
         .stream
         .translate(liftK)
 
-    override def getAllMainUnspentBuyOrderByTokenId(
-      tokenId: TokenId
+    def getAllMainUnspentBuyOrderByTokenId(
+      tokenId: TokenId,
+      offset: Int,
+      limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentBuyOrderByTokenId(
           tokenId,
           dex.buyContractTemplate,
-          0,
-          Int.MaxValue
+          offset,
+          limit
         )
         .stream
         .translate(liftK)

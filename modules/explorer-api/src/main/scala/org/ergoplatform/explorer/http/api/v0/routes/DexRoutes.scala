@@ -17,13 +17,13 @@ final class DexRoutes[F[_]: Sync: ContextShift](
     getUnspentSellOrdersR <+> getUnspentBuyOrdersR
 
   private def getUnspentSellOrdersR: HttpRoutes[F] =
-    getUnspentSellOrdersDef.toRoutes { tokenId =>
-      service.getUnspentSellOrders(tokenId).compile.toList.either
+    getUnspentSellOrdersDef.toRoutes { case (paging, tokenId) =>
+      service.getUnspentSellOrders(tokenId, paging).compile.toList.either
     }
 
   private def getUnspentBuyOrdersR: HttpRoutes[F] =
-    getUnspentBuyOrdersDef.toRoutes { tokenId =>
-      service.getUnspentBuyOrders(tokenId).compile.toList.either
+    getUnspentBuyOrdersDef.toRoutes { case (paging, tokenId) =>
+      service.getUnspentBuyOrders(tokenId, paging).compile.toList.either
     }
 }
 

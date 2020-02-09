@@ -76,6 +76,28 @@ object OutputQuerySet extends QuerySet {
          |where o.ergo_tree = $ergoTree
          |""".stripMargin.query[ExtendedOutput]
 
+  def getAllMainUnspentIdsByErgoTree(
+    ergoTree: HexString
+  ): Query0[BoxId] =
+    sql"""
+         |select o.box_id from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[BoxId]
+
+  def sumOfAllMainUnspentByErgoTree(
+    ergoTree: HexString
+  ): Query0[Long] =
+    sql"""
+         |select sum(o.value) from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Long]
+
   def getMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,

@@ -70,7 +70,7 @@ class OutputRepoSpec
       forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
         val arbTokenId = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
-          .getAllMainUnspentSellOrderByTokenId(arbTokenId)
+          .getAllMainUnspentSellOrderByTokenId(arbTokenId, 0, Int.MaxValue)
           .compile
           .toList
           .runWithIO() shouldBe empty
@@ -85,14 +85,14 @@ class OutputRepoSpec
           case (out, asset) =>
             val expectedOuts = List(ExtendedOutput(out, None))
             outputRepo
-              .getAllMainUnspentSellOrderByTokenId(asset.tokenId)
+              .getAllMainUnspentSellOrderByTokenId(asset.tokenId, 0, Int.MaxValue)
               .compile
               .toList
               .runWithIO() should contain theSameElementsAs expectedOuts
         }
 
         outputRepo
-          .getAllMainUnspentSellOrderByTokenId(arbTokenId)
+          .getAllMainUnspentSellOrderByTokenId(arbTokenId, 0, Int.MaxValue)
           .compile
           .toList
           .runWithIO() shouldBe empty
@@ -105,7 +105,7 @@ class OutputRepoSpec
       forSingleInstance(dexBuyOrderGen) { buyOrder =>
         val arbTokenId = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(arbTokenId)
+          .getAllMainUnspentBuyOrderByTokenId(arbTokenId, 0, Int.MaxValue)
           .compile
           .toList
           .runWithIO() shouldBe empty
@@ -117,13 +117,13 @@ class OutputRepoSpec
         val expectedOuts = List(ExtendedOutput(buyOrder, None))
 
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(tokenEmbeddedInContract)
+          .getAllMainUnspentBuyOrderByTokenId(tokenEmbeddedInContract, 0, Int.MaxValue)
           .compile
           .toList
           .runWithIO() should contain theSameElementsAs expectedOuts
 
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(arbTokenId)
+          .getAllMainUnspentBuyOrderByTokenId(arbTokenId, 0, Int.MaxValue)
           .compile
           .toList
           .runWithIO() shouldBe empty

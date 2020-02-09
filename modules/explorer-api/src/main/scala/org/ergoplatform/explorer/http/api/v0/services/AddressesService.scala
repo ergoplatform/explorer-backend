@@ -64,11 +64,11 @@ object AddressesService {
 
     def getAddressInfo(address: Address): F[AddressInfo] =
       (for {
-        ergoTree    <- utils.addressToErgoTreeHex(address)
-        outs        <- outputRepo.getAllByErgoTree(ergoTree)
-        unspentOuts <- outputRepo.getAllMainUnspentByErgoTree(ergoTree)
-        assets <- unspentOuts
-                   .map(_.output.boxId)
+        ergoTree      <- utils.addressToErgoTreeHex(address)
+        outs          <- outputRepo.getAllByErgoTree(ergoTree)
+        unspentOutIds <- outputRepo.getAllMainUnspentIdsByErgoTree(ergoTree)
+        balance       <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree)
+        assets <- unspentOutIds
                    .toNel
                    .traverse(assetRepo.getAllByBoxIds)
                    .map(_.toList.flatten)
@@ -80,7 +80,6 @@ object AddressesService {
                            .map(_.toList.flatten)
       } yield {
         val txsQty          = outs.map(_.output.txId).distinct.size
-        val balance         = unspentOuts.map(_.output.value).sum
         val offChainBalance = unspentOffChainOuts.map(_.value).sum
         val totalBalance    = balance + offChainBalance
         val totalReceived   = outs.map(o => BigDecimal(o.output.value)).sum
