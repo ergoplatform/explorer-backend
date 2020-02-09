@@ -18,8 +18,8 @@ final class AssetsRoutes[F[_]: Sync: ContextShift](
     getAllIssuingBoxesR <+> getIssuingBoxR
 
   private def getAllIssuingBoxesR: HttpRoutes[F] =
-    getAllIssuingBoxesDef.toRoutes { _ =>
-      service.getAllIssuingBoxes.compile.toList.either
+    getAllIssuingBoxesDef.toRoutes { paging =>
+      service.getAllIssuingBoxes(paging).compile.toList.either
     }
 
   private def getIssuingBoxR: HttpRoutes[F] =

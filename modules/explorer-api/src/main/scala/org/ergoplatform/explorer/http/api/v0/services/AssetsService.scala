@@ -2,12 +2,13 @@ package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.data.NonEmptyList
 import cats.syntax.list._
-import cats.{~>, Monad}
+import cats.{Monad, ~>}
 import fs2.Stream
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
+import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
 import org.ergoplatform.explorer.syntax.stream._
 import tofu.Raise.ContravariantRaise
@@ -20,7 +21,7 @@ trait AssetsService[F[_], S[_[_], _]] {
   /** Get boxes where given tokens where issued
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
-  def getAllIssuingBoxes: S[F, OutputInfo]
+  def getAllIssuingBoxes(paging: Paging): S[F, OutputInfo]
 
   /** Get boxes where given tokens where issued
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
@@ -46,15 +47,15 @@ object AssetsService {
   )(xa: D ~> F)
     extends AssetsService[F, Stream] {
 
-    def getAllIssuingBoxes: Stream[F, OutputInfo] =
+    def getAllIssuingBoxes(paging: Paging): Stream[F, OutputInfo] =
       (for {
-        extOut <- assetRepo.getAllIssuingBoxes
+        extOut <- assetRepo.getAllIssuingBoxes(paging.offset, paging.limit)
         assets <- assetRepo.getAllByBoxId(extOut.output.boxId).asStream
       } yield OutputInfo(extOut, assets)).translate(xa)
 
     def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): Stream[F, OutputInfo] =
       (for {
-        extOuts <- assetRepo.getIssuingBoxes(tokenIds).asStream
+        extOuts <- assetRepo.getIssuingBoxesByTokenIds(tokenIds).asStream
         boxIdsNel <- extOuts
                       .map(_.output.boxId)
                       .toNel

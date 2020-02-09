@@ -39,9 +39,9 @@ class AssetRepoSpec
   property("insert/getIssuingBoxes/getAllIssuingBoxes") {
     withLiveRepos[ConnectionIO] { (assetRepo, outputRepo, inputRepo) =>
       forSingleInstance(issueTokensGen(5)) { issuedTokens =>
-        assetRepo.getAllIssuingBoxes.compile.toList.runWithIO() shouldBe empty
+        assetRepo.getAllIssuingBoxes(0, Int.MaxValue).compile.toList.runWithIO() shouldBe empty
         val issuedTokenIds = NonEmptyList.fromList(issuedTokens.map(_._3.tokenId)).get
-        assetRepo.getIssuingBoxes(issuedTokenIds).runWithIO() shouldBe empty
+        assetRepo.getIssuingBoxesByTokenIds(issuedTokenIds).runWithIO() shouldBe empty
 
         issuedTokens.foreach {
           case (input, out, token) =>
@@ -57,22 +57,22 @@ class AssetRepoSpec
 
         val outsIssuingToken = issuedTokens.map(_._2).map(ExtendedOutput(_, None))
 
-        assetRepo.getAllIssuingBoxes.compile.toList
+        assetRepo.getAllIssuingBoxes(0, Int.MaxValue).compile.toList
           .runWithIO() should contain theSameElementsAs outsIssuingToken
 
         // test all
         assetRepo
-          .getIssuingBoxes(issuedTokenIds)
+          .getIssuingBoxesByTokenIds(issuedTokenIds)
           .runWithIO() should contain theSameElementsAs outsIssuingToken
 
         // test one
         assetRepo
-          .getIssuingBoxes(NonEmptyList.one(issuedTokenIds.head))
+          .getIssuingBoxesByTokenIds(NonEmptyList.one(issuedTokenIds.head))
           .runWithIO() should contain theSameElementsAs List(outsIssuingToken.head)
 
         // test many
         assetRepo
-          .getIssuingBoxes(NonEmptyList.fromList(issuedTokenIds.tail).get)
+          .getIssuingBoxesByTokenIds(NonEmptyList.fromList(issuedTokenIds.tail).get)
           .runWithIO() should contain theSameElementsAs outsIssuingToken.tail
       }
     }

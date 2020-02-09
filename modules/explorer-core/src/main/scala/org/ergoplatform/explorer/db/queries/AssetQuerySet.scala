@@ -49,7 +49,7 @@ object AssetQuerySet extends QuerySet {
   /** Get boxes where tokens where issued
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
-  def getAllIssuingBoxes: Query0[ExtendedOutput] =
+  def getAllIssuingBoxes(offset: Int, limit: Int): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -71,6 +71,7 @@ object AssetQuerySet extends QuerySet {
          |  and i_issued.tx_id = o.tx_id
          |  and o.box_id = a.box_id
          |  and a.token_id = i_issued.box_id
+         |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
   def getIssuingBoxes(
