@@ -50,6 +50,12 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
     substring: String
   ): F[scala.List[Address]] = ???
 
+  override def sumOfAllUnspentOutputsSince(ts: Long): F[BigDecimal] = ???
+
+  override def estimatedOutputsSince(ts: Long)(
+    genesisAddress: Address
+  ): F[BigDecimal] = ???
+
   override def getAllMainUnspentSellOrderByTokenId(
     tokenId: TokenId
   ): fs2.Stream[F, ExtendedOutput] = fs2.Stream.emits(source.sellOrders)
