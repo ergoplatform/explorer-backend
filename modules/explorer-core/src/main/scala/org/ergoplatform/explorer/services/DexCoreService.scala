@@ -47,6 +47,17 @@ object DexCoreService {
   ]: ContravariantRaise[*[_], ErgoTreeDeserializationFailed]]: DexCoreService[F, Stream] =
     new Live[F](OutputRepo[F])
 
+  def apply[F[_]: Monad: ContravariantRaise[
+    *[_],
+    DexErr
+  ]: ContravariantRaise[
+    *[_],
+    Base16DecodingFailed
+  ]: ContravariantRaise[*[_], ErgoTreeDeserializationFailed]](
+    outputRepo: OutputRepo[F, Stream]
+  ): DexCoreService[F, Stream] =
+    new Live[F](outputRepo)
+
   final private class Live[F[_]: Monad: ContravariantRaise[
     *[_],
     DexErr
