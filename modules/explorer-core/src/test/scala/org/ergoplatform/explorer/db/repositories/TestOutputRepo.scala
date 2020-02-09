@@ -70,16 +70,5 @@ object TestOutputRepo {
   final case class Source(
     sellOrders: List[ExtendedOutput],
     buyOrders: List[ExtendedOutput]
-  ) {
-
-//    def fromOutputs(
-//      sellOrdersOuts: List[(Output, Asset)],
-//      buyOrders: List[ExtendedOutput]
-//    ): Source = {
-//      val sellOrdersExtOuts = sellOrdersOuts.map(p => (ExtendedOutput(p._1, None), p._2))
-//      new Source(sellOrdersExtOuts, buyOrders)
-//    }
-
-  }
-
+  )
 }
