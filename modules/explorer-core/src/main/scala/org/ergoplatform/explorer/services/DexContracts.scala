@@ -59,12 +59,11 @@ object DexContracts {
         case Values.ConstantNode(value, SLong) =>
           value.asInstanceOf[Long]
       }
-      .toRight(
+      .orRaise(
         DexSellOrderAttributesFailed(
           s"Cannot find token price in constants($SellContractTokenPriceIndexInConstants) in sell order ergo tree $tree"
         )
       )
-      .toRaise
 
   def getTokenPriceFromSellOrderTree[F[_]: ContravariantRaise[
     *[_],
@@ -91,12 +90,11 @@ object DexContracts {
         case ByteArrayConstant(coll) =>
           TokenId(Base16.encode(coll.toArray))
       }
-      .toRight(
+      .orRaise(
         DexBuyOrderAttributesFailed(
           s"Cannot find tokenId in the buy order ergo tree $tree"
         )
       )
-      .toRaise
       .flatMap(tokenId =>
         tree.constants
           .lift(BuyContractTokenAmountIndexInConstants)
@@ -105,12 +103,11 @@ object DexContracts {
               value.asInstanceOf[Long]
           }
           .map(tokenAmount => TokenInfo(tokenId, tokenAmount))
-          .toRight(
+          .orRaise(
             DexBuyOrderAttributesFailed(
               s"Cannot find token amount in the buy order ergo tree $tree"
             )
           )
-          .toRaise
       )
 
   def getTokenInfoFromBuyOrderTree[F[_]: ContravariantRaise[
