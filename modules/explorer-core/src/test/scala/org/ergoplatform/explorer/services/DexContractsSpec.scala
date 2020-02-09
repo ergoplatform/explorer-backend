@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.services
 
 import cats.effect.IO
 import org.ergoplatform.explorer.TokenId
-import org.ergoplatform.explorer.services.DexContracts.TokenInfo
+import org.ergoplatform.explorer.protocol.dex
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -15,7 +15,7 @@ class DexContractsSpec
 
   property("getTokenPriceFromSellOrderTree") {
     val extractedTokenPrice =
-      DexContracts
+      dex
         .getTokenPriceFromSellOrderTree[IO](sellOrderErgoTree)
         .unsafeRunSync()
 
@@ -24,9 +24,9 @@ class DexContractsSpec
 
   property("Buy orders (enrich ExtendedOutput with token info)") {
     val extractedTokenInfo =
-      DexContracts.getTokenInfoFromBuyOrderTree[IO](buyOrderErgoTree).unsafeRunSync()
+      dex.getTokenInfoFromBuyOrderTree[IO](buyOrderErgoTree).unsafeRunSync()
 
-    val expectedTokenInfo = TokenInfo(
+    val expectedTokenInfo = (
       TokenId("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1"),
       60
     )

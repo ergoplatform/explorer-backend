@@ -144,7 +144,8 @@ object dependencies {
       ),
       compilerPlugin(
         "org.scalamacros" % "paradise" % MacroParadise cross CrossVersion.full
-      )
+      ),
+      compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
     )
 
   lazy val core: List[ModuleID] = List(

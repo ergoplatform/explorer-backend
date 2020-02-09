@@ -3,8 +3,8 @@ package org.ergoplatform.explorer.db.repositories
 import cats.Functor
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
+import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.runConnectionIO._
 import org.ergoplatform.explorer.db.{RealDbTest, repositories}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks

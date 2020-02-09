@@ -1,17 +1,14 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.{~>, Monad}
+import cats.{Monad, ~>}
 import fs2.Stream
-import org.ergoplatform.explorer.Err.DexErr
-import org.ergoplatform.explorer.Err.RequestProcessingErr.{
-  Base16DecodingFailed,
-  ErgoTreeDeserializationFailed
-}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr
+import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.v0.models.{DexBuyOrderInfo, DexSellOrderInfo}
-import org.ergoplatform.explorer.services.DexCoreService
+import org.ergoplatform.explorer.protocol.dex
 import org.ergoplatform.explorer.syntax.stream._
 import tofu.Raise.ContravariantRaise
 
@@ -28,50 +25,40 @@ object DexService {
 
   def apply[
     F[_],
-    D[_]: LiftConnectionIO: Monad: ContravariantRaise[
-      *[_],
-      DexErr
-    ]: ContravariantRaise[
-      *[_],
-      Base16DecodingFailed
-    ]: ContravariantRaise[
-      *[_],
-      ErgoTreeDeserializationFailed
-    ]
-  ](
-    xa: D ~> F
-  ): DexService[F, Stream] =
-    new Live(AssetRepo[D], DexCoreService[D])(xa)
+    D[_]: LiftConnectionIO
+        : Monad
+        : ContravariantRaise[*[_], DexErr]
+        : ContravariantRaise[*[_], ContractParsingErr]
+  ](xa: D ~> F): DexService[F, Stream] =
+    new Live(AssetRepo[D], OutputRepo[D])(xa)
 
   final private class Live[
     F[_],
     D[_]: Monad
+        : ContravariantRaise[*[_], DexErr]
+        : ContravariantRaise[*[_], ContractParsingErr]
   ](
     assetRepo: AssetRepo[D, Stream],
-    dexCoreService: DexCoreService[D, Stream]
+    outputRepo: OutputRepo[D, Stream]
   )(xa: D ~> F)
     extends DexService[F, Stream] {
 
-    override def getUnspentSellOrders(tokenId: TokenId): Stream[F, DexSellOrderInfo] =
-      (
-        for {
-          sellOrderOut <- dexCoreService
-                           .getAllMainUnspentSellOrderByTokenId(
-                             tokenId
-                           )
-          assets <- assetRepo.getAllByBoxId(sellOrderOut.extOutput.output.boxId).asStream
-        } yield DexSellOrderInfo(sellOrderOut, assets)
-      ).translate(xa)
+    def getUnspentSellOrders(tokenId: TokenId): Stream[F, DexSellOrderInfo] =
+      (for {
+        output <- outputRepo.getAllMainUnspentSellOrderByTokenId(tokenId)
+        tokenPrice <- dex
+                       .getTokenPriceFromSellOrderTree[D](output.output.ergoTree)
+                       .asStream
+        assets <- assetRepo.getAllByBoxId(output.output.boxId).asStream
+      } yield DexSellOrderInfo(output, tokenPrice, assets)).translate(xa)
 
-    override def getUnspentBuyOrders(tokenId: TokenId): Stream[F, DexBuyOrderInfo] =
-      (
-        for {
-          buyOrder <- dexCoreService
-                       .getAllMainUnspentBuyOrderByTokenId(tokenId)
-          assets <- assetRepo.getAllByBoxId(buyOrder.extOutput.output.boxId).asStream
-        } yield DexBuyOrderInfo(buyOrder, assets)
-      ).translate(xa)
-
+    def getUnspentBuyOrders(tokenId: TokenId): Stream[F, DexBuyOrderInfo] =
+      (for {
+        eOut <- outputRepo.getAllMainUnspentBuyOrderByTokenId(tokenId)
+        (tokenId, tokenAmount) <- dex
+                                   .getTokenInfoFromBuyOrderTree(eOut.output.ergoTree)
+                                   .asStream
+        assets <- assetRepo.getAllByBoxId(eOut.output.boxId).asStream
+      } yield DexBuyOrderInfo(eOut, tokenId, tokenAmount, assets)).translate(xa)
   }
-
 }

@@ -3,10 +3,10 @@ package org.ergoplatform.explorer.db.repositories
 import cats.effect.Sync
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.{RealDbTest, repositories}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import org.ergoplatform.explorer.db.syntax.runConnectionIO._
 
 class BlockExtensionRepoSpec
   extends PropSpec

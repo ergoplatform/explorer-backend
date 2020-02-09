@@ -3,12 +3,11 @@ package org.ergoplatform.explorer.db.repositories
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import doobie.ConnectionIO
-import org.ergoplatform.explorer.{db, BoxId}
-import org.ergoplatform.explorer.db.{repositories, RealDbTest}
+import org.ergoplatform.explorer.db
+import org.ergoplatform.explorer.db.RealDbTest
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.db.syntax.runConnectionIO._
-import org.scalacheck.Gen
+import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 

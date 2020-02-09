@@ -1,7 +1,5 @@
 package org.ergoplatform.explorer.db.repositories
 
-import java.sql.Types
-
 import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.free.implicits._
@@ -10,10 +8,10 @@ import fs2.Stream
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
-import org.ergoplatform.explorer.db.models.aggregates.{DexSellOrderOutput, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
-import org.ergoplatform.explorer.services.DexContracts
+import org.ergoplatform.explorer.protocol.dex
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */
@@ -133,7 +131,7 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
-    override def getAllMainUnspentByErgoTreeTemplate(
+    def getAllMainUnspentByErgoTreeTemplate(
       ergoTreeTemplate: HexString
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTreeTemplate(
@@ -164,7 +162,7 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentSellOrderByTokenId(
           tokenId,
-          DexContracts.sellContractTemplate,
+          dex.sellContractTemplate,
           0,
           Int.MaxValue
         )
@@ -176,7 +174,7 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentBuyOrderByTokenId(
           tokenId,
-          DexContracts.buyContractTemplate,
+          dex.buyContractTemplate,
           0,
           Int.MaxValue
         )

@@ -4,11 +4,11 @@ import cats.syntax.either._
 import cats.syntax.flatMap._
 import cats.{Applicative, Monad}
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.{
-  AddressDecodingFailed,
+import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.{
   Base16DecodingFailed,
   ErgoTreeDeserializationFailed
 }
+import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.{Address, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import scorex.util.encode.Base16
@@ -64,5 +64,4 @@ object utils {
     }.toEither
       .leftMap(e => ErgoTreeDeserializationFailed(bytes, Option(e.getMessage)))
       .toRaise
-
 }

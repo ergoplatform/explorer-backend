@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.db.syntax
+package org.ergoplatform.explorer.testSyntax
 
 import cats.effect.IO
 import doobie.free.connection.ConnectionIO
@@ -11,7 +11,7 @@ trait RunConnectionIOSyntax {
     new RunConnectionIOOps[A](ca)
 }
 
-private[syntax] final class RunConnectionIOOps[A](private val ca: ConnectionIO[A]) extends AnyVal {
+private[testSyntax] final class RunConnectionIOOps[A](private val ca: ConnectionIO[A]) extends AnyVal {
 
   def runWithIO()(implicit xa: Transactor[IO]): A =
     ca.transact(xa).unsafeRunSync()

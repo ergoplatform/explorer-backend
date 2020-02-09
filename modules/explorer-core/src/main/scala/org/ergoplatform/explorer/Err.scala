@@ -45,32 +45,36 @@ object Err {
           .getOrElse("")
       )
 
-    final case class Base16DecodingFailed(
-      hexString: HexString,
-      reasonOpt: Option[String] = None
-    ) extends RequestProcessingErr(
-        s"Failed to decode Base16: `$hexString`" + reasonOpt
-          .map(s => s", reason: $s")
-          .getOrElse("")
-      )
+    abstract class ContractParsingErr(msg: String) extends RequestProcessingErr(msg)
 
-    final case class ErgoTreeDeserializationFailed(
-      bytes: Array[Byte],
-      reasonOpt: Option[String] = None
-    ) extends RequestProcessingErr(
-        s"Failed to deserialize ergo tree from: `${Base16.encode(bytes)}`" + reasonOpt
-          .map(s => s", reason: $s")
-          .getOrElse("")
-      )
-  }
+    object ContractParsingErr {
 
-  abstract class DexErr(override val msg: String) extends RequestProcessingErr(msg)
+      final case class Base16DecodingFailed(
+        hexString: HexString,
+        reasonOpt: Option[String] = None
+      ) extends ContractParsingErr(
+          s"Failed to decode Base16: `$hexString`" + reasonOpt
+            .map(s => s", reason: $s")
+            .getOrElse("")
+        )
 
-  object DexErr {
+      final case class ErgoTreeDeserializationFailed(
+        bytes: Array[Byte],
+        reasonOpt: Option[String] = None
+      ) extends ContractParsingErr(
+          s"Failed to deserialize ergo tree from: `${Base16.encode(bytes)}`" + reasonOpt
+            .map(s => s", reason: $s")
+            .getOrElse("")
+        )
+    }
 
-    final case class DexSellOrderAttributesFailed(details: String) extends DexErr(details)
+    abstract class DexErr(msg: String) extends RequestProcessingErr(msg)
 
-    final case class DexBuyOrderAttributesFailed(details: String) extends DexErr(details)
+    object DexErr {
 
+      final case class DexSellOrderAttributesFailed(details: String) extends DexErr(details)
+
+      final case class DexBuyOrderAttributesFailed(details: String) extends DexErr(details)
+    }
   }
 }
