@@ -3,9 +3,16 @@ package org.ergoplatform.explorer.db.repositories
 import cats.effect.Sync
 import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
+import org.ergoplatform.explorer.{db, TokenId}
+import org.ergoplatform.explorer.services.DexContracts.TokenInfo
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.db.models.aggregates.{
+  DexBuyOrderOutput,
+  DexSellOrderOutput,
+  ExtendedOutput
+}
 import org.ergoplatform.explorer.db.syntax.runConnectionIO._
-import org.ergoplatform.explorer.db.{RealDbTest, repositories}
+import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -19,7 +26,7 @@ class OutputRepoSpec
   import org.ergoplatform.explorer.db.models.generators._
 
   property("insert/getByBoxId") {
-    withLiveRepos[ConnectionIO] { (hRepo, txRepo, oRepo) =>
+    withLiveRepos[ConnectionIO] { (hRepo, txRepo, oRepo, _) =>
       forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
         case (header, tx, outputs) =>
           hRepo.insert(header).runWithIO()
@@ -34,7 +41,7 @@ class OutputRepoSpec
   }
 
   property("getAllByAddress/getAllByErgoTree") {
-    withLiveRepos[ConnectionIO] { (hRepo, txRepo, oRepo) =>
+    withLiveRepos[ConnectionIO] { (hRepo, txRepo, oRepo, _) =>
       forSingleInstance(hexStringRGen.flatMap(hex => addressGen.map(_ -> hex))) {
         case (address, ergoTree) =>
           forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
@@ -45,7 +52,8 @@ class OutputRepoSpec
               val matching = outputs.tail
                 .map { extOut =>
                   extOut.copy(
-                    output = extOut.output.copy(addressOpt = address.some, ergoTree = ergoTree)
+                    output =
+                      extOut.output.copy(addressOpt = address.some, ergoTree = ergoTree)
                   )
                 }
               matching.foreach { extOut =>
@@ -62,16 +70,84 @@ class OutputRepoSpec
     }
   }
 
+  property("insert/getUnspentSellOrders") {
+    withLiveRepos[ConnectionIO] { (_, _, outputRepo, assetRepo) =>
+      forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
+        val arbTokenId = assetIdGen.retryUntil(_ => true).sample.get
+        outputRepo
+          .getAllMainUnspentSellOrderByTokenId(arbTokenId)
+          .compile
+          .toList
+          .runWithIO() shouldBe empty
+
+        sellOrders.foreach {
+          case (out, asset) =>
+            assetRepo.insert(asset).runWithIO()
+            outputRepo.insert(out).runWithIO()
+        }
+
+        sellOrders.foreach {
+          case (out, asset) =>
+            val expectedOuts = List(ExtendedOutput(out, None))
+            outputRepo
+              .getAllMainUnspentSellOrderByTokenId(asset.tokenId)
+              .compile
+              .toList
+              .runWithIO() should contain theSameElementsAs expectedOuts
+        }
+
+        outputRepo
+          .getAllMainUnspentSellOrderByTokenId(arbTokenId)
+          .compile
+          .toList
+          .runWithIO() shouldBe empty
+      }
+    }
+  }
+
+  property("insert/getUnspentBuyOrders") {
+    withLiveRepos[ConnectionIO] { (_, _, outputRepo, _) =>
+      forSingleInstance(dexBuyOrderGen) { buyOrder =>
+        val arbTokenId = assetIdGen.retryUntil(_ => true).sample.get
+        outputRepo
+          .getAllMainUnspentBuyOrderByTokenId(arbTokenId)
+          .compile
+          .toList
+          .runWithIO() shouldBe empty
+
+        outputRepo.insert(buyOrder).runWithIO()
+
+        val tokenEmbeddedInContract =
+          TokenId("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1")
+        val expectedOuts = List(ExtendedOutput(buyOrder, None))
+
+        outputRepo
+          .getAllMainUnspentBuyOrderByTokenId(tokenEmbeddedInContract)
+          .compile
+          .toList
+          .runWithIO() should contain theSameElementsAs expectedOuts
+
+        outputRepo
+          .getAllMainUnspentBuyOrderByTokenId(arbTokenId)
+          .compile
+          .toList
+          .runWithIO() shouldBe empty
+      }
+    }
+  }
+
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (
       HeaderRepo[D],
       TransactionRepo[D, fs2.Stream],
-      OutputRepo[D, fs2.Stream]
+      OutputRepo[D, fs2.Stream],
+      AssetRepo[D, fs2.Stream]
     ) => Any
   ): Any = {
     val headerRepo = repositories.HeaderRepo[D]
     val txRepo     = repositories.TransactionRepo[D]
     val outRepo    = repositories.OutputRepo[D]
-    body(headerRepo, txRepo, outRepo)
+    val assetRepo  = repositories.AssetRepo[D]
+    body(headerRepo, txRepo, outRepo, assetRepo)
   }
 }

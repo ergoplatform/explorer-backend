@@ -35,7 +35,10 @@ object OutputInfo {
       )
     )
 
-  def apply(o: ExtendedOutput, assets: List[Asset]): OutputInfo =
+  def apply(
+    o: ExtendedOutput,
+    assets: List[Asset]
+  ): OutputInfo =
     OutputInfo(
       o.output.boxId,
       o.output.value,

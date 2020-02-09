@@ -1,10 +1,13 @@
 package org.ergoplatform.explorer.db.models
 
 import cats.syntax.option._
+import cats.instances.try_._
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
 import org.scalacheck.Gen
+
+import scala.util.Try
 
 object generators {
 
@@ -91,14 +94,14 @@ object generators {
               .map(_.map(_.copy(headerId = header.id)))
     } yield (header, txs)
 
-  def outputGen(mainChain: Boolean): Gen[Output] =
+  def outputGen(mainChain: Boolean, ergoTreeGen: Gen[HexString]): Gen[Output] =
     for {
       boxId   <- boxIdGen
       txId    <- txIdGen
       value   <- Gen.posNum[Long]
       height  <- Gen.posNum[Int]
       idx     <- Gen.posNum[Int]
-      tree    <- hexStringRGen
+      tree    <- ergoTreeGen
       address <- addressGen
       regs    <- jsonFieldsGen
       ts      <- Gen.posNum[Long]
@@ -114,6 +117,8 @@ object generators {
       ts,
       mainChain
     )
+
+  def outputGen(mainChain: Boolean): Gen[Output] = outputGen(mainChain, hexStringRGen)
 
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
@@ -202,4 +207,41 @@ object generators {
 
   def issueTokensGen(num: Int): Gen[List[(Input, Output, Asset)]] =
     Gen.listOfN(num, issueTokenGen)
+
+  /** from http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/test/resources/mockwebserver/node_responses/response_Box_AAE_seller_contract.json#L4-L4
+    * which was generated with http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/main/scala-2.12/org/ergoplatform/appkit/ergotool/dex/CreateSellOrderCmd.scala#L58-L58
+    */
+  val sellOrderErgoTree: HexString = HexString
+    .fromString[Try](
+      "100808cd036ba5cfbc03ea2471fdf02737f64dbcd58c34461a7ec1e586dcd713dacbf89a1204020402040204020580c2d72f040208cd036ba5cfbc03ea2471fdf02737f64dbcd58c34461a7ec1e586dcd713dacbf89a12eb027300d1eded91b1a57301e6c6b2a5730200040ed801d60193e4c6b2a5730300040ec5a7eded92c1b2a57304007305720193c2b2a5730600d07307"
+    )
+    .get
+
+  def dexSellOrderErgoTreeGen: Gen[HexString] = Gen.const(sellOrderErgoTree)
+
+  def dexSellOrderGen: Gen[(Output, Asset)] =
+    for {
+      out   <- outputGen(mainChain = true, dexSellOrderErgoTreeGen)
+      token <- assetGen.map(_.copy(boxId = out.boxId))
+    } yield (out, token)
+
+  def dexSellOrdersGen(num: Int): Gen[List[(Output, Asset)]] =
+    Gen.listOfN(num, dexSellOrderGen)
+
+  /** from http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/test/resources/mockwebserver/node_responses/response_Box_AAE_buyer_contract.json#L4-L4
+    * which was generated with http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/main/scala-2.12/org/ergoplatform/appkit/ergotool/dex/CreateBuyOrderCmd.scala#L56-L56
+    */
+  val buyOrderErgoTree: HexString = HexString
+    .fromString[Try](
+      "100c08cd036ba5cfbc03ea2471fdf02737f64dbcd58c34461a7ec1e586dcd713dacbf89a12040004000400040004000e2021f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1040005780400040008cd036ba5cfbc03ea2471fdf02737f64dbcd58c34461a7ec1e586dcd713dacbf89a12eb027300d1eded91b1a57301e6c6b2a5730200040ed803d601e4c6b2a5730300020c4d0ed602eded91b172017304938cb27201730500017306928cb27201730700027308d60393e4c6b2a5730900040ec5a7eded720293c2b2a5730a00d0730b7203"
+    )
+    .get
+
+  def dexBuyOrderErgoTreeGen: Gen[HexString] = Gen.const(buyOrderErgoTree)
+
+  def dexBuyOrderGen: Gen[Output] =
+    for {
+      out <- outputGen(mainChain = true, dexBuyOrderErgoTreeGen)
+    } yield out
+
 }

@@ -1,5 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
+import java.sql.Types
+
 import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.free.implicits._
@@ -8,9 +10,10 @@ import fs2.Stream
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
+import org.ergoplatform.explorer.db.models.aggregates.{DexSellOrderOutput, ExtendedOutput}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
+import org.ergoplatform.explorer.services.DexContracts
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */
@@ -48,6 +51,14 @@ trait OutputRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, ExtendedOutput]
 
+  /** Get all unspent main-chain outputs that are protected with given ergo tree template
+    * see [[https://github.com/ScorexFoundation/sigmastate-interpreter/issues/264]]
+    * [[http://github.com/ScorexFoundation/sigmastate-interpreter/blob/633efcfd47f2fa4aa240eee2f774cc033cc241a5/sigmastate/src/main/scala/sigmastate/Values.scala#L828-L828]]
+    */
+  def getAllMainUnspentByErgoTreeTemplate(
+    ergoTreeTemplate: HexString
+  ): S[D, ExtendedOutput]
+
   /** Get all outputs related to a given `txId`.
     */
   def getAllByTxId(txId: TxId): D[List[ExtendedOutput]]
@@ -63,6 +74,19 @@ trait OutputRepo[D[_], S[_[_], _]] {
   def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal]
 
   def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal]
+
+  /** Get all unspent main-chain DEX sell orders
+    */
+  def getAllMainUnspentSellOrderByTokenId(
+    tokenId: TokenId
+  ): S[D, ExtendedOutput]
+
+  /** Get all unspent main-chain DEX buy orders
+    */
+  def getAllMainUnspentBuyOrderByTokenId(
+    tokenId: TokenId
+  ): S[D, ExtendedOutput]
+
 }
 
 object OutputRepo {
@@ -109,6 +133,17 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
+    override def getAllMainUnspentByErgoTreeTemplate(
+      ergoTreeTemplate: HexString
+    ): Stream[D, ExtendedOutput] =
+      QS.getMainUnspentByErgoTreeTemplate(
+          ergoTreeTemplate,
+          offset = 0,
+          limit  = Int.MaxValue
+        )
+        .stream
+        .translate(liftK)
+
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO
 
@@ -123,5 +158,30 @@ object OutputRepo {
 
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
       QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
+
+    override def getAllMainUnspentSellOrderByTokenId(
+      tokenId: TokenId
+    ): Stream[D, ExtendedOutput] =
+      QS.getMainUnspentSellOrderByTokenId(
+          tokenId,
+          DexContracts.sellContractTemplate,
+          0,
+          Int.MaxValue
+        )
+        .stream
+        .translate(liftK)
+
+    override def getAllMainUnspentBuyOrderByTokenId(
+      tokenId: TokenId
+    ): Stream[D, ExtendedOutput] =
+      QS.getMainUnspentBuyOrderByTokenId(
+          tokenId,
+          DexContracts.buyContractTemplate,
+          0,
+          Int.MaxValue
+        )
+        .stream
+        .translate(liftK)
+
   }
 }

@@ -13,7 +13,7 @@ object versions {
   val CatsTaglessVersion     = "0.10"
   val MouseVersion           = "0.23"
   val Fs2Version             = "2.0.1"
-  val DoobieVersion          = "0.8.4"
+  val DoobieVersion          = "0.8.8"
   val FlywayVersion          = "5.1.1"
   val ZioVersion             = "1.0.0-RC16"
   val ZioCatsVersion         = "2.0.0.0-RC6"
