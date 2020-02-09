@@ -4,7 +4,7 @@ import cats.effect.Sync
 import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.{db, TokenId}
-import org.ergoplatform.explorer.db.DexContracts.TokenInfo
+import org.ergoplatform.explorer.services.DexContracts.TokenInfo
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.{
   DexBuyOrderOutput,

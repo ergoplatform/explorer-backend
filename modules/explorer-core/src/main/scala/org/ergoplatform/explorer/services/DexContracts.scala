@@ -1,7 +1,7 @@
-package org.ergoplatform.explorer.db
+package org.ergoplatform.explorer.services
 
-import cats.{Applicative, Monad}
 import cats.syntax.flatMap._
+import cats.{Applicative, Monad}
 import eu.timepit.refined.refineMV
 import eu.timepit.refined.string.HexStringSpec
 import org.ergoplatform.explorer.Err.DexErr.{
@@ -15,13 +15,11 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.{
 import org.ergoplatform.explorer.protocol.utils._
 import org.ergoplatform.explorer.{HexString, TokenId}
 import scorex.util.encode.Base16
-import sigmastate.{SLong, Values}
 import sigmastate.Values.{ByteArrayConstant, ErgoTree}
 import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.{SLong, Values}
 import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
-
-import scala.util.{Failure, Success, Try}
 
 object DexContracts {
 

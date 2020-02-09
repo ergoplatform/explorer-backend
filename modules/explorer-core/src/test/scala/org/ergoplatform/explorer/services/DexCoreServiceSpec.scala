@@ -1,7 +1,6 @@
 package org.ergoplatform.explorer.services
 
 import cats.effect.IO
-import org.ergoplatform.explorer.db.DexContracts
 import org.ergoplatform.explorer.db.models.aggregates.{
   DexBuyOrderOutput,
   DexSellOrderOutput,

@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.models.aggregates
 
 import org.ergoplatform.explorer.TokenId
-import org.ergoplatform.explorer.db.DexContracts
+import org.ergoplatform.explorer.services.DexContracts
 
 final case class DexBuyOrderOutput(
   extOutput: ExtendedOutput,

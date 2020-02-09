@@ -8,7 +8,6 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.{
   ErgoTreeDeserializationFailed
 }
 import org.ergoplatform.explorer.TokenId
-import org.ergoplatform.explorer.db.DexContracts
 import org.ergoplatform.explorer.db.models.aggregates.{
   DexBuyOrderOutput,
   DexSellOrderOutput
