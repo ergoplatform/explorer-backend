@@ -4,8 +4,12 @@ import cats.instances.list._
 import cats.instances.option._
 import cats.syntax.traverse._
 import cats.syntax.option._
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.{UAsset, UInput, UOutput, UTransaction}
+import sttp.tapir.Schema
+import sttp.tapir.generic.Derived
 
 final case class UTransactionInfo(
   id: TxId,
@@ -16,6 +20,18 @@ final case class UTransactionInfo(
 )
 
 object UTransactionInfo {
+
+  implicit val codec: Codec[UTransactionInfo] = deriveCodec
+
+  implicit val schema: Schema[UTransactionInfo] =
+    implicitly[Derived[Schema[UTransactionInfo]]].value
+      .modify(_.id)(_.description("Transaction ID"))
+      .modify(_.creationTimestamp)(
+        _.description("Approximate time this transaction appeared in the network")
+      )
+      .modify(_.size)(
+        _.description("Size of the transaction in bytes")
+      )
 
   def apply(
     tx: UTransaction,

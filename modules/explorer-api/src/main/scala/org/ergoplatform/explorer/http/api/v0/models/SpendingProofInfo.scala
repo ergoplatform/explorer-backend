@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.Json
+import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.HexString
 import sttp.tapir.generic.Derived
 import sttp.tapir.{Schema, SchemaType}
@@ -8,6 +9,8 @@ import sttp.tapir.{Schema, SchemaType}
 final case class SpendingProofInfo(proofBytes: Option[HexString], extension: Json)
 
 object SpendingProofInfo {
+
+  implicit val codec: Codec[SpendingProofInfo] = deriveCodec
 
   implicit val schema: Schema[SpendingProofInfo] =
     implicitly[Derived[Schema[SpendingProofInfo]]].value
