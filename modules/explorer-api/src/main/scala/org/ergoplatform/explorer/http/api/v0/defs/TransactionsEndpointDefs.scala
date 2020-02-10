@@ -2,11 +2,13 @@ package org.ergoplatform.explorer.http.api.v0.defs
 
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.http.api.ApiErr
+import org.ergoplatform.explorer.http.api.models.Paging
+import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, UTransactionInfo}
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
-class TransactionsEndpointDefs {
+object TransactionsEndpointDefs {
 
   private val PathPrefix = "addresses"
 
@@ -21,4 +23,10 @@ class TransactionsEndpointDefs {
     baseEndpointDef
       .in(PathPrefix / path[TxId])
       .out(jsonBody[UTransactionInfo])
+
+  def getTxsSinceDef: Endpoint[(Paging, Int), ApiErr, List[TransactionInfo], Nothing] =
+    baseEndpointDef
+    .in(paging)
+    .in(PathPrefix / path[Int])
+    .out(jsonBody[List[TransactionInfo]])
 }

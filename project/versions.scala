@@ -3,7 +3,7 @@ object versions {
   val ErgoWalletVersion = "master-83d10111-SNAPSHOT"
 
   val Http4sVersion          = "0.21.0-M5"
-  val TapirVersion           = "0.12.7"
+  val TapirVersion           = "0.12.20"
   val CirceVersion           = "0.12.3"
   val CirceDerivationVersion = "0.12.0-M7"
   val CatsVersion            = "2.0.0"
@@ -12,13 +12,13 @@ object versions {
   val CatsMeowMtl            = "0.4.0"
   val CatsTaglessVersion     = "0.10"
   val MouseVersion           = "0.23"
-  val Fs2Version             = "2.0.1"
+  val Fs2Version             = "2.2.2"
   val DoobieVersion          = "0.8.8"
   val FlywayVersion          = "5.1.1"
   val ZioVersion             = "1.0.0-RC16"
   val ZioCatsVersion         = "2.0.0.0-RC6"
   val MonocleVersion         = "2.0.0"
-  val TofuVersion            = "0.6.2"
+  val TofuVersion            = "0.6.3"
 
   val SimulacrumVersion = "0.19.0"
 

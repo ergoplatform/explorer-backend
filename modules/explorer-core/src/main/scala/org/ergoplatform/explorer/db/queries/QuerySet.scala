@@ -21,7 +21,7 @@ trait QuerySet {
     insert.withUniqueGeneratedKeys[M](fields: _*)(m)
 
   def insertMany[M: Read: Write](list: List[M]): ConnectionIO[List[M]] =
-    insert.updateManyWithGeneratedKeys[M](fields: _*)(list).compile.to[List]
+    insert.updateManyWithGeneratedKeys[M](fields: _*)(list).compile.to(List)
 
   private def insert[M: Write]: Update[M] =
     Update[M](s"insert into $tableName ($fieldsString) values ($holdersString)")
