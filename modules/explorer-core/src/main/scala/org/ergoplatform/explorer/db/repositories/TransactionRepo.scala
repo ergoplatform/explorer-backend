@@ -40,6 +40,10 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, Transaction]
 
+  /** Get total number of transactions related to a given `address`.
+    */
+  def countRelatedToAddress(address: Address): D[Int]
+
   /** Get transactions appeared in the main-chain after given height.
     */
   def getMainSince(
@@ -81,6 +85,9 @@ object TransactionRepo {
       limit: Int
     ): Stream[D, Transaction] =
       QS.getAllRelatedToAddress(address, offset, limit).stream.translate(liftK)
+
+    def countRelatedToAddress(address: Address): D[Int] =
+      QS.countRelatedToAddress(address).unique.liftConnectionIO
 
     def getMainSince(
       height: Int,

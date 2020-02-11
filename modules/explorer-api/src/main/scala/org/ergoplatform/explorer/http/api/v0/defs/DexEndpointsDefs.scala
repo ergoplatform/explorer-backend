@@ -2,14 +2,9 @@ package org.ergoplatform.explorer.http.api.v0.defs
 
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.http.api.ApiErr
-import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{
-  DexBuyOrderInfo,
-  DexSellOrderInfo,
-  OutputInfo
-}
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.commonDirectives._
+import org.ergoplatform.explorer.http.api.models.Paging
+import org.ergoplatform.explorer.http.api.v0.models.{DexBuyOrderInfo, DexSellOrderInfo}
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
@@ -21,16 +16,16 @@ object DexEndpointsDefs {
     getUnspentSellOrdersDef :: getUnspentBuyOrdersDef :: Nil
 
   def getUnspentSellOrdersDef
-    : Endpoint[(Paging, TokenId), ApiErr, List[DexSellOrderInfo], Nothing] =
+    : Endpoint[(TokenId, Paging), ApiErr, List[DexSellOrderInfo], Nothing] =
     baseEndpointDef
-      .in(paging)
       .in(PathPrefix / "tokens" / path[TokenId] / "unspentSellOrders")
+      .in(paging)
       .out(jsonBody[List[DexSellOrderInfo]])
 
   def getUnspentBuyOrdersDef
-    : Endpoint[(Paging, TokenId), ApiErr, List[DexBuyOrderInfo], Nothing] =
+    : Endpoint[(TokenId, Paging), ApiErr, List[DexBuyOrderInfo], Nothing] =
     baseEndpointDef
-      .in(paging)
       .in(PathPrefix / "tokens" / path[TokenId] / "unspentBuyOrders")
+      .in(paging)
       .out(jsonBody[List[DexBuyOrderInfo]])
 }

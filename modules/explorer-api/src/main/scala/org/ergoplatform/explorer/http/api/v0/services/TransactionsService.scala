@@ -33,6 +33,10 @@ trait TransactionsService[F[_], S[_[_], _]] {
     */
   def getTxsInfoByAddress(address: Address, paging: Paging): S[F, TransactionInfo]
 
+  /** Get total number of transactions related to a given `address`.
+    */
+  def countTxsInfoByAddress(address: Address): F[Int]
+
   /** Get all transactions appeared in the blockchain after the given `height`.
     */
   def getTxsSince(height: Int, paging: Paging): S[F, TransactionInfo]
@@ -100,6 +104,9 @@ object TransactionsService {
         .chunkN(100)
         .through(assembleInfo)
         .translate(xa)
+
+    def countTxsInfoByAddress(address: Address): F[Int] =
+      transactionRepo.countRelatedToAddress(address) ||> xa
 
     def getTxsSince(height: Int, paging: Paging): Stream[F, TransactionInfo] =
       transactionRepo
