@@ -2,17 +2,23 @@ package org.ergoplatform.explorer.http.api.v0
 
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import cats.{~>, Monad}
+import cats.syntax.semigroupk._
+import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.RequestProcessingErr
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.http.api.v0.routes.{
+  AddressesRoutes,
   AssetsRoutes,
   BlocksRoutes,
-  DexRoutes
+  DexRoutes,
+  TransactionsRoutes
 }
 import org.ergoplatform.explorer.http.api.v0.services.{
+  AddressesService,
   AssetsService,
   BlockChainService,
-  DexService
+  DexService,
+  TransactionsService
 }
 import org.ergoplatform.explorer.settings.HttpSettings
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -20,20 +26,26 @@ import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
 import tofu.Raise.ContravariantRaise
 
-// TODO scaladoc
 object HttpApiV0 {
 
+  /** Create an API v0 http server.
+    */
   def apply[
     F[_]: ConcurrentEffect: ContextShift: Timer,
     D[_]: ContravariantRaise[*[_], RequestProcessingErr]: Monad: LiftConnectionIO
-  ](settings: HttpSettings)(xa: D ~> F): Resource[F, Server[F]] =
+  ](settings: HttpSettings)(xa: D ~> F)(
+    implicit e: ErgoAddressEncoder
+  ): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(xa))
+      routes = BlocksRoutes(blockChainService) <+>
+               AssetsRoutes(AssetsService(xa)) <+>
+               DexRoutes(DexService(xa)) <+>
+               TransactionsRoutes(TransactionsService(xa)) <+>
+               AddressesRoutes(AddressesService(xa), TransactionsService(xa))
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
-               .withHttpApp(Router("/" -> BlocksRoutes(blockChainService)).orNotFound)
-               .withHttpApp(Router("/" -> AssetsRoutes(AssetsService(xa))).orNotFound)
-               .withHttpApp(Router("/" -> DexRoutes(DexService(xa))).orNotFound)
+               .withHttpApp(Router("/" -> routes).orNotFound)
                .resource
     } yield http
 }
