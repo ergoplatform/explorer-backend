@@ -13,7 +13,7 @@ import org.ergoplatform.explorer.{Address, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import scorex.util.encode.Base16
 import sigmastate.Values.ErgoTree
-import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
 
@@ -21,7 +21,7 @@ import scala.util.Try
 
 object utils {
 
-  private val treeSerializer: ErgoTreeSerializer = new ErgoTreeSerializer
+  private val treeSerializer: ErgoTreeSerializer = ErgoTreeSerializer.DefaultSerializer
 
   @inline def ergoTreeToAddress(
     ergoTree: HexString
@@ -64,4 +64,13 @@ object utils {
     }.toEither
       .leftMap(e => ErgoTreeDeserializationFailed(bytes, Option(e.getMessage)))
       .toRaise
+
+  /** Extracts ErgoTree's template (serialized tree with placeholders instead of values)
+    * @param ergoTree ErgoTree
+    * @return serialized ErgoTree's template
+    */
+  def ergoTreeTemplateBytes(ergoTree: ErgoTree): Array[Byte] = {
+    val r = SigmaSerializer.startReader(ergoTree.bytes)
+    treeSerializer.deserializeHeaderWithTreeBytes(r)._4
+  }
 }
