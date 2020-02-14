@@ -15,8 +15,7 @@ object versions {
   val Fs2Version             = "2.2.2"
   val DoobieVersion          = "0.8.8"
   val FlywayVersion          = "5.1.1"
-  val ZioVersion             = "1.0.0-RC16"
-  val ZioCatsVersion         = "2.0.0.0-RC6"
+  val MonixVersion           = "3.1.0"
   val MonocleVersion         = "2.0.0"
   val TofuVersion            = "0.6.3"
 

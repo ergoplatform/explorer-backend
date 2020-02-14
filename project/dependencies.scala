@@ -53,10 +53,9 @@ object dependencies {
     )
   }
 
-  object zio extends DependencyGroup {
+  object monix extends DependencyGroup {
     override def deps: List[ModuleID] = List(
-      "dev.zio" %% "zio"              % ZioVersion,
-      "dev.zio" %% "zio-interop-cats" % ZioCatsVersion
+      "io.monix" %% "monix" % MonixVersion,
     )
   }
 
@@ -157,6 +156,7 @@ object dependencies {
     http4s.deps,
     tapir.deps,
     db.deps,
+    config.deps,
     logging.deps,
     newtypes.deps,
     simulacrum.deps,
@@ -166,7 +166,7 @@ object dependencies {
   lazy val api: List[ModuleID] = List(
     ergo.deps,
     cats.deps,
-    zio.deps,
+    monix.deps,
     fs2.deps,
     circe.deps,
     http4s.deps,
@@ -181,7 +181,7 @@ object dependencies {
   lazy val grabber: List[ModuleID] = List(
     ergo.deps,
     cats.deps,
-    zio.deps,
+    monix.deps,
     fs2.deps,
     circe.deps,
     http4s.deps,
@@ -196,7 +196,7 @@ object dependencies {
   lazy val utxWatcher: List[ModuleID] = List(
     ergo.deps,
     cats.deps,
-    zio.deps,
+    monix.deps,
     fs2.deps,
     circe.deps,
     http4s.deps,

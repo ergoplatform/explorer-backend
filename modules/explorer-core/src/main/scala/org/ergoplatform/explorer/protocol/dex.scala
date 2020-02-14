@@ -1,13 +1,10 @@
 package org.ergoplatform.explorer.protocol
 
-import cats.{Applicative, Monad}
+import cats.{Applicative, FlatMap, Monad}
 import cats.syntax.flatMap._
 import eu.timepit.refined.refineMV
 import eu.timepit.refined.string.HexStringSpec
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{
-  DexBuyOrderAttributesFailed,
-  DexSellOrderAttributesFailed
-}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{DexBuyOrderAttributesFailed, DexSellOrderAttributesFailed}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr
 import org.ergoplatform.explorer.protocol.utils.{bytesToErgoTree, hexStringBase16ToBytes}
 import org.ergoplatform.explorer.{HexString, TokenId}
@@ -58,7 +55,7 @@ object dex {
       )
 
   def getTokenPriceFromSellOrderTree[
-    F[_]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: ContravariantRaise[*[_], ContractParsingErr]: Monad
+    F[_]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: ContravariantRaise[*[_], ContractParsingErr]: FlatMap: Applicative
   ](ergoTreeStr: HexString): F[Long] =
     hexStringBase16ToBytes[F](ergoTreeStr)
       .flatMap(bytes =>
