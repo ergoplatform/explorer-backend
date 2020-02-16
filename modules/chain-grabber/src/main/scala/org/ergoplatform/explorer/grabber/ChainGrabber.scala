@@ -11,7 +11,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Monad, MonadError, Parallel, ~>}
+import cats.{~>, Monad, MonadError, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -26,7 +26,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetworkService
-import org.ergoplatform.explorer.settings.Settings
+import org.ergoplatform.explorer.settings.GrabberAppSettings
 import tofu.Raise.ContravariantRaise
 
 /** Fetches new blocks from the network divide them into
@@ -34,12 +34,10 @@ import tofu.Raise.ContravariantRaise
   */
 final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
-  D[_]: ContravariantRaise[*[_], ProcessingErr]
-      : ContravariantRaise[*[_], RefinementFailed]
-      : Monad
+  D[_]: ContravariantRaise[*[_], ProcessingErr]: ContravariantRaise[*[_], RefinementFailed]: Monad
 ](
   lastBlockCache: Ref[F, Option[BlockInfo]],
-  settings: Settings,
+  settings: GrabberAppSettings,
   networkService: ErgoNetworkService[F, Stream],
   headerRepo: HeaderRepo[D],
   blockInfoRepo: BlockInfoRepo[D, Stream],
@@ -56,7 +54,7 @@ final class ChainGrabber[
       .covary[F]
       .metered(settings.chainPollInterval)
       .evalMap { _ =>
-        grab.handleErrorWith { e =>
+        Logger[F].info("Starting sync job ..") >> grab.handleErrorWith { e =>
           Logger[F].warn(e)(
             "An error occurred while syncing with the network. Restarting ..."
           )
@@ -70,16 +68,16 @@ final class ChainGrabber[
       _             <- Logger[F].info(s"Current network height : $networkHeight")
       _             <- Logger[F].info(s"Current explorer height: $localHeight")
       range         <- getScanRange(localHeight, networkHeight).pure[F]
-      _             <- range.traverse { height =>
-                         grabBlocksFromHeight(height)
-                           .flatMap(_ ||> xa)
-                           .flatTap { blocks =>
-                             if (blocks.nonEmpty)
-                               lastBlockCache.update(_ => blocks.headOption) >>
-                               Logger[F].info(s"${blocks.size} block grabbed from height $height")
-                             else ProcessingErr.NoBlocksWritten(height = height).raiseError[F, Unit]
-                           }
-                       }
+      _ <- range.traverse { height =>
+            grabBlocksFromHeight(height)
+              .flatMap(_ ||> xa)
+              .flatTap { blocks =>
+                if (blocks.nonEmpty)
+                  lastBlockCache.update(_ => blocks.headOption) >>
+                  Logger[F].info(s"${blocks.size} block grabbed from height $height")
+                else ProcessingErr.NoBlocksWritten(height = height).raiseError[F, Unit]
+              }
+          }
     } yield ()
 
   private def grabBlocksFromHeight(
@@ -167,7 +165,7 @@ object ChainGrabber {
     F[_]: Sync: Parallel: Timer,
     D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
   ](
-    settings: Settings,
+    settings: GrabberAppSettings,
     networkService: ErgoNetworkService[F, Stream]
   )(xa: D ~> F): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>

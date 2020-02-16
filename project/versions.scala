@@ -2,12 +2,12 @@ object versions {
 
   val ErgoWalletVersion = "master-83d10111-SNAPSHOT"
 
-  val Http4sVersion          = "0.21.0-M5"
+  val Http4sVersion          = "0.21.1"
   val TapirVersion           = "0.12.20"
   val CirceVersion           = "0.12.3"
   val CirceDerivationVersion = "0.12.0-M7"
-  val CatsVersion            = "2.0.0"
-  val CatsEffectVersion      = "2.0.0"
+  val CatsVersion            = "2.1.0"
+  val CatsEffectVersion      = "2.1.1"
   val CatsMtlVersion         = "0.7.0"
   val CatsMeowMtl            = "0.4.0"
   val CatsTaglessVersion     = "0.10"

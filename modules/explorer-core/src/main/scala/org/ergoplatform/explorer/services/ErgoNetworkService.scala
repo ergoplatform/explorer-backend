@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.services
 
+import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.syntax.functor._
 import cats.{ApplicativeError, Monad}
@@ -10,8 +11,7 @@ import io.circe.Decoder
 import jawnfs2._
 import org.ergoplatform.explorer.Err.ProcessingErr.TransactionDecodingFailed
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
-import org.ergoplatform.explorer.settings.Settings
-import org.ergoplatform.explorer.{Err, Id, UrlString}
+import org.ergoplatform.explorer.{Id, UrlString}
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
 import tofu.Raise.ContravariantRaise
@@ -42,16 +42,16 @@ object ErgoNetworkService {
 
   def apply[F[_]: Sync](
     client: Client[F],
-    settings: Settings
+    masterNodesAddresses: NonEmptyList[UrlString]
   ): F[ErgoNetworkService[F, Stream]] =
     Slf4jLogger
       .create[F]
-      .map(logger => new Live[F](client, logger, settings))
+      .map(new Live[F](client, _, masterNodesAddresses))
 
   final private class Live[F[_]: Sync: ContravariantRaise[*[_], TransactionDecodingFailed]](
     client: Client[F],
     logger: Logger[F],
-    settings: Settings
+    masterNodesAddresses: NonEmptyList[UrlString]
   ) extends ErgoNetworkService[F, Stream] {
 
     import io.circe.jawn.CirceSupportParser.facade
@@ -108,7 +108,7 @@ object ErgoNetworkService {
           case Nil =>
             G.raiseError(new Exception(s"Gave up after $i attempts"))
         }
-      attempt(settings.masterNodesAddresses.toList)(0)
+      attempt(masterNodesAddresses.toList)(0)
     }
 
     private def makeGetRequest(uri: String) =

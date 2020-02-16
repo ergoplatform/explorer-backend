@@ -7,17 +7,17 @@ import pureconfig.generic.auto._
 import pureconfig.module.catseffect._
 import org.ergoplatform.explorer.settings.pureConfigInstances._
 
-final case class Settings(
+final case class ApiAppSettings(
   httpSettings: HttpSettings,
   dbSettings: DbSettings,
-  protocolSettings: ProtocolSettings
+  protocol: ProtocolSettings
 )
 
-object Settings {
+object ApiAppSettings {
 
-  def load[F[_]: Sync](pathOpt: Option[String]): F[Settings] =
+  def load[F[_]: Sync](pathOpt: Option[String]): F[ApiAppSettings] =
     pathOpt
       .map(ConfigSource.file)
       .getOrElse(ConfigSource.default)
-      .loadF[F, Settings]
+      .loadF[F, ApiAppSettings]
 }

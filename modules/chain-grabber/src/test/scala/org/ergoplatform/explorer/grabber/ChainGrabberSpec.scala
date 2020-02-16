@@ -7,10 +7,13 @@ import org.ergoplatform.explorer.MainNetConfiguration
 import org.ergoplatform.explorer.db.RealDbTest
 import org.ergoplatform.explorer.grabber.GrabberTestNetworkService.Source
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
+import org.ergoplatform.explorer.settings.GrabberAppSettings
 import org.scalacheck.ScalacheckShapeless._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+
+import scala.concurrent.duration._
 
 class ChainGrabberSpec
   extends PropSpec
@@ -20,6 +23,9 @@ class ChainGrabberSpec
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.testConstants._
+
+  private lazy val settings =
+    GrabberAppSettings(1.second, 1.second, mainnetNodes, dbSettings, protocolSettings)
 
   property("Network scanning") {
     forAll(consistentChainGen(12)) { apiBlocks =>

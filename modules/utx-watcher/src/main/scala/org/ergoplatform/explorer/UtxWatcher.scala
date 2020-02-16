@@ -20,7 +20,6 @@ import org.ergoplatform.explorer.db.repositories.{
   UTransactionRepo
 }
 import org.ergoplatform.explorer.services.ErgoNetworkService
-import org.ergoplatform.explorer.settings.Settings
 import org.ergoplatform.explorer.syntax.stream._
 
 /** Synchronises local memory pool representation with the network.
@@ -29,7 +28,7 @@ final class UtxWatcher[
   F[_]: Timer: Applicative: Logger,
   D[_]: Monad
 ](
-  settings: Settings,
+  settings: UtxWatcherSettings,
   networkService: ErgoNetworkService[F, Stream],
   txRepo: UTransactionRepo[D, Stream],
   inRepo: UInputRepo[D, Stream],
@@ -42,7 +41,7 @@ final class UtxWatcher[
   def run: Stream[F, Unit] =
     Stream(()).repeat
       .covary[F]
-      .metered(settings.utxPoolPollInterval)
+      .metered(settings.pollInterval)
       .flatMap(_ => syncPool)
 
   private def syncPool: Stream[F, Unit] =

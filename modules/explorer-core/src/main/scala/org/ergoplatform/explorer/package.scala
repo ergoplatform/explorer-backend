@@ -14,9 +14,10 @@ import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.constraints._
+import pureconfig.ConfigReader
+import pureconfig.error.CannotConvert
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
-import tofu.Raise
 import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
 
@@ -205,6 +206,13 @@ package object explorer {
     // circe instances
     implicit def encoder: Encoder[UrlString] = deriving
     implicit def decoder: Decoder[UrlString] = deriving
+
+    implicit def configReader: ConfigReader[UrlString] =
+      implicitly[ConfigReader[String]].emap { s =>
+        fromString[Either[RefinementFailed, *]](s).leftMap(e =>
+          CannotConvert(s, s"Refined", e.msg)
+        )
+      }
 
     def fromString[
       F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
