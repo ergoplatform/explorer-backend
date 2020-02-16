@@ -2,14 +2,22 @@ package org.ergoplatform.explorer.protocol
 
 import cats.{Applicative, FlatMap, Monad}
 import cats.syntax.flatMap._
-import cats.instances.try_._
+import cats.syntax.either._
+import org.ergoplatform.explorer.Err.RefinementFailed
+import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.{
+  ErgoTreeDeserializationFailed,
+  ErgoTreeSerializationFailed
+}
+import org.ergoplatform.explorer.protocol.utils.stringBase16ToBytes
 import org.ergoplatform.contracts.AssetsAtomicExchangeCompilation
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{
   DexBuyOrderAttributesFailed,
+  DexContractInstantiationFailed,
   DexSellOrderAttributesFailed
 }
 import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr
+import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.Base16DecodingFailed
 import org.ergoplatform.explorer.protocol.utils.{
   bytesToErgoTree,
   ergoTreeTemplateBytes,
@@ -32,36 +40,95 @@ object dex {
   private val BuyContractTokenIdIndexInConstants     = 6
   private val BuyContractTokenAmountIndexInConstants = 8
 
-  def sellContractInstance(tokensPrice: Long): ErgoTree = {
+  def sellContractInstance[F[_]: ContravariantRaise[
+    *[_],
+    DexContractInstantiationFailed
+  ]: Applicative](
+    tokensPrice: Long
+  ): F[ErgoTree] = {
     import org.ergoplatform.sigma.verified.VerifiedTypeConverters._
     // since we're only using compiled contracts for constant(parameters) extraction PK value does not matter
-    val anyPk = sigmastate.eval.SigmaDsl.SigmaProp(ProveDlog(constants.group.generator))
-    AssetsAtomicExchangeCompilation.sellerContractInstance(tokensPrice, anyPk).ergoTree
+    Try {
+      val anyPk = sigmastate.eval.SigmaDsl.SigmaProp(ProveDlog(constants.group.generator))
+      AssetsAtomicExchangeCompilation.sellerContractInstance(tokensPrice, anyPk).ergoTree
+    }.toEither
+      .leftMap(e => DexContractInstantiationFailed(e.getMessage))
+      .toRaise
   }
 
-  val sellContractTemplate: HexString = {
+  def sellContractTemplate[F[_]: ContravariantRaise[*[_], DexContractInstantiationFailed]: ContravariantRaise[
+    *[_],
+    ErgoTreeDeserializationFailed
+  ]: ContravariantRaise[
+    *[_],
+    ErgoTreeSerializationFailed
+  ]: ContravariantRaise[
+    *[_],
+    RefinementFailed
+  ]: Monad]: F[HexString] =
     // parameter values does not matter, we're extracting ErgoTree template (with placeholders in places of values)
-    val contractErgoTree = sellContractInstance(0L)
-    HexString.fromString[Try](Base16.encode(ergoTreeTemplateBytes(contractErgoTree))).get
-  }
+    sellContractInstance[F](0L)
+      .flatMap(ergoTreeTemplateBytes[F])
+      .flatMap(bytes => HexString.fromString(Base16.encode(bytes)))
 
-  def buyContractInstance(tokenId: TokenId, tokenAmount: Long): ErgoTree = {
-    import org.ergoplatform.sigma.verified.VerifiedTypeConverters._
-    // since we're only using compiled contracts for constant(parameters) extraction PK value does not matter
-    val anyPk = sigmastate.eval.SigmaDsl.SigmaProp(ProveDlog(constants.group.generator))
-    AssetsAtomicExchangeCompilation
-      .buyerContractInstance(Base16.decode(tokenId.value).get.toColl, tokenAmount, anyPk)
-      .ergoTree
-  }
+  def buyContractInstance[F[_]: ContravariantRaise[
+    *[_],
+    DexContractInstantiationFailed
+  ]: ContravariantRaise[
+    *[_],
+    Base16DecodingFailed
+  ]: Monad](
+    tokenId: TokenId,
+    tokenAmount: Long
+  ): F[ErgoTree] =
+    stringBase16ToBytes(tokenId.value).flatMap { tokenIdBytes =>
+      import org.ergoplatform.sigma.verified.VerifiedTypeConverters._
+      // since we're only using compiled contracts for constant(parameters) extraction PK value does not matter
+      Try {
+        val anyPk =
+          sigmastate.eval.SigmaDsl.SigmaProp(ProveDlog(constants.group.generator))
+        AssetsAtomicExchangeCompilation
+          .buyerContractInstance(
+            tokenIdBytes.toColl,
+            tokenAmount,
+            anyPk
+          )
+          .ergoTree
+      }.toEither
+        .leftMap(e => DexContractInstantiationFailed(e.getMessage))
+        .toRaise
+    }
 
-  val buyContractTemplate: HexString = {
+  def buyContractTemplate[F[_]: ContravariantRaise[*[_], DexContractInstantiationFailed]: ContravariantRaise[
+    *[_],
+    ErgoTreeDeserializationFailed
+  ]: ContravariantRaise[
+    *[_],
+    ErgoTreeSerializationFailed
+  ]: ContravariantRaise[
+    *[_],
+    Base16DecodingFailed
+  ]: ContravariantRaise[
+    *[_],
+    RefinementFailed
+  ]: Monad]: F[HexString] = {
+    // parameter values does not matter, we're extracting ErgoTree template (with placeholders in places of values)
     val anyToken = TokenId(
       "21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1"
     )
     // parameter values does not matter, we're extracting ErgoTree template (with placeholders in places of values)
-    val contractErgoTree = buyContractInstance(anyToken, tokenAmount = 0L)
-    HexString.fromString[Try](Base16.encode(ergoTreeTemplateBytes(contractErgoTree))).get
+    buyContractInstance[F](anyToken, tokenAmount = 0L)
+      .flatMap(ergoTreeTemplateBytes[F])
+      .flatMap(bytes => HexString.fromString(Base16.encode(bytes)))
   }
+//  val buyContractTemplate: HexString = {
+//    val anyToken = TokenId(
+//      "21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1"
+//    )
+//    // parameter values does not matter, we're extracting ErgoTree template (with placeholders in places of values)
+//    val contractErgoTree = buyContractInstance(anyToken, tokenAmount = 0L)
+//    HexString.fromString[Try](Base16.encode(ergoTreeTemplateBytes(contractErgoTree))).get
+//  }
 
   /** Extracts tokens price embedded in the DEX sell order contract
     * @param tree ErgoTree of the contract

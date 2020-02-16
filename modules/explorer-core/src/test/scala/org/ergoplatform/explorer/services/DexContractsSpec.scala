@@ -22,9 +22,10 @@ class DexContractsSpec
   property("getTokenPriceFromSellOrderTree") {
     forAll(Gen.posNum[Long]) { tokenPrice =>
       val extractedTokenPrice =
-        getTokenPriceFromSellContractTree[IO](
-          dex.sellContractInstance(tokenPrice)
-        ).unsafeRunSync()
+        dex
+          .sellContractInstance[IO](tokenPrice)
+          .flatMap(getTokenPriceFromSellContractTree[IO])
+          .unsafeRunSync()
 
       extractedTokenPrice shouldBe tokenPrice
     }
@@ -34,9 +35,10 @@ class DexContractsSpec
     forAll(assetIdGen, Gen.posNum[Long]) {
       case (tokenId, tokenAmount) =>
         val extractedTokenInfo =
-          getTokenInfoFromBuyContractTree[IO](
-            dex.buyContractInstance(tokenId, tokenAmount)
-          ).unsafeRunSync()
+          dex
+            .buyContractInstance[IO](tokenId, tokenAmount)
+            .flatMap(getTokenInfoFromBuyContractTree[IO])
+            .unsafeRunSync()
 
     val expectedTokenInfo = (
       TokenId.fromString[Try]("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1").get,

@@ -6,7 +6,8 @@ import cats.{Applicative, Monad}
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.{
   Base16DecodingFailed,
-  ErgoTreeDeserializationFailed
+  ErgoTreeDeserializationFailed,
+  ErgoTreeSerializationFailed
 }
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.{Address, HexString}
@@ -53,6 +54,15 @@ object utils {
     Base16
       .decode(s.unwrapped)
       .toEither
+      .leftMap(e => Base16DecodingFailed(s.unwrapped, Option(e.getMessage)))
+      .toRaise
+
+  @inline def stringBase16ToBytes[
+    F[_]: ContravariantRaise[*[_], Base16DecodingFailed]: Applicative
+  ](s: String): F[Array[Byte]] =
+    Base16
+      .decode(s)
+      .toEither
       .leftMap(e => Base16DecodingFailed(s, Option(e.getMessage)))
       .toRaise
 
@@ -65,12 +75,32 @@ object utils {
       .leftMap(e => ErgoTreeDeserializationFailed(bytes, Option(e.getMessage)))
       .toRaise
 
+  @inline def ergoTreeToBytes[
+    F[_]: ContravariantRaise[*[_], ErgoTreeSerializationFailed]: Applicative
+  ](ergoTree: ErgoTree): F[Array[Byte]] =
+    Try {
+      ergoTree.bytes
+    }.toEither
+      .leftMap(e => ErgoTreeSerializationFailed(ergoTree, Option(e.getMessage)))
+      .toRaise
+
   /** Extracts ErgoTree's template (serialized tree with placeholders instead of values)
     * @param ergoTree ErgoTree
     * @return serialized ErgoTree's template
     */
-  def ergoTreeTemplateBytes(ergoTree: ErgoTree): Array[Byte] = {
-    val r = SigmaSerializer.startReader(ergoTree.bytes)
-    treeSerializer.deserializeHeaderWithTreeBytes(r)._4
-  }
+  def ergoTreeTemplateBytes[F[_]: ContravariantRaise[
+    *[_],
+    ErgoTreeDeserializationFailed
+  ]: ContravariantRaise[*[_], ErgoTreeSerializationFailed]: Monad](
+    ergoTree: ErgoTree
+  ): F[Array[Byte]] =
+    ergoTreeToBytes[F](ergoTree).flatMap { bytes =>
+      Try {
+        val r = SigmaSerializer.startReader(bytes)
+        treeSerializer.deserializeHeaderWithTreeBytes(r)._4
+      }.toEither
+        .leftMap(e => ErgoTreeDeserializationFailed(bytes, Option(e.getMessage)))
+        .toRaise
+    }
+
 }

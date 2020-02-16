@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer
 
 import scorex.util.encode.Base16
+import sigmastate.Values.ErgoTree
 
 import scala.util.control.NoStackTrace
 
@@ -50,10 +51,10 @@ object Err {
     object ContractParsingErr {
 
       final case class Base16DecodingFailed(
-        hexString: HexString,
+        string: String,
         reasonOpt: Option[String] = None
       ) extends ContractParsingErr(
-          s"Failed to decode Base16: `$hexString`" + reasonOpt
+          s"Failed to decode Base16: `$string`" + reasonOpt
             .map(s => s", reason: $s")
             .getOrElse("")
         )
@@ -66,15 +67,29 @@ object Err {
             .map(s => s", reason: $s")
             .getOrElse("")
         )
+
+      final case class ErgoTreeSerializationFailed(
+        ergoTree: ErgoTree,
+        reasonOpt: Option[String] = None
+      ) extends ContractParsingErr(
+          s"Failed to serialize ergo tree: `$ergoTree`" + reasonOpt
+            .map(s => s", reason: $s")
+            .getOrElse("")
+        )
     }
 
     abstract class DexErr(msg: String) extends RequestProcessingErr(msg)
 
     object DexErr {
 
-      final case class DexSellOrderAttributesFailed(details: String) extends DexErr(details)
+      final case class DexContractInstantiationFailed(details: String)
+        extends DexErr(details)
 
-      final case class DexBuyOrderAttributesFailed(details: String) extends DexErr(details)
+      final case class DexSellOrderAttributesFailed(details: String)
+        extends DexErr(details)
+
+      final case class DexBuyOrderAttributesFailed(details: String)
+        extends DexErr(details)
     }
   }
 }

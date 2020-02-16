@@ -60,12 +60,14 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
 
   override def getAllMainUnspentSellOrderByTokenId(
     tokenId: TokenId,
+    ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = fs2.Stream.emits(source.sellOrders)
 
   override def getAllMainUnspentBuyOrderByTokenId(
     tokenId: TokenId,
+    ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = fs2.Stream.emits(source.buyOrders)

@@ -75,6 +75,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def getAllMainUnspentSellOrderByTokenId(
     tokenId: TokenId,
+    ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
@@ -83,6 +84,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def getAllMainUnspentBuyOrderByTokenId(
     tokenId: TokenId,
+    ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
@@ -169,12 +171,13 @@ object OutputRepo {
 
     def getAllMainUnspentSellOrderByTokenId(
       tokenId: TokenId,
+      ergoTreeTemplate: HexString,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentSellOrderByTokenId(
           tokenId,
-          dex.sellContractTemplate,
+          ergoTreeTemplate,
           offset,
           limit
         )
@@ -183,12 +186,13 @@ object OutputRepo {
 
     def getAllMainUnspentBuyOrderByTokenId(
       tokenId: TokenId,
+      ergoTreeTemplate: HexString,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentBuyOrderByTokenId(
           tokenId,
-          dex.buyContractTemplate,
+          ergoTreeTemplate,
           offset,
           limit
         )
