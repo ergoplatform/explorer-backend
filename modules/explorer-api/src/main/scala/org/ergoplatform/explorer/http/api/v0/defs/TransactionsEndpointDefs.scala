@@ -12,12 +12,13 @@ object TransactionsEndpointDefs {
 
   private val PathPrefix = "addresses"
 
-  def endpoints: List[Endpoint[_, _, _, _]] = Nil
+  def endpoints: List[Endpoint[_, _, _, _]] =
+    getTxByIdDef :: getUnconfirmedTxByIdDef :: getTxsSinceDef :: Nil
 
   def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionInfo, Nothing] =
     baseEndpointDef
-    .in(PathPrefix / path[TxId])
-    .out(jsonBody[TransactionInfo])
+      .in(PathPrefix / path[TxId])
+      .out(jsonBody[TransactionInfo])
 
   def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionInfo, Nothing] =
     baseEndpointDef
@@ -26,7 +27,7 @@ object TransactionsEndpointDefs {
 
   def getTxsSinceDef: Endpoint[(Paging, Int), ApiErr, List[TransactionInfo], Nothing] =
     baseEndpointDef
-    .in(paging)
-    .in(PathPrefix / path[Int])
-    .out(jsonBody[List[TransactionInfo]])
+      .in(paging)
+      .in(PathPrefix / path[Int])
+      .out(jsonBody[List[TransactionInfo]])
 }

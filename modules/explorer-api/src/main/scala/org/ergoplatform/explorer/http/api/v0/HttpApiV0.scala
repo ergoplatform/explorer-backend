@@ -1,14 +1,27 @@
 package org.ergoplatform.explorer.http.api.v0
 
-import cats.effect.{ConcurrentEffect, ContextShift, Resource, Sync, Timer}
-import cats.{Applicative, FlatMap, Monad, ~>}
+import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
+import cats.{~>, Monad}
 import cats.syntax.semigroupk._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.http.api.settings.HttpSettings
-import org.ergoplatform.explorer.http.api.v0.routes.{AddressesRoutes, AssetsRoutes, BlocksRoutes, DexRoutes, TransactionsRoutes}
-import org.ergoplatform.explorer.http.api.v0.services.{AddressesService, AssetsService, BlockChainService, DexService, TransactionsService}
+import org.ergoplatform.explorer.http.api.v0.routes.{
+  AddressesRoutes,
+  AssetsRoutes,
+  BlocksRoutes,
+  DexRoutes,
+  DocsRoutes,
+  TransactionsRoutes
+}
+import org.ergoplatform.explorer.http.api.v0.services.{
+  AddressesService,
+  AssetsService,
+  BlockChainService,
+  DexService,
+  TransactionsService
+}
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
@@ -33,7 +46,8 @@ object HttpApiV0 {
         AssetsRoutes(AssetsService(xa)) <+>
         DexRoutes(DexService(xa)) <+>
         TransactionsRoutes(TransactionsService(xa)) <+>
-        AddressesRoutes(AddressesService(xa), TransactionsService(xa))
+        AddressesRoutes(AddressesService(xa), TransactionsService(xa)) <+>
+        DocsRoutes[F]
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
                .withHttpApp(Router("/" -> routes).orNotFound)
