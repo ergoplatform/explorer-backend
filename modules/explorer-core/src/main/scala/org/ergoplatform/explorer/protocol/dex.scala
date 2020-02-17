@@ -4,7 +4,7 @@ import cats.{Applicative, FlatMap, Monad}
 import cats.syntax.flatMap._
 import cats.syntax.either._
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.{
+import org.ergoplatform.explorer.Err.RequestProcessingErr.ErgoTreeSerializationErr.{
   ErgoTreeDeserializationFailed,
   ErgoTreeSerializationFailed
 }
@@ -16,7 +16,10 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{
   DexContractInstantiationFailed,
   DexSellOrderAttributesFailed
 }
-import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr
+import org.ergoplatform.explorer.Err.RequestProcessingErr.{
+  ContractParsingErr,
+  ErgoTreeSerializationErr
+}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.Base16DecodingFailed
 import org.ergoplatform.explorer.protocol.utils.{
   bytesToErgoTree,
@@ -58,10 +61,7 @@ object dex {
 
   def sellContractTemplate[F[_]: ContravariantRaise[*[_], DexContractInstantiationFailed]: ContravariantRaise[
     *[_],
-    ErgoTreeDeserializationFailed
-  ]: ContravariantRaise[
-    *[_],
-    ErgoTreeSerializationFailed
+    ErgoTreeSerializationErr
   ]: ContravariantRaise[
     *[_],
     RefinementFailed
@@ -101,10 +101,7 @@ object dex {
 
   def buyContractTemplate[F[_]: ContravariantRaise[*[_], DexContractInstantiationFailed]: ContravariantRaise[
     *[_],
-    ErgoTreeDeserializationFailed
-  ]: ContravariantRaise[
-    *[_],
-    ErgoTreeSerializationFailed
+    ErgoTreeSerializationErr
   ]: ContravariantRaise[
     *[_],
     Base16DecodingFailed
@@ -154,7 +151,10 @@ object dex {
     * @return tokens price
     */
   def getTokenPriceFromSellOrderTree[
-    F[_]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: ContravariantRaise[*[_], ContractParsingErr]: FlatMap: Applicative
+    F[_]: ContravariantRaise[*[_], DexSellOrderAttributesFailed]: ContravariantRaise[*[_], ErgoTreeSerializationErr]: ContravariantRaise[
+      *[_],
+      Base16DecodingFailed
+    ]: FlatMap: Applicative
   ](ergoTreeStr: HexString): F[Long] =
     hexStringBase16ToBytes[F](ergoTreeStr)
       .flatMap(bytes =>
@@ -201,7 +201,10 @@ object dex {
     * @return token id and token amount
     */
   def getTokenInfoFromBuyOrderTree[
-    F[_]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]: ContravariantRaise[*[_], ContractParsingErr]: ContravariantRaise[
+    F[_]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]: ContravariantRaise[*[_], ErgoTreeSerializationErr]: ContravariantRaise[
+      *[_],
+      Base16DecodingFailed
+    ]: ContravariantRaise[
       *[_],
       RefinementFailed
     ]: Monad

@@ -3,8 +3,12 @@ package org.ergoplatform.explorer.http.api.v0.services
 import cats.{~>, Monad}
 import fs2.Stream
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr
-import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr
+import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.Base16DecodingFailed
+import org.ergoplatform.explorer.Err.RequestProcessingErr.{
+  ContractParsingErr,
+  DexErr,
+  ErgoTreeSerializationErr
+}
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
@@ -29,7 +33,9 @@ object DexService {
     F[_],
     D[_]: LiftConnectionIO: Monad: ContravariantRaise[*[_], DexErr]: ContravariantRaise[*[
       _
-    ], ContractParsingErr]: ContravariantRaise[*[_], RefinementFailed]: ContravariantRaise[
+    ], ErgoTreeSerializationErr]: ContravariantRaise[*[
+      _
+    ], Base16DecodingFailed]: ContravariantRaise[*[_], RefinementFailed]: ContravariantRaise[
       *[_],
       RefinementFailed
     ]
@@ -38,7 +44,12 @@ object DexService {
 
   final private class Live[
     F[_],
-    D[_]: Monad: ContravariantRaise[*[_], DexErr]: ContravariantRaise[*[_], ContractParsingErr]: ContravariantRaise[
+    D[_]: Monad: ContravariantRaise[*[_], DexErr]: ContravariantRaise[*[_], ErgoTreeSerializationErr]: ContravariantRaise[
+      *[
+        _
+      ],
+      Base16DecodingFailed
+    ]: ContravariantRaise[
       *[_],
       RefinementFailed
     ]

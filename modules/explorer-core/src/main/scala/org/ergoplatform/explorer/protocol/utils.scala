@@ -4,12 +4,15 @@ import cats.syntax.either._
 import cats.syntax.flatMap._
 import cats.{Applicative, Monad}
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.{
-  Base16DecodingFailed,
+import org.ergoplatform.explorer.Err.RequestProcessingErr.ErgoTreeSerializationErr.{
   ErgoTreeDeserializationFailed,
   ErgoTreeSerializationFailed
 }
-import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
+import org.ergoplatform.explorer.Err.RequestProcessingErr.{
+  AddressDecodingFailed,
+  ErgoTreeSerializationErr
+}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.Base16DecodingFailed
 import org.ergoplatform.explorer.{Address, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import scorex.util.encode.Base16
@@ -88,10 +91,7 @@ object utils {
     * @param ergoTree ErgoTree
     * @return serialized ErgoTree's template
     */
-  def ergoTreeTemplateBytes[F[_]: ContravariantRaise[
-    *[_],
-    ErgoTreeDeserializationFailed
-  ]: ContravariantRaise[*[_], ErgoTreeSerializationFailed]: Monad](
+  def ergoTreeTemplateBytes[F[_]: ContravariantRaise[*[_], ErgoTreeSerializationErr]: Monad](
     ergoTree: ErgoTree
   ): F[Array[Byte]] =
     ergoTreeToBytes[F](ergoTree).flatMap { bytes =>
