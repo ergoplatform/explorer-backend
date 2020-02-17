@@ -4,10 +4,6 @@ import cats.{Applicative, FlatMap, Monad}
 import cats.syntax.flatMap._
 import cats.syntax.either._
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.ErgoTreeSerializationErr.{
-  ErgoTreeDeserializationFailed,
-  ErgoTreeSerializationFailed
-}
 import org.ergoplatform.explorer.protocol.utils.stringBase16ToBytes
 import org.ergoplatform.contracts.AssetsAtomicExchangeCompilation
 import org.ergoplatform.explorer.Err.RefinementFailed
@@ -16,10 +12,7 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{
   DexContractInstantiationFailed,
   DexSellOrderAttributesFailed
 }
-import org.ergoplatform.explorer.Err.RequestProcessingErr.{
-  ContractParsingErr,
-  ErgoTreeSerializationErr
-}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.{ErgoTreeSerializationErr}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.Base16DecodingFailed
 import org.ergoplatform.explorer.protocol.utils.{
   bytesToErgoTree,
@@ -118,14 +111,6 @@ object dex {
       .flatMap(ergoTreeTemplateBytes[F])
       .flatMap(bytes => HexString.fromString(Base16.encode(bytes)))
   }
-//  val buyContractTemplate: HexString = {
-//    val anyToken = TokenId(
-//      "21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1"
-//    )
-//    // parameter values does not matter, we're extracting ErgoTree template (with placeholders in places of values)
-//    val contractErgoTree = buyContractInstance(anyToken, tokenAmount = 0L)
-//    HexString.fromString[Try](Base16.encode(ergoTreeTemplateBytes(contractErgoTree))).get
-//  }
 
   /** Extracts tokens price embedded in the DEX sell order contract
     * @param tree ErgoTree of the contract
