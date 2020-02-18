@@ -4,7 +4,11 @@ import cats.{Applicative, FlatMap, Monad}
 import cats.syntax.flatMap._
 import eu.timepit.refined.refineMV
 import eu.timepit.refined.string.HexStringSpec
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{DexBuyOrderAttributesFailed, DexSellOrderAttributesFailed}
+import org.ergoplatform.explorer.Err.RefinementFailed
+import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{
+  DexBuyOrderAttributesFailed,
+  DexSellOrderAttributesFailed
+}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr
 import org.ergoplatform.explorer.protocol.utils.{bytesToErgoTree, hexStringBase16ToBytes}
 import org.ergoplatform.explorer.{HexString, TokenId}
@@ -64,19 +68,20 @@ object dex {
       )
 
   @inline def getTokenInfoFromBuyContractTree[
-    F[_]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]: Monad
+    F[_]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]: ContravariantRaise[*[_], RefinementFailed]: Monad
   ](tree: ErgoTree): F[(TokenId, Long)] =
     tree.constants
       .lift(BuyContractTokenIdIndexInConstants)
       .collect {
         case ByteArrayConstant(coll) =>
-          TokenId(Base16.encode(coll.toArray))
+          TokenId.fromString(Base16.encode(coll.toArray))
       }
       .orRaise(
         DexBuyOrderAttributesFailed(
           s"Cannot find tokenId in the buy order ergo tree $tree"
         )
       )
+      .flatten
       .flatMap(tokenId =>
         tree.constants
           .lift(BuyContractTokenAmountIndexInConstants)
@@ -93,7 +98,10 @@ object dex {
       )
 
   def getTokenInfoFromBuyOrderTree[
-    F[_]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]: ContravariantRaise[*[_], ContractParsingErr]: Monad
+    F[_]: ContravariantRaise[*[_], DexBuyOrderAttributesFailed]
+        : ContravariantRaise[*[_], ContractParsingErr]
+        : ContravariantRaise[*[_], RefinementFailed]
+        : Monad
   ](ergoTreeStr: HexString): F[(TokenId, Long)] =
     hexStringBase16ToBytes[F](ergoTreeStr)
       .flatMap(bytes =>

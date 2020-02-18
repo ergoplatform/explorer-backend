@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.{Monad, ~>}
 import fs2.Stream
+import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr
 import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr
 import org.ergoplatform.explorer.TokenId
@@ -30,6 +31,7 @@ object DexService {
         : Monad
         : ContravariantRaise[*[_], DexErr]
         : ContravariantRaise[*[_], ContractParsingErr]
+        : ContravariantRaise[*[_], RefinementFailed]
   ](xa: D ~> F): DexService[F, Stream] =
     new Live(AssetRepo[D], OutputRepo[D])(xa)
 
@@ -38,6 +40,7 @@ object DexService {
     D[_]: Monad
         : ContravariantRaise[*[_], DexErr]
         : ContravariantRaise[*[_], ContractParsingErr]
+        : ContravariantRaise[*[_], RefinementFailed]
   ](
     assetRepo: AssetRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream]

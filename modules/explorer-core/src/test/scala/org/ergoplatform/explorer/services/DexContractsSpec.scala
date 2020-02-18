@@ -1,10 +1,13 @@
 package org.ergoplatform.explorer.services
 
 import cats.effect.IO
+import cats.instances.try_._
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.protocol.dex
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+
+import scala.util.Try
 
 class DexContractsSpec
   extends PropSpec
@@ -27,7 +30,7 @@ class DexContractsSpec
       dex.getTokenInfoFromBuyOrderTree[IO](buyOrderErgoTree).unsafeRunSync()
 
     val expectedTokenInfo = (
-      TokenId("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1"),
+      TokenId.fromString[Try]("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1").get,
       60
     )
     extractedTokenInfo shouldEqual expectedTokenInfo

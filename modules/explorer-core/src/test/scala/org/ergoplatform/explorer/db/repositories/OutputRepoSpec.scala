@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.Sync
+import cats.instances.try_._
 import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.TokenId
@@ -10,6 +11,8 @@ import org.ergoplatform.explorer.db.{RealDbTest, repositories}
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+
+import scala.util.Try
 
 class OutputRepoSpec
   extends PropSpec
@@ -113,7 +116,7 @@ class OutputRepoSpec
         outputRepo.insert(buyOrder).runWithIO()
 
         val tokenEmbeddedInContract =
-          TokenId("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1")
+          TokenId.fromString[Try]("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1").get
         val expectedOuts = List(ExtendedOutput(buyOrder, None))
 
         outputRepo

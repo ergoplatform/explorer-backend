@@ -12,7 +12,7 @@ import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
-import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
+import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
@@ -97,7 +97,7 @@ package object explorer {
       jsonCodec.meta.schema.description("Box ID")
   }
 
-  @newtype case class TokenId(value: String)
+  @newtype case class TokenId(value: HexString)
 
   object TokenId {
     // doobie instances
@@ -112,10 +112,15 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[TokenId] = deriving
 
     implicit def jsonCodec: Codec.JsonCodec[TokenId] =
-      implicitly[Codec.JsonCodec[String]].map(TokenId.apply)(_.value)
+      HexString.jsonCodec.map(TokenId.apply)(_.value)
 
     implicit def schema: Schema[TokenId] =
       jsonCodec.meta.schema.description("Token ID")
+
+    def fromString[
+      F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
+    ](s: String): F[TokenId] =
+      HexString.fromString(s).map(TokenId.apply)
   }
 
   @newtype case class Address(value: AddressType) {
