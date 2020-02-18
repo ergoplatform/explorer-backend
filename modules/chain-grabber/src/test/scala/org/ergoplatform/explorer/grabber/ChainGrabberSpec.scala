@@ -25,7 +25,7 @@ class ChainGrabberSpec
   import org.ergoplatform.explorer.testConstants._
 
   private lazy val settings =
-    GrabberAppSettings(1.second, 1.second, mainnetNodes, dbSettings, protocolSettings)
+    GrabberAppSettings(1.second, mainnetNodes, dbSettings, protocolSettings)
 
   property("Network scanning") {
     forAll(consistentChainGen(12)) { apiBlocks =>

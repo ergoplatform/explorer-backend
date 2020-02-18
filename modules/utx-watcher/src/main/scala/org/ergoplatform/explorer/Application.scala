@@ -8,6 +8,7 @@ import monix.eval.{Task, TaskApp}
 import org.ergoplatform.explorer.db.DbTrans
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.UtxWatcherSettings
+import org.ergoplatform.explorer.watcher.UtxWatcher
 import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext.global
