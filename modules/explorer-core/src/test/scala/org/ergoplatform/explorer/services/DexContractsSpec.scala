@@ -1,7 +1,6 @@
 package org.ergoplatform.explorer.services
 
 import cats.effect.IO
-import cats.instances.try_._
 import org.ergoplatform.explorer.commonGenerators.assetIdGen
 import org.ergoplatform.explorer.protocol.dex
 import org.ergoplatform.explorer.protocol.dex.{
@@ -11,8 +10,6 @@ import org.ergoplatform.explorer.protocol.dex.{
 import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-
-import scala.util.Try
 
 class DexContractsSpec
   extends PropSpec
@@ -40,10 +37,8 @@ class DexContractsSpec
             .flatMap(getTokenInfoFromBuyContractTree[IO])
             .unsafeRunSync()
 
-    val expectedTokenInfo = (
-      TokenId.fromString[Try]("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1").get,
-      60
-    )
-    extractedTokenInfo shouldEqual expectedTokenInfo
+        val expectedTokenInfo = (tokenId, tokenAmount)
+        extractedTokenInfo shouldEqual expectedTokenInfo
+    }
   }
 }

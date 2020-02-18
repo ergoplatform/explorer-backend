@@ -60,15 +60,6 @@ object utils {
       .leftMap(e => Base16DecodingFailed(s.unwrapped, Option(e.getMessage)))
       .toRaise
 
-  @inline def stringBase16ToBytes[
-    F[_]: ContravariantRaise[*[_], Base16DecodingFailed]: Applicative
-  ](s: String): F[Array[Byte]] =
-    Base16
-      .decode(s)
-      .toEither
-      .leftMap(e => Base16DecodingFailed(s, Option(e.getMessage)))
-      .toRaise
-
   @inline def bytesToErgoTree[
     F[_]: ContravariantRaise[*[_], ErgoTreeDeserializationFailed]: Applicative
   ](bytes: Array[Byte]): F[ErgoTree] =

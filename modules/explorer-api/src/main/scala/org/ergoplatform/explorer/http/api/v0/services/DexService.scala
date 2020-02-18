@@ -5,7 +5,6 @@ import fs2.Stream
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.Base16DecodingFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.{
-  ContractParsingErr,
   DexErr,
   ErgoTreeSerializationErr
 }
@@ -35,7 +34,7 @@ object DexService {
       _
     ], ErgoTreeSerializationErr]: ContravariantRaise[*[
       _
-    ], Base16DecodingFailed]: ContravariantRaise[*[_], RefinementFailed]: ContravariantRaise[
+    ], Base16DecodingFailed]: ContravariantRaise[
       *[_],
       RefinementFailed
     ]

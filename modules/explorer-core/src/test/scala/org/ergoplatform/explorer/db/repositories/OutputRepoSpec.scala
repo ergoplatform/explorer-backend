@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import cats.instances.try_._
 import cats.syntax.option._
 import doobie.free.connection.ConnectionIO

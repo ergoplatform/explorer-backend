@@ -3,8 +3,6 @@ package org.ergoplatform.explorer.protocol
 import cats.{Applicative, FlatMap, Monad}
 import cats.syntax.flatMap._
 import cats.syntax.either._
-import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.protocol.utils.stringBase16ToBytes
 import org.ergoplatform.contracts.AssetsAtomicExchangeCompilation
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{
@@ -74,7 +72,7 @@ object dex {
     tokenId: TokenId,
     tokenAmount: Long
   ): F[ErgoTree] =
-    stringBase16ToBytes(tokenId.value).flatMap { tokenIdBytes =>
+    hexStringBase16ToBytes[F](tokenId.value).flatMap { tokenIdBytes =>
       import org.ergoplatform.sigma.verified.VerifiedTypeConverters._
       // since we're only using compiled contracts for constant(parameters) extraction PK value does not matter
       Try {
@@ -101,16 +99,13 @@ object dex {
   ]: ContravariantRaise[
     *[_],
     RefinementFailed
-  ]: Monad]: F[HexString] = {
+  ]: Monad]: F[HexString] =
     // parameter values does not matter, we're extracting ErgoTree template (with placeholders in places of values)
-    val anyToken = TokenId(
-      "21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1"
-    )
-    // parameter values does not matter, we're extracting ErgoTree template (with placeholders in places of values)
-    buyContractInstance[F](anyToken, tokenAmount = 0L)
+    TokenId
+      .fromString[F]("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1")
+      .flatMap(buyContractInstance[F](_, tokenAmount = 0L))
       .flatMap(ergoTreeTemplateBytes[F])
       .flatMap(bytes => HexString.fromString(Base16.encode(bytes)))
-  }
 
   /** Extracts tokens price embedded in the DEX sell order contract
     * @param tree ErgoTree of the contract
