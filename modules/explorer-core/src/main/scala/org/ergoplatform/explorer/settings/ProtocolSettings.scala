@@ -17,7 +17,3 @@ final case class ProtocolSettings(
   val addressEncoder: ErgoAddressEncoder =
     ErgoAddressEncoder(networkPrefix.value.toByte)
 }
-
-object ProtocolSettings {
-
-}

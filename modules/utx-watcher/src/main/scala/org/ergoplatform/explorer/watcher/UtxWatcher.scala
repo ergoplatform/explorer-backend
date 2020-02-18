@@ -1,6 +1,6 @@
-package org.ergoplatform.explorer
+package org.ergoplatform.explorer.watcher
 
-import cats.effect.Timer
+import cats.effect.{Sync, Timer}
 import cats.instances.list._
 import cats.syntax.applicative._
 import cats.syntax.flatMap._
@@ -10,8 +10,10 @@ import cats.syntax.traverse._
 import cats.{~>, Applicative, Monad}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.FlatUTransaction
 import org.ergoplatform.explorer.db.repositories.{
   UAssetRepo,
@@ -20,6 +22,7 @@ import org.ergoplatform.explorer.db.repositories.{
   UTransactionRepo
 }
 import org.ergoplatform.explorer.services.ErgoNetworkService
+import org.ergoplatform.explorer.settings.UtxWatcherSettings
 import org.ergoplatform.explorer.syntax.stream._
 
 /** Synchronises local memory pool representation with the network.
@@ -42,11 +45,16 @@ final class UtxWatcher[
     Stream(()).repeat
       .covary[F]
       .metered(settings.pollInterval)
-      .flatMap(_ => syncPool)
+      .flatMap { _ =>
+        Logger[F].info("Syncing UTX pool ..").asStream >> syncPool.handleErrorWith { e =>
+          Logger[F]
+            .warn(e)("An error occurred while syncing with the network. Restarting ...")
+            .asStream
+        }
+      }
 
   private def syncPool: Stream[F, Unit] =
     for {
-      _        <- Logger[F].info("Syncing UTX pool ..").asStream
       knownIds <- (txRepo.getAllIds ||> xa).asStream.map(_.toSet)
       txs      <- networkService.getUnconfirmedTransactions.chunkN(100).map(_.toList)
       newTxs   = txs.filterNot(tx => knownIds.contains(tx.id))
@@ -61,4 +69,22 @@ final class UtxWatcher[
     inRepo.insetMany(txs.flatMap(_.inputs)) >>
     outRepo.insertMany(txs.flatMap(_.outputs)) >>
     assetRep.insertMany(txs.flatMap(_.assets))
+}
+
+object UtxWatcher {
+
+  def apply[F[_]: Timer: Sync, D[_]: Monad: LiftConnectionIO](
+    settings: UtxWatcherSettings,
+    networkService: ErgoNetworkService[F, Stream]
+  )(xa: D ~> F): F[UtxWatcher[F, D]] =
+    Slf4jLogger.create[F].map { implicit logger =>
+      new UtxWatcher(
+        settings,
+        networkService,
+        UTransactionRepo[D],
+        UInputRepo[D],
+        UOutputRepo[D],
+        UAssetRepo[D]
+      )(xa)
+    }
 }

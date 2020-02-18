@@ -8,8 +8,8 @@ import pureconfig.module.catseffect._
 import org.ergoplatform.explorer.settings.pureConfigInstances._
 
 final case class ApiAppSettings(
-  httpSettings: HttpSettings,
-  dbSettings: DbSettings,
+  http: HttpSettings,
+  db: DbSettings,
   protocol: ProtocolSettings
 )
 

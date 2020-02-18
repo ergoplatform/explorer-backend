@@ -52,7 +52,7 @@ final class ChainGrabber[
   def run: Stream[F, Unit] =
     Stream(()).repeat
       .covary[F]
-      .metered(settings.chainPollInterval)
+      .metered(settings.pollInterval)
       .evalMap { _ =>
         Logger[F].info("Starting sync job ..") >> grab.handleErrorWith { e =>
           Logger[F].warn(e)(

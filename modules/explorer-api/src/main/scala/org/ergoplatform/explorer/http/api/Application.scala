@@ -17,7 +17,7 @@ object Application extends TaskApp {
     resources(args.headOption).use {
       case (settings, xa) =>
         implicit val e: ErgoAddressEncoder = settings.protocol.addressEncoder
-        HttpApiV0[Task, ConnectionIO](settings.httpSettings)(xa)
+        HttpApiV0[Task, ConnectionIO](settings.http)(xa)
           .use(_ => Task.never)
           .as(ExitCode.Success)
     }
@@ -25,6 +25,6 @@ object Application extends TaskApp {
   private def resources(configPathOpt: Option[String]) =
     for {
       settings <- Resource.liftF(ApiAppSettings.load(configPathOpt))
-      xa       <- DbTrans[Task](settings.dbSettings).map(_.trans)
+      xa       <- DbTrans[Task](settings.db).map(_.trans)
     } yield (settings, xa)
 }
