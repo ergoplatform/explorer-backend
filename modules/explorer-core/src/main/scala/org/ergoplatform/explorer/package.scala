@@ -7,12 +7,13 @@ import cats.syntax.functor._
 import doobie.refined.implicits._
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.Refined
-import eu.timepit.refined.{refineV, W}
+import eu.timepit.refined.{W, refineV}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.Err.RefinementFailed
+import org.ergoplatform.explorer.UrlString.fromString
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
@@ -151,6 +152,13 @@ package object explorer {
 
     implicit def schema: Schema[Address] =
       jsonCodec.meta.schema.description("Ergo Address")
+
+    implicit def configReader: ConfigReader[Address] =
+      implicitly[ConfigReader[String]].emap { s =>
+        fromString[Either[RefinementFailed, *]](s).leftMap(e =>
+          CannotConvert(s, s"Refined", e.msg)
+        )
+      }
 
     def fromString[
       F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative

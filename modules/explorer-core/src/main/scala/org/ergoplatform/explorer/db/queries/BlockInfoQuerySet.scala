@@ -42,6 +42,10 @@ object BlockInfoQuerySet extends QuerySet {
     sql"select * from blocks_info offset $offset limit $limit"
       .query[BlockInfo]
 
+  def getManySince(ts: Long): Query0[BlockInfo] =
+    sql"select * from blocks_info where timestamp >= $ts"
+      .query[BlockInfo]
+
   def getBlockSize(id: Id): Query0[Int] =
     sql"select block_size from blocks_info where id = $id"
       .query[Int]

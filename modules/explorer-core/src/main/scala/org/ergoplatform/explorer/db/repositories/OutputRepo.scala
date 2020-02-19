@@ -158,15 +158,6 @@ object OutputRepo {
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
 
-    def searchAddressesBySubstring(substring: String): D[List[Address]] =
-      QS.searchAddressesBySubstring(substring).to[List].liftConnectionIO
-
-    def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal] =
-      QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnectionIO
-
-    def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
-      QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
-
     def getAllMainUnspentSellOrderByTokenId(
       tokenId: TokenId,
       offset: Int,
@@ -195,5 +186,13 @@ object OutputRepo {
         .stream
         .translate(liftK)
 
+    def searchAddressesBySubstring(substring: String): D[List[Address]] =
+      QS.searchAddressesBySubstring(substring).to[List].liftConnectionIO
+
+    def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal] =
+      QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnectionIO
+
+    def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
+      QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
   }
 }

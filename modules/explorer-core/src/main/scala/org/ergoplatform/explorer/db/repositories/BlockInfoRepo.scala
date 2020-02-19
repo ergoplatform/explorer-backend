@@ -24,6 +24,10 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
     */
   def getMany(offset: Int, limit: Int): S[D, BlockInfo]
 
+  /** Get all blocks appeared in the main chain after the given timestamp `ts`.
+    */
+  def getManySince(ts: Long): D[List[BlockInfo]]
+
   /** Get size in bytes of the block with the given `id`.
     */
   def getBlockSize(id: Id): D[Option[Int]]
@@ -66,6 +70,9 @@ object BlockInfoRepo {
 
     def getMany(offset: Int, limit: Int): fs2.Stream[D, BlockInfo] =
       QS.getMany(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
+
+    def getManySince(ts: Long): D[List[BlockInfo]] =
+      QS.getManySince(ts).to[List].liftConnectionIO
 
     def getBlockSize(id: Id): D[Option[Int]] =
       QS.getBlockSize(id).option.liftConnectionIO

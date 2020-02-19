@@ -1,9 +1,17 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.~>
+import java.util.concurrent.TimeUnit
+
+import cats.effect.Clock
+import cats.syntax.flatMap._
+import cats.syntax.functor._
+import cats.{~>, FlatMap, Functor, Monad}
 import fs2.Stream
-import org.ergoplatform.explorer.db.repositories.BlockInfoRepo
+import mouse.anyf._
+import org.ergoplatform.explorer.db.repositories.{BlockInfoRepo, OutputRepo}
+import org.ergoplatform.explorer.http.api.v0.domain.stats
 import org.ergoplatform.explorer.http.api.v0.models.{BlockChainInfo, StatsSummary}
+import org.ergoplatform.explorer.settings.ProtocolSettings
 
 trait StatsService[F[_]] {
 
@@ -18,11 +26,26 @@ trait StatsService[F[_]] {
 
 object StatsService {
 
-  final private class Live[F[_], D[_]](blockInfoRepo: BlockInfoRepo[D, Stream])(
+  final private class Live[F[_]: Clock: Functor: FlatMap, D[_]: Monad](
+    protocolSettings: ProtocolSettings,
+    blockInfoRepo: BlockInfoRepo[D, Stream],
+    outputRepo: OutputRepo[D, Stream]
+  )(
     xa: D ~> F
   ) extends StatsService[F] {
 
-    def getCurrentStats: F[StatsSummary] = ???
+    private val SecondsIn24H: Long = (24 * 60 * 60).toLong
+    private val MillisIn24H: Long  = SecondsIn24H * 1000L
+
+    def getCurrentStats: F[StatsSummary] =
+      Clock[F].realTime(TimeUnit.MILLISECONDS).map(_ - MillisIn24H).flatMap { ts =>
+        (for {
+          totalOuts <- outputRepo.sumOfAllUnspentOutputsSince(ts)
+          estimatedOuts <- outputRepo
+                            .estimatedOutputsSince(ts)(protocolSettings.genesisAddress)
+          blocks <- blockInfoRepo.getManySince(ts)
+        } yield stats.recentToStats(blocks, totalOuts, estimatedOuts)) ||> xa
+      }
 
     def getBlockchainInfo: F[BlockChainInfo] = ???
   }
