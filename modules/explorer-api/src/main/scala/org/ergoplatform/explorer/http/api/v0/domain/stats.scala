@@ -1,5 +1,10 @@
 package org.ergoplatform.explorer.http.api.v0.domain
 
+import java.util.concurrent.TimeUnit
+
+import cats.Functor
+import cats.syntax.functor._
+import cats.effect.Clock
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.http.api.v0.models.StatsSummary
 
@@ -28,7 +33,12 @@ object stats {
 
   private def hashrateForSecs(difficulty: Long, seconds: Long): Long = (difficulty / seconds) + 1L
 
-  def recentToStats(
+  /** Get timestamp to calculate statistics from.
+    */
+  @inline def getPastTs[F[_]: Clock: Functor]: F[Long] =
+    Clock[F].realTime(TimeUnit.MILLISECONDS).map(_ - stats.MillisIn24H)
+
+  @inline def recentToStats(
     blocks: List[BlockInfo],
     totalOutputs: BigDecimal,
     estimatedOutputs: BigDecimal

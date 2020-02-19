@@ -34,11 +34,8 @@ object StatsService {
     xa: D ~> F
   ) extends StatsService[F] {
 
-    private val SecondsIn24H: Long = (24 * 60 * 60).toLong
-    private val MillisIn24H: Long  = SecondsIn24H * 1000L
-
     def getCurrentStats: F[StatsSummary] =
-      Clock[F].realTime(TimeUnit.MILLISECONDS).map(_ - MillisIn24H).flatMap { ts =>
+      stats.getPastTs.flatMap { ts =>
         (for {
           totalOuts <- outputRepo.sumOfAllUnspentOutputsSince(ts)
           estimatedOuts <- outputRepo
