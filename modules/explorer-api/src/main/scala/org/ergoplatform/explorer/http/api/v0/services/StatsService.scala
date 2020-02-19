@@ -1,7 +1,5 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import java.util.concurrent.TimeUnit
-
 import cats.effect.Clock
 import cats.syntax.flatMap._
 import cats.syntax.functor._
