@@ -67,6 +67,9 @@ object TransactionQuerySet extends QuerySet {
          |where os.address = $address and h.main_chain = true
          |""".stripMargin.query[Int]
 
+  def countMainSince(ts: Long): Query0[Int] =
+    sql"select count(id) from node_transactions where timestamp >= $ts".query[Int]
+
   def getAllMainSince(
     height: Int,
     offset: Int,

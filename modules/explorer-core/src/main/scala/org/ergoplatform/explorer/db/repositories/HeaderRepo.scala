@@ -21,6 +21,10 @@ trait HeaderRepo[D[_]] {
     */
   def get(id: Id): D[Option[Header]]
 
+  /** Get last header in the chain.
+    */
+  def getLast: D[Option[Header]]
+
   /** Get header with a given `parentId`.
     */
   def getByParentId(parentId: Id): D[Option[Header]]
@@ -57,6 +61,9 @@ object HeaderRepo {
 
     def get(id: Id): D[Option[Header]] =
       QS.get(id).option.liftConnectionIO
+
+    def getLast: D[Option[Header]] =
+      QS.getLast.option.liftConnectionIO
 
     def getByParentId(parentId: Id): D[Option[Header]] =
       QS.getByParentId(parentId).option.liftConnectionIO

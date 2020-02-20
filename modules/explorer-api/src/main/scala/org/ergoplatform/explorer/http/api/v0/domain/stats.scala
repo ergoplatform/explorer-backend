@@ -31,11 +31,11 @@ object stats {
       BigDecimal(result * 100).setScale(8, BigDecimal.RoundingMode.HALF_UP).toDouble
     }
 
-  private def hashrateForSecs(difficulty: Long, seconds: Long): Long = (difficulty / seconds) + 1L
+  @inline def dailyHashRate(difficulty: Long): Long = (difficulty / SecondsIn24H) + 1L
 
-  /** Get timestamp to calculate statistics from.
+  /** Get timestamp millis to calculate statistics from.
     */
-  @inline def getPastTs[F[_]: Clock: Functor]: F[Long] =
+  @inline def getPastTsMillis[F[_]: Clock: Functor]: F[Long] =
     Clock[F].realTime(TimeUnit.MILLISECONDS).map(_ - stats.MillisIn24H)
 
   @inline def recentToStats(
@@ -54,7 +54,7 @@ object stats {
         val totalFee      = blocks.map(_.blockFee).sum
         val minersRevenue = blocks.map(_.minerRevenue).sum
         val minersReward  = blocks.map(_.minerReward).sum
-        val hashrate      = hashrateForSecs(blocks.map(_.difficulty).sum, SecondsIn24H)
+        val hashrate      = dailyHashRate(blocks.map(_.difficulty).sum)
 
         StatsSummary(
           blocksCount                   = blocksCount,

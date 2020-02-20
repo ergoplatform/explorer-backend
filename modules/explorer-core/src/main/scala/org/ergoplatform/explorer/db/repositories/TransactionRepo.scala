@@ -44,6 +44,10 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     */
   def countRelatedToAddress(address: Address): D[Int]
 
+  /** Get total number of transactions appeared in the main chain after a given timestamp `ts`.
+    */
+  def countMainSince(ts: Long): D[Int]
+
   /** Get transactions appeared in the main-chain after given height.
     */
   def getMainSince(
@@ -88,6 +92,9 @@ object TransactionRepo {
 
     def countRelatedToAddress(address: Address): D[Int] =
       QS.countRelatedToAddress(address).unique.liftConnectionIO
+
+    def countMainSince(ts: Long): D[Int] =
+      QS.countMainSince(ts).unique.liftConnectionIO
 
     def getMainSince(
       height: Int,

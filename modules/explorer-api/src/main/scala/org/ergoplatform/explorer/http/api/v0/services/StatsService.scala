@@ -6,7 +6,12 @@ import cats.syntax.functor._
 import cats.{~>, FlatMap, Functor, Monad}
 import fs2.Stream
 import mouse.anyf._
-import org.ergoplatform.explorer.db.repositories.{BlockInfoRepo, OutputRepo}
+import org.ergoplatform.explorer.db.repositories.{
+  BlockInfoRepo,
+  HeaderRepo,
+  OutputRepo,
+  TransactionRepo
+}
 import org.ergoplatform.explorer.http.api.v0.domain.stats
 import org.ergoplatform.explorer.http.api.v0.models.{BlockChainInfo, StatsSummary}
 import org.ergoplatform.explorer.settings.ProtocolSettings
@@ -19,7 +24,7 @@ trait StatsService[F[_]] {
 
   /** Get short blockchain info.
     */
-  def getBlockchainInfo: F[BlockChainInfo]
+  def getBlockChainInfo: F[BlockChainInfo]
 }
 
 object StatsService {
@@ -27,13 +32,15 @@ object StatsService {
   final private class Live[F[_]: Clock: Functor: FlatMap, D[_]: Monad](
     protocolSettings: ProtocolSettings,
     blockInfoRepo: BlockInfoRepo[D, Stream],
+    headerRepo: HeaderRepo[D],
+    transactionRepo: TransactionRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream]
   )(
     xa: D ~> F
   ) extends StatsService[F] {
 
     def getCurrentStats: F[StatsSummary] =
-      stats.getPastTs.flatMap { ts =>
+      stats.getPastTsMillis.flatMap { ts =>
         (for {
           totalOuts <- outputRepo.sumOfAllUnspentOutputsSince(ts)
           estimatedOuts <- outputRepo
@@ -42,6 +49,18 @@ object StatsService {
         } yield stats.recentToStats(blocks, totalOuts, estimatedOuts)) ||> xa
       }
 
-    def getBlockchainInfo: F[BlockChainInfo] = ???
+    def getBlockChainInfo: F[BlockChainInfo] =
+      stats.getPastTsMillis.flatMap { ts =>
+        (for {
+          headerOpt <- headerRepo.getLast
+          diff      <- blockInfoRepo.totalDifficultySince(ts)
+          hashRate = stats.dailyHashRate(diff)
+          numTxs <- transactionRepo.countMainSince(ts)
+          info = headerOpt.fold(BlockChainInfo.empty) { h =>
+            val supply = protocolSettings.emission.issuedCoinsAfterHeight(h.height)
+            BlockChainInfo(h.version.toString, supply, numTxs, hashRate)
+          }
+        } yield info) ||> xa
+      }
   }
 }

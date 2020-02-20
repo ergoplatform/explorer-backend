@@ -36,6 +36,9 @@ object HeaderQuerySet extends QuerySet {
   def get(id: Id): Query0[Header] =
     sql"select * from node_headers where id = $id".query[Header]
 
+  def getLast: Query0[Header] =
+    sql"select * from node_headers order by height desc limit 1".query[Header]
+
   def getByParentId(parentId: Id): Query0[Header] =
     sql"select * from node_headers where parent_id = $parentId".query[Header]
 
@@ -52,6 +55,6 @@ object HeaderQuerySet extends QuerySet {
          |""".stripMargin.update
 
   def getBestHeight: Query0[Int] =
-    sql"SELECT height FROM blocks_info ORDER BY height DESC LIMIT 1"
+    sql"select height from blocks_info order by height desc limit 1"
       .query[Int]
 }
