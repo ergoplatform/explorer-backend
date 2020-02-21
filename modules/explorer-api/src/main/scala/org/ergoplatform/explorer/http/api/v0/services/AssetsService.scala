@@ -5,13 +5,12 @@ import cats.syntax.list._
 import cats.{Monad, ~>}
 import fs2.Stream
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
-import org.ergoplatform.explorer.TokenId
+import org.ergoplatform.explorer.{CRaise, TokenId}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
 import org.ergoplatform.explorer.syntax.stream._
-import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
 
 /** A service providing an access to the assets data.
@@ -33,7 +32,7 @@ object AssetsService {
 
   def apply[
     F[_],
-    D[_]: LiftConnectionIO: ContravariantRaise[*[_], InconsistentDbData]: Monad
+    D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
   ](
     xa: D ~> F
   ): AssetsService[F, Stream] =
@@ -41,7 +40,7 @@ object AssetsService {
 
   final private class Live[
     F[_],
-    D[_]: ContravariantRaise[*[_], InconsistentDbData]: Monad
+    D[_]: CRaise[*[_], InconsistentDbData]: Monad
   ](
     assetRepo: AssetRepo[D, Stream]
   )(xa: D ~> F)

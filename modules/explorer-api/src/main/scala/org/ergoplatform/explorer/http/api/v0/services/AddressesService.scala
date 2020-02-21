@@ -17,8 +17,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetInfo}
 import org.ergoplatform.explorer.protocol.utils
-import org.ergoplatform.explorer.{Address, TokenId}
-import tofu.Raise.ContravariantRaise
+import org.ergoplatform.explorer.{Address, CRaise, TokenId}
 
 /** A service providing an access to the addresses data.
   */
@@ -37,8 +36,8 @@ object AddressesService {
 
   def apply[
     F[_],
-    D[_]: ContravariantRaise[*[_], AddressDecodingFailed]
-        : ContravariantRaise[*[_], RefinementFailed]
+    D[_]: CRaise[*[_], AddressDecodingFailed]
+        : CRaise[*[_], RefinementFailed]
         : Monad
         : LiftConnectionIO
   ](xa: D ~> F)(implicit e: ErgoAddressEncoder): AddressesService[F, Stream] =
@@ -51,8 +50,8 @@ object AddressesService {
 
   final private class Live[
     F[_],
-    D[_]: ContravariantRaise[*[_], AddressDecodingFailed]
-        : ContravariantRaise[*[_], RefinementFailed]
+    D[_]: CRaise[*[_], AddressDecodingFailed]
+        : CRaise[*[_], RefinementFailed]
         : Monad
   ](
     outputRepo: OutputRepo[D, Stream],

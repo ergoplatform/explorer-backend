@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer
 
 import scorex.util.encode.Base16
+import sigmastate.Values.ErgoTree
 
 import scala.util.control.NoStackTrace
 
@@ -45,36 +46,56 @@ object Err {
           .getOrElse("")
       )
 
-    abstract class ContractParsingErr(msg: String) extends RequestProcessingErr(msg)
-
-    object ContractParsingErr {
-
-      final case class Base16DecodingFailed(
-        hexString: HexString,
-        reasonOpt: Option[String] = None
-      ) extends ContractParsingErr(
-          s"Failed to decode Base16: `$hexString`" + reasonOpt
-            .map(s => s", reason: $s")
-            .getOrElse("")
-        )
-
-      final case class ErgoTreeDeserializationFailed(
-        bytes: Array[Byte],
-        reasonOpt: Option[String] = None
-      ) extends ContractParsingErr(
-          s"Failed to deserialize ergo tree from: `${Base16.encode(bytes)}`" + reasonOpt
-            .map(s => s", reason: $s")
-            .getOrElse("")
-        )
-    }
-
     abstract class DexErr(msg: String) extends RequestProcessingErr(msg)
 
     object DexErr {
 
-      final case class DexSellOrderAttributesFailed(details: String) extends DexErr(details)
+      abstract class ContractParsingErr(msg: String) extends DexErr(msg)
 
-      final case class DexBuyOrderAttributesFailed(details: String) extends DexErr(details)
+      object ContractParsingErr {
+
+        final case class Base16DecodingFailed(
+          string: HexString,
+          reasonOpt: Option[String] = None
+        ) extends ContractParsingErr(
+            s"Failed to decode Base16: `$string`" + reasonOpt
+              .map(s => s", reason: $s")
+              .getOrElse("")
+          )
+
+        abstract class ErgoTreeSerializationErr(msg: String)
+          extends ContractParsingErr(msg)
+
+        object ErgoTreeSerializationErr {
+
+          final case class ErgoTreeDeserializationFailed(
+            bytes: Array[Byte],
+            reasonOpt: Option[String] = None
+          ) extends ErgoTreeSerializationErr(
+              s"Failed to deserialize ergo tree from: `${Base16.encode(bytes)}`" + reasonOpt
+                .map(s => s", reason: $s")
+                .getOrElse("")
+            )
+
+          final case class ErgoTreeSerializationFailed(
+            ergoTree: ErgoTree,
+            reasonOpt: Option[String] = None
+          ) extends ErgoTreeSerializationErr(
+              s"Failed to serialize ergo tree: `$ergoTree`" + reasonOpt
+                .map(s => s", reason: $s")
+                .getOrElse("")
+            )
+        }
+      }
+
+      final case class DexContractInstantiationFailed(details: String)
+        extends DexErr(details)
+
+      final case class DexSellOrderAttributesFailed(details: String)
+        extends DexErr(details)
+
+      final case class DexBuyOrderAttributesFailed(details: String)
+        extends DexErr(details)
     }
   }
 }

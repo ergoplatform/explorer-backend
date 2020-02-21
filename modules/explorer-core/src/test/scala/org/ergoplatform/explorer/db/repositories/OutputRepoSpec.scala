@@ -1,13 +1,14 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import cats.instances.try_._
 import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.db.{RealDbTest, repositories}
+import org.ergoplatform.explorer.db.{repositories, RealDbTest}
+import org.ergoplatform.explorer.protocol.dex
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -71,9 +72,15 @@ class OutputRepoSpec
   property("insert/getUnspentSellOrders") {
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, assetRepo) =>
       forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
-        val arbTokenId = assetIdGen.retryUntil(_ => true).sample.get
+        val contractTemplate = dex.sellContractTemplate[IO].unsafeRunSync()
+        val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
-          .getAllMainUnspentSellOrderByTokenId(arbTokenId, 0, Int.MaxValue)
+          .getAllMainUnspentSellOrderByTokenId(
+            arbTokenId,
+            contractTemplate,
+            0,
+            Int.MaxValue
+          )
           .compile
           .toList
           .runWithIO() shouldBe empty
@@ -88,14 +95,24 @@ class OutputRepoSpec
           case (out, asset) =>
             val expectedOuts = List(ExtendedOutput(out, None))
             outputRepo
-              .getAllMainUnspentSellOrderByTokenId(asset.tokenId, 0, Int.MaxValue)
+              .getAllMainUnspentSellOrderByTokenId(
+                asset.tokenId,
+                contractTemplate,
+                0,
+                Int.MaxValue
+              )
               .compile
               .toList
               .runWithIO() should contain theSameElementsAs expectedOuts
         }
 
         outputRepo
-          .getAllMainUnspentSellOrderByTokenId(arbTokenId, 0, Int.MaxValue)
+          .getAllMainUnspentSellOrderByTokenId(
+            arbTokenId,
+            contractTemplate,
+            0,
+            Int.MaxValue
+          )
           .compile
           .toList
           .runWithIO() shouldBe empty
@@ -106,9 +123,15 @@ class OutputRepoSpec
   property("insert/getUnspentBuyOrders") {
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, _) =>
       forSingleInstance(dexBuyOrderGen) { buyOrder =>
-        val arbTokenId = assetIdGen.retryUntil(_ => true).sample.get
+        val contractTemplate = dex.buyContractTemplate[IO].unsafeRunSync()
+        val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(arbTokenId, 0, Int.MaxValue)
+          .getAllMainUnspentBuyOrderByTokenId(
+            arbTokenId,
+            contractTemplate,
+            0,
+            Int.MaxValue
+          )
           .compile
           .toList
           .runWithIO() shouldBe empty
@@ -116,17 +139,31 @@ class OutputRepoSpec
         outputRepo.insert(buyOrder).runWithIO()
 
         val tokenEmbeddedInContract =
-          TokenId.fromString[Try]("21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1").get
+          TokenId
+            .fromString[Try](
+              "21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1"
+            )
+            .get
         val expectedOuts = List(ExtendedOutput(buyOrder, None))
 
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(tokenEmbeddedInContract, 0, Int.MaxValue)
+          .getAllMainUnspentBuyOrderByTokenId(
+            tokenEmbeddedInContract,
+            contractTemplate,
+            0,
+            Int.MaxValue
+          )
           .compile
           .toList
           .runWithIO() should contain theSameElementsAs expectedOuts
 
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(arbTokenId, 0, Int.MaxValue)
+          .getAllMainUnspentBuyOrderByTokenId(
+            arbTokenId,
+            contractTemplate,
+            0,
+            Int.MaxValue
+          )
           .compile
           .toList
           .runWithIO() shouldBe empty

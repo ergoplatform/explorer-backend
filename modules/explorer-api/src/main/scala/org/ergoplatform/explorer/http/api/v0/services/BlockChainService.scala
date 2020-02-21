@@ -19,8 +19,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
 import org.ergoplatform.explorer.syntax.stream._
-import org.ergoplatform.explorer.{Err, Id}
-import tofu.Raise.ContravariantRaise
+import org.ergoplatform.explorer.{CRaise, Id}
 import tofu.syntax.raise._
 
 /** A service providing an access to the blockchain data.
@@ -44,7 +43,7 @@ object BlockChainService {
 
   def apply[
     F[_]: Sync,
-    D[_]: LiftConnectionIO: ContravariantRaise[*[_], InconsistentDbData]: Monad
+    D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
   ](xa: D ~> F): F[BlockChainService[F, Stream]] =
     Slf4jLogger
       .create[F]
@@ -64,7 +63,7 @@ object BlockChainService {
 
   final private class Live[
     F[_]: Sync: Logger,
-    D[_]: ContravariantRaise[*[_], InconsistentDbData]: Monad
+    D[_]: CRaise[*[_], InconsistentDbData]: Monad
   ](
     headerRepo: HeaderRepo[D],
     blockInfoRepo: BlockInfoRepo[D, Stream],
