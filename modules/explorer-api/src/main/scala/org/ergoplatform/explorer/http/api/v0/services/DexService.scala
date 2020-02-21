@@ -3,19 +3,14 @@ package org.ergoplatform.explorer.http.api.v0.services
 import cats.{~>, Monad}
 import fs2.Stream
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.ContractParsingErr.Base16DecodingFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.{
-  DexErr,
-  ErgoTreeSerializationErr
-}
-import org.ergoplatform.explorer.TokenId
+import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.{DexBuyOrderInfo, DexSellOrderInfo}
 import org.ergoplatform.explorer.protocol.dex
 import org.ergoplatform.explorer.syntax.stream._
-import tofu.Raise.ContravariantRaise
+import org.ergoplatform.explorer.{CRaise, TokenId}
 
 /** A service providing an access to the DEX data.
   */
@@ -30,28 +25,13 @@ object DexService {
 
   def apply[
     F[_],
-    D[_]: LiftConnectionIO: Monad: ContravariantRaise[*[_], DexErr]: ContravariantRaise[*[
-      _
-    ], ErgoTreeSerializationErr]: ContravariantRaise[*[
-      _
-    ], Base16DecodingFailed]: ContravariantRaise[
-      *[_],
-      RefinementFailed
-    ]
+    D[_]: LiftConnectionIO: Monad: CRaise[*[_], DexErr]: CRaise[*[_], RefinementFailed]
   ](xa: D ~> F): DexService[F, Stream] =
     new Live(AssetRepo[D], OutputRepo[D])(xa)
 
   final private class Live[
     F[_],
-    D[_]: Monad: ContravariantRaise[*[_], DexErr]: ContravariantRaise[*[_], ErgoTreeSerializationErr]: ContravariantRaise[
-      *[
-        _
-      ],
-      Base16DecodingFailed
-    ]: ContravariantRaise[
-      *[_],
-      RefinementFailed
-    ]
+    D[_]: Monad: CRaise[*[_], DexErr]: CRaise[*[_], RefinementFailed]
   ](
     assetRepo: AssetRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream]

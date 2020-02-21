@@ -46,46 +46,47 @@ object Err {
           .getOrElse("")
       )
 
-    abstract class ContractParsingErr(msg: String) extends RequestProcessingErr(msg)
-
-    object ContractParsingErr {
-
-      final case class Base16DecodingFailed(
-        string: String,
-        reasonOpt: Option[String] = None
-      ) extends ContractParsingErr(
-          s"Failed to decode Base16: `$string`" + reasonOpt
-            .map(s => s", reason: $s")
-            .getOrElse("")
-        )
-    }
-
-    abstract class ErgoTreeSerializationErr(msg: String) extends RequestProcessingErr(msg)
-
-    object ErgoTreeSerializationErr {
-
-      final case class ErgoTreeDeserializationFailed(
-        bytes: Array[Byte],
-        reasonOpt: Option[String] = None
-      ) extends ErgoTreeSerializationErr(
-          s"Failed to deserialize ergo tree from: `${Base16.encode(bytes)}`" + reasonOpt
-            .map(s => s", reason: $s")
-            .getOrElse("")
-        )
-
-      final case class ErgoTreeSerializationFailed(
-        ergoTree: ErgoTree,
-        reasonOpt: Option[String] = None
-      ) extends ErgoTreeSerializationErr(
-          s"Failed to serialize ergo tree: `$ergoTree`" + reasonOpt
-            .map(s => s", reason: $s")
-            .getOrElse("")
-        )
-    }
-
     abstract class DexErr(msg: String) extends RequestProcessingErr(msg)
 
     object DexErr {
+
+      abstract class ContractParsingErr(msg: String) extends DexErr(msg)
+
+      object ContractParsingErr {
+
+        final case class Base16DecodingFailed(
+          string: HexString,
+          reasonOpt: Option[String] = None
+        ) extends ContractParsingErr(
+            s"Failed to decode Base16: `$string`" + reasonOpt
+              .map(s => s", reason: $s")
+              .getOrElse("")
+          )
+
+        abstract class ErgoTreeSerializationErr(msg: String)
+          extends ContractParsingErr(msg)
+
+        object ErgoTreeSerializationErr {
+
+          final case class ErgoTreeDeserializationFailed(
+            bytes: Array[Byte],
+            reasonOpt: Option[String] = None
+          ) extends ErgoTreeSerializationErr(
+              s"Failed to deserialize ergo tree from: `${Base16.encode(bytes)}`" + reasonOpt
+                .map(s => s", reason: $s")
+                .getOrElse("")
+            )
+
+          final case class ErgoTreeSerializationFailed(
+            ergoTree: ErgoTree,
+            reasonOpt: Option[String] = None
+          ) extends ErgoTreeSerializationErr(
+              s"Failed to serialize ergo tree: `$ergoTree`" + reasonOpt
+                .map(s => s", reason: $s")
+                .getOrElse("")
+            )
+        }
+      }
 
       final case class DexContractInstantiationFailed(details: String)
         extends DexErr(details)
