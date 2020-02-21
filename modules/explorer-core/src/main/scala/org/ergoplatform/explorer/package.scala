@@ -23,6 +23,8 @@ import tofu.syntax.raise._
 
 package object explorer {
 
+  type CRaise[F[_], -E] = ContravariantRaise[F, E]
+
   object constraints {
 
     type Base58Spec = MatchesRegex[W.`"[1-9A-HJ-NP-Za-km-z]+"`.T]
@@ -118,7 +120,7 @@ package object explorer {
       jsonCodec.meta.schema.description("Token ID")
 
     def fromString[
-      F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
+      F[_]: CRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[TokenId] =
       HexString.fromString(s).map(TokenId.apply)
   }
@@ -153,7 +155,7 @@ package object explorer {
       jsonCodec.meta.schema.description("Ergo Address")
 
     def fromString[
-      F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
+      F[_]: CRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[Address] =
       refineV[Base58Spec](s)
         .leftMap(RefinementFailed)
@@ -191,7 +193,7 @@ package object explorer {
       jsonCodec.meta.schema.description("Hex-encoded string")
 
     def fromString[
-      F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
+      F[_]: CRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[HexString] =
       refineV[HexStringSpec](s)
         .leftMap(RefinementFailed)
@@ -220,7 +222,7 @@ package object explorer {
       }
 
     def fromString[
-      F[_]: ContravariantRaise[*[_], RefinementFailed]: Applicative
+      F[_]: CRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[UrlString] =
       refineV[Url](s)
         .leftMap(RefinementFailed)

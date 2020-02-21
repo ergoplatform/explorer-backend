@@ -8,13 +8,12 @@ import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
-import org.ergoplatform.explorer.{Address, Id}
+import org.ergoplatform.explorer.{Address, CRaise, Id}
 import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
 
 import scala.util.Try
@@ -48,8 +47,8 @@ final case class BlockInfo(
 object BlockInfo {
 
   def fromApi[
-    F[_]: ContravariantRaise[*[_], ProcessingErr]
-        : ContravariantRaise[*[_], RefinementFailed]
+    F[_]: CRaise[*[_], ProcessingErr]
+        : CRaise[*[_], RefinementFailed]
         : Monad
   ](
     apiBlock: ApiFullBlock,
@@ -102,8 +101,8 @@ object BlockInfo {
     }
 
   private def minerRewardAddress[
-    F[_]: ContravariantRaise[*[_], ProcessingErr]
-        : ContravariantRaise[*[_], RefinementFailed]
+    F[_]: CRaise[*[_], ProcessingErr]
+        : CRaise[*[_], RefinementFailed]
         : Monad
   ](
     apiBlock: ApiFullBlock

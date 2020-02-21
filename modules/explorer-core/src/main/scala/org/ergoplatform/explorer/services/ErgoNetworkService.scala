@@ -11,10 +11,9 @@ import io.circe.Decoder
 import jawnfs2._
 import org.ergoplatform.explorer.Err.ProcessingErr.TransactionDecodingFailed
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
-import org.ergoplatform.explorer.{Id, UrlString}
+import org.ergoplatform.explorer.{CRaise, Id, UrlString}
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
-import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
 
 /** A service providing an access to the Ergo network.
@@ -48,7 +47,7 @@ object ErgoNetworkService {
       .create[F]
       .map(new Live[F](client, _, masterNodesAddresses))
 
-  final private class Live[F[_]: Sync: ContravariantRaise[*[_], TransactionDecodingFailed]](
+  final private class Live[F[_]: Sync: CRaise[*[_], TransactionDecodingFailed]](
     client: Client[F],
     logger: Logger[F],
     masterNodesAddresses: NonEmptyList[UrlString]

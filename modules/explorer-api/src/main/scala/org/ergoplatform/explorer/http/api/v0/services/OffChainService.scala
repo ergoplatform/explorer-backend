@@ -26,9 +26,8 @@ import org.ergoplatform.explorer.http.api.v0.models.{
   UTransactionInfo
 }
 import org.ergoplatform.explorer.protocol.utils
-import org.ergoplatform.explorer.{Address, Err, HexString, TxId}
+import org.ergoplatform.explorer.{Address, CRaise, Err, HexString, TxId}
 import org.ergoplatform.explorer.syntax.stream._
-import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
 
 /** A service providing an access to unconfirmed transactions data.
@@ -61,16 +60,14 @@ trait OffChainService[F[_], S[_[_], _]] {
 
 object OffChainService {
 
-  def apply[F[_], D[_]: ContravariantRaise[*[_], Err]: Monad: LiftConnectionIO](
+  def apply[F[_], D[_]: CRaise[*[_], Err]: Monad: LiftConnectionIO](
     xa: D ~> F
   )(implicit e: ErgoAddressEncoder): OffChainService[F, Stream] =
     new Live(UTransactionRepo[D], UInputRepo[D], UOutputRepo[D], UAssetRepo[D])(xa)
 
   final private class Live[
     F[_],
-    D[_]: ContravariantRaise[*[_], RequestProcessingErr]
-        : ContravariantRaise[*[_], RefinementFailed]
-        : Monad
+    D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
   ](
     txRepo: UTransactionRepo[D, Stream],
     inRepo: UInputRepo[D, Stream],
