@@ -33,9 +33,9 @@ object stats {
 
   @inline def dailyHashRate(difficulty: Long): Long = (difficulty / SecondsIn24H) + 1L
 
-  /** Get timestamp millis to calculate statistics from.
+  /** Get timestamp millis 24h back.
     */
-  @inline def getPastTsMillis[F[_]: Clock: Functor]: F[Long] =
+  @inline def getPastPeriodTsMillis[F[_]: Clock: Functor]: F[Long] =
     Clock[F].realTime(TimeUnit.MILLISECONDS).map(_ - stats.MillisIn24H)
 
   @inline def recentToStats(
@@ -45,7 +45,7 @@ object stats {
   ): StatsSummary =
     blocks.sortBy(info => -info.height) match {
       case Nil =>
-        ???
+        StatsSummary.empty
       case x :: _ =>
         val blocksCount   = blocks.length.toLong
         val avgMiningTime = blocks.map(_.blockMiningTime).sum / blocksCount
@@ -54,7 +54,7 @@ object stats {
         val totalFee      = blocks.map(_.blockFee).sum
         val minersRevenue = blocks.map(_.minerRevenue).sum
         val minersReward  = blocks.map(_.minerReward).sum
-        val hashrate      = dailyHashRate(blocks.map(_.difficulty).sum)
+        val hashRate      = dailyHashRate(blocks.map(_.difficulty).sum)
 
         StatsSummary(
           blocksCount                   = blocksCount,
@@ -69,7 +69,7 @@ object stats {
           percentTransactionVolume      = percentOfTxVolume(minersReward, coins),
           costPerTx                     = if (txsCount == 0L) 0L else minersRevenue / txsCount,
           lastDifficulty                = x.difficulty,
-          totalHashrate                 = hashrate
+          totalHashrate                 = hashRate
         )
     }
 }

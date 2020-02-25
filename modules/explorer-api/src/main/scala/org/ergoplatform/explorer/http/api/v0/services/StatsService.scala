@@ -6,6 +6,7 @@ import cats.syntax.functor._
 import cats.{~>, FlatMap, Functor, Monad}
 import fs2.Stream
 import mouse.anyf._
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.{
   BlockInfoRepo,
   HeaderRepo,
@@ -29,6 +30,20 @@ trait StatsService[F[_]] {
 
 object StatsService {
 
+  def apply[
+    F[_]: Clock: Functor: FlatMap,
+    D[_]: LiftConnectionIO: Monad
+  ](
+    protocolSettings: ProtocolSettings
+  )(xa: D ~> F): StatsService[F] =
+    new Live(
+      protocolSettings,
+      BlockInfoRepo[D],
+      HeaderRepo[D],
+      TransactionRepo[D],
+      OutputRepo[D]
+    )(xa)
+
   final private class Live[F[_]: Clock: Functor: FlatMap, D[_]: Monad](
     protocolSettings: ProtocolSettings,
     blockInfoRepo: BlockInfoRepo[D, Stream],
@@ -40,7 +55,7 @@ object StatsService {
   ) extends StatsService[F] {
 
     def getCurrentStats: F[StatsSummary] =
-      stats.getPastTsMillis.flatMap { ts =>
+      stats.getPastPeriodTsMillis.flatMap { ts =>
         (for {
           totalOuts <- outputRepo.sumOfAllUnspentOutputsSince(ts)
           estimatedOuts <- outputRepo
@@ -50,14 +65,14 @@ object StatsService {
       }
 
     def getBlockChainInfo: F[BlockChainInfo] =
-      stats.getPastTsMillis.flatMap { ts =>
+      stats.getPastPeriodTsMillis.flatMap { ts =>
         (for {
           headerOpt <- headerRepo.getLast
           diff      <- blockInfoRepo.totalDifficultySince(ts)
           hashRate = stats.dailyHashRate(diff)
           numTxs <- transactionRepo.countMainSince(ts)
           info = headerOpt.fold(BlockChainInfo.empty) { h =>
-            val supply = protocolSettings.emission.issuedCoinsAfterHeight(h.height)
+            val supply = protocolSettings.emission.issuedCoinsAfterHeight(h.height.toLong)
             BlockChainInfo(h.version.toString, supply, numTxs, hashRate)
           }
         } yield info) ||> xa

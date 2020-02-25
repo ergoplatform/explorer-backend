@@ -14,6 +14,7 @@ import org.ergoplatform.explorer.http.api.v0.routes.{
   BlocksRoutes,
   DexRoutes,
   DocsRoutes,
+  StatsRoutes,
   TransactionsRoutes
 }
 import org.ergoplatform.explorer.http.api.v0.services.{
@@ -21,8 +22,10 @@ import org.ergoplatform.explorer.http.api.v0.services.{
   AssetsService,
   BlockChainService,
   DexService,
+  StatsService,
   TransactionsService
 }
+import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
@@ -34,7 +37,7 @@ object HttpApiV0 {
   def apply[
     F[_]: ConcurrentEffect: ContextShift: Timer,
     D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
-  ](settings: HttpSettings)(xa: D ~> F)(
+  ](settings: HttpSettings, protocolSettings: ProtocolSettings)(xa: D ~> F)(
     implicit e: ErgoAddressEncoder
   ): Resource[F, Server[F]] =
     for {
@@ -44,6 +47,7 @@ object HttpApiV0 {
       DexRoutes(DexService(xa)) <+>
       TransactionsRoutes(TransactionsService(xa)) <+>
       AddressesRoutes(AddressesService(xa), TransactionsService(xa)) <+>
+      StatsRoutes(StatsService(protocolSettings)(xa)) <+>
       DocsRoutes[F]
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)

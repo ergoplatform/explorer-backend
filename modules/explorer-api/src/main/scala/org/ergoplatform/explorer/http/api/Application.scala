@@ -17,7 +17,7 @@ object Application extends TaskApp {
     resources(args.headOption).use {
       case (settings, xa) =>
         implicit val e: ErgoAddressEncoder = settings.protocol.addressEncoder
-        HttpApiV0[Task, ConnectionIO](settings.http)(xa)
+        HttpApiV0[Task, ConnectionIO](settings.http, settings.protocol)(xa)
           .use(_ => Task.never)
           .as(ExitCode.Success)
     }
