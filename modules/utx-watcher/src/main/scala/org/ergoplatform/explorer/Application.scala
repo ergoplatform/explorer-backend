@@ -5,7 +5,7 @@ import cats.syntax.functor._
 import cats.free.Free.catsFreeMonadForFree
 import doobie.free.connection.ConnectionIO
 import monix.eval.{Task, TaskApp}
-import org.ergoplatform.explorer.db.DbTrans
+import org.ergoplatform.explorer.db.DoobieTrans
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.UtxWatcherSettings
 import org.ergoplatform.explorer.watcher.UtxWatcher
@@ -29,6 +29,6 @@ object Application extends TaskApp {
     for {
       settings <- Resource.liftF(UtxWatcherSettings.load(configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
-      xa       <- DbTrans[Task]("UtxWatcherPool", settings.db).map(_.trans)
+      xa       <- DoobieTrans[Task]("UtxWatcherPool", settings.db).map(_.trans)
     } yield (settings, client, xa)
 }

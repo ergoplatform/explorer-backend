@@ -1,14 +1,15 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
+import cats.Monad
 import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{~>, Monad}
 import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
@@ -45,7 +46,7 @@ trait TransactionsService[F[_], S[_[_], _]] {
 object TransactionsService {
 
   def apply[F[_], D[_]: Monad: LiftConnectionIO](
-    xa: D ~> F
+    trans: D Trans F
   )(implicit e: ErgoAddressEncoder): TransactionsService[F, Stream] =
     new Live(
       HeaderRepo[D],
@@ -57,7 +58,7 @@ object TransactionsService {
       UOutputRepo[D],
       AssetRepo[D],
       UAssetRepo[D]
-    )(xa)
+    )(trans)
 
   final private class Live[F[_], D[_]: Monad](
     headerRepo: HeaderRepo[D],
@@ -69,7 +70,7 @@ object TransactionsService {
     uOutputRepo: UOutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
     uAssetRepo: UAssetRepo[D]
-  )(xa: D ~> F)(implicit e: ErgoAddressEncoder)
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends TransactionsService[F, Stream] {
 
     def getTxInfo(id: TxId): F[Option[TransactionInfo]] =
@@ -83,7 +84,7 @@ object TransactionsService {
         txInfo = txOpt.map(tx =>
           TransactionInfo(tx, bestHeight - tx.inclusionHeight, ins, outs, assets)
         )
-      } yield txInfo) ||> xa
+      } yield txInfo) ||> trans.xa
 
     def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionInfo]] =
       (for {
@@ -93,7 +94,7 @@ object TransactionsService {
         boxIdsNel = outs.map(_.boxId).toNel
         assets <- boxIdsNel.toList.flatTraverse(uAssetRepo.getAllByBoxIds)
         txInfo = txOpt.map(UTransactionInfo(_, ins, outs, assets))
-      } yield txInfo) ||> xa
+      } yield txInfo) ||> trans.xa
 
     def getTxsInfoByAddress(
       address: Address,
@@ -102,18 +103,16 @@ object TransactionsService {
       transactionRepo
         .getRelatedToAddress(address, paging.offset, paging.limit)
         .chunkN(100)
-        .through(assembleInfo)
-        .translate(xa)
+        .through(assembleInfo) ||> trans.xas
 
     def countTxsInfoByAddress(address: Address): F[Int] =
-      transactionRepo.countRelatedToAddress(address) ||> xa
+      transactionRepo.countRelatedToAddress(address) ||> trans.xa
 
     def getTxsSince(height: Int, paging: Paging): Stream[F, TransactionInfo] =
       transactionRepo
         .getMainSince(height, paging.offset, paging.limit)
         .chunkN(100)
-        .through(assembleInfo)
-        .translate(xa)
+        .through(assembleInfo) ||> trans.xas
 
     private def assembleInfo: Pipe[D, Chunk[Transaction], TransactionInfo] =
       _.flatMap { txChunk =>

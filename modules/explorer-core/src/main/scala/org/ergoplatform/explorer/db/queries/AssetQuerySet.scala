@@ -28,7 +28,7 @@ object AssetQuerySet extends QuerySet {
     sql"select * from node_assets where box_id = $boxId".query[Asset]
 
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): Query0[Asset] =
-    (sql"select * from node_assets" ++ Fragments.in(fr"where box_id", boxIds))
+    (sql"select * from node_assets " ++ Fragments.in(fr"where box_id", boxIds))
       .query[Asset]
 
   def getAllHoldingAddresses(
@@ -100,5 +100,4 @@ object AssetQuerySet extends QuerySet {
           |  and a.token_id = i_issued.box_id
           |""".stripMargin ++ Fragments.in(fr"and a.token_id", tokenIds))
       .query[ExtendedOutput]
-
 }

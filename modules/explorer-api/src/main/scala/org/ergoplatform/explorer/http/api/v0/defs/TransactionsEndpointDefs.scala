@@ -10,7 +10,7 @@ import sttp.tapir.json.circe._
 
 object TransactionsEndpointDefs {
 
-  private val PathPrefix = "addresses"
+  private val PathPrefix = "transactions"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
     getTxByIdDef :: getUnconfirmedTxByIdDef :: getTxsSinceDef :: Nil

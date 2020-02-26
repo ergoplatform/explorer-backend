@@ -1,9 +1,11 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.{~>, Monad}
+import cats.Monad
 import fs2.Stream
+import mouse.anyf._
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr
+import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
@@ -26,8 +28,8 @@ object DexService {
   def apply[
     F[_],
     D[_]: LiftConnectionIO: Monad: CRaise[*[_], DexErr]: CRaise[*[_], RefinementFailed]
-  ](xa: D ~> F): DexService[F, Stream] =
-    new Live(AssetRepo[D], OutputRepo[D])(xa)
+  ](trans: D Trans F): DexService[F, Stream] =
+    new Live(AssetRepo[D], OutputRepo[D])(trans)
 
   final private class Live[
     F[_],
@@ -35,7 +37,7 @@ object DexService {
   ](
     assetRepo: AssetRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream]
-  )(xa: D ~> F)
+  )(trans: D Trans F)
     extends DexService[F, Stream] {
 
     def getUnspentSellOrders(
@@ -54,7 +56,7 @@ object DexService {
                        .getTokenPriceFromSellOrderTree(output.output.ergoTree)
                        .asStream
         assets <- assetRepo.getAllByBoxId(output.output.boxId).asStream
-      } yield DexSellOrderInfo(output, tokenPrice, assets)).translate(xa)
+      } yield DexSellOrderInfo(output, tokenPrice, assets)) ||> trans.xas
 
     def getUnspentBuyOrders(
       tokenId: TokenId,
@@ -72,6 +74,6 @@ object DexService {
                                    .getTokenInfoFromBuyOrderTree(eOut.output.ergoTree)
                                    .asStream
         assets <- assetRepo.getAllByBoxId(eOut.output.boxId).asStream
-      } yield DexBuyOrderInfo(eOut, tokenId, tokenAmount, assets)).translate(xa)
+      } yield DexBuyOrderInfo(eOut, tokenId, tokenAmount, assets)) ||> trans.xas
   }
 }

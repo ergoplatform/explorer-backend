@@ -1,16 +1,17 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
+import cats.Monad
 import cats.instances.option._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{Monad, ~>}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
+import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{Asset, UAsset}
 import org.ergoplatform.explorer.db.repositories._
@@ -36,29 +37,24 @@ object AddressesService {
 
   def apply[
     F[_],
-    D[_]: CRaise[*[_], AddressDecodingFailed]
-        : CRaise[*[_], RefinementFailed]
-        : Monad
-        : LiftConnectionIO
-  ](xa: D ~> F)(implicit e: ErgoAddressEncoder): AddressesService[F, Stream] =
+    D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
+  ](trans: D Trans F)(implicit e: ErgoAddressEncoder): AddressesService[F, Stream] =
     new Live(
       OutputRepo[D],
       UOutputRepo[D],
       AssetRepo[D],
       UAssetRepo[D]
-    )(xa)
+    )(trans)
 
   final private class Live[
     F[_],
-    D[_]: CRaise[*[_], AddressDecodingFailed]
-        : CRaise[*[_], RefinementFailed]
-        : Monad
+    D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad
   ](
     outputRepo: OutputRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
     uAssetRepo: UAssetRepo[D]
-  )(xa: D ~> F)(implicit e: ErgoAddressEncoder)
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends AddressesService[F, Stream] {
 
     def getAddressInfo(address: Address): F[AddressInfo] =
@@ -67,8 +63,7 @@ object AddressesService {
         outs          <- outputRepo.getAllByErgoTree(ergoTree)
         unspentOutIds <- outputRepo.getAllMainUnspentIdsByErgoTree(ergoTree)
         balance       <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree)
-        assets <- unspentOutIds
-                   .toNel
+        assets <- unspentOutIds.toNel
                    .traverse(assetRepo.getAllByBoxIds)
                    .map(_.toList.flatten)
         unspentOffChainOuts <- uOutputRepo.getAllUnspentByErgoTree(ergoTree)
@@ -103,9 +98,9 @@ object AddressesService {
           tokensBalanceInfo,
           totalTokensBalanceInfo
         )
-      }) ||> xa
+      }) ||> trans.xa
 
     def getAssetHoldersAddresses(tokenId: TokenId, paging: Paging): Stream[F, Address] =
-      assetRepo.getAllHoldingAddresses(tokenId, paging.offset, paging.limit).translate(xa)
+      assetRepo.getAllHoldingAddresses(tokenId, paging.offset, paging.limit) ||> trans.xas
   }
 }

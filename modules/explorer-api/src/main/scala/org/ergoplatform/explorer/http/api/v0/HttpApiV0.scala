@@ -1,11 +1,12 @@
 package org.ergoplatform.explorer.http.api.v0
 
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
-import cats.{~>, Monad}
+import cats.Monad
 import cats.syntax.semigroupk._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
+import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.http.api.settings.HttpSettings
 import org.ergoplatform.explorer.http.api.v0.routes.{
@@ -37,25 +38,25 @@ object HttpApiV0 {
   def apply[
     F[_]: ConcurrentEffect: ContextShift: Timer,
     D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
-  ](settings: HttpSettings, protocolSettings: ProtocolSettings)(xa: D ~> F)(
+  ](settings: HttpSettings, protocolSettings: ProtocolSettings)(trans: D Trans F)(
     implicit e: ErgoAddressEncoder
   ): Resource[F, Server[F]] =
     for {
-      blockChainService <- Resource.liftF(BlockChainService(xa))
+      blockChainService <- Resource.liftF(BlockChainService(trans))
       blockRoutes       <- Resource.liftF(BlocksRoutes(blockChainService))
-      assetRoutes       <- Resource.liftF(AssetsRoutes(AssetsService(xa)))
-      dexRoutes         <- Resource.liftF(DexRoutes(DexService(xa)))
-      txRoutes          <- Resource.liftF(TransactionsRoutes(TransactionsService(xa)))
+      assetRoutes       <- Resource.liftF(AssetsRoutes(AssetsService(trans)))
+      dexRoutes         <- Resource.liftF(DexRoutes(DexService(trans)))
+      txRoutes          <- Resource.liftF(TransactionsRoutes(TransactionsService(trans)))
       addressRoutes <- Resource.liftF(
-                        AddressesRoutes(AddressesService(xa), TransactionsService(xa))
-                      )
-      statsRoutes <- Resource.liftF(StatsRoutes(StatsService(protocolSettings)(xa)))
+        AddressesRoutes(AddressesService(trans), TransactionsService(trans))
+      )
+      statsRoutes <- Resource.liftF(StatsRoutes(StatsService(protocolSettings)(trans)))
       docsRoutes  <- Resource.liftF(DocsRoutes[F])
 
       routes = blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+> addressRoutes <+> statsRoutes <+> docsRoutes
       http <- BlazeServerBuilder[F]
-               .bindHttp(settings.port, settings.host)
-               .withHttpApp(Router("/" -> routes).orNotFound)
-               .resource
+        .bindHttp(settings.port, settings.host)
+        .withHttpApp(Router("/" -> routes).orNotFound)
+        .resource
     } yield http
 }

@@ -3,9 +3,10 @@ package org.ergoplatform.explorer.http.api.v0.services
 import cats.effect.Clock
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import cats.{~>, FlatMap, Functor, Monad}
+import cats.{FlatMap, Functor, Monad}
 import fs2.Stream
 import mouse.anyf._
+import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.{
   BlockInfoRepo,
@@ -35,14 +36,14 @@ object StatsService {
     D[_]: LiftConnectionIO: Monad
   ](
     protocolSettings: ProtocolSettings
-  )(xa: D ~> F): StatsService[F] =
+  )(trans: D Trans F): StatsService[F] =
     new Live(
       protocolSettings,
       BlockInfoRepo[D],
       HeaderRepo[D],
       TransactionRepo[D],
       OutputRepo[D]
-    )(xa)
+    )(trans)
 
   final private class Live[F[_]: Clock: Functor: FlatMap, D[_]: Monad](
     protocolSettings: ProtocolSettings,
@@ -51,7 +52,7 @@ object StatsService {
     transactionRepo: TransactionRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream]
   )(
-    xa: D ~> F
+    trans: D Trans F
   ) extends StatsService[F] {
 
     def getCurrentStats: F[StatsSummary] =
@@ -61,7 +62,7 @@ object StatsService {
           estimatedOuts <- outputRepo
                             .estimatedOutputsSince(ts)(protocolSettings.genesisAddress)
           blocks <- blockInfoRepo.getManySince(ts)
-        } yield stats.recentToStats(blocks, totalOuts, estimatedOuts)) ||> xa
+        } yield stats.recentToStats(blocks, totalOuts, estimatedOuts)) ||> trans.xa
       }
 
     def getBlockChainInfo: F[BlockChainInfo] =
@@ -75,7 +76,7 @@ object StatsService {
             val supply = protocolSettings.emission.issuedCoinsAfterHeight(h.height.toLong)
             BlockChainInfo(h.version.toString, supply, numTxs, hashRate)
           }
-        } yield info) ||> xa
+        } yield info) ||> trans.xa
       }
   }
 }

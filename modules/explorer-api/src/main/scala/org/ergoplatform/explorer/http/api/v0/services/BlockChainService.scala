@@ -7,12 +7,13 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{Monad, ~>}
+import cats.Monad
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
+import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
@@ -44,7 +45,7 @@ object BlockChainService {
   def apply[
     F[_]: Sync,
     D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
-  ](xa: D ~> F): F[BlockChainService[F, Stream]] =
+  ](xa: D Trans F): F[BlockChainService[F, Stream]] =
     Slf4jLogger
       .create[F]
       .map { implicit logger =>
@@ -74,11 +75,11 @@ object BlockChainService {
     inputRepo: InputRepo[D],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
-  )(xa: D ~> F)
+  )(trans: D Trans F)
     extends BlockChainService[F, Stream] {
 
     def getBestHeight: F[Int] =
-      (headerRepo.getBestHeight ||> xa)
+      (headerRepo.getBestHeight ||> trans.xa)
         .flatTap(h => Logger[F].trace(s"Reading best height from db: $h"))
 
     def getBlockSummaryById(id: Id): F[Option[BlockSummary]] = {
@@ -95,14 +96,13 @@ object BlockChainService {
             BlockSummary(blockInfo, refs)
           }
 
-      summary.translate(xa).compile.last.map(_.flatten)
+      (summary ||> trans.xas).compile.last.map(_.flatten)
     }
 
     def getBlocks(paging: Paging): Stream[F, BlockInfo] =
       blockInfoRepo
         .getMany(paging.offset, paging.limit)
-        .map(BlockInfo.apply)
-        .translate(xa)
+        .map(BlockInfo.apply) ||> trans.xas
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {

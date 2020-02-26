@@ -4,7 +4,7 @@ import cats.effect.{ExitCode, Resource}
 import cats.syntax.functor._
 import doobie.free.connection.ConnectionIO
 import monix.eval.{Task, TaskApp}
-import org.ergoplatform.explorer.db.DbTrans
+import org.ergoplatform.explorer.db.DoobieTrans
 import org.ergoplatform.explorer.grabber.ChainGrabber
 import org.ergoplatform.explorer.services.ErgoNetworkService
 import org.ergoplatform.explorer.settings.GrabberAppSettings
@@ -28,6 +28,6 @@ object Application extends TaskApp {
     for {
       settings <- Resource.liftF(GrabberAppSettings.load(configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
-      xa       <- DbTrans[Task]("GrabberPool", settings.db).map(_.trans)
+      xa       <- DoobieTrans[Task]("GrabberPool", settings.db).map(_.trans)
     } yield (settings, client, xa)
 }

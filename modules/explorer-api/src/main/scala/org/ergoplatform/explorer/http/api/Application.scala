@@ -6,7 +6,7 @@ import cats.syntax.functor._
 import doobie.free.connection.ConnectionIO
 import monix.eval.{Task, TaskApp}
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.db.DbTrans
+import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.ergoplatform.explorer.http.api.settings.ApiAppSettings
 import org.ergoplatform.explorer.http.api.v0.HttpApiV0
 import pureconfig.generic.auto._
@@ -17,7 +17,7 @@ object Application extends TaskApp {
     resources(args.headOption).use {
       case (settings, xa) =>
         implicit val e: ErgoAddressEncoder = settings.protocol.addressEncoder
-        HttpApiV0[Task, ConnectionIO](settings.http, settings.protocol)(xa)
+        HttpApiV0[Task, ConnectionIO](settings.http, settings.protocol)(Trans.fromDoobie(xa))
           .use(_ => Task.never)
           .as(ExitCode.Success)
     }
@@ -25,6 +25,6 @@ object Application extends TaskApp {
   private def resources(configPathOpt: Option[String]) =
     for {
       settings <- Resource.liftF(ApiAppSettings.load(configPathOpt))
-      xa       <- DbTrans[Task]("ApiPool", settings.db).map(_.trans)
-    } yield (settings, xa)
+      tr     <- DoobieTrans[Task]("ApiPool", settings.db)
+    } yield (settings, tr)
 }
