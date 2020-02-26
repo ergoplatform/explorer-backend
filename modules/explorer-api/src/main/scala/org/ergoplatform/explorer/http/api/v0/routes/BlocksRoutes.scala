@@ -5,6 +5,8 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.semigroupk._
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.models.Items
 import org.ergoplatform.explorer.http.api.v0.services.BlockChainService
@@ -12,7 +14,7 @@ import org.ergoplatform.explorer.http.api.syntax.applicativeThrow._
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class BlocksRoutes[F[_]: Sync: ContextShift](
+final class BlocksRoutes[F[_]: Sync: ContextShift: Logger](
   service: BlockChainService[F, fs2.Stream]
 ) {
 
@@ -46,6 +48,8 @@ object BlocksRoutes {
 
   def apply[F[_]: Sync: ContextShift](
     service: BlockChainService[F, fs2.Stream]
-  ): HttpRoutes[F] =
-    new BlocksRoutes(service).routes
+  ): F[HttpRoutes[F]] =
+    Slf4jLogger.create.map { implicit logger =>
+      new BlocksRoutes(service).routes
+    }
 }

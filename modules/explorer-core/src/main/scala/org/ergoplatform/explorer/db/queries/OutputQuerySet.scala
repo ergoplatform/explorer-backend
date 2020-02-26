@@ -1,17 +1,13 @@
 package org.ergoplatform.explorer.db.queries
 
-import java.sql.Types
-
 import cats.data.NonEmptyList
-import doobie.Fragments
+import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.util.update.Update0
-import io.circe.Json
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
-import org.ergoplatform.explorer.db.models.{Input, Output}
 
 /** A set of queries for doobie implementation of [OutputRepo].
   */
@@ -207,7 +203,7 @@ object OutputQuerySet extends QuerySet {
 
   def sumOfAllUnspentOutputsSince(ts: Long): Query0[BigDecimal] =
     sql"""
-         |select coalesce(cast(sum(o.value) as bigint), 0)
+         |select coalesce(cast(sum(o.value) as decimal), 0)
          |from node_outputs o left join node_inputs i on o.box_id = i.box_id
          |where i.box_id is null and o.timestamp >= $ts
          |""".stripMargin.query[BigDecimal]

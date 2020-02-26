@@ -28,6 +28,6 @@ object Application extends TaskApp {
     for {
       settings <- Resource.liftF(GrabberAppSettings.load(configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
-      xa       <- DbTrans[Task](settings.db).map(_.trans)
+      xa       <- DbTrans[Task]("GrabberPool", settings.db).map(_.trans)
     } yield (settings, client, xa)
 }

@@ -18,6 +18,7 @@ object BlocksEndpointDefs {
   def getBlocksDef: Endpoint[Paging, ApiErr, Items[BlockInfo], Nothing] =
     baseEndpointDef
       .in(paging)
+      .in(PathPrefix)
       .out(jsonBody[Items[BlockInfo]])
 
   def getBlockSummaryByIdDef: Endpoint[Id, ApiErr, BlockSummary, Nothing] =

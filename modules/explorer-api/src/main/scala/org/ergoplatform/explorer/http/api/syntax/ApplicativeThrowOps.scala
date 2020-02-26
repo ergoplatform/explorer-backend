@@ -1,22 +1,28 @@
 package org.ergoplatform.explorer.http.api.syntax
 
-import cats.ApplicativeError
+import cats.MonadError
+import cats.syntax.applicative._
 import cats.syntax.applicativeError._
 import cats.syntax.either._
+import cats.syntax.flatMap._
 import cats.syntax.functor._
+import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 
 final class ApplicativeThrowOps[
-  F[_]: ApplicativeError[*[_], Throwable],
+  F[_]: MonadError[*[_], Throwable]: Logger,
   A
 ](fa: F[A]) {
 
   def either: F[Either[ApiErr, A]] =
     fa.map(Either.right[ApiErr, A])
-      .handleError {
+      .handleErrorWith {
         case e: ApiErr =>
-          Either.left(e)
+          Logger[F].error(e)(e.msg) >> e.asLeft[A].pure[F]
         case e =>
-          Either.left(ApiErr.UnknownErr(e.getMessage))
+          Logger[F].error(e)(e.getMessage) >> (ApiErr
+            .UnknownErr(e.getMessage): ApiErr)
+            .asLeft[A]
+            .pure[F]
       }
 }

@@ -42,13 +42,17 @@ object HttpApiV0 {
   ): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(xa))
-      routes = BlocksRoutes(blockChainService) <+>
-      AssetsRoutes(AssetsService(xa)) <+>
-      DexRoutes(DexService(xa)) <+>
-      TransactionsRoutes(TransactionsService(xa)) <+>
-      AddressesRoutes(AddressesService(xa), TransactionsService(xa)) <+>
-      StatsRoutes(StatsService(protocolSettings)(xa)) <+>
-      DocsRoutes[F]
+      blockRoutes       <- Resource.liftF(BlocksRoutes(blockChainService))
+      assetRoutes       <- Resource.liftF(AssetsRoutes(AssetsService(xa)))
+      dexRoutes         <- Resource.liftF(DexRoutes(DexService(xa)))
+      txRoutes          <- Resource.liftF(TransactionsRoutes(TransactionsService(xa)))
+      addressRoutes <- Resource.liftF(
+                        AddressesRoutes(AddressesService(xa), TransactionsService(xa))
+                      )
+      statsRoutes <- Resource.liftF(StatsRoutes(StatsService(protocolSettings)(xa)))
+      docsRoutes  <- Resource.liftF(DocsRoutes[F])
+
+      routes = blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+> addressRoutes <+> statsRoutes <+> docsRoutes
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
                .withHttpApp(Router("/" -> routes).orNotFound)

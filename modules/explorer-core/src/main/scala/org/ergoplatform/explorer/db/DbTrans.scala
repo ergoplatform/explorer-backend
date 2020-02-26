@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.db
 
-import cats.effect.{Async, Blocker, ContextShift, Resource}
+import cats.effect.{Async, Blocker, ContextShift, IO, Resource, Sync}
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import org.ergoplatform.explorer.settings.DbSettings
@@ -8,6 +8,7 @@ import org.ergoplatform.explorer.settings.DbSettings
 object DbTrans {
 
   def apply[F[_]: Async: ContextShift](
+    poolName: String,
     settings: DbSettings
   ): Resource[F, HikariTransactor[F]] =
     for {
@@ -21,5 +22,19 @@ object DbTrans {
              cp,
              blocker
            )
+      _ <- Resource.liftF(configure(xa)(poolName, settings.cpSize))
     } yield xa
+
+  private def configure[F[_]: Sync](
+    xa: HikariTransactor[F]
+  )(name: String, maxPoolSize: Int): F[Unit] =
+    xa.configure { c =>
+      Sync[F].delay {
+        c.setAutoCommit(false)
+        c.setPoolName(name)
+        c.setMaxLifetime(600000)
+        c.setMaximumPoolSize(maxPoolSize)
+        c.setMinimumIdle(math.max(2, maxPoolSize / 2))
+      }
+    }
 }

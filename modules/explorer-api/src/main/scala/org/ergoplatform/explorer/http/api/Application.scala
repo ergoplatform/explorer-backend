@@ -25,6 +25,6 @@ object Application extends TaskApp {
   private def resources(configPathOpt: Option[String]) =
     for {
       settings <- Resource.liftF(ApiAppSettings.load(configPathOpt))
-      xa       <- DbTrans[Task](settings.db).map(_.trans)
+      xa       <- DbTrans[Task]("ApiPool", settings.db).map(_.trans)
     } yield (settings, xa)
 }

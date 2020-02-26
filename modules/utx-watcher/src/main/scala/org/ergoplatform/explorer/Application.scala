@@ -29,6 +29,6 @@ object Application extends TaskApp {
     for {
       settings <- Resource.liftF(UtxWatcherSettings.load(configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
-      xa       <- DbTrans[Task](settings.db).map(_.trans)
+      xa       <- DbTrans[Task]("UtxWatcherPool", settings.db).map(_.trans)
     } yield (settings, client, xa)
 }

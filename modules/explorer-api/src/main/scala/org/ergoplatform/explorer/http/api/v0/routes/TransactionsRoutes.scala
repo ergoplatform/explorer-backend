@@ -3,15 +3,18 @@ package org.ergoplatform.explorer.http.api.v0.routes
 import cats.effect.{ContextShift, Sync}
 import cats.syntax.semigroupk._
 import cats.syntax.flatMap._
+import cats.syntax.functor._
 import cats.syntax.option._
 import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.v0.services.TransactionsService
 import org.ergoplatform.explorer.http.api.syntax.applicativeThrow._
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class TransactionsRoutes[F[_]: Sync: ContextShift](
+final class TransactionsRoutes[F[_]: Sync: ContextShift: Logger](
   service: TransactionsService[F, Stream]
 ) {
 
@@ -47,6 +50,8 @@ object TransactionsRoutes {
 
   def apply[F[_]: Sync: ContextShift](
     service: TransactionsService[F, Stream]
-  ): HttpRoutes[F] =
-    new TransactionsRoutes(service).routes
+  ): F[HttpRoutes[F]] =
+    Slf4jLogger.create.map { implicit logger =>
+      new TransactionsRoutes(service).routes
+    }
 }

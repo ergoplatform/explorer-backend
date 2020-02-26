@@ -22,12 +22,12 @@ object TransactionsEndpointDefs {
 
   def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionInfo, Nothing] =
     baseEndpointDef
-      .in(PathPrefix / path[TxId])
+      .in(PathPrefix / "unconfirmed" / path[TxId])
       .out(jsonBody[UTransactionInfo])
 
   def getTxsSinceDef: Endpoint[(Paging, Int), ApiErr, List[TransactionInfo], Nothing] =
     baseEndpointDef
       .in(paging)
-      .in(PathPrefix / path[Int])
+      .in(PathPrefix / "since" / path[Int])
       .out(jsonBody[List[TransactionInfo]])
 }
