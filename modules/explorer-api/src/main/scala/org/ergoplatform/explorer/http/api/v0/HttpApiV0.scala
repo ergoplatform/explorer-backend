@@ -15,6 +15,7 @@ import org.ergoplatform.explorer.http.api.v0.routes.{
   BlocksRoutes,
   DexRoutes,
   DocsRoutes,
+  InfoRoutes,
   StatsRoutes,
   TransactionsRoutes
 }
@@ -48,15 +49,21 @@ object HttpApiV0 {
       dexRoutes         <- Resource.liftF(DexRoutes(DexService(trans)))
       txRoutes          <- Resource.liftF(TransactionsRoutes(TransactionsService(trans)))
       addressRoutes <- Resource.liftF(
-        AddressesRoutes(AddressesService(trans), TransactionsService(trans))
-      )
-      statsRoutes <- Resource.liftF(StatsRoutes(StatsService(protocolSettings)(trans)))
+                        AddressesRoutes(
+                          AddressesService(trans),
+                          TransactionsService(trans)
+                        )
+                      )
+      statsService = StatsService(protocolSettings)(trans)
+      infoRoutes  <- Resource.liftF(InfoRoutes(statsService))
+      statsRoutes <- Resource.liftF(StatsRoutes(statsService))
       docsRoutes  <- Resource.liftF(DocsRoutes[F])
 
-      routes = blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+> addressRoutes <+> statsRoutes <+> docsRoutes
+      routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
+               addressRoutes <+> statsRoutes <+> docsRoutes
       http <- BlazeServerBuilder[F]
-        .bindHttp(settings.port, settings.host)
-        .withHttpApp(Router("/" -> routes).orNotFound)
-        .resource
+               .bindHttp(settings.port, settings.host)
+               .withHttpApp(Router("/" -> routes).orNotFound)
+               .resource
     } yield http
 }
