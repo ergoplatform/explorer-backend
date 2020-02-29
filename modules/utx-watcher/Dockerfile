@@ -15,4 +15,3 @@ CMD ["/usr/bin/java", "-jar", "/utx-tracker.jar"]
 FROM openjdk:8-jre-slim as utx_tracker
 COPY --from=utx_tracker_builder /utx-tracker.jar /utx-tracker.jar
 ENTRYPOINT ["java", "-jar", "/utx-tracker.jar"]
-CMD [""]

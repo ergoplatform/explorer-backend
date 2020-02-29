@@ -16,4 +16,3 @@ FROM openjdk:8-jre-slim as api
 COPY --from=api_builder /explorer-api.jar /explorer-api.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/explorer-api.jar"]
-CMD [""]

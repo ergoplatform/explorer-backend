@@ -15,4 +15,3 @@ CMD ["/usr/bin/java", "-jar", "/chain-grabber.jar"]
 FROM openjdk:8-jre-slim as grabber
 COPY --from=grabber_builder /chain-grabber.jar /chain-grabber.jar
 ENTRYPOINT ["java", "-jar", "/chain-grabber.jar"]
-CMD [""]
