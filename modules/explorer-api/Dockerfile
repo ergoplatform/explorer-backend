@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends sbt
-COPY ../.. /explorer-backend
+COPY . /explorer-backend
 WORKDIR /explorer-backend
 RUN sbt explorer-api/assembly
 RUN mv `find . -name ExplorerApi-assembly-*.jar` /explorer-api.jar

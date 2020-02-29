@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends sbt
-COPY ../.. /explorer-backend
+COPY . /explorer-backend
 WORKDIR /explorer-backend
 RUN sbt utx-watcher/assembly
 RUN mv `find . -name UtxWatcher-assembly-*.jar` /utx-tracker.jar
