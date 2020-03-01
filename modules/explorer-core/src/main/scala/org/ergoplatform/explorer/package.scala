@@ -6,7 +6,7 @@ import cats.syntax.either._
 import cats.syntax.functor._
 import doobie.refined.implicits._
 import doobie.util.{Get, Put}
-import eu.timepit.refined.api.Refined
+import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.{W, refineV}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import io.circe.refined._
@@ -27,6 +27,18 @@ package object explorer {
   type CRaise[F[_], -E] = ContravariantRaise[F, E]
 
   object constraints {
+
+    final case class ValidOrdering()
+    object ValidOrdering {
+      implicit def validLongValidate: Validate.Plain[String, ValidOrdering] =
+        Validate.fromPredicate(
+          x => x.toLowerCase == "asc" || x.toLowerCase == "desc",
+          _ => "ValidOrdering",
+          ValidOrdering()
+        )
+    }
+
+    type OrderingString = String Refined ValidOrdering
 
     type Base58Spec = MatchesRegex[W.`"[1-9A-HJ-NP-Za-km-z]+"`.T]
 

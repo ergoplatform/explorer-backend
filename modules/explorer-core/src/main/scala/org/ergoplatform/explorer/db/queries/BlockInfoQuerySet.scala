@@ -2,8 +2,10 @@ package org.ergoplatform.explorer.db.queries
 
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.util.fragment.Fragment
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.{ChartPoint, ExtendedBlockInfo}
 
@@ -38,8 +40,18 @@ object BlockInfoQuerySet extends QuerySet {
     sql"select * from blocks_info where header_id = $headerId"
       .query[BlockInfo]
 
-  def getManyExtended(offset: Int, limit: Int): Query0[ExtendedBlockInfo] =
-    sql"""
+  def getManyExtended(
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString,
+    orderBy: String
+  ): Query0[ExtendedBlockInfo] = {
+    val ord =
+      Fragment.const(s"order by bi.$orderBy $ordering")
+    val lim =
+      Fragment.const(s"offset $offset limit $limit")
+    val q =
+      sql"""
          |select
          |  bi.header_id,
          |  bi.timestamp,
@@ -64,8 +76,9 @@ object BlockInfoQuerySet extends QuerySet {
          |  mi.miner_name
          |from blocks_info bi
          |left join known_miners mi on bi.miner_address = mi.miner_address
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedBlockInfo]
+         |""".stripMargin
+    (q ++ ord ++ lim).query[ExtendedBlockInfo]
+  }
 
   def getManySince(ts: Long): Query0[BlockInfo] =
     sql"select * from blocks_info where timestamp >= $ts"

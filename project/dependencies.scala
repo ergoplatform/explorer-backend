@@ -137,6 +137,14 @@ object dependencies {
     )
   }
 
+  object enums extends DependencyGroup {
+
+    override def deps: List[ModuleID] = List(
+      "com.beachape" %% "enumeratum"       % EnumeratumVersion,
+      "com.beachape" %% "enumeratum-circe" % EnumeratumCirceVersion
+    )
+  }
+
   object config extends DependencyGroup {
 
     override def deps: List[ModuleID] = List(

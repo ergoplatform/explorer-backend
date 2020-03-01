@@ -24,15 +24,16 @@ final class BlocksRoutes[F[_]: Sync: ContextShift: Logger](
     getBlocksR <+> getBlockSummaryByIdR
 
   private def getBlocksR: HttpRoutes[F] =
-    getBlocksDef.toRoutes { paging =>
-      service.getBestHeight.flatMap { maxHeight =>
-        service
-          .getBlocks(paging)
-          .compile
-          .toList // API v0 format does not allow to use streaming
-          .map(Items(_, maxHeight))
-          .either
-      }
+    getBlocksDef.toRoutes {
+      case (paging, sorting) =>
+        service.getBestHeight.flatMap { maxHeight =>
+          service
+            .getBlocks(paging, sorting)
+            .compile
+            .toList // API v0 format does not allow to use streaming
+            .map(Items(_, maxHeight))
+            .either
+        }
     }
 
   private def getBlockSummaryByIdR: HttpRoutes[F] =

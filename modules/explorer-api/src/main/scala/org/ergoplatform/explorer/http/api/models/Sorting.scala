@@ -2,12 +2,14 @@ package org.ergoplatform.explorer.http.api.models
 
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import sttp.tapir.{Codec, DecodeResult}
+import eu.timepit.refined.refineMV
+import org.ergoplatform.explorer.constraints.OrderingString
 
 final case class Sorting(sortBy: String, order: SortOrder)
 
 object Sorting {
 
-  sealed trait SortOrder
+  sealed trait SortOrder { def value: OrderingString }
 
   object SortOrder {
 
@@ -23,10 +25,12 @@ object Sorting {
   }
 
   case object Asc extends SortOrder {
-    override def toString: String = "ASC"
+    override def toString: String = value.value
+    def value: OrderingString = refineMV("ASC")
   }
 
   case object Desc extends SortOrder {
-    override def toString: String = "DESC"
+    override def toString: String = value.value
+    def value: OrderingString = refineMV("DESC")
   }
 }

@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.db.repositories
 import cats.syntax.functor._
 import doobie.free.implicits._
 import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.BlockInfo
@@ -22,7 +23,12 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
 
   /** Get slice of the main chain.
     */
-  def getMany(offset: Int, limit: Int): S[D, ExtendedBlockInfo]
+  def getMany(
+    offset: Int,
+    limit: Int,
+    order: OrderingString,
+    sortBy: String
+  ): S[D, ExtendedBlockInfo]
 
   /** Get all blocks appeared in the main chain after the given timestamp `ts`.
     */
@@ -68,8 +74,15 @@ object BlockInfoRepo {
     def get(id: Id): D[Option[BlockInfo]] =
       QS.getBlockInfo(id).option.liftConnectionIO
 
-    def getMany(offset: Int, limit: Int): fs2.Stream[D, ExtendedBlockInfo] =
-      QS.getManyExtended(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
+    def getMany(
+      offset: Int,
+      limit: Int,
+      ordering: OrderingString,
+      orderBy: String
+    ): fs2.Stream[D, ExtendedBlockInfo] =
+      QS.getManyExtended(offset, limit, ordering, orderBy)
+        .stream
+        .translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def getManySince(ts: Long): D[List[BlockInfo]] =
       QS.getManySince(ts).to[List].liftConnectionIO

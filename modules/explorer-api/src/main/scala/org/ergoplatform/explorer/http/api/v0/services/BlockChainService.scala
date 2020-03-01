@@ -17,7 +17,7 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.Paging
+import org.ergoplatform.explorer.http.api.models.{Paging, Sorting}
 import org.ergoplatform.explorer.http.api.v0.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{CRaise, Id}
@@ -37,7 +37,7 @@ trait BlockChainService[F[_], S[_[_], _]] {
 
   /** Get a slice block info items.
     */
-  def getBlocks(paging: Paging): S[F, BlockInfo]
+  def getBlocks(paging: Paging, sorting: Sorting): S[F, BlockInfo]
 }
 
 object BlockChainService {
@@ -99,10 +99,10 @@ object BlockChainService {
       (summary ||> trans.xas).compile.last.map(_.flatten)
     }
 
-    def getBlocks(paging: Paging): Stream[F, BlockInfo] =
+    def getBlocks(paging: Paging, sorting: Sorting): Stream[F, BlockInfo] =
       blockInfoRepo
-        .getMany(paging.offset, paging.limit)
-        .map(BlockInfo.apply) ||> trans.xas
+        .getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
+        .map(BlockInfo(_)) ||> trans.xas
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {
