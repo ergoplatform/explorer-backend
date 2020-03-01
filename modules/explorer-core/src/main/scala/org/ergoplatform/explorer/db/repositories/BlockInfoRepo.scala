@@ -18,7 +18,7 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
 
   /** Get block info with a given `headerId`.
     */
-  def get(id: Id): D[Option[ExtendedBlockInfo]]
+  def get(id: Id): D[Option[BlockInfo]]
 
   /** Get slice of the main chain.
     */
@@ -65,7 +65,7 @@ object BlockInfoRepo {
     def insert(blockInfo: BlockInfo): D[Unit] =
       QS.insert(blockInfo).void.liftConnectionIO
 
-    def get(id: Id): D[Option[ExtendedBlockInfo]] =
+    def get(id: Id): D[Option[BlockInfo]] =
       QS.getBlockInfo(id).option.liftConnectionIO
 
     def getMany(offset: Int, limit: Int): fs2.Stream[D, ExtendedBlockInfo] =
