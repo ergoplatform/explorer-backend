@@ -65,8 +65,7 @@ object BlockInfoQuerySet extends QuerySet {
          |from blocks_info bi
          |left join known_miners mi on bi.miner_address = mi.miner_address
          |offset $offset limit $limit
-         |"""
-      .query[ExtendedBlockInfo]
+         |""".stripMargin.query[ExtendedBlockInfo]
 
   def getManySince(ts: Long): Query0[BlockInfo] =
     sql"select * from blocks_info where timestamp >= $ts"
