@@ -3,15 +3,15 @@ services:
   grabber:
     image: oskin1/chain-grabber:0.1.1
     build:
-      context: ../..
+      context: .
       dockerfile: modules/chain-grabber/Dockerfile
   api:
     image: oskin1/explorer-api:0.1.1
     build:
-      context: ../..
+      context: .
       dockerfile: modules/explorer-api/Dockerfile
   utx-tracker:
     image: oskin1/utx-tracker:0.1.1
     build:
-      context: ../..
+      context: .
       dockerfile: modules/utx-watcher/Dockerfile
