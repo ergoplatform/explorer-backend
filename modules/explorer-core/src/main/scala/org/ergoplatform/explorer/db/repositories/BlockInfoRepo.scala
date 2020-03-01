@@ -69,7 +69,7 @@ object BlockInfoRepo {
       QS.getBlockInfo(id).option.liftConnectionIO
 
     def getMany(offset: Int, limit: Int): fs2.Stream[D, ExtendedBlockInfo] =
-      QS.getMany(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
+      QS.getManyExtended(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def getManySince(ts: Long): D[List[BlockInfo]] =
       QS.getManySince(ts).to[List].liftConnectionIO

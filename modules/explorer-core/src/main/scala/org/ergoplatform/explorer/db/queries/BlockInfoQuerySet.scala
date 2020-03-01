@@ -38,7 +38,7 @@ object BlockInfoQuerySet extends QuerySet {
     sql"select * from blocks_info where header_id = $headerId"
       .query[BlockInfo]
 
-  def getMany(offset: Int, limit: Int): Query0[ExtendedBlockInfo] =
+  def getManyExtended(offset: Int, limit: Int): Query0[ExtendedBlockInfo] =
     sql"""
          |select
          |  bi.header_id,
