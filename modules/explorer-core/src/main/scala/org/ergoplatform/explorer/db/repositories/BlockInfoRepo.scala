@@ -6,7 +6,7 @@ import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.BlockInfo
-import org.ergoplatform.explorer.db.models.aggregates.ChartPoint
+import org.ergoplatform.explorer.db.models.aggregates.{ChartPoint, ExtendedBlockInfo}
 
 /** [[BlockInfo]] data access operations.
   */
@@ -18,11 +18,11 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
 
   /** Get block info with a given `headerId`.
     */
-  def get(id: Id): D[Option[BlockInfo]]
+  def get(id: Id): D[Option[ExtendedBlockInfo]]
 
   /** Get slice of the main chain.
     */
-  def getMany(offset: Int, limit: Int): S[D, BlockInfo]
+  def getMany(offset: Int, limit: Int): S[D, ExtendedBlockInfo]
 
   /** Get all blocks appeared in the main chain after the given timestamp `ts`.
     */
@@ -65,10 +65,10 @@ object BlockInfoRepo {
     def insert(blockInfo: BlockInfo): D[Unit] =
       QS.insert(blockInfo).void.liftConnectionIO
 
-    def get(id: Id): D[Option[BlockInfo]] =
+    def get(id: Id): D[Option[ExtendedBlockInfo]] =
       QS.getBlockInfo(id).option.liftConnectionIO
 
-    def getMany(offset: Int, limit: Int): fs2.Stream[D, BlockInfo] =
+    def getMany(offset: Int, limit: Int): fs2.Stream[D, ExtendedBlockInfo] =
       QS.getMany(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def getManySince(ts: Long): D[List[BlockInfo]] =

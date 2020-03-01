@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
@@ -35,17 +36,19 @@ object BlockInfo {
         _.description("The amount of nanoErgs miner received as a reward for block")
       )
 
-  def apply(blockInfo: org.ergoplatform.explorer.db.models.BlockInfo): BlockInfo = {
-    val minerName = "" // todo:
+  def apply(extBlockInfo: ExtendedBlockInfo): BlockInfo = {
+    val minerName = extBlockInfo.minerNameOpt.getOrElse(
+      extBlockInfo.blockInfo.minerAddress.unwrapped.takeRight(8)
+    )
     new BlockInfo(
-      id                = blockInfo.headerId,
-      height            = blockInfo.height,
-      timestamp         = blockInfo.timestamp,
-      transactionsCount = blockInfo.txsCount,
-      miner             = MinerInfo(blockInfo.minerAddress, minerName),
-      size              = blockInfo.blockSize,
-      difficulty        = blockInfo.difficulty,
-      minerReward       = blockInfo.minerReward
+      id                = extBlockInfo.blockInfo.headerId,
+      height            = extBlockInfo.blockInfo.height,
+      timestamp         = extBlockInfo.blockInfo.timestamp,
+      transactionsCount = extBlockInfo.blockInfo.txsCount,
+      miner             = MinerInfo(extBlockInfo.blockInfo.minerAddress, minerName),
+      size              = extBlockInfo.blockInfo.blockSize,
+      difficulty        = extBlockInfo.blockInfo.difficulty,
+      minerReward       = extBlockInfo.blockInfo.minerReward
     )
   }
 }
