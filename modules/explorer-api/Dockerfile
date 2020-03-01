@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-slim as api_builder
+FROM openjdk:8-jre-slim as builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends apt-transport-https apt-utils bc dirmngr gnupg && \
     echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list && \
@@ -12,7 +12,7 @@ RUN sbt explorer-api/assembly
 RUN mv `find . -name ExplorerApi-assembly-*.jar` /explorer-api.jar
 CMD ["/usr/bin/java", "-jar", "/explorer-api.jar"]
 
-FROM openjdk:8-jre-slim as api
-COPY --from=api_builder /explorer-api.jar /explorer-api.jar
+FROM openjdk:8-jre-slim
+COPY --from=builder /explorer-api.jar /explorer-api.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/explorer-api.jar"]

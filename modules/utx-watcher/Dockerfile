@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-slim as utx_tracker_builder
+FROM openjdk:8-jre-slim as builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends apt-transport-https apt-utils bc dirmngr gnupg && \
     echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list && \
@@ -12,6 +12,6 @@ RUN sbt utx-watcher/assembly
 RUN mv `find . -name UtxWatcher-assembly-*.jar` /utx-tracker.jar
 CMD ["/usr/bin/java", "-jar", "/utx-tracker.jar"]
 
-FROM openjdk:8-jre-slim as utx_tracker
-COPY --from=utx_tracker_builder /utx-tracker.jar /utx-tracker.jar
+FROM openjdk:8-jre-slim
+COPY --from=builder /utx-tracker.jar /utx-tracker.jar
 ENTRYPOINT ["java", "-jar", "/utx-tracker.jar"]
