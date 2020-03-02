@@ -85,7 +85,7 @@ object BlockInfoQuerySet extends QuerySet {
       .query[BlockInfo]
 
   def getBlockSize(id: Id): Query0[Int] =
-    sql"select block_size from blocks_info where id = $id"
+    sql"select block_size from blocks_info where header_id = $id"
       .query[Int]
 
   def totalDifficultySince(ts: Long): Query0[Long] =

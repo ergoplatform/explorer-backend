@@ -38,7 +38,7 @@ object TransactionQuerySet extends QuerySet {
   def getAllByBlockId(id: Id): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
-         |where header_id = $id
+         |where t.header_id = $id
          |""".stripMargin.query[Transaction]
 
   def getAllRelatedToAddress(
