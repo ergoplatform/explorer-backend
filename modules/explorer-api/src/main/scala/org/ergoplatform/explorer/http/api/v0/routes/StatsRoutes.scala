@@ -17,7 +17,7 @@ final class StatsRoutes[F[_]: Sync: ContextShift: Logger](service: StatsService[
 
   private def getCurrentStatsR: HttpRoutes[F] =
     getCurrentStatsDef.toRoutes { _ =>
-      service.getCurrentStats.either
+      service.getCurrentStats.attemptApi
     }
 }
 

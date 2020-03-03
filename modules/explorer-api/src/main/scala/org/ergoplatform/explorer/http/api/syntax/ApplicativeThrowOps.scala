@@ -14,7 +14,7 @@ final class ApplicativeThrowOps[
   A
 ](fa: F[A]) {
 
-  def either: F[Either[ApiErr, A]] =
+  def attemptApi: F[Either[ApiErr, A]] =
     fa.map(Either.right[ApiErr, A])
       .handleErrorWith {
         case e: ApiErr =>

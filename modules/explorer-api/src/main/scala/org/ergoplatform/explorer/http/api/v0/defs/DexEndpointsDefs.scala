@@ -17,14 +17,14 @@ object DexEndpointsDefs {
 
   def getUnspentSellOrdersDef
     : Endpoint[(TokenId, Paging), ApiErr, List[DexSellOrderInfo], Nothing] =
-    baseEndpointDef
+    baseEndpointDef.get
       .in(PathPrefix / "tokens" / path[TokenId] / "unspentSellOrders")
       .in(paging)
       .out(jsonBody[List[DexSellOrderInfo]])
 
   def getUnspentBuyOrdersDef
     : Endpoint[(TokenId, Paging), ApiErr, List[DexBuyOrderInfo], Nothing] =
-    baseEndpointDef
+    baseEndpointDef.get
       .in(PathPrefix / "tokens" / path[TokenId] / "unspentBuyOrders")
       .in(paging)
       .out(jsonBody[List[DexBuyOrderInfo]])

@@ -89,9 +89,9 @@ trait OutputRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, ExtendedOutput]
 
-  /** Search for addresses containing a given `substring`.
+  /** Get all addresses matching the given `query`.
     */
-  def searchAddressesBySubstring(substring: String): D[List[Address]]
+  def getAllLike(query: String): D[List[Address]]
 
   def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal]
 
@@ -190,8 +190,8 @@ object OutputRepo {
         .stream
         .translate(liftK)
 
-    def searchAddressesBySubstring(substring: String): D[List[Address]] =
-      QS.searchAddressesBySubstring(substring).to[List].liftConnectionIO
+    def getAllLike(query: String): D[List[Address]] =
+      QS.getAllLike(query).to[List].liftConnectionIO
 
     def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal] =
       QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnectionIO

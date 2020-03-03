@@ -38,6 +38,10 @@ trait BlockChainService[F[_], S[_[_], _]] {
   /** Get a slice block info items.
     */
   def getBlocks(paging: Paging, sorting: Sorting): S[F, BlockInfo]
+
+  /** Get all blocks with id matching a given `query`.
+    */
+  def getBlocksByIdLike(query: String): F[List[BlockInfo]]
 }
 
 object BlockChainService {
@@ -103,6 +107,11 @@ object BlockChainService {
       blockInfoRepo
         .getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
         .map(BlockInfo(_)) ||> trans.xas
+
+    def getBlocksByIdLike(query: String): F[List[BlockInfo]] =
+      blockInfoRepo
+        .getManyByIdLike(query)
+        .map(_.map(BlockInfo(_))) ||> trans.xa
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {

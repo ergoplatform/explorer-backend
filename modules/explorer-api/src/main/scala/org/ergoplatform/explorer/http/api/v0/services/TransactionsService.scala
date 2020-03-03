@@ -41,6 +41,10 @@ trait TransactionsService[F[_], S[_[_], _]] {
   /** Get all transactions appeared in the blockchain after the given `height`.
     */
   def getTxsSince(height: Int, paging: Paging): S[F, TransactionInfo]
+
+  /** Get all ids matching the given `query`.
+    */
+  def getIdsLike(query: String): F[List[TxId]]
 }
 
 object TransactionsService {
@@ -113,6 +117,9 @@ object TransactionsService {
         .getMainSince(height, paging.offset, paging.limit)
         .chunkN(100)
         .through(assembleInfo) ||> trans.xas
+
+    def getIdsLike(query: String): F[List[TxId]] =
+      transactionRepo.getIdsLike(query) ||> trans.xa
 
     private def assembleInfo: Pipe[D, Chunk[Transaction], TransactionInfo] =
       _.flatMap { txChunk =>

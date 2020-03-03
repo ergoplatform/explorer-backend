@@ -25,7 +25,7 @@ import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
-import org.ergoplatform.explorer.services.ErgoNetworkService
+import org.ergoplatform.explorer.clients.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.GrabberAppSettings
 
 /** Fetches new blocks from the network divide them into
@@ -35,17 +35,17 @@ final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
   D[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
 ](
-  lastBlockCache: Ref[F, Option[BlockInfo]],
-  settings: GrabberAppSettings,
-  networkService: ErgoNetworkService[F, Stream],
-  headerRepo: HeaderRepo[D],
-  blockInfoRepo: BlockInfoRepo[D, Stream],
-  blockExtensionRepo: BlockExtensionRepo[D],
-  adProofRepo: AdProofRepo[D],
-  txRepo: TransactionRepo[D, Stream],
-  inputRepo: InputRepo[D],
-  outputRepo: OutputRepo[D, Stream],
-  assetRepo: AssetRepo[D, Stream]
+   lastBlockCache: Ref[F, Option[BlockInfo]],
+   settings: GrabberAppSettings,
+   networkService: ErgoNetworkClient[F, Stream],
+   headerRepo: HeaderRepo[D],
+   blockInfoRepo: BlockInfoRepo[D, Stream],
+   blockExtensionRepo: BlockExtensionRepo[D],
+   adProofRepo: AdProofRepo[D],
+   txRepo: TransactionRepo[D, Stream],
+   inputRepo: InputRepo[D],
+   outputRepo: OutputRepo[D, Stream],
+   assetRepo: AssetRepo[D, Stream]
 )(xa: D ~> F) {
 
   def run: Stream[F, Unit] =
@@ -165,7 +165,7 @@ object ChainGrabber {
     D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
   ](
     settings: GrabberAppSettings,
-    networkService: ErgoNetworkService[F, Stream]
+    networkService: ErgoNetworkClient[F, Stream]
   )(xa: D ~> F): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).map { cache =>

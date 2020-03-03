@@ -22,13 +22,13 @@ final class DexRoutes[F[_]: Sync: ContextShift: Logger](
   private def getUnspentSellOrdersR: HttpRoutes[F] =
     getUnspentSellOrdersDef.toRoutes {
       case (tokenId, paging) =>
-        service.getUnspentSellOrders(tokenId, paging).compile.toList.either
+        service.getUnspentSellOrders(tokenId, paging).compile.toList.attemptApi
     }
 
   private def getUnspentBuyOrdersR: HttpRoutes[F] =
     getUnspentBuyOrdersDef.toRoutes {
       case (tokenId, paging) =>
-        service.getUnspentBuyOrders(tokenId, paging).compile.toList.either
+        service.getUnspentBuyOrders(tokenId, paging).compile.toList.attemptApi
     }
 }
 

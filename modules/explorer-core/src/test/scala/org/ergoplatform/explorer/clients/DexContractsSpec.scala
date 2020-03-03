@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.services
+package org.ergoplatform.explorer.clients
 
 import cats.effect.IO
 import org.ergoplatform.explorer.commonGenerators.assetIdGen

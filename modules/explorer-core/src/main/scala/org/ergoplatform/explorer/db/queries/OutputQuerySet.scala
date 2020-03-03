@@ -189,7 +189,7 @@ object OutputQuerySet extends QuerySet {
       .query[ExtendedOutput]
   }
 
-  def searchAddressesBySubstring(substring: String): Query0[Address] =
+  def getAllLike(substring: String): Query0[Address] =
     sql"select address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
 

@@ -55,6 +55,10 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, Transaction]
+
+  /** Get all ids matching the given `query`.
+   */
+  def getIdsLike(query: String): D[List[TxId]]
 }
 
 object TransactionRepo {
@@ -102,5 +106,8 @@ object TransactionRepo {
       limit: Int
     ): Stream[D, Transaction] =
       QS.getAllMainSince(height, offset, limit).stream.translate(liftK)
+
+    def getIdsLike(query: String): D[List[TxId]] =
+      QS.getIdsLike(query).to[List].liftConnectionIO
   }
 }

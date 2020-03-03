@@ -25,7 +25,7 @@ final class AddressesRoutes[F[_]: Sync: ContextShift: Logger](
 
   def getAddressR: HttpRoutes[F] =
     getAddressDef.toRoutes { address =>
-      addressesService.getAddressInfo(address).either
+      addressesService.getAddressInfo(address).attemptApi
     }
 
   def getTxsByAddressR: HttpRoutes[F] =
@@ -39,7 +39,7 @@ final class AddressesRoutes[F[_]: Sync: ContextShift: Logger](
               .compile
               .toList
               .map(Items(_, totalNumTxs))
-              .either
+              .attemptApi
           }
     }
 
@@ -50,7 +50,7 @@ final class AddressesRoutes[F[_]: Sync: ContextShift: Logger](
           .getAssetHoldersAddresses(tokenId, paging)
           .compile
           .toList
-          .either
+          .attemptApi
     }
 }
 

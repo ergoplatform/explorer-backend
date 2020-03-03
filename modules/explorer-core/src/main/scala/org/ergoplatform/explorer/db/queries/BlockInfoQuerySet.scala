@@ -84,6 +84,35 @@ object BlockInfoQuerySet extends QuerySet {
     sql"select * from blocks_info where timestamp >= $ts"
       .query[BlockInfo]
 
+  def getManyExtendedByIdLike(q: String): Query0[ExtendedBlockInfo] =
+    sql"""
+         |select
+         |  bi.header_id,
+         |  bi.timestamp,
+         |  bi.height,
+         |  bi.difficulty,
+         |  bi.block_size,
+         |  bi.block_coins,
+         |  bi.block_mining_time,
+         |  bi.txs_count,
+         |  bi.txs_size,
+         |  bi.miner_address,
+         |  bi.miner_reward,
+         |  bi.miner_revenue,
+         |  bi.block_fee,
+         |  bi.block_chain_total_size,
+         |  bi.total_txs_count,
+         |  bi.total_coins_issued,
+         |  bi.total_mining_time,
+         |  bi.total_fees,
+         |  bi.total_miners_reward,
+         |  bi.total_coins_in_txs,
+         |  mi.miner_name
+         |from blocks_info bi
+         |left join known_miners mi on bi.miner_address = mi.miner_address
+         |where bi.header_id like ${s"%$q%"}
+         |""".stripMargin.query[ExtendedBlockInfo]
+
   def getBlockSize(id: Id): Query0[Int] =
     sql"select block_size from blocks_info where header_id = $id"
       .query[Int]

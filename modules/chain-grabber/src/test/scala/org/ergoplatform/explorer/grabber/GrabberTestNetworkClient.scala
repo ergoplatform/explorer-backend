@@ -3,12 +3,12 @@ package org.ergoplatform.explorer.grabber
 import cats.Applicative
 import cats.syntax.applicative._
 import org.ergoplatform.explorer
-import org.ergoplatform.explorer.grabber.GrabberTestNetworkService.Source
+import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
-import org.ergoplatform.explorer.services.ErgoNetworkService
+import org.ergoplatform.explorer.clients.ErgoNetworkClient
 
-final class GrabberTestNetworkService[F[_]: Applicative](var source: Source)
-  extends ErgoNetworkService[F, fs2.Stream] {
+final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
+  extends ErgoNetworkClient[F, fs2.Stream] {
 
   def getBestHeight: F[Int] =
     source.blocksStorage.maxBy(_._1)._1.pure[F]
@@ -22,7 +22,7 @@ final class GrabberTestNetworkService[F[_]: Applicative](var source: Source)
   def getUnconfirmedTransactions: fs2.Stream[F, ApiTransaction] = ???
 }
 
-object GrabberTestNetworkService {
+object GrabberTestNetworkClient {
 
   final case class Source(blocks: List[ApiFullBlock]) {
 

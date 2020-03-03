@@ -16,7 +16,7 @@ final class InfoRoutes[F[_]: Sync: ContextShift: Logger](service: StatsService[F
   val routes: HttpRoutes[F] = getCurrentStatsR
 
   private def getCurrentStatsR: HttpRoutes[F] =
-    getBlockChainInfoDef.toRoutes(_ => service.getBlockChainInfo.either)
+    getBlockChainInfoDef.toRoutes(_ => service.getBlockChainInfo.attemptApi)
 }
 
 object InfoRoutes {

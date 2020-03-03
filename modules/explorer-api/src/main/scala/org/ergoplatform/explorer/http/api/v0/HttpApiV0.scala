@@ -16,6 +16,7 @@ import org.ergoplatform.explorer.http.api.v0.routes.{
   DexRoutes,
   DocsRoutes,
   InfoRoutes,
+  SearchRoutes,
   StatsRoutes,
   TransactionsRoutes
 }
@@ -44,10 +45,11 @@ object HttpApiV0 {
   ): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(trans))
-      blockRoutes       <- Resource.liftF(BlocksRoutes(blockChainService))
-      assetRoutes       <- Resource.liftF(AssetsRoutes(AssetsService(trans)))
-      dexRoutes         <- Resource.liftF(DexRoutes(DexService(trans)))
-      txRoutes          <- Resource.liftF(TransactionsRoutes(TransactionsService(trans)))
+      txsService = TransactionsService(trans)
+      blockRoutes <- Resource.liftF(BlocksRoutes(blockChainService))
+      assetRoutes <- Resource.liftF(AssetsRoutes(AssetsService(trans)))
+      dexRoutes   <- Resource.liftF(DexRoutes(DexService(trans)))
+      txRoutes    <- Resource.liftF(TransactionsRoutes(txsService))
       addressRoutes <- Resource.liftF(
                         AddressesRoutes(
                           AddressesService(trans),
@@ -58,9 +60,12 @@ object HttpApiV0 {
       infoRoutes  <- Resource.liftF(InfoRoutes(statsService))
       statsRoutes <- Resource.liftF(StatsRoutes(statsService))
       docsRoutes  <- Resource.liftF(DocsRoutes[F])
+      searchRoutes <- Resource.liftF(
+                       SearchRoutes(blockChainService, txsService, AddressesService(trans))
+                     )
 
       routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
-               addressRoutes <+> statsRoutes <+> docsRoutes
+      addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
                .withHttpApp(Router("/" -> routes).orNotFound)

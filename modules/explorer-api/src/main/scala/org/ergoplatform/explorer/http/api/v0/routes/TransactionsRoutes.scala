@@ -28,7 +28,7 @@ final class TransactionsRoutes[F[_]: Sync: ContextShift: Logger](
       service
         .getTxInfo(txId)
         .flatMap(_.liftTo[F](ApiErr.NotFound(s"Transaction with id: $txId")))
-        .either
+        .attemptApi
     }
 
   private def getUnconfirmedTxByIdR: HttpRoutes[F] =
@@ -36,13 +36,13 @@ final class TransactionsRoutes[F[_]: Sync: ContextShift: Logger](
       service
         .getUnconfirmedTxInfo(txId)
         .flatMap(_.liftTo[F](ApiErr.NotFound(s"Unconfirmed transaction with id: $txId")))
-        .either
+        .attemptApi
     }
 
   private def getTxsSinceR: HttpRoutes[F] =
     getTxsSinceDef.toRoutes {
       case (paging, height) =>
-        service.getTxsSince(height, paging).compile.toList.either
+        service.getTxsSince(height, paging).compile.toList.attemptApi
     }
 }
 

@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.services
+package org.ergoplatform.explorer.clients
 
 import cats.data.NonEmptyList
 import cats.effect.Sync
@@ -18,7 +18,7 @@ import tofu.syntax.raise._
 
 /** A service providing an access to the Ergo network.
   */
-trait ErgoNetworkService[F[_], S[_[_], _]] {
+trait ErgoNetworkClient[F[_], S[_[_], _]] {
 
   /** Get height of the best block.
     */
@@ -37,12 +37,12 @@ trait ErgoNetworkService[F[_], S[_[_], _]] {
   def getUnconfirmedTransactions: S[F, ApiTransaction]
 }
 
-object ErgoNetworkService {
+object ErgoNetworkClient {
 
   def apply[F[_]: Sync](
     client: Client[F],
     masterNodesAddresses: NonEmptyList[UrlString]
-  ): F[ErgoNetworkService[F, Stream]] =
+  ): F[ErgoNetworkClient[F, Stream]] =
     Slf4jLogger
       .create[F]
       .map(new Live[F](client, _, masterNodesAddresses))
@@ -51,7 +51,7 @@ object ErgoNetworkService {
     client: Client[F],
     logger: Logger[F],
     masterNodesAddresses: NonEmptyList[UrlString]
-  ) extends ErgoNetworkService[F, Stream] {
+  ) extends ErgoNetworkClient[F, Stream] {
 
     import io.circe.jawn.CirceSupportParser.facade
     import org.http4s.circe.CirceEntityDecoder._

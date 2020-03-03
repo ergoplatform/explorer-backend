@@ -82,4 +82,7 @@ object TransactionQuerySet extends QuerySet {
          |order by t.timestamp desc
          |offset $offset limit $limit
          |""".stripMargin.query[Transaction]
+
+  def getIdsLike(q: String): Query0[TxId] =
+    sql"select id from node_transactions where id like ${s"%$q%"}".query[TxId]
 }

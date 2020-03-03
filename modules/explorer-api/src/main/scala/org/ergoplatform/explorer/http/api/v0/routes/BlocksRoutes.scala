@@ -32,7 +32,7 @@ final class BlocksRoutes[F[_]: Sync: ContextShift: Logger](
             .compile
             .toList // API v0 format does not allow to use streaming
             .map(Items(_, maxHeight))
-            .either
+            .attemptApi
         }
     }
 
@@ -41,7 +41,7 @@ final class BlocksRoutes[F[_]: Sync: ContextShift: Logger](
       service
         .getBlockSummaryById(id)
         .flatMap(_.liftTo[F](ApiErr.NotFound(s"Block with id: $id")))
-        .either
+        .attemptApi
     }
 }
 

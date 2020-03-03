@@ -48,8 +48,8 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
     txsId: NonEmptyList[TxId]
   ): F[scala.List[ExtendedOutput]] = ???
 
-  override def searchAddressesBySubstring(
-    substring: String
+  override def getAllLike(
+                           query: String
   ): F[scala.List[Address]] = ???
 
   override def sumOfAllUnspentOutputsSince(ts: Long): F[BigDecimal] = ???

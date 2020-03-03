@@ -31,6 +31,10 @@ trait AddressesService[F[_], S[_[_], _]] {
   /** Get all addresses holding an asset with a given `assetId`.
     */
   def getAssetHoldersAddresses(tokenId: TokenId, paging: Paging): S[F, Address]
+
+  /** Get all addresses matching the given `query`.
+    */
+  def getAllLike(query: String): F[List[Address]]
 }
 
 object AddressesService {
@@ -102,5 +106,8 @@ object AddressesService {
 
     def getAssetHoldersAddresses(tokenId: TokenId, paging: Paging): Stream[F, Address] =
       assetRepo.getAllHoldingAddresses(tokenId, paging.offset, paging.limit) ||> trans.xas
+
+    def getAllLike(query: String): F[List[Address]] =
+      outputRepo.getAllLike(query) ||> trans.xa
   }
 }

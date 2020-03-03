@@ -22,12 +22,12 @@ final class AssetsRoutes[F[_]: Sync: ContextShift: Logger](
 
   private def getAllIssuingBoxesR: HttpRoutes[F] =
     getAllIssuingBoxesDef.toRoutes { paging =>
-      service.getAllIssuingBoxes(paging).compile.toList.either
+      service.getAllIssuingBoxes(paging).compile.toList.attemptApi
     }
 
   private def getIssuingBoxR: HttpRoutes[F] =
     getIssuingBoxDef.toRoutes { tokenId =>
-      service.getIssuingBoxes(NonEmptyList.one(tokenId)).compile.toList.either
+      service.getIssuingBoxes(NonEmptyList.one(tokenId)).compile.toList.attemptApi
     }
 }
 

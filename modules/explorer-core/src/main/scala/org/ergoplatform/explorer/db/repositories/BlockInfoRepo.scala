@@ -34,6 +34,10 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
     */
   def getManySince(ts: Long): D[List[BlockInfo]]
 
+  /** Get all blocks with id matching a given `query`.
+    */
+  def getManyByIdLike(query: String): D[List[ExtendedBlockInfo]]
+
   /** Get size in bytes of the block with the given `id`.
     */
   def getBlockSize(id: Id): D[Option[Int]]
@@ -86,6 +90,9 @@ object BlockInfoRepo {
 
     def getManySince(ts: Long): D[List[BlockInfo]] =
       QS.getManySince(ts).to[List].liftConnectionIO
+
+    def getManyByIdLike(query: String): D[List[ExtendedBlockInfo]] =
+      QS.getManyExtendedByIdLike(query).to[List].liftConnectionIO
 
     def getBlockSize(id: Id): D[Option[Int]] =
       QS.getBlockSize(id).option.liftConnectionIO

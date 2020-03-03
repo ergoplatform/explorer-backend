@@ -49,6 +49,8 @@ package object explorer {
     type UrlStringType = String Refined Url
   }
 
+  /** Persistent modifier id (header, block_transaction, etc.)
+    */
   @newtype case class Id(value: String)
 
   object Id {

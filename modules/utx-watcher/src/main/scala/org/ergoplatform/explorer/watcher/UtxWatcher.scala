@@ -21,7 +21,7 @@ import org.ergoplatform.explorer.db.repositories.{
   UOutputRepo,
   UTransactionRepo
 }
-import org.ergoplatform.explorer.services.ErgoNetworkService
+import org.ergoplatform.explorer.clients.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.UtxWatcherSettings
 import org.ergoplatform.explorer.syntax.stream._
 
@@ -31,12 +31,12 @@ final class UtxWatcher[
   F[_]: Timer: Applicative: Logger,
   D[_]: Monad
 ](
-  settings: UtxWatcherSettings,
-  networkService: ErgoNetworkService[F, Stream],
-  txRepo: UTransactionRepo[D, Stream],
-  inRepo: UInputRepo[D, Stream],
-  outRepo: UOutputRepo[D, Stream],
-  assetRep: UAssetRepo[D]
+   settings: UtxWatcherSettings,
+   networkService: ErgoNetworkClient[F, Stream],
+   txRepo: UTransactionRepo[D, Stream],
+   inRepo: UInputRepo[D, Stream],
+   outRepo: UOutputRepo[D, Stream],
+   assetRep: UAssetRepo[D]
 )(xa: D ~> F) {
 
   implicit private val enc: ErgoAddressEncoder = settings.protocol.addressEncoder
@@ -75,7 +75,7 @@ object UtxWatcher {
 
   def apply[F[_]: Timer: Sync, D[_]: Monad: LiftConnectionIO](
     settings: UtxWatcherSettings,
-    networkService: ErgoNetworkService[F, Stream]
+    networkService: ErgoNetworkClient[F, Stream]
   )(xa: D ~> F): F[UtxWatcher[F, D]] =
     Slf4jLogger.create[F].map { implicit logger =>
       new UtxWatcher(
