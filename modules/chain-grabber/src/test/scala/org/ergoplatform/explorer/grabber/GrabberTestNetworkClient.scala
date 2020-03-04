@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.grabber
 
 import cats.Applicative
 import cats.syntax.applicative._
-import org.ergoplatform.explorer
+import org.ergoplatform.{ErgoLikeTransaction, explorer}
 import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 import org.ergoplatform.explorer.clients.ErgoNetworkClient
@@ -20,6 +20,8 @@ final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
     source.blocksStorage.values.flatten.find(_.header.id == id).pure[F]
 
   def getUnconfirmedTransactions: fs2.Stream[F, ApiTransaction] = ???
+
+  def submitTransaction(tx: ErgoLikeTransaction): F[String] = ???
 }
 
 object GrabberTestNetworkClient {
