@@ -7,21 +7,16 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{~>, Applicative, Monad}
+import cats.{Applicative, Monad, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.FlatUTransaction
-import org.ergoplatform.explorer.db.repositories.{
-  UAssetRepo,
-  UInputRepo,
-  UOutputRepo,
-  UTransactionRepo
-}
-import org.ergoplatform.explorer.clients.ErgoNetworkClient
+import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
 import org.ergoplatform.explorer.settings.UtxWatcherSettings
 import org.ergoplatform.explorer.syntax.stream._
 

@@ -5,8 +5,8 @@ import cats.syntax.functor._
 import cats.free.Free.catsFreeMonadForFree
 import doobie.free.connection.ConnectionIO
 import monix.eval.{Task, TaskApp}
+import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.DoobieTrans
-import org.ergoplatform.explorer.clients.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.UtxWatcherSettings
 import org.ergoplatform.explorer.watcher.UtxWatcher
 import org.http4s.client.blaze.BlazeClientBuilder

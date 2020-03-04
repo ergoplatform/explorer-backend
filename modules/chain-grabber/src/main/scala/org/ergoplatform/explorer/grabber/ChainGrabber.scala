@@ -18,6 +18,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
+import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.{CRaise, Id}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
@@ -25,7 +26,6 @@ import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
-import org.ergoplatform.explorer.clients.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.GrabberAppSettings
 
 /** Fetches new blocks from the network divide them into

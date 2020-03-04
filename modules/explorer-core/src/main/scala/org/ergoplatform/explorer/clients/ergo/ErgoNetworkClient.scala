@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.clients
+package org.ergoplatform.explorer.clients.ergo
 
 import cats.data.NonEmptyList
 import cats.effect.Sync
@@ -8,16 +8,16 @@ import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
+import io.circe.jawn.CirceSupportParser.facade
 import jawnfs2._
-import org.ergoplatform.{ErgoLikeTransaction, JsonCodecs}
 import org.ergoplatform.explorer.Err.ProcessingErr.TransactionDecodingFailed
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
 import org.ergoplatform.explorer.{CRaise, Id, UrlString}
-import org.http4s.client.Client
-import org.http4s.{Method, Request, Uri}
-import io.circe.jawn.CirceSupportParser.facade
+import org.ergoplatform.{ErgoLikeTransaction, JsonCodecs}
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
+import org.http4s.client.Client
+import org.http4s.{Method, Request, Uri}
 import tofu.syntax.raise._
 
 /** A service providing an access to the Ergo network.
@@ -42,7 +42,7 @@ trait ErgoNetworkClient[F[_], S[_[_], _]] {
 
   /** Submit a transaction to the network.
     */
-  def submitTransaction(tx: ErgoLikeTransaction): F[String]
+  def submitTransaction(tx: ErgoLikeTransaction): F[Unit]
 }
 
 object ErgoNetworkClient {
@@ -100,14 +100,14 @@ object ErgoNetworkClient {
           }
       }
 
-    def submitTransaction(tx: ErgoLikeTransaction): F[String] =
+    def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
       retrying { url =>
-        client.expect[String](
+        client.expect[TxResponse](
           Request[F](
             Method.POST,
             Uri.unsafeFromString(s"$url/transactions")
           ).withEntity(tx)
-        )
+        ).void
       }
 
     private def retrying[M[_]: Monad, A](

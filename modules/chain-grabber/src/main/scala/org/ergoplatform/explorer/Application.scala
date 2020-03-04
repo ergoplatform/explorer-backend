@@ -4,9 +4,9 @@ import cats.effect.{ExitCode, Resource}
 import cats.syntax.functor._
 import doobie.free.connection.ConnectionIO
 import monix.eval.{Task, TaskApp}
+import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.DoobieTrans
 import org.ergoplatform.explorer.grabber.ChainGrabber
-import org.ergoplatform.explorer.clients.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.GrabberAppSettings
 import org.http4s.client.blaze.BlazeClientBuilder
 
