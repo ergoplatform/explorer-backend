@@ -1,20 +1,26 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.Monad
+import cats.{FlatMap, Monad}
+import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
+import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.{Chunk, Pipe, Stream}
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
-import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, UTransactionInfo}
+import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{Address, TxId}
 
@@ -45,26 +51,34 @@ trait TransactionsService[F[_], S[_[_], _]] {
   /** Get all ids matching the given `query`.
     */
   def getIdsLike(query: String): F[List[TxId]]
+
+  /** Submit a transaction to the network.
+    */
+  def submitTransaction(tx: ErgoLikeTransaction): F[Unit]
 }
 
 object TransactionsService {
 
-  def apply[F[_], D[_]: Monad: LiftConnectionIO](
-    trans: D Trans F
-  )(implicit e: ErgoAddressEncoder): TransactionsService[F, Stream] =
-    new Live(
-      HeaderRepo[D],
-      TransactionRepo[D],
-      UTransactionRepo[D],
-      InputRepo[D],
-      UInputRepo[D],
-      OutputRepo[D],
-      UOutputRepo[D],
-      AssetRepo[D],
-      UAssetRepo[D]
-    )(trans)
+  def apply[F[_]: Sync, D[_]: Monad: LiftConnectionIO](
+    utxCacheSettings: UtxCacheSettings,
+    redis: RedisCommands[F, String, String]
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[TransactionsService[F, Stream]] =
+    Slf4jLogger.create[F].map { implicit logger =>
+      new Live(
+        HeaderRepo[D],
+        TransactionRepo[D],
+        UTransactionRepo[D],
+        InputRepo[D],
+        UInputRepo[D],
+        OutputRepo[D],
+        UOutputRepo[D],
+        AssetRepo[D],
+        UAssetRepo[D],
+        ErgoLikeTransactionRepo[F](utxCacheSettings, redis)
+      )(trans)
+    }
 
-  final private class Live[F[_], D[_]: Monad](
+  final private class Live[F[_]: Logger: FlatMap, D[_]: Monad](
     headerRepo: HeaderRepo[D],
     transactionRepo: TransactionRepo[D, Stream],
     uTransactionRepo: UTransactionRepo[D, Stream],
@@ -73,7 +87,8 @@ object TransactionsService {
     outputRepo: OutputRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
-    uAssetRepo: UAssetRepo[D]
+    uAssetRepo: UAssetRepo[D],
+    ergoLikeTxRepo: ErgoLikeTransactionRepo[F, Stream]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends TransactionsService[F, Stream] {
 
@@ -120,6 +135,10 @@ object TransactionsService {
 
     def getIdsLike(query: String): F[List[TxId]] =
       transactionRepo.getIdsLike(query) ||> trans.xa
+
+    def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
+      Logger[F].trace(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
+        ergoLikeTxRepo.put(tx)
 
     private def assembleInfo: Pipe[D, Chunk[Transaction], TransactionInfo] =
       _.flatMap { txChunk =>

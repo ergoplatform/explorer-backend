@@ -4,163 +4,115 @@ object dependencies {
 
   import versions._
 
-  trait DependencyGroup {
-    def deps: List[ModuleID]
-  }
+  val Http4s: List[ModuleID] =
+    List(
+      "org.http4s" %% "http4s-dsl",
+      "org.http4s" %% "http4s-blaze-server",
+      "org.http4s" %% "http4s-blaze-client",
+      "org.http4s" %% "http4s-circe"
+    ).map(_ % Http4sVersion)
 
-  object http4s extends DependencyGroup {
+  val Tapir: List[ModuleID] =
+    List(
+      "com.softwaremill.sttp.tapir" %% "tapir-core",
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe",
+      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server",
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs",
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml"
+    ).map(_ % TapirVersion)
 
-    override def deps: List[ModuleID] =
-      List(
-        "org.http4s" %% "http4s-dsl",
-        "org.http4s" %% "http4s-blaze-server",
-        "org.http4s" %% "http4s-blaze-client",
-        "org.http4s" %% "http4s-circe"
-      ).map(_ % Http4sVersion)
-  }
-
-  object tapir extends DependencyGroup {
-
-    override def deps: List[ModuleID] =
-      List(
-        "com.softwaremill.sttp.tapir" %% "tapir-core",
-        "com.softwaremill.sttp.tapir" %% "tapir-json-circe",
-        "com.softwaremill.sttp.tapir" %% "tapir-http4s-server",
-        "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs",
-        "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml"
-      ).map(_ % TapirVersion)
-  }
-
-  object circe extends DependencyGroup {
-
-    override def deps: List[ModuleID] =
-      List(
-        "io.circe" %% "circe-core",
-        "io.circe" %% "circe-generic",
-        "io.circe" %% "circe-parser",
-        "io.circe" %% "circe-refined"
-      ).map(_      % CirceVersion) ++ List(
-        "io.circe" %% "circe-derivation" % CirceDerivationVersion
-      )
-  }
-
-  object cats extends DependencyGroup {
-
-    override def deps: List[ModuleID] = List(
-      "org.typelevel" %% "cats-core"           % CatsVersion,
-      "org.typelevel" %% "cats-effect"         % CatsEffectVersion,
-      "org.typelevel" %% "cats-mtl-core"       % CatsMtlVersion,
-      "com.olegpy"    %% "meow-mtl-core"       % CatsMeowMtl,
-      "org.typelevel" %% "cats-tagless-macros" % CatsTaglessVersion,
-      "org.typelevel" %% "cats-tagless-core"   % CatsTaglessVersion,
-      "org.typelevel" %% "mouse"               % MouseVersion
+  val Circe: List[ModuleID] =
+    List(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-parser",
+      "io.circe" %% "circe-refined"
+    ).map(_      % CirceVersion) ++ List(
+      "io.circe" %% "circe-derivation" % CirceDerivationVersion
     )
-  }
 
-  object monix extends DependencyGroup {
+  val Cats: List[ModuleID] = List(
+    "org.typelevel" %% "cats-core"           % CatsVersion,
+    "org.typelevel" %% "cats-effect"         % CatsEffectVersion,
+    "org.typelevel" %% "cats-mtl-core"       % CatsMtlVersion,
+    "com.olegpy"    %% "meow-mtl-core"       % CatsMeowMtl,
+    "org.typelevel" %% "cats-tagless-macros" % CatsTaglessVersion,
+    "org.typelevel" %% "cats-tagless-core"   % CatsTaglessVersion,
+    "org.typelevel" %% "mouse"               % MouseVersion
+  )
 
-    override def deps: List[ModuleID] = List(
-      "io.monix" %% "monix" % MonixVersion
-    )
-  }
+  val Monix: List[ModuleID] = List(
+    "io.monix" %% "monix" % MonixVersion
+  )
 
-  object monocle extends DependencyGroup {
+  val Monocle: List[ModuleID] = List(
+    "com.github.julien-truffaut" %% "monocle-core"  % MonocleVersion,
+    "com.github.julien-truffaut" %% "monocle-macro" % MonocleVersion
+  )
 
-    override def deps: List[ModuleID] = List(
-      "com.github.julien-truffaut" %% "monocle-core"  % MonocleVersion,
-      "com.github.julien-truffaut" %% "monocle-macro" % MonocleVersion
-    )
-  }
+  val Fs2: List[ModuleID] = List(
+    "co.fs2" %% "fs2-core" % Fs2Version
+  )
 
-  object fs2 extends DependencyGroup {
+  val Tofu: List[ModuleID] = List(
+    "ru.tinkoff" %% "tofu-core" % TofuVersion
+  )
 
-    override def deps: List[ModuleID] = List(
-      "co.fs2" %% "fs2-core" % Fs2Version
-    )
-  }
+  val Ergo: List[ModuleID] = List(
+    "org.ergoplatform" %% "ergo-wallet"        % ErgoWalletVersion,
+    "org.ergoplatform" %% "verified-contracts" % ErgoContractsVertions
+  )
 
-  object tofu extends DependencyGroup {
+  val Logging: List[ModuleID] = List(
+    "ch.qos.logback"    % "logback-classic" % Logback,
+    "org.slf4j"         % "slf4j-api"       % Slf4j,
+    "io.chrisdavenport" %% "log4cats-slf4j" % Log4Cats
+  )
 
-    override def deps: List[ModuleID] = List(
-      "ru.tinkoff" %% "tofu-core" % TofuVersion
-    )
-  }
+  val Db: List[ModuleID] = List(
+    "org.tpolecat" %% "doobie-core"      % DoobieVersion,
+    "org.tpolecat" %% "doobie-postgres"  % DoobieVersion,
+    "org.tpolecat" %% "doobie-scalatest" % DoobieVersion,
+    "org.tpolecat" %% "doobie-hikari"    % DoobieVersion,
+    "org.tpolecat" %% "doobie-refined"   % DoobieVersion,
+    "org.flywaydb" % "flyway-core"       % FlywayVersion
+  )
 
-  object ergo extends DependencyGroup {
+  val Testing: List[ModuleID] = List(
+    "org.tpolecat"               %% "doobie-scalatest"          % DoobieVersion                 % Test,
+    "org.scalatest"              %% "scalatest"                 % ScalaTestVersion              % Test,
+    "org.scalacheck"             %% "scalacheck"                % ScalaCheckVersion             % Test,
+    "org.testcontainers"         % "postgresql"                 % TestContainersPostgresVersion % Test,
+    "com.dimafeng"               %% "testcontainers-scala"      % TestContainersScalaVersion    % Test,
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % ScalaCheckShapelessVersion    % Test
+  )
 
-    override def deps: List[ModuleID] = List(
-      "org.ergoplatform" %% "ergo-wallet"        % ErgoWalletVersion,
-      "org.ergoplatform" %% "verified-contracts" % ErgoContractsVertions
-    )
-  }
+  val Typing: List[ModuleID] = List(
+    "org.scalaz"  %% "deriving-macro" % DerivingVersion,
+    "io.estatico" %% "newtype"        % NewtypeVersion,
+    "eu.timepit"  %% "refined"        % RefinedVersion,
+    "eu.timepit"  %% "refined-cats"   % RefinedVersion
+  )
 
-  object logging extends DependencyGroup {
+  val Enums: List[ModuleID] = List(
+    "com.beachape" %% "enumeratum"       % EnumeratumVersion,
+    "com.beachape" %% "enumeratum-circe" % EnumeratumCirceVersion
+  )
 
-    override def deps: List[ModuleID] = List(
-      "ch.qos.logback"    % "logback-classic" % Logback,
-      "org.slf4j"         % "slf4j-api"       % Slf4j,
-      "io.chrisdavenport" %% "log4cats-slf4j" % Log4Cats
-    )
-  }
+  val Redis = List(
+    "dev.profunktor" %% "redis4cats-effects" % CatsRedisV
+  )
 
-  object db extends DependencyGroup {
+  val Config: List[ModuleID] = List(
+    "com.github.pureconfig" %% "pureconfig"             % PureConfigVersion,
+    "com.github.pureconfig" %% "pureconfig-cats-effect" % PureConfigVersion
+  )
 
-    override def deps: List[ModuleID] = List(
-      "org.tpolecat" %% "doobie-core"      % DoobieVersion,
-      "org.tpolecat" %% "doobie-postgres"  % DoobieVersion,
-      "org.tpolecat" %% "doobie-scalatest" % DoobieVersion,
-      "org.tpolecat" %% "doobie-hikari"    % DoobieVersion,
-      "org.tpolecat" %% "doobie-refined"   % DoobieVersion,
-      "org.flywaydb" % "flyway-core"       % FlywayVersion
-    )
-  }
+  val Simulacrum: List[ModuleID] = List(
+    "com.github.mpilquist" %% "simulacrum" % SimulacrumVersion
+  )
 
-  object testing extends DependencyGroup {
-
-    override def deps: List[ModuleID] = List(
-      "org.tpolecat"               %% "doobie-scalatest"          % DoobieVersion                 % Test,
-      "org.scalatest"              %% "scalatest"                 % ScalaTestVersion              % Test,
-      "org.scalacheck"             %% "scalacheck"                % ScalaCheckVersion             % Test,
-      "org.testcontainers"         % "postgresql"                 % TestContainersPostgresVersion % Test,
-      "com.dimafeng"               %% "testcontainers-scala"      % TestContainersScalaVersion    % Test,
-      "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % ScalaCheckShapelessVersion    % Test
-    )
-  }
-
-  object newtypes extends DependencyGroup {
-
-    override def deps: List[ModuleID] = List(
-      "org.scalaz"  %% "deriving-macro" % DerivingVersion,
-      "io.estatico" %% "newtype"        % NewtypeVersion,
-      "eu.timepit"  %% "refined"        % RefinedVersion,
-      "eu.timepit"  %% "refined-cats"   % RefinedVersion
-    )
-  }
-
-  object enums extends DependencyGroup {
-
-    override def deps: List[ModuleID] = List(
-      "com.beachape" %% "enumeratum"       % EnumeratumVersion,
-      "com.beachape" %% "enumeratum-circe" % EnumeratumCirceVersion
-    )
-  }
-
-  object config extends DependencyGroup {
-
-    override def deps: List[ModuleID] = List(
-      "com.github.pureconfig" %% "pureconfig"             % PureConfigVersion,
-      "com.github.pureconfig" %% "pureconfig-cats-effect" % PureConfigVersion
-    )
-  }
-
-  object simulacrum extends DependencyGroup {
-
-    override def deps: List[ModuleID] = List(
-      "com.github.mpilquist" %% "simulacrum" % SimulacrumVersion
-    )
-  }
-
-  lazy val compilerPlugins: List[ModuleID] =
+  val CompilerPlugins: List[ModuleID] =
     List(
       compilerPlugin(
         "org.typelevel" %% "kind-projector" % KindProjector cross CrossVersion.full
@@ -171,64 +123,25 @@ object dependencies {
       compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
     )
 
-  lazy val core: List[ModuleID] = List(
-    ergo.deps,
-    cats.deps,
-    tofu.deps,
-    fs2.deps,
-    circe.deps,
-    http4s.deps,
-    tapir.deps,
-    db.deps,
-    config.deps,
-    logging.deps,
-    newtypes.deps,
-    simulacrum.deps,
-    monocle.deps
-  ).flatten
+  lazy val core: List[ModuleID] =
+    Ergo ++
+    Cats ++
+    Tofu ++
+    Fs2 ++
+    Circe ++
+    Http4s ++
+    Tapir ++
+    Db ++
+    Config ++
+    Logging ++
+    Typing ++
+    Simulacrum ++
+    Monocle ++
+    Redis
 
-  lazy val api: List[ModuleID] = List(
-    ergo.deps,
-    cats.deps,
-    monix.deps,
-    fs2.deps,
-    circe.deps,
-    http4s.deps,
-    tapir.deps,
-    db.deps,
-    logging.deps,
-    newtypes.deps,
-    simulacrum.deps,
-    monocle.deps
-  ).flatten
+  lazy val api: List[ModuleID] = Monix
 
-  lazy val grabber: List[ModuleID] = List(
-    ergo.deps,
-    cats.deps,
-    monix.deps,
-    fs2.deps,
-    circe.deps,
-    http4s.deps,
-    tapir.deps,
-    db.deps,
-    logging.deps,
-    newtypes.deps,
-    simulacrum.deps,
-    monocle.deps
-  ).flatten
+  lazy val grabber: List[ModuleID] = Monix
 
-  lazy val utxWatcher: List[ModuleID] = List(
-    ergo.deps,
-    cats.deps,
-    monix.deps,
-    fs2.deps,
-    circe.deps,
-    http4s.deps,
-    tapir.deps,
-    db.deps,
-    logging.deps,
-    newtypes.deps,
-    simulacrum.deps,
-    monocle.deps
-  ).flatten
+  lazy val utxWatcher: List[ModuleID] = Monix
 }

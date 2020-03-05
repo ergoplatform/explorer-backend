@@ -26,7 +26,7 @@ lazy val core = utils
   .mkModule("explorer-core", "ExplorerCore")
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= dependencies.core ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+    libraryDependencies ++= dependencies.core ++ dependencies.Testing ++ dependencies.CompilerPlugins
   )
 
 lazy val httpApi = utils
@@ -34,7 +34,7 @@ lazy val httpApi = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.http.api.Application"),
-    libraryDependencies ++= dependencies.api ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+    libraryDependencies ++= dependencies.api ++ dependencies.CompilerPlugins
   )
   .dependsOn(core)
 
@@ -43,7 +43,7 @@ lazy val grabber = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.Application"),
-    libraryDependencies ++= dependencies.grabber ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+    libraryDependencies ++= dependencies.grabber ++ dependencies.CompilerPlugins
   )
   .dependsOn(core % allConfigDependency)
 
@@ -52,7 +52,7 @@ lazy val utxWatcher = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.Application"),
-    libraryDependencies ++= dependencies.utxWatcher ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+    libraryDependencies ++= dependencies.utxWatcher ++ dependencies.CompilerPlugins
   )
   .dependsOn(core)
 
