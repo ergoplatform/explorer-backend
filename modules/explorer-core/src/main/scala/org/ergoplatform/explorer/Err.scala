@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer
 
+import io.circe.Json
 import scorex.util.encode.Base16
 import sigmastate.Values.ErgoTree
 
@@ -97,5 +98,13 @@ object Err {
       final case class DexBuyOrderAttributesFailed(details: String)
         extends DexErr(details)
     }
+  }
+
+  abstract class UtxBroadcastingErr(val msg: String) extends Err
+
+  object UtxBroadcastingErr {
+
+    final case class TxDeserializationFailed(raw: String)
+      extends ProcessingErr(s"Failed to deserialize transaction: $raw")
   }
 }

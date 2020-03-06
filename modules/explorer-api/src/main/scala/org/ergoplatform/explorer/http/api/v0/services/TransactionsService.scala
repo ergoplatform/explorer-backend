@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.{FlatMap, Monad}
-import cats.effect.Sync
+import cats.effect.{Concurrent, Sync}
 import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -59,23 +59,25 @@ trait TransactionsService[F[_], S[_[_], _]] {
 
 object TransactionsService {
 
-  def apply[F[_]: Sync, D[_]: Monad: LiftConnectionIO](
+  def apply[F[_]: Concurrent, D[_]: Monad: LiftConnectionIO](
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[TransactionsService[F, Stream]] =
-    Slf4jLogger.create[F].map { implicit logger =>
-      new Live(
-        HeaderRepo[D],
-        TransactionRepo[D],
-        UTransactionRepo[D],
-        InputRepo[D],
-        UInputRepo[D],
-        OutputRepo[D],
-        UOutputRepo[D],
-        AssetRepo[D],
-        UAssetRepo[D],
-        ErgoLikeTransactionRepo[F](utxCacheSettings, redis)
-      )(trans)
+    Slf4jLogger.create[F].flatMap { implicit logger =>
+      ErgoLikeTransactionRepo[F](utxCacheSettings, redis).map { etxRepo =>
+        new Live(
+          HeaderRepo[D],
+          TransactionRepo[D],
+          UTransactionRepo[D],
+          InputRepo[D],
+          UInputRepo[D],
+          OutputRepo[D],
+          UOutputRepo[D],
+          AssetRepo[D],
+          UAssetRepo[D],
+          etxRepo
+        )(trans)
+      }
     }
 
   final private class Live[F[_]: Logger: FlatMap, D[_]: Monad](
@@ -138,7 +140,7 @@ object TransactionsService {
 
     def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
       Logger[F].trace(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
-        ergoLikeTxRepo.put(tx)
+      ergoLikeTxRepo.put(tx)
 
     private def assembleInfo: Pipe[D, Chunk[Transaction], TransactionInfo] =
       _.flatMap { txChunk =>
