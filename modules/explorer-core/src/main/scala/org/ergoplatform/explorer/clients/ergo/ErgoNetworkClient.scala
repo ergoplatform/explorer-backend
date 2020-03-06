@@ -3,7 +3,9 @@ package org.ergoplatform.explorer.clients.ergo
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.syntax.functor._
-import cats.{ApplicativeError, Monad}
+import cats.syntax.parallel._
+import cats.instances.list._
+import cats.{ApplicativeError, Monad, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -47,17 +49,20 @@ trait ErgoNetworkClient[F[_], S[_[_], _]] {
 
 object ErgoNetworkClient {
 
-  def apply[F[_]: Sync](
+  def apply[F[_]: Sync: Parallel](
     client: Client[F],
     masterNodesAddresses: NonEmptyList[UrlString]
   ): F[ErgoNetworkClient[F, Stream]] =
     Slf4jLogger
       .create[F]
-      .map(new Live[F](client, _, masterNodesAddresses))
+      .map { implicit logger =>
+        new Live[F](client, masterNodesAddresses)
+      }
 
-  final private class Live[F[_]: Sync: CRaise[*[_], TransactionDecodingFailed]](
+  final private class Live[
+    F[_]: Sync: Parallel: Logger: CRaise[*[_], TransactionDecodingFailed]
+  ](
     client: Client[F],
-    logger: Logger[F],
     masterNodesAddresses: NonEmptyList[UrlString]
   ) extends ErgoNetworkClient[F, Stream]
     with JsonCodecs {
@@ -101,14 +106,15 @@ object ErgoNetworkClient {
       }
 
     def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
-      retrying { url =>
-        client.expect[TxResponse](
-          Request[F](
-            Method.POST,
-            Uri.unsafeFromString(s"$url/transactions")
-          ).withEntity(tx)
-        ).void
-      }
+      masterNodesAddresses.toList.parTraverse { url =>
+        client
+          .expect[TxResponse](
+            Request[F](
+              Method.POST,
+              Uri.unsafeFromString(s"$url/transactions")
+            ).withEntity(tx)
+          )
+      }.void
 
     private def retrying[M[_]: Monad, A](
       f: UrlString => M[A]

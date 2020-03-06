@@ -42,7 +42,7 @@ lazy val grabber = utils
   .mkModule("chain-grabber", "ChainGrabber")
   .settings(commonSettings)
   .settings(
-    mainClass in assembly := Some("org.ergoplatform.explorer.Application"),
+    mainClass in assembly := Some("org.ergoplatform.explorer.grabber.Application"),
     libraryDependencies ++= dependencies.grabber ++ dependencies.CompilerPlugins
   )
   .dependsOn(core % allConfigDependency)
@@ -51,8 +51,17 @@ lazy val utxWatcher = utils
   .mkModule("utx-watcher", "UtxWatcher")
   .settings(commonSettings)
   .settings(
-    mainClass in assembly := Some("org.ergoplatform.explorer.Application"),
+    mainClass in assembly := Some("org.ergoplatform.explorer.watcher.Application"),
     libraryDependencies ++= dependencies.utxWatcher ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core)
+
+lazy val utxBroadcaster = utils
+  .mkModule("utx-broadcaster", "UtxBroadcaster")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.broadcaster.Application"),
+    libraryDependencies ++= dependencies.utxBroadcaster ++ dependencies.CompilerPlugins
   )
   .dependsOn(core)
 

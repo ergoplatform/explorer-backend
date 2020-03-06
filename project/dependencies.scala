@@ -144,4 +144,6 @@ object dependencies {
   lazy val grabber: List[ModuleID] = Monix
 
   lazy val utxWatcher: List[ModuleID] = Monix
+
+  lazy val utxBroadcaster: List[ModuleID] = Monix
 }

@@ -9,7 +9,7 @@ import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.http.api.settings.HttpSettings
+import org.ergoplatform.explorer.settings.HttpSettings
 import org.ergoplatform.explorer.http.api.v0.routes.{
   AddressesRoutes,
   AssetsRoutes,

@@ -1,7 +1,6 @@
-package org.ergoplatform.explorer.http.api.settings
+package org.ergoplatform.explorer.settings
 
 import cats.effect.Sync
-import org.ergoplatform.explorer.settings.{DbSettings, ProtocolSettings, RedisSettings, UtxCacheSettings}
 import pureconfig.ConfigSource
 import pureconfig.generic.auto._
 import pureconfig.module.catseffect._

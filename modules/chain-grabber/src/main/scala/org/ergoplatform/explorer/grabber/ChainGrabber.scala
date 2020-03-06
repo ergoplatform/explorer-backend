@@ -11,7 +11,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Monad, MonadError, Parallel, ~>}
+import cats.{~>, Monad, MonadError, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -35,17 +35,17 @@ final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
   D[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
 ](
-   lastBlockCache: Ref[F, Option[BlockInfo]],
-   settings: GrabberAppSettings,
-   networkService: ErgoNetworkClient[F, Stream],
-   headerRepo: HeaderRepo[D],
-   blockInfoRepo: BlockInfoRepo[D, Stream],
-   blockExtensionRepo: BlockExtensionRepo[D],
-   adProofRepo: AdProofRepo[D],
-   txRepo: TransactionRepo[D, Stream],
-   inputRepo: InputRepo[D],
-   outputRepo: OutputRepo[D, Stream],
-   assetRepo: AssetRepo[D, Stream]
+  lastBlockCache: Ref[F, Option[BlockInfo]],
+  settings: GrabberAppSettings,
+  network: ErgoNetworkClient[F, Stream],
+  headerRepo: HeaderRepo[D],
+  blockInfoRepo: BlockInfoRepo[D, Stream],
+  blockExtensionRepo: BlockExtensionRepo[D],
+  adProofRepo: AdProofRepo[D],
+  txRepo: TransactionRepo[D, Stream],
+  inputRepo: InputRepo[D],
+  outputRepo: OutputRepo[D, Stream],
+  assetRepo: AssetRepo[D, Stream]
 )(xa: D ~> F) {
 
   def run: Stream[F, Unit] =
@@ -62,7 +62,7 @@ final class ChainGrabber[
 
   private def grab: F[Unit] =
     for {
-      networkHeight <- networkService.getBestHeight
+      networkHeight <- network.getBestHeight
       localHeight   <- getLastGrabbedBlockHeight
       _             <- Logger[F].info(s"Current network height : $networkHeight")
       _             <- Logger[F].info(s"Current explorer height: $localHeight")
@@ -84,10 +84,10 @@ final class ChainGrabber[
     existingHeaderIds: List[Id] = List.empty
   ): F[D[List[BlockInfo]]] =
     for {
-      ids <- networkService.getBlockIdsAtHeight(height)
+      ids <- network.getBlockIdsAtHeight(height)
       apiBlocks <- ids
                     .filterNot(existingHeaderIds.contains)
-                    .parTraverse(networkService.getFullBlockById)
+                    .parTraverse(network.getFullBlockById)
                     .map {
                       _.flatten.map { block =>
                         block
@@ -165,14 +165,14 @@ object ChainGrabber {
     D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
   ](
     settings: GrabberAppSettings,
-    networkService: ErgoNetworkClient[F, Stream]
+    network: ErgoNetworkClient[F, Stream]
   )(xa: D ~> F): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).map { cache =>
         new ChainGrabber[F, D](
           cache,
           settings,
-          networkService,
+          network,
           HeaderRepo[D],
           BlockInfoRepo[D],
           BlockExtensionRepo[D],

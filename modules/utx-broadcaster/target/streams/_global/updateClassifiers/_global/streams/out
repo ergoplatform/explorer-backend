@@ -1,0 +1,4 @@
+[debug] "not up to date. inChanged = true, force = false
+[debug] Updating ProjectRef(uri("file:/Users/oskin/Desktop/Dev/scala_dev/explorer-backend/"), "utx-broadcaster")...
+[debug] Done updating ProjectRef(uri("file:/Users/oskin/Desktop/Dev/scala_dev/explorer-backend/"), "utx-broadcaster")
+[warn] There may be incompatibilities among your library dependencies; run 'evicted' to see detailed eviction warnings.
