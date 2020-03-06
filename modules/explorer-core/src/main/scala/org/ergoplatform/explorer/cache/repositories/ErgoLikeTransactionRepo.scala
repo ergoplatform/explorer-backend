@@ -16,12 +16,15 @@ import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.explorer.cache.redisInstances._
 import tofu.syntax.raise._
 import fs2.Stream
+import scorex.util.ModifierId
 
 trait ErgoLikeTransactionRepo[F[_], S[_[_], _]] {
 
   def put(tx: ErgoLikeTransaction): F[Unit]
 
   def getAll: S[F, ErgoLikeTransaction]
+
+  def delete(id: ModifierId): F[Unit]
 }
 
 object ErgoLikeTransactionRepo {
@@ -34,7 +37,9 @@ object ErgoLikeTransactionRepo {
       new Live[F](utxCacheSettings, redis)
     }
 
-  final private class Live[F[_]: Concurrent: Logger: CRaise[*[_], TxDeserializationFailed]](
+  final private class Live[
+    F[_]: Concurrent: Logger: CRaise[*[_], TxDeserializationFailed]
+  ](
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
   ) extends ErgoLikeTransactionRepo[F, Stream]
@@ -43,7 +48,7 @@ object ErgoLikeTransactionRepo {
     private val HashKey = "txs"
 
     def put(tx: ErgoLikeTransaction): F[Unit] =
-      redis.hSet(HashKey, tx.id.toString, tx.asJson.noSpaces)
+      redis.hSet(HashKey, tx.id, tx.asJson.noSpaces)
 
     def getAll: Stream[F, ErgoLikeTransaction] =
       Stream
@@ -58,5 +63,8 @@ object ErgoLikeTransactionRepo {
             .leftMap(_ => TxDeserializationFailed(rawTx))
             .toRaise[F]
         )
+
+    def delete(id: ModifierId): F[Unit] =
+      redis.hDel(HashKey, id)
   }
 }
