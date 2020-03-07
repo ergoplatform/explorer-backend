@@ -1,24 +1,23 @@
 package org.ergoplatform.explorer.cache.repositories
 
 import cats.effect.Concurrent
-import cats.syntax.functor._
-import cats.syntax.either._
 import cats.instances.list._
-import mouse.any._
-import io.circe.syntax._
-import io.circe.parser._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 import dev.profunktor.redis4cats.algebra.RedisCommands
+import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.ergoplatform.explorer.CRaise
-import org.ergoplatform.explorer.Err.UtxBroadcastingErr.TxDeserializationFailed
-import org.ergoplatform.{ErgoLikeTransaction, JsonCodecs}
-import org.ergoplatform.explorer.settings.UtxCacheSettings
+import io.circe.parser._
+import io.circe.syntax._
+import mouse.any._
 import org.ergoplatform.explorer.cache.redisInstances._
-import tofu.syntax.raise._
-import fs2.Stream
 import org.ergoplatform.explorer.cache.redisTransaction.Transaction
+import org.ergoplatform.explorer.settings.UtxCacheSettings
+import org.ergoplatform.{ErgoLikeTransaction, JsonCodecs}
 import scorex.util.ModifierId
+
+import scala.util.Try
 
 trait ErgoLikeTransactionRepo[F[_], S[_[_], _]] {
 
@@ -27,6 +26,8 @@ trait ErgoLikeTransactionRepo[F[_], S[_[_], _]] {
   def getAll: S[F, ErgoLikeTransaction]
 
   def delete(id: ModifierId): F[Unit]
+
+  def count: F[Int]
 }
 
 object ErgoLikeTransactionRepo {
@@ -40,21 +41,27 @@ object ErgoLikeTransactionRepo {
     }
 
   final private class Live[
-    F[_]: Concurrent: Logger: CRaise[*[_], TxDeserializationFailed]
+    F[_]: Concurrent: Logger
   ](
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
   ) extends ErgoLikeTransactionRepo[F, Stream]
     with JsonCodecs {
 
-    private val KeyPrefix = "txs"
+    private val KeyPrefix  = "txs"
+    private val CounterKey = "txs:count"
 
     def put(tx: ErgoLikeTransaction): F[Unit] =
       s"$KeyPrefix:${tx.id}" |> { key =>
-        Transaction(redis).run(
-          redis.append(key, tx.asJson.noSpaces),
-          redis.expire(key, utxCacheSettings.transactionTtl)
-        )
+        (redis.get(CounterKey) >>= { count =>
+          (count.flatMap(x => Try(x.toInt).toOption).getOrElse(0) + 1) |> { newCount =>
+            Transaction(redis).run(
+              redis.set(CounterKey, newCount.toString),
+              redis.append(key, tx.asJson.noSpaces),
+              redis.expire(key, utxCacheSettings.transactionTtl)
+            )
+          }
+        }) >> Logger[F].info(s"Unconfirmed transaction '${tx.id}' has been cached")
       }
 
     def getAll: Stream[F, ErgoLikeTransaction] =
@@ -64,14 +71,18 @@ object ErgoLikeTransactionRepo {
         .flatMap { ids =>
           Stream.evals(redis.mGet(ids.toList.toSet).map(_.values.toList))
         }
-        .evalMap(rawTx =>
+        .map(rawTx =>
           parse(rawTx)
             .flatMap(_.as[ErgoLikeTransaction])
-            .leftMap(_ => TxDeserializationFailed(rawTx))
-            .toRaise[F]
+            .toOption
         )
+        .unNone
 
     def delete(id: ModifierId): F[Unit] =
-      redis.hDel(KeyPrefix, id)
+      redis.hDel(KeyPrefix, id) >>
+      Logger[F].debug(s"Transaction '$id' removed from cache")
+
+    def count: F[Int] =
+      redis.get(CounterKey).map(_.flatMap(x => Try(x.toInt).toOption).getOrElse(0))
   }
 }

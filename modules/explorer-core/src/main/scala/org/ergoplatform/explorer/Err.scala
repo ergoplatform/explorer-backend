@@ -99,12 +99,4 @@ object Err {
         extends DexErr(details)
     }
   }
-
-  abstract class UtxBroadcastingErr(val msg: String) extends Err
-
-  object UtxBroadcastingErr {
-
-    final case class TxDeserializationFailed(raw: String)
-      extends ProcessingErr(s"Failed to deserialize transaction: $raw")
-  }
 }
