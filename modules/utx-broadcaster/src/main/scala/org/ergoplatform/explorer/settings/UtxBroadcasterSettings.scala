@@ -13,8 +13,7 @@ import scala.concurrent.duration.FiniteDuration
 final case class UtxBroadcasterSettings(
   masterNodesAddresses: NonEmptyList[UrlString],
   tickInterval: FiniteDuration,
-  redis: RedisSettings,
-  utxCache: UtxCacheSettings
+  redis: RedisSettings
 )
 
 object UtxBroadcasterSettings {
