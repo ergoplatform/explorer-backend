@@ -54,7 +54,7 @@ object ErgoLikeTransactionRepo {
     def put(tx: ErgoLikeTransaction): F[Unit] =
       s"$KeyPrefix:${tx.id}" |> { key =>
         (redis.get(CounterKey) >>= { count =>
-          (count.flatMap(x => Try(x.toInt).toOption).getOrElse(0) + 1) |> { newCount =>
+          (getCount(count) + 1) |> { newCount =>
             Transaction(redis).run(
               redis.set(CounterKey, newCount.toString),
               redis.append(key, tx.asJson.noSpaces),
@@ -79,10 +79,14 @@ object ErgoLikeTransactionRepo {
         .unNone
 
     def delete(id: ModifierId): F[Unit] =
-      redis.hDel(KeyPrefix, id) >>
-      Logger[F].debug(s"Transaction '$id' removed from cache")
+      (count >>= { c =>
+        Transaction(redis).run(redis.hDel(KeyPrefix, id), redis.set(CounterKey, (c - 1).toString))
+      }) >> Logger[F].debug(s"Transaction '$id' removed from cache")
 
     def count: F[Int] =
-      redis.get(CounterKey).map(_.flatMap(x => Try(x.toInt).toOption).getOrElse(0))
+      redis.get(CounterKey).map(getCount)
+
+    private def getCount(raw: Option[String]): Int =
+      raw.flatMap(x => Try(x.toInt).toOption).getOrElse(0)
   }
 }
