@@ -4,6 +4,7 @@ import cats.effect.Concurrent
 import cats.syntax.functor._
 import cats.syntax.either._
 import cats.instances.list._
+import mouse.any._
 import io.circe.syntax._
 import io.circe.parser._
 import dev.profunktor.redis4cats.algebra.RedisCommands
@@ -16,6 +17,7 @@ import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.explorer.cache.redisInstances._
 import tofu.syntax.raise._
 import fs2.Stream
+import org.ergoplatform.explorer.cache.redisTransaction.Transaction
 import scorex.util.ModifierId
 
 trait ErgoLikeTransactionRepo[F[_], S[_[_], _]] {
@@ -45,17 +47,22 @@ object ErgoLikeTransactionRepo {
   ) extends ErgoLikeTransactionRepo[F, Stream]
     with JsonCodecs {
 
-    private val HashKey = "txs"
+    private val KeyPrefix = "txs"
 
     def put(tx: ErgoLikeTransaction): F[Unit] =
-      redis.hSet(HashKey, tx.id, tx.asJson.noSpaces)
+      s"$KeyPrefix:${tx.id}" |> { key =>
+        Transaction(redis).run(
+          redis.append(key, tx.asJson.noSpaces),
+          redis.expire(key, utxCacheSettings.transactionTtl)
+        )
+      }
 
     def getAll: Stream[F, ErgoLikeTransaction] =
       Stream
-        .evals(redis.hKeys(HashKey))
+        .evals(redis.keys(s"$KeyPrefix:*"))
         .chunkN(100)
         .flatMap { ids =>
-          Stream.evals(redis.hmGet(HashKey, ids.toList: _*).map(_.values.toList))
+          Stream.evals(redis.mGet(ids.toList.toSet).map(_.values.toList))
         }
         .evalMap(rawTx =>
           parse(rawTx)
@@ -65,6 +72,6 @@ object ErgoLikeTransactionRepo {
         )
 
     def delete(id: ModifierId): F[Unit] =
-      redis.hDel(HashKey, id)
+      redis.hDel(KeyPrefix, id)
   }
 }
