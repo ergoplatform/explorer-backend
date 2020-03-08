@@ -7,10 +7,10 @@ lazy val commonSettings = Seq(
   resolvers += Resolver.sonatypeRepo("snapshots"),
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
-    case "logback.xml"                  => MergeStrategy.first
-    case "module-info.class"            => MergeStrategy.discard
-    case "io.netty.versions.properties" => MergeStrategy.first
-    case other                          => (assemblyMergeStrategy in assembly).value(other)
+    case "logback.xml"                                => MergeStrategy.first
+    case "module-info.class"                          => MergeStrategy.discard
+    case other if other.contains("io.netty.versions") => MergeStrategy.first
+    case other                                        => (assemblyMergeStrategy in assembly).value(other)
   }
 )
 
