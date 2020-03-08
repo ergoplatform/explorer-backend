@@ -20,7 +20,7 @@ object Redis {
   ): Resource[F, RedisCommands[F, String, String]] =
     for {
       implicit0(log: Log[F]) <- Resource.liftF(Slf4jLogger.create.map(logInstance(_)))
-      uri                    <- Resource.liftF(RedisURI.make[F](settings.url.unwrapped))
+      uri                    <- Resource.liftF(RedisURI.make[F](settings.url))
       client                 <- RedisClient[F](uri)
       cmd                    <- RedisI[F, String, String](client, RedisCodec.Utf8)
     } yield cmd
