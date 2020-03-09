@@ -1,6 +1,5 @@
 package org.ergoplatform.explorer
 
-import io.circe.Json
 import scorex.util.encode.Base16
 import sigmastate.Values.ErgoTree
 

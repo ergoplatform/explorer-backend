@@ -2,19 +2,20 @@ package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.effect.{ContextShift, Sync}
 import cats.syntax.semigroupk._
-import cats.syntax.functor._
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.ergoplatform.explorer.http.api.syntax.applicativeThrow._
+import org.ergoplatform.explorer.http.api.ApiErr
+import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
+import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v0.services.DexService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class DexRoutes[F[_]: Sync: ContextShift: Logger](
+final class DexRoutes[F[_]: Sync: ContextShift](
   service: DexService[F, fs2.Stream]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DexEndpointsDefs._
+
+  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] =
     getUnspentSellOrdersR <+> getUnspentBuyOrdersR
@@ -22,13 +23,23 @@ final class DexRoutes[F[_]: Sync: ContextShift: Logger](
   private def getUnspentSellOrdersR: HttpRoutes[F] =
     getUnspentSellOrdersDef.toRoutes {
       case (tokenId, paging) =>
-        service.getUnspentSellOrders(tokenId, paging).compile.toList.attemptApi
+        service
+          .getUnspentSellOrders(tokenId, paging)
+          .compile
+          .toList
+          .adaptThrowable
+          .value
     }
 
   private def getUnspentBuyOrdersR: HttpRoutes[F] =
     getUnspentBuyOrdersDef.toRoutes {
       case (tokenId, paging) =>
-        service.getUnspentBuyOrders(tokenId, paging).compile.toList.attemptApi
+        service
+          .getUnspentBuyOrders(tokenId, paging)
+          .compile
+          .toList
+          .adaptThrowable
+          .value
     }
 }
 
@@ -36,8 +47,6 @@ object DexRoutes {
 
   def apply[F[_]: Sync: ContextShift](
     service: DexService[F, fs2.Stream]
-  ): F[HttpRoutes[F]] =
-    Slf4jLogger.create.map { implicit logger =>
-      new DexRoutes(service).routes
-    }
+  ): HttpRoutes[F] =
+    new DexRoutes(service).routes
 }

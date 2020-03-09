@@ -49,7 +49,7 @@ object OutputQuerySet extends QuerySet {
          |where o.box_id = $boxId
          |""".stripMargin.query[ExtendedOutput]
 
-  def getByErgoTree(
+  def getMainByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
@@ -69,7 +69,7 @@ object OutputQuerySet extends QuerySet {
          |  i.tx_id
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |where o.ergo_tree = $ergoTree
+         |where o.ergo_tree = $ergoTree and o.main_chain = true
          |""".stripMargin.query[ExtendedOutput]
 
   def getAllMainUnspentIdsByErgoTree(

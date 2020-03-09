@@ -16,15 +16,15 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
 
   override def getByBoxId(boxId: BoxId): F[Option[ExtendedOutput]] = ???
 
-  override def getAllByErgoTree(ergoTree: HexString): F[scala.List[ExtendedOutput]] = ???
+  override def getAllMainByErgoTree(ergoTree: HexString): F[scala.List[ExtendedOutput]] = ???
 
-  override def getByErgoTree(
+  override def getMainByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
-  override def getAllMainUnspentByErgoTree(
+  override def getMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int

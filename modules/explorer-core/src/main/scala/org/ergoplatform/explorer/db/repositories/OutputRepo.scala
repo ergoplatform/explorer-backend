@@ -31,11 +31,11 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all outputs with a given `ergoTree` from persistence.
     */
-  def getAllByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]]
+  def getAllMainByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]]
 
   /** Get outputs with a given `ergoTree` from persistence.
     */
-  def getByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
+  def getMainByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
 
   /** Get all unspent main-chain outputs with a given `ergoTree` from persistence.
     */
@@ -47,7 +47,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
-  def getAllMainUnspentByErgoTree(
+  def getMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
@@ -118,17 +118,17 @@ object OutputRepo {
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
       QS.getByBoxId(boxId).option.liftConnectionIO
 
-    def getAllByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
-      QS.getByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue)
+    def getAllMainByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
+      QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue)
         .to[List]
         .liftConnectionIO
 
-    def getByErgoTree(
+    def getMainByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
-      QS.getByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
+      QS.getMainByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
     def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): D[List[BoxId]] =
       QS.getAllMainUnspentIdsByErgoTree(ergoTree)
@@ -138,7 +138,7 @@ object OutputRepo {
     def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long] =
       QS.sumOfAllMainUnspentByErgoTree(ergoTree).unique.liftConnectionIO
 
-    def getAllMainUnspentByErgoTree(
+    def getMainUnspentByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int

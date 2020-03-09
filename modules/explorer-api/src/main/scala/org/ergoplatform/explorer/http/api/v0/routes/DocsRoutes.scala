@@ -3,9 +3,6 @@ package org.ergoplatform.explorer.http.api.v0.routes
 import cats.effect.{ContextShift, Sync}
 import cats.syntax.applicative._
 import cats.syntax.either._
-import cats.syntax.functor._
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.v0.defs._
 import org.http4s.HttpRoutes
@@ -13,7 +10,7 @@ import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.server.http4s._
 
-final class DocsRoutes[F[_]: Sync: ContextShift: Logger] {
+final class DocsRoutes[F[_]: Sync: ContextShift] {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DocsEndpointDefs._
 
@@ -25,6 +22,10 @@ final class DocsRoutes[F[_]: Sync: ContextShift: Logger] {
     BlocksEndpointDefs.endpoints ++
     DexEndpointsDefs.endpoints ++
     TransactionsEndpointDefs.endpoints ++
+    BoxesEndpointDefs.endpoints ++
+    SearchEndpointDefs.endpoints ++
+    InfoEndpointDefs.endpoints ++
+    StatsEndpointDefs.endpoints ++
     DocsEndpointDefs.endpoints
 
   private def openApiSpecR: HttpRoutes[F] =
@@ -39,8 +40,6 @@ final class DocsRoutes[F[_]: Sync: ContextShift: Logger] {
 
 object DocsRoutes {
 
-  def apply[F[_]: Sync: ContextShift]: F[HttpRoutes[F]] =
-    Slf4jLogger.create.map { implicit logger =>
-      new DocsRoutes[F].routes
-    }
+  def apply[F[_]: Sync: ContextShift]: HttpRoutes[F] =
+    new DocsRoutes[F].routes
 }

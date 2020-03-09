@@ -64,7 +64,7 @@ object AddressesService {
     def getAddressInfo(address: Address): F[AddressInfo] =
       (for {
         ergoTree      <- utils.addressToErgoTreeHex(address)
-        outs          <- outputRepo.getAllByErgoTree(ergoTree)
+        outs          <- outputRepo.getAllMainByErgoTree(ergoTree)
         unspentOutIds <- outputRepo.getAllMainUnspentIdsByErgoTree(ergoTree)
         balance       <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree)
         assets <- unspentOutIds.toNel

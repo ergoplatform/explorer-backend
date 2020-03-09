@@ -5,27 +5,29 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.semigroupk._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.ergoplatform.explorer.http.api.ApiErr
+import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.models.Items
-import org.ergoplatform.explorer.http.api.syntax.applicativeThrow._
+import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v0.services.{AddressesService, TransactionsService}
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class AddressesRoutes[F[_]: Sync: ContextShift: Logger](
+final class AddressesRoutes[F[_]: Sync: ContextShift](
   addressesService: AddressesService[F, Stream],
   transactionsService: TransactionsService[F, Stream]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.AddressesEndpointDefs._
 
+  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
+
   val routes: HttpRoutes[F] =
     getAddressR <+> getTxsByAddressR <+> getAssetHoldersR
 
   def getAddressR: HttpRoutes[F] =
     getAddressDef.toRoutes { address =>
-      addressesService.getAddressInfo(address).attemptApi
+      addressesService.getAddressInfo(address).adaptThrowable.value
     }
 
   def getTxsByAddressR: HttpRoutes[F] =
@@ -39,7 +41,8 @@ final class AddressesRoutes[F[_]: Sync: ContextShift: Logger](
               .compile
               .toList
               .map(Items(_, totalNumTxs))
-              .attemptApi
+              .adaptThrowable
+              .value
           }
     }
 
@@ -50,7 +53,8 @@ final class AddressesRoutes[F[_]: Sync: ContextShift: Logger](
           .getAssetHoldersAddresses(tokenId, paging)
           .compile
           .toList
-          .attemptApi
+          .adaptThrowable
+          .value
     }
 }
 
@@ -59,8 +63,6 @@ object AddressesRoutes {
   def apply[F[_]: Sync: ContextShift](
     addressesService: AddressesService[F, Stream],
     transactionsService: TransactionsService[F, Stream]
-  ): F[HttpRoutes[F]] =
-    Slf4jLogger.create.map { implicit logger =>
-      new AddressesRoutes(addressesService, transactionsService).routes
-    }
+  ): HttpRoutes[F] =
+    new AddressesRoutes(addressesService, transactionsService).routes
 }

@@ -21,7 +21,7 @@ package object defs {
           ),
           statusMapping(
             StatusCode.BadRequest,
-            jsonBody[ApiErr.BadInput].description("Bad request")
+            jsonBody[ApiErr.BadRequest].description("Bad request")
           ),
           statusDefaultMapping(jsonBody[ApiErr.UnknownErr].description("Unknown error"))
         )

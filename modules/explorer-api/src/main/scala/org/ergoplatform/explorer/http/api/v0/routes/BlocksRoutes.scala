@@ -5,20 +5,21 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.semigroupk._
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.explorer.http.api.ApiErr
+import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.models.Items
+import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v0.services.BlockChainService
-import org.ergoplatform.explorer.http.api.syntax.applicativeThrow._
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class BlocksRoutes[F[_]: Sync: ContextShift: Logger](
+final class BlocksRoutes[F[_]: Sync: ContextShift](
   service: BlockChainService[F, fs2.Stream]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.BlocksEndpointDefs._
+
+  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] =
     getBlocksR <+> getBlockSummaryByIdR
@@ -32,7 +33,8 @@ final class BlocksRoutes[F[_]: Sync: ContextShift: Logger](
             .compile
             .toList // API v0 format does not allow to use streaming
             .map(Items(_, maxHeight))
-            .attemptApi
+            .adaptThrowable
+            .value
         }
     }
 
@@ -41,7 +43,8 @@ final class BlocksRoutes[F[_]: Sync: ContextShift: Logger](
       service
         .getBlockSummaryById(id)
         .flatMap(_.liftTo[F](ApiErr.NotFound(s"Block with id: $id")))
-        .attemptApi
+        .adaptThrowable
+        .value
     }
 }
 
@@ -49,8 +52,6 @@ object BlocksRoutes {
 
   def apply[F[_]: Sync: ContextShift](
     service: BlockChainService[F, fs2.Stream]
-  ): F[HttpRoutes[F]] =
-    Slf4jLogger.create.map { implicit logger =>
-      new BlocksRoutes(service).routes
-    }
+  ): HttpRoutes[F] =
+    new BlocksRoutes(service).routes
 }

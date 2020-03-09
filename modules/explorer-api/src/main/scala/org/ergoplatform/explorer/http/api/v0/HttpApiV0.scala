@@ -14,6 +14,7 @@ import org.ergoplatform.explorer.http.api.v0.routes.{
   AddressesRoutes,
   AssetsRoutes,
   BlocksRoutes,
+  BoxesRoutes,
   DexRoutes,
   DocsRoutes,
   InfoRoutes,
@@ -25,6 +26,7 @@ import org.ergoplatform.explorer.http.api.v0.services.{
   AddressesService,
   AssetsService,
   BlockChainService,
+  BoxesService,
   DexService,
   StatsService,
   TransactionsService
@@ -52,21 +54,20 @@ object HttpApiV0 {
     for {
       blockChainService <- Resource.liftF(BlockChainService(trans))
       txsService        <- Resource.liftF(TransactionsService(utxCacheSettings, redis)(trans))
-      blockRoutes       <- Resource.liftF(BlocksRoutes(blockChainService))
-      assetRoutes       <- Resource.liftF(AssetsRoutes(AssetsService(trans)))
-      dexRoutes         <- Resource.liftF(DexRoutes(DexService(trans)))
-      txRoutes          <- Resource.liftF(TransactionsRoutes(txsService))
-      addressRoutes     <- Resource.liftF(AddressesRoutes(AddressesService(trans), txsService))
-      statsService = StatsService(protocolSettings)(trans)
-      infoRoutes  <- Resource.liftF(InfoRoutes(statsService))
-      statsRoutes <- Resource.liftF(StatsRoutes(statsService))
-      docsRoutes  <- Resource.liftF(DocsRoutes[F])
-      searchRoutes <- Resource.liftF(
-                       SearchRoutes(blockChainService, txsService, AddressesService(trans))
-                     )
+      blockRoutes   = BlocksRoutes(blockChainService)
+      assetRoutes   = AssetsRoutes(AssetsService(trans))
+      dexRoutes     = DexRoutes(DexService(trans))
+      txRoutes      = TransactionsRoutes(txsService)
+      addressRoutes = AddressesRoutes(AddressesService(trans), txsService)
+      statsService  = StatsService(protocolSettings)(trans)
+      infoRoutes    = InfoRoutes(statsService)
+      statsRoutes   = StatsRoutes(statsService)
+      docsRoutes    = DocsRoutes[F]
+      searchRoutes  = SearchRoutes(blockChainService, txsService, AddressesService(trans))
+      boxesRoutes   = BoxesRoutes(BoxesService(trans))
 
       routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
-      addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes
+      addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
                .withHttpApp(Router("/" -> routes).orNotFound)
