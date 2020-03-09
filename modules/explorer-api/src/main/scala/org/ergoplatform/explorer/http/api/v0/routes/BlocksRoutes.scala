@@ -13,13 +13,11 @@ import org.ergoplatform.explorer.http.api.v0.services.BlockChainService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class BlocksRoutes[F[_]: Sync: ContextShift](
-  service: BlockChainService[F, fs2.Stream]
-) {
+final class BlocksRoutes[
+  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+](service: BlockChainService[F, fs2.Stream]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.BlocksEndpointDefs._
-
-  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] =
     getBlocksR <+> getBlockSummaryByIdR

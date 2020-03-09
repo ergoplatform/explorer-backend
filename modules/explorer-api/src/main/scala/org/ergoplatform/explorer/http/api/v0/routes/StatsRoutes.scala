@@ -8,11 +8,11 @@ import org.ergoplatform.explorer.http.api.v0.services.StatsService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class StatsRoutes[F[_]: Sync: ContextShift](service: StatsService[F]) {
+final class StatsRoutes[
+  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+](service: StatsService[F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.StatsEndpointDefs._
-
-  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] = getCurrentStatsR
 

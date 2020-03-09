@@ -13,14 +13,14 @@ import org.ergoplatform.explorer.http.api.v0.services.{AddressesService, Transac
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class AddressesRoutes[F[_]: Sync: ContextShift](
+final class AddressesRoutes[
+  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+](
   addressesService: AddressesService[F, Stream],
   transactionsService: TransactionsService[F, Stream]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.AddressesEndpointDefs._
-
-  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] =
     getAddressR <+> getTxsByAddressR <+> getAssetHoldersR

@@ -12,13 +12,11 @@ import org.ergoplatform.explorer.http.api.v0.services.BoxesService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class BoxesRoutes[F[_]: Sync: ContextShift](
-  service: BoxesService[F, fs2.Stream]
-) {
+final class BoxesRoutes[
+  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+](service: BoxesService[F, fs2.Stream]) {
 
   import BoxesEndpointDefs._
-
-  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] =
     getOutputByIdR <+> getOutputsByErgoTreeR <+> getUnspentOutputsByErgoTreeR <+>

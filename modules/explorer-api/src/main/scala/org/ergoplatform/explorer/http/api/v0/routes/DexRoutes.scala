@@ -9,13 +9,11 @@ import org.ergoplatform.explorer.http.api.v0.services.DexService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class DexRoutes[F[_]: Sync: ContextShift](
-  service: DexService[F, fs2.Stream]
-) {
+final class DexRoutes[
+  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+](service: DexService[F, fs2.Stream]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DexEndpointsDefs._
-
-  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] =
     getUnspentSellOrdersR <+> getUnspentBuyOrdersR

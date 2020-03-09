@@ -15,15 +15,15 @@ import org.ergoplatform.explorer.http.api.v0.services.{
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class SearchRoutes[F[_]: Sync: ContextShift](
+final class SearchRoutes[
+  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+](
   blocksService: BlockChainService[F, fs2.Stream],
   txsService: TransactionsService[F, fs2.Stream],
   addressesService: AddressesService[F, fs2.Stream]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.SearchEndpointDefs._
-
-  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] = searchR
 

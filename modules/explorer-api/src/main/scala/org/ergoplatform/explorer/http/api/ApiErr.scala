@@ -1,13 +1,11 @@
 package org.ergoplatform.explorer.http.api
 
-import cats.Applicative
-import cats.data.EitherT
+import cats.ApplicativeError
 import io.circe.generic.auto._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import sttp.tapir.json.circe._
 import sttp.tapir.{CodecForOptional, CodecFormat, Schema}
-import tofu.HandleTo
 
 import scala.util.control.NoStackTrace
 
@@ -36,9 +34,7 @@ object ApiErr {
     )
 
   implicit def adaptThrowable[F[_]](
-    implicit
-    F: Applicative[F],
-    H: HandleTo[F, EitherT[F, ApiErr, *], Throwable]
+    implicit A: ApplicativeError[F, Throwable]
   ): AdaptThrowableEitherT[F, ApiErr] =
     new AdaptThrowableEitherT[F, ApiErr] {
       final def adapter: Throwable => ApiErr = {

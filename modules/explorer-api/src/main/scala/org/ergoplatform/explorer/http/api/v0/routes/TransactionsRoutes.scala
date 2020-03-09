@@ -12,13 +12,11 @@ import org.ergoplatform.explorer.http.api.v0.services.TransactionsService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class TransactionsRoutes[F[_]: Sync: ContextShift](
-  service: TransactionsService[F, Stream]
-) {
+final class TransactionsRoutes[
+  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+](service: TransactionsService[F, Stream]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.TransactionsEndpointDefs._
-
-  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] =
     getTxByIdR <+> getUnconfirmedTxByIdR <+> getTxsSinceR

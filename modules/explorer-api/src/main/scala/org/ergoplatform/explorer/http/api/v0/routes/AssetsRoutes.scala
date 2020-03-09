@@ -10,13 +10,11 @@ import org.ergoplatform.explorer.http.api.v0.services.AssetsService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
-final class AssetsRoutes[F[_]: Sync: ContextShift](
-  service: AssetsService[F, fs2.Stream]
-) {
+final class AssetsRoutes[
+  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+](service: AssetsService[F, fs2.Stream]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.AssetsEndpointDefs._
-
-  implicit private val adapt: AdaptThrowableEitherT[F, ApiErr] = implicitly
 
   val routes: HttpRoutes[F] =
     getAllIssuingBoxesR <+> getIssuingBoxR
