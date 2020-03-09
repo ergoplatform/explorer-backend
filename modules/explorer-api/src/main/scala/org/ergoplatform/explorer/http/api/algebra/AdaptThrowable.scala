@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.algebra
 import cats.ApplicativeError
 import cats.data.EitherT
 
-/** Adapt effect throwing any [[Throwable]] to some effect throwing narrower error type `E`.
+/** Adapt effect which can fail with any [[Throwable]] to some effect with narrower static error type `E`.
   */
 trait AdaptThrowable[F[_], G[_, _], E] {
 
