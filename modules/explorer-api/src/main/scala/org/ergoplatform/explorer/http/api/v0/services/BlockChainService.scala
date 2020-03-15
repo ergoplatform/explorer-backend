@@ -12,6 +12,7 @@ import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
+import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -35,13 +36,17 @@ trait BlockChainService[F[_], S[_[_], _]] {
     */
   def getBlockSummaryById(id: Id): F[Option[BlockSummary]]
 
-  /** Get a slice block info items.
+  /** Get a slice of block info items.
     */
   def getBlocks(paging: Paging, sorting: Sorting): S[F, BlockInfo]
 
   /** Get all blocks with id matching a given `query`.
     */
   def getBlocksByIdLike(query: String): F[List[BlockInfo]]
+
+  /** Get ids of all blocks at the given `height`.
+    */
+  def getBlockIdsAtHeight(height: Int): F[List[Id]]
 }
 
 object BlockChainService {
@@ -112,6 +117,9 @@ object BlockChainService {
       blockInfoRepo
         .getManyByIdLike(query)
         .map(_.map(BlockInfo(_))) ||> trans.xa
+
+    def getBlockIdsAtHeight(height: Height): F[List[Id]] =
+      blockInfoRepo.getBlocksAt(height) ||> trans.xa
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {

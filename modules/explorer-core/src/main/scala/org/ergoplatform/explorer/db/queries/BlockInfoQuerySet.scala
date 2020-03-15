@@ -117,6 +117,13 @@ object BlockInfoQuerySet extends QuerySet {
     sql"select block_size from blocks_info where header_id = $id"
       .query[Int]
 
+  def getBlocksAt(height: Int): Query0[Id] =
+    sql"""
+         |select height from node_headers
+         |where height = $height
+         |order by main_chain desc
+         |""".stripMargin.query[Id]
+
   def totalDifficultySince(ts: Long): Query0[Long] =
     sql"""
          |select coalesce(cast(sum(difficulty) as bigint), 0) from blocks_info

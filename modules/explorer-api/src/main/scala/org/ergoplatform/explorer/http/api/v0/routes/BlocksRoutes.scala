@@ -20,7 +20,7 @@ final class BlocksRoutes[
   import org.ergoplatform.explorer.http.api.v0.defs.BlocksEndpointDefs._
 
   val routes: HttpRoutes[F] =
-    getBlocksR <+> getBlockSummaryByIdR
+    getBlocksR <+> getBlockSummaryByIdR <+> getBlockIdsAtHeightR
 
   private def getBlocksR: HttpRoutes[F] =
     getBlocksDef.toRoutes {
@@ -41,6 +41,14 @@ final class BlocksRoutes[
       service
         .getBlockSummaryById(id)
         .flatMap(_.liftTo[F](ApiErr.NotFound(s"Block with id: $id")))
+        .adaptThrowable
+        .value
+    }
+
+  private def getBlockIdsAtHeightR: HttpRoutes[F] =
+    getBlockIdsAtHeightDef.toRoutes { height =>
+      service
+        .getBlockIdsAtHeight(height)
         .adaptThrowable
         .value
     }
