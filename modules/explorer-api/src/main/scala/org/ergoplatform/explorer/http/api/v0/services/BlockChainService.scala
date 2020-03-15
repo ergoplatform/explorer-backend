@@ -119,7 +119,9 @@ object BlockChainService {
         .map(_.map(BlockInfo(_))) ||> trans.xa
 
     def getBlockIdsAtHeight(height: Height): F[List[Id]] =
-      blockInfoRepo.getBlocksAt(height) ||> trans.xa
+      headerRepo
+        .getAllByHeight(height)
+        .map(_.map(_.id)) ||> trans.xa
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {

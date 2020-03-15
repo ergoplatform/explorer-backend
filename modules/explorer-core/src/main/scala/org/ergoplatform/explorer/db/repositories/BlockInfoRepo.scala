@@ -42,10 +42,6 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
     */
   def getBlockSize(id: Id): D[Option[Int]]
 
-  /** Get all blocks at the given `height`.
-    */
-  def getBlocksAt(height: Int): D[List[Id]]
-
   def totalDifficultySince(ts: Long): D[Long]
 
   def circulatingSupplySince(ts: Long): D[Long]
@@ -100,9 +96,6 @@ object BlockInfoRepo {
 
     def getBlockSize(id: Id): D[Option[Int]] =
       QS.getBlockSize(id).option.liftConnectionIO
-
-    def getBlocksAt(height: Int): D[List[Id]] =
-      QS.getBlocksAt(height).to[List].liftConnectionIO
 
     def totalDifficultySince(ts: Long): D[Long] =
       QS.totalDifficultySince(ts).unique.liftConnectionIO
