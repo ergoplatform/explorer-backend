@@ -7,6 +7,7 @@ import org.ergoplatform.explorer.{HexString, Id}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc
 final case class AdProofInfo(
   headerId: Id,
   proofBytes: HexString,

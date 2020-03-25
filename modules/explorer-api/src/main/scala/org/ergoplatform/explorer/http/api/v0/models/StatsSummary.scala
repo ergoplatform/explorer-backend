@@ -7,6 +7,7 @@ import sttp.tapir.generic.Derived
 
 import scala.math.BigDecimal
 
+// TODO ScalaDoc including all fields
 final case class StatsSummary(
   blocksCount: Long,
   blocksAvgTime: Long,

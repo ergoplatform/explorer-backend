@@ -7,13 +7,15 @@ import org.ergoplatform.explorer.db.models.{UAsset, UOutput}
 import sttp.tapir.{Schema, SchemaType}
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc
+// in particular what U means?
 final case class UOutputInfo(
   boxId: BoxId,
   value: Long,
   creationHeight: Int,
   ergoTree: HexString,
   assets: List[AssetInfo],
-  additionalRegisters: Json
+  additionalRegisters: Json // TODO ScalaDoc: structure of the content
 )
 
 object UOutputInfo {

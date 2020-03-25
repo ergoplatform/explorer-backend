@@ -6,6 +6,7 @@ import org.ergoplatform.explorer.Id
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc
 final case class BlockReferencesInfo(previousId: Id, nextId: Option[Id])
 
 object BlockReferencesInfo {

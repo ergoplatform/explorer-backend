@@ -9,7 +9,7 @@ import sttp.tapir.generic.Derived
 
 final case class FullBlockInfo(
   headerInfo: HeaderInfo,
-  transactionsInfo: List[TransactionInfo],
+  transactionsInfo: List[TransactionInfo],  // TODO optimize: consider using Seq
   extension: BlockExtensionInfo,
   adProof: Option[AdProofInfo]
 )

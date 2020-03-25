@@ -6,6 +6,7 @@ import org.ergoplatform.explorer.Address
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc
 final case class MinerInfo(addressId: Address, name: String)
 
 object MinerInfo {

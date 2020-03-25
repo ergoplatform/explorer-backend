@@ -8,6 +8,7 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc: in particular where is ergAmount, and the other DEX semantics?
 final case class DexBuyOrderInfo(
   outputInfo: OutputInfo,
   tokenId: TokenId,

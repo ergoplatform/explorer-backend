@@ -7,9 +7,10 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc
 final case class DexSellOrderInfo(
   outputInfo: OutputInfo,
-  tokenPrice: Long
+  tokenPrice: Long  // TODO refactor: the name is misleading (it should be ergAmount)
 )
 
 object DexSellOrderInfo {

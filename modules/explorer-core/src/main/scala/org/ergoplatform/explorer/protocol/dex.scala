@@ -30,6 +30,7 @@ object dex {
   private val BuyContractTokenIdIndexInConstants     = 6
   private val BuyContractTokenAmountIndexInConstants = 8
 
+  // TODO ScalaDoc
   def sellContractInstance[F[_]: CRaise[*[_], DexContractInstantiationFailed]: Applicative](
     tokensPrice: Long
   ): F[ErgoTree] = {
@@ -42,6 +43,7 @@ object dex {
       .toRaise
   }
 
+  // TODO ScalaDoc
   def sellContractTemplate[F[_]: CRaise[*[_], DexErr]: CRaise[*[_], RefinementFailed]: Monad]
     : F[HexString] =
     // parameter values does not matter, we're extracting ErgoTree template (with placeholders in places of values)
@@ -49,6 +51,7 @@ object dex {
       .flatMap(ergoTreeTemplateBytes[F])
       .flatMap(bytes => HexString.fromString(Base16.encode(bytes)))
 
+  // TODO ScalaDoc
   def buyContractInstance[
     F[_]: CRaise[*[_], DexContractInstantiationFailed]: CRaise[*[_], Base16DecodingFailed]: Monad
   ](
@@ -72,6 +75,7 @@ object dex {
         .toRaise
     }
 
+  // TODO ScalaDoc
   def buyContractTemplate[
     F[_]: CRaise[*[_], DexErr]: CRaise[*[_], RefinementFailed]: Monad
   ]: F[HexString] =

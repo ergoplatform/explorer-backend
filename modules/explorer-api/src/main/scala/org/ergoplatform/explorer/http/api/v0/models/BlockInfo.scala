@@ -10,10 +10,10 @@ import sttp.tapir.generic.Derived
 final case class BlockInfo(
   id: Id,
   height: Int,
-  timestamp: Long,
+  timestamp: Long, // TODO ScalaDoc: there are different kinds of timestamps (which one is this?)
   transactionsCount: Int,
   miner: MinerInfo,
-  size: Int,
+  size: Int,       // TODO ScalaDoc: what kind of size?
   difficulty: Long,
   minerReward: Long
 )

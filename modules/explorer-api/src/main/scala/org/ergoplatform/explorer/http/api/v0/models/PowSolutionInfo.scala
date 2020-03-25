@@ -6,6 +6,8 @@ import org.ergoplatform.explorer.HexString
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc
+// in particular format of `d` is unclear
 final case class PowSolutionInfo(pk: HexString, w: HexString, n: HexString, d: String)
 
 object PowSolutionInfo {

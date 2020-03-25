@@ -8,6 +8,7 @@ import org.ergoplatform.explorer.{Id, TxId}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc
 final case class TransactionInfo(
   id: TxId,
   headerId: Id,

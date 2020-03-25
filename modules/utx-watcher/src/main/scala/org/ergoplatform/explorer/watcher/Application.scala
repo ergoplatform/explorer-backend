@@ -13,6 +13,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext.global
 
+// TODO ScalaDoc: what this application is doing?
 object Application extends TaskApp {
 
   def run(args: List[String]): Task[ExitCode] =

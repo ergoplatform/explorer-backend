@@ -55,7 +55,7 @@ object Err {
       object ContractParsingErr {
 
         final case class Base16DecodingFailed(
-          string: HexString,
+          string: HexString,  // TODO refactor: string -> hexString
           reasonOpt: Option[String] = None
         ) extends ContractParsingErr(
             s"Failed to decode Base16: `$string`" + reasonOpt

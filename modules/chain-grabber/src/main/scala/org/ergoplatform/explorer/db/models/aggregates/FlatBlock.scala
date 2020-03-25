@@ -20,7 +20,7 @@ final case class FlatBlock(
   header: Header,
   info: BlockInfo,
   extension: BlockExtension,
-  adProofOpt: Option[AdProof],
+  adProofOpt: Option[AdProof], // TODO ScalaDoc: what None means
   txs: List[Transaction],
   inputs: List[Input],
   outputs: List[Output],

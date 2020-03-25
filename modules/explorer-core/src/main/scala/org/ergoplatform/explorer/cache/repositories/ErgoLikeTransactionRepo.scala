@@ -19,6 +19,7 @@ import scorex.util.ModifierId
 
 import scala.util.Try
 
+// TODO ScalaDoc
 trait ErgoLikeTransactionRepo[F[_], S[_[_], _]] {
 
   def put(tx: ErgoLikeTransaction): F[Unit]

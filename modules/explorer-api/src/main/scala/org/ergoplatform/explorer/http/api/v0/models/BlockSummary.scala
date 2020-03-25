@@ -5,6 +5,7 @@ import io.circe.generic.semiauto.deriveCodec
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
+// TODO ScalaDoc: responsibility of this class?
 final case class BlockSummary(info: FullBlockInfo, references: BlockReferencesInfo)
 
 object BlockSummary {

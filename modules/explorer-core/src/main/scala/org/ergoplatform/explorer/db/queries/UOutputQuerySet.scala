@@ -8,6 +8,7 @@ import doobie.Fragments.in
 import org.ergoplatform.explorer.{HexString, TxId}
 import org.ergoplatform.explorer.db.models.UOutput
 
+// TODO ScalaDoc: in particular what U means?
 object UOutputQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.db.doobieInstances._

@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
 
+// TODO ScalaDoc
 final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
   settings: UtxBroadcasterSettings,
   network: ErgoNetworkClient[F, Stream],

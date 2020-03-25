@@ -7,6 +7,7 @@ import doobie.util.query.Query0
 import org.ergoplatform.explorer.BoxId
 import org.ergoplatform.explorer.db.models.UAsset
 
+// TODO ScalaDoc: in particular what U means?
 object UAssetQuerySet extends QuerySet {
 
   val tableName: String = "node_u_assets"
