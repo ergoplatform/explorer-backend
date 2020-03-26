@@ -8,7 +8,6 @@ import doobie.util.query.Query0
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.UInput
 
-// TODO ScalaDoc: in particular what U means?
 object UInputQuerySet extends QuerySet {
 
   import org.ergoplatform.explorer.db.doobieInstances._

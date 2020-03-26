@@ -7,7 +7,6 @@ import org.ergoplatform.explorer.{HexString, Id}
 import sttp.tapir.{Schema, SchemaType}
 import sttp.tapir.generic.Derived
 
-// TODO ScalaDoc
 final case class BlockExtensionInfo(
   headerId: Id,
   digest: HexString,

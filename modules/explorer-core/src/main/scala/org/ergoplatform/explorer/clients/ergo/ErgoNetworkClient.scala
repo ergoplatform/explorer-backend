@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.clients.ergo
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.syntax.functor._
+import cats.syntax.flatMap._
 import cats.syntax.parallel._
 import cats.instances.list._
 import cats.{ApplicativeError, Monad, Parallel}
@@ -68,7 +69,7 @@ object ErgoNetworkClient {
     with JsonCodecs {
 
     def getBestHeight: F[Int] =
-      retrying { url =>
+      retrying(Logger[F].error) { url =>
         client
           .expect[ApiNodeInfo](
             makeGetRequest(s"$url/info")
@@ -77,21 +78,21 @@ object ErgoNetworkClient {
       }
 
     def getBlockIdsAtHeight(height: Int): F[List[Id]] =
-      retrying { url =>
+      retrying(Logger[F].error) { url =>
         client.expect[List[Id]](
           makeGetRequest(s"$url/blocks/at/$height")
         )
       }
 
     def getFullBlockById(id: Id): F[Option[ApiFullBlock]] =
-      retrying { url =>
+      retrying(Logger[F].error) { url =>
         client.expectOption[ApiFullBlock](
           makeGetRequest(s"$url/blocks/$id")
         )
       }
 
     def getUnconfirmedTransactions: Stream[F, ApiTransaction] =
-      retrying[Stream[F, *], ApiTransaction] { url =>
+      retrying[Stream[F, *], ApiTransaction](s => Stream.eval(Logger[F].error(s))) { url =>
         client
           .stream(makeGetRequest(s"$url/transactions/unconfirmed"))
           .flatMap(_.body.chunks.parseJsonStream)
@@ -116,14 +117,14 @@ object ErgoNetworkClient {
           )
       }.void
 
-    private def retrying[M[_]: Monad, A](
+    private def retrying[M[_]: Monad, A](logError: String => M[Unit])(
       f: UrlString => M[A]
     )(implicit G: ApplicativeError[M, Throwable]): M[A] = {
       def attempt(urls: List[UrlString])(i: Int): M[A] =
         urls match {
           case hd :: tl =>
             G.handleErrorWith(f(hd)) { e =>
-              println(e) // todo:
+              logError(s"Failed to execute request to $hd, ${e.getMessage}") >>
               attempt(tl)(i + 1)
             }
           case Nil =>

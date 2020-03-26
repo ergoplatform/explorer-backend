@@ -7,7 +7,6 @@ import org.ergoplatform.explorer.{HexString, Id}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
-// TODO ScalaDoc
 final case class HeaderInfo(
   id: Id,
   parentId: Id,

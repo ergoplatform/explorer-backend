@@ -55,16 +55,15 @@ object Err {
       object ContractParsingErr {
 
         final case class Base16DecodingFailed(
-          string: HexString,  // TODO refactor: string -> hexString
+          hexString: HexString,
           reasonOpt: Option[String] = None
         ) extends ContractParsingErr(
-            s"Failed to decode Base16: `$string`" + reasonOpt
+            s"Failed to decode Base16: `$hexString`" + reasonOpt
               .map(s => s", reason: $s")
               .getOrElse("")
           )
 
-        abstract class ErgoTreeSerializationErr(msg: String)
-          extends ContractParsingErr(msg)
+        abstract class ErgoTreeSerializationErr(msg: String) extends ContractParsingErr(msg)
 
         object ErgoTreeSerializationErr {
 
@@ -88,14 +87,11 @@ object Err {
         }
       }
 
-      final case class DexContractInstantiationFailed(details: String)
-        extends DexErr(details)
+      final case class DexContractInstantiationFailed(details: String) extends DexErr(details)
 
-      final case class DexSellOrderAttributesFailed(details: String)
-        extends DexErr(details)
+      final case class DexSellOrderAttributesFailed(details: String) extends DexErr(details)
 
-      final case class DexBuyOrderAttributesFailed(details: String)
-        extends DexErr(details)
+      final case class DexBuyOrderAttributesFailed(details: String) extends DexErr(details)
     }
   }
 }

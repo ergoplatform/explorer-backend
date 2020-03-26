@@ -6,7 +6,6 @@ import org.ergoplatform.explorer.{Address, TxId}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
-// TODO ScalaDoc
 final case class SearchResult(
   blocks: List[BlockInfo],
   transactionIds: List[TxId],

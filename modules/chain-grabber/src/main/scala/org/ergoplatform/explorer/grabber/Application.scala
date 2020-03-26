@@ -12,7 +12,8 @@ import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext.global
 
-// TODO ScalaDoc
+/** A service dumping blocks from the Ergo network to local db.
+  */
 object Application extends TaskApp {
 
   def run(args: List[String]): Task[ExitCode] =

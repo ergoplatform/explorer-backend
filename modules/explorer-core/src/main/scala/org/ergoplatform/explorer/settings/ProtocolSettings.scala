@@ -8,7 +8,7 @@ import org.ergoplatform.mining.emission.EmissionRules
 import org.ergoplatform.settings.MonetarySettings
 
 final case class ProtocolSettings(
-  networkPrefix: String Refined ValidByte, // TODO ScalaDoc: which format?
+  networkPrefix: String Refined ValidByte,
   genesisAddress: Address,
   monetary: MonetarySettings
 ) {

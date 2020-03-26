@@ -15,7 +15,6 @@ object AddressesEndpointDefs {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getAddressDef :: getTxsByAddressDef :: getAssetHoldersDef :: Nil
 
-  // TODO ScalaDoc: show example path like ("api/v0/addresses/<addressHex>")
   def getAddressDef: Endpoint[Address, ApiErr, AddressInfo, Nothing] =
     baseEndpointDef
       .in(PathPrefix / path[Address])

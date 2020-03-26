@@ -9,7 +9,6 @@ import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.{ChartPoint, ExtendedBlockInfo}
 
-// TODO ScalaDoc
 object BlockInfoQuerySet extends QuerySet {
 
   val tableName: String = "blocks_info"

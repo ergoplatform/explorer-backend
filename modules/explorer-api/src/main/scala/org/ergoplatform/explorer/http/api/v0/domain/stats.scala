@@ -15,8 +15,8 @@ object stats {
   private val SecondsIn24H: Long = (24 * 60 * 60).toLong
   private val MillisIn24H: Long = SecondsIn24H * 1000L
 
-  // TODO ScalaDoc
-  private def percentOfFee(fees: Long, minersReward: Long) =
+  // Get percent of fees in total miner rewards.
+  private def percentOfFee(fees: Long, minersReward: Long): Double =
     if (fees + minersReward == 0L) {
       0.0
     } else {
@@ -25,7 +25,7 @@ object stats {
       BigDecimal(result * 100).setScale(8, BigDecimal.RoundingMode.HALF_UP).toDouble
     }
 
-  // TODO ScalaDoc
+  // Get percent of miner rewards in total coins number.
   private def percentOfTxVolume(minersReward: Long, totalCoins: Long): Double =
     if (totalCoins == 0L) {
       0.0
@@ -41,7 +41,8 @@ object stats {
   @inline def getPastPeriodTsMillis[F[_]: Clock: Functor]: F[Long] =
     Clock[F].realTime(TimeUnit.MILLISECONDS).map(_ - stats.MillisIn24H)
 
-  // TODO ScalaDoc
+  /** Obtain stats from recent blocks.
+    */
   @inline def recentToStats(
     blocks: List[BlockInfo],
     totalOutputs: BigDecimal,

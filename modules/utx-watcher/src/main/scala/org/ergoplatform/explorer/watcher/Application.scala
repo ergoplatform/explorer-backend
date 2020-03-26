@@ -13,20 +13,21 @@ import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext.global
 
-// TODO ScalaDoc: what this application is doing?
+/** A service watching for new unconfirmed transactions appeared in the network.
+  */
 object Application extends TaskApp {
 
   def run(args: List[String]): Task[ExitCode] =
     resources(args.headOption).use {
       case (logger, settings, client, xa) =>
-        logger.info("Starting UtxGrabber service ..") >>
+        logger.info("Starting UtxWatcher service ..") >>
         ErgoNetworkClient[Task](client, settings.masterNodesAddresses)
           .flatMap { ns =>
             UtxWatcher[Task, ConnectionIO](settings, ns)(xa)
               .flatMap(_.run.compile.drain)
               .as(ExitCode.Success)
           }
-          .guarantee(logger.info("Stopping UtxGrabber service .."))
+          .guarantee(logger.info("Stopping UtxWatcher service .."))
     }
 
   private def resources(configPathOpt: Option[String]) =

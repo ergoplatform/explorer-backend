@@ -7,7 +7,6 @@ import org.ergoplatform.explorer.settings.DbSettings
 
 object DoobieTrans {
 
-  // TODO ScalaDoc: motivation for why fixedThreadPool, why Hikari
   def apply[F[_]: Async: ContextShift](
     poolName: String,
     settings: DbSettings

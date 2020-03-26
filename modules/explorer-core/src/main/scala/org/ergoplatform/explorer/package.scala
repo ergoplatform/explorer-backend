@@ -72,7 +72,6 @@ package object explorer {
       jsonCodec.meta.schema.description("Modifier ID")
   }
 
-  // TODO ScalaDoc: describe encoding
   @newtype case class TxId(value: String)
 
   object TxId {
@@ -141,7 +140,7 @@ package object explorer {
       HexString.fromString(s).map(TokenId.apply)
   }
 
-  // TODO ScalaDoc
+  // Ergo Address
   @newtype case class Address(value: AddressType) {
     final def unwrapped: String = value.value
   }

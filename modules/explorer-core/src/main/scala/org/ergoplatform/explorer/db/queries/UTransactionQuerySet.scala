@@ -9,7 +9,6 @@ import doobie.util.update.Update0
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.{HexString, TxId}
 
-// TODO ScalaDoc: in particular what U means?
 object UTransactionQuerySet extends QuerySet {
 
   val tableName: String = "node_u_transactions"

@@ -10,10 +10,10 @@ import sttp.tapir.generic.Derived
 final case class BlockInfo(
   id: Id,
   height: Int,
-  timestamp: Long, // TODO ScalaDoc: there are different kinds of timestamps (which one is this?)
+  timestamp: Long,
   transactionsCount: Int,
   miner: MinerInfo,
-  size: Int,       // TODO ScalaDoc: what kind of size?
+  size: Int,
   difficulty: Long,
   minerReward: Long
 )
@@ -26,7 +26,7 @@ object BlockInfo {
     implicitly[Derived[Schema[BlockInfo]]].value
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
-      .modify(_.timestamp)(_.description("Timestamp the block was created"))
+      .modify(_.timestamp)(_.description("Timestamp the block was created (UNIX timestamp in millis)"))
       .modify(_.transactionsCount)(
         _.description("Number of transactions included in the block")
       )

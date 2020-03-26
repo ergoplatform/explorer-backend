@@ -7,14 +7,13 @@ import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
-// TODO ScalaDoc
 final case class InputInfo(
   id: BoxId,
   proof: Option[HexString],
-  value: Option[Long],   // TODO ScalaDoc: what it means the value is None
+  value: Option[Long],
   txId: TxId,
-  outputTransactionId: Option[TxId], // TODO ScalaDoc: describe the meaning of None
-  address: Option[Address]  // TODO ScalaDoc: describe the meaning of None
+  outputTransactionId: Option[TxId],
+  address: Option[Address]
 )
 
 object InputInfo {

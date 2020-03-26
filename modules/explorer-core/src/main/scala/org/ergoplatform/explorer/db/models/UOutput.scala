@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.db.models
 import io.circe.Json
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 
-/** Entity representing `node_u_outputs` table.
+/** Entity representing `node_u_outputs` table (Unconfirmed Output, which is a part of Unconfirmed Transaction).
  */
 final case class UOutput(
   boxId: BoxId,

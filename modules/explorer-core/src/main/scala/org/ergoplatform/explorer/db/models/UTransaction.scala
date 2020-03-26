@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.db.models
 
 import org.ergoplatform.explorer.TxId
 
-/** Entity representing `node_u_transactions` table.
+/** Entity representing `node_u_transactions` table (Unconfirmed Transaction).
   */
 final case class UTransaction(
   id: TxId,

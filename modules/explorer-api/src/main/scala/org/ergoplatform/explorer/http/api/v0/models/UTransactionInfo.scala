@@ -11,13 +11,12 @@ import org.ergoplatform.explorer.db.models.{UAsset, UInput, UOutput, UTransactio
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
-// TODO ScalaDoc
 final case class UTransactionInfo(
   id: TxId,
   inputs: List[UInputInfo],
   outputs: List[UOutputInfo],
-  creationTimestamp: Long, // TODO ScalaDoc: does it correspond to anything in Ergo?
-  size: Int  // TODO ScalaDoc: which size?
+  creationTimestamp: Long,
+  size: Int
 )
 
 object UTransactionInfo {

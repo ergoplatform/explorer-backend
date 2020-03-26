@@ -15,9 +15,9 @@ final case class OutputInfo(
   ergoTree: HexString,
   address: Option[Address],
   assets: Seq[AssetInfo],
-  additionalRegisters: Json, // TODO ScalaDoc: describe the format of Json
+  additionalRegisters: Json,
   spentTxId: Option[TxId],
-  mainChain: Boolean         // TODO ScalaDoc: what this means?
+  mainChain: Boolean
 )
 
 object OutputInfo {

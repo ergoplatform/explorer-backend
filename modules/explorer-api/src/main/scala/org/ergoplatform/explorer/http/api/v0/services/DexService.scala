@@ -18,10 +18,8 @@ import org.ergoplatform.explorer.{CRaise, TokenId}
   */
 trait DexService[F[_], S[_[_], _]] {
 
-  // TODO ScalaDoc
   def getUnspentSellOrders(tokenId: TokenId, paging: Paging): S[F, DexSellOrderInfo]
 
-  // TODO ScalaDoc
   def getUnspentBuyOrders(tokenId: TokenId, paging: Paging): S[F, DexBuyOrderInfo]
 }
 
