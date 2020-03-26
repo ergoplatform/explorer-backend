@@ -69,7 +69,7 @@ object ErgoNetworkClient {
     with JsonCodecs {
 
     def getBestHeight: F[Int] =
-      retrying(Logger[F].error) { url =>
+      retrying(Logger[F].error(_)) { url =>
         client
           .expect[ApiNodeInfo](
             makeGetRequest(s"$url/info")
@@ -78,14 +78,14 @@ object ErgoNetworkClient {
       }
 
     def getBlockIdsAtHeight(height: Int): F[List[Id]] =
-      retrying(Logger[F].error) { url =>
+      retrying(Logger[F].error(_)) { url =>
         client.expect[List[Id]](
           makeGetRequest(s"$url/blocks/at/$height")
         )
       }
 
     def getFullBlockById(id: Id): F[Option[ApiFullBlock]] =
-      retrying(Logger[F].error) { url =>
+      retrying(Logger[F].error(_)) { url =>
         client.expectOption[ApiFullBlock](
           makeGetRequest(s"$url/blocks/$id")
         )
@@ -124,7 +124,7 @@ object ErgoNetworkClient {
         urls match {
           case hd :: tl =>
             G.handleErrorWith(f(hd)) { e =>
-              logError(s"Failed to execute request to $hd, ${e.getMessage}") >>
+              logError(s"Failed to execute request to '$hd'. ${e.getMessage}") >>
               attempt(tl)(i + 1)
             }
           case Nil =>
