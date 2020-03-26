@@ -18,7 +18,7 @@ When extracted from the full block these entities are inserted to the database.
 Database access layer is defined in `org.ergoplatform.explorer.db` module and has the following structure:
 
 - `models` - module containing models described above (all these models has underlying tables in db schema)
-    - `composite` - module containing models which are not mapped to a single db table exactly but consists of a data from several tables
+    - `aggregates` - module containing models which are not mapped to a single db table exactly but consists of an aggregated data from several tables
 
 - `queries` - module containing sets of sql queries for each entity for concrete database
 - `repositories` - defines abstract interfaces for accessing entities' data and also their production implementations.

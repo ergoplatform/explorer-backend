@@ -4,9 +4,13 @@
 .DS_Store
 
 /.idea/
-/.ergo_wallet/
 .metals
 .bloop
+target
+/modules/*/target/
 /target/
 /project/target/
 /project/project/target
+
+.vscode/
+project/metals.sbt
