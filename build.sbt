@@ -1,53 +1,72 @@
-name := "explorer-backend"
-
-organization := "org.ergoplatform"
-
-version := "0.0.1"
-
-scalaVersion := "2.12.10"
-
-resolvers += Resolver.sonatypeRepo("public")
-resolvers += Resolver.sonatypeRepo("snapshots")
-
-lazy val ergoWalletVersion = "master-83d10111-SNAPSHOT"
-lazy val doobieVersion     = "0.8.4"
-lazy val circeVersion      = "0.12.2"
-lazy val http4sVersion     = "0.21.0-M5"
-lazy val log4catsVersion   = "1.0.1"
-
-lazy val projectDeps = Seq(
-  "org.ergoplatform"  %% "ergo-wallet"         % ergoWalletVersion,
-  "org.typelevel"     %% "cats-effect"         % "2.0.0-RC2",
-  "dev.zio"           %% "zio"                 % "1.0.0-RC16",
-  "dev.zio"           %% "zio-interop-cats"    % "2.0.0.0-RC6",
-  "co.fs2"            %% "fs2-core"            % "2.0.1",
-  "org.tpolecat"      %% "doobie-core"         % doobieVersion,
-  "org.tpolecat"      %% "doobie-postgres"     % doobieVersion,
-  "org.tpolecat"      %% "doobie-scalatest"    % doobieVersion,
-  "org.tpolecat"      %% "doobie-hikari"       % doobieVersion,
-  "org.tpolecat"      %% "doobie-refined"      % doobieVersion,
-  "io.circe"          %% "circe-core"          % circeVersion,
-  "io.circe"          %% "circe-generic"       % circeVersion,
-  "org.http4s"        %% "http4s-dsl"          % http4sVersion,
-  "org.http4s"        %% "http4s-blaze-server" % http4sVersion,
-  "org.http4s"        %% "http4s-circe"        % http4sVersion,
-  "io.chrisdavenport" %% "log4cats-core"       % log4catsVersion,
-  "io.chrisdavenport" %% "log4cats-slf4j"      % log4catsVersion,
-  "eu.timepit"        %% "refined"             % "0.9.10",
-  "io.estatico"       %% "newtype"             % "0.4.3",
-  "org.slf4j"         % "slf4j-simple"         % "1.7.28"
+lazy val commonSettings = Seq(
+  scalacOptions ++= commonScalacOptions,
+  scalaVersion := "2.12.10",
+  organization := "org.ergoplatform",
+  version := "0.0.1",
+  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers += Resolver.sonatypeRepo("snapshots"),
+  test in assembly := {},
+  assemblyMergeStrategy in assembly := {
+    case "logback.xml"                                => MergeStrategy.first
+    case "module-info.class"                          => MergeStrategy.discard
+    case other if other.contains("io.netty.versions") => MergeStrategy.first
+    case other                                        => (assemblyMergeStrategy in assembly).value(other)
+  }
 )
 
-lazy val testDeps = Seq(
-  "org.tpolecat"   %% "doobie-scalatest" % doobieVersion % "test",
-  "org.scalactic"  %% "scalactic"        % "3.0.8"       % "test",
-  "org.scalatest"  %% "scalatest"        % "3.0.8"       % "test",
-  "org.scalacheck" %% "scalacheck"       % "1.14.1"      % "test"
-)
+lazy val allConfigDependency = "compile->compile;test->test"
 
-libraryDependencies ++= (projectDeps ++ testDeps)
+lazy val explorer = project
+  .in(file("."))
+  .withId("explorer-backend")
+  .settings(commonSettings)
+  .settings(moduleName := "explorer-backend", name := "ExplorerBackend")
+  .aggregate(core, httpApi, grabber, utxWatcher)
 
-scalacOptions ++= Seq(
+lazy val core = utils
+  .mkModule("explorer-core", "ExplorerCore")
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= dependencies.core ++ dependencies.Testing ++ dependencies.CompilerPlugins
+  )
+
+lazy val httpApi = utils
+  .mkModule("explorer-api", "ExplorerApi")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.http.api.Application"),
+    libraryDependencies ++= dependencies.api ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core)
+
+lazy val grabber = utils
+  .mkModule("chain-grabber", "ChainGrabber")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.grabber.Application"),
+    libraryDependencies ++= dependencies.grabber ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core % allConfigDependency)
+
+lazy val utxWatcher = utils
+  .mkModule("utx-watcher", "UtxWatcher")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.watcher.Application"),
+    libraryDependencies ++= dependencies.utxWatcher ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core)
+
+lazy val utxBroadcaster = utils
+  .mkModule("utx-broadcaster", "UtxBroadcaster")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.broadcaster.Application"),
+    libraryDependencies ++= dependencies.utxBroadcaster ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core)
+
+lazy val commonScalacOptions = List(
   "-deprecation",
   "-encoding",
   "UTF-8",
@@ -61,6 +80,3 @@ scalacOptions ++= Seq(
   "-Ywarn-numeric-widen",
   "-Ypartial-unification"
 )
-
-addCompilerPlugin("org.typelevel"   % "kind-projector" % "0.11.0" cross CrossVersion.full)
-addCompilerPlugin("org.scalamacros" % "paradise"       % "2.1.1" cross CrossVersion.full)
