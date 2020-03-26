@@ -1,30 +1,72 @@
-name := "explorer-backend"
+lazy val commonSettings = Seq(
+  scalacOptions ++= commonScalacOptions,
+  scalaVersion := "2.12.10",
+  organization := "org.ergoplatform",
+  version := "0.0.1",
+  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers += Resolver.sonatypeRepo("snapshots"),
+  test in assembly := {},
+  assemblyMergeStrategy in assembly := {
+    case "logback.xml"                                => MergeStrategy.first
+    case "module-info.class"                          => MergeStrategy.discard
+    case other if other.contains("io.netty.versions") => MergeStrategy.first
+    case other                                        => (assemblyMergeStrategy in assembly).value(other)
+  }
+)
 
-organization := "org.ergoplatform"
+lazy val allConfigDependency = "compile->compile;test->test"
 
-version := "0.0.1"
+lazy val explorer = project
+  .in(file("."))
+  .withId("explorer-backend")
+  .settings(commonSettings)
+  .settings(moduleName := "explorer-backend", name := "ExplorerBackend")
+  .aggregate(core, httpApi, grabber, utxWatcher)
 
-scalaVersion := "2.12.10"
+lazy val core = utils
+  .mkModule("explorer-core", "ExplorerCore")
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= dependencies.core ++ dependencies.Testing ++ dependencies.CompilerPlugins
+  )
 
-resolvers += Resolver.sonatypeRepo("public")
-resolvers += Resolver.sonatypeRepo("snapshots")
+lazy val httpApi = utils
+  .mkModule("explorer-api", "ExplorerApi")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.http.api.Application"),
+    libraryDependencies ++= dependencies.api ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core)
 
-lazy val projectDeps = List(
-  dependencies.ergo.deps,
-  dependencies.cats.deps,
-  dependencies.zio.deps,
-  dependencies.fs2.deps,
-  dependencies.circe.deps,
-  dependencies.http4s.deps,
-  dependencies.db.deps,
-  dependencies.logging.deps,
-  dependencies.newtypes.deps,
-  dependencies.simulacrum.deps
-).flatten
+lazy val grabber = utils
+  .mkModule("chain-grabber", "ChainGrabber")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.grabber.Application"),
+    libraryDependencies ++= dependencies.grabber ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core % allConfigDependency)
 
-libraryDependencies ++= projectDeps ++ dependencies.testing.deps ++ dependencies.compilerPlugins
+lazy val utxWatcher = utils
+  .mkModule("utx-watcher", "UtxWatcher")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.watcher.Application"),
+    libraryDependencies ++= dependencies.utxWatcher ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core)
 
-scalacOptions ++= Seq(
+lazy val utxBroadcaster = utils
+  .mkModule("utx-broadcaster", "UtxBroadcaster")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.broadcaster.Application"),
+    libraryDependencies ++= dependencies.utxBroadcaster ++ dependencies.CompilerPlugins
+  )
+  .dependsOn(core)
+
+lazy val commonScalacOptions = List(
   "-deprecation",
   "-encoding",
   "UTF-8",
