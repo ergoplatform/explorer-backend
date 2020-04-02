@@ -43,7 +43,7 @@ object HeaderQuerySet extends QuerySet {
     sql"select * from node_headers where parent_id = $parentId".query[Header]
 
   def getAllByHeight(height: Int): Query0[Header] =
-    sql"select * from node_headers where height = $height".query[Header]
+    sql"select * from node_headers where height = $height order by main_chain desc".query[Header]
 
   def getHeightOf(id: Id): Query0[Int] =
     sql"select height from node_headers where id = $id".query[Int]
