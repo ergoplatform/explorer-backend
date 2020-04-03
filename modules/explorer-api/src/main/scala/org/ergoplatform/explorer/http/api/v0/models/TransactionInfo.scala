@@ -28,7 +28,7 @@ object TransactionInfo {
         _.description("ID of the block the transaction was included in")
       )
       .modify(_.timestamp)(
-        _.description("Approx timestamp the transaction got into the network")
+        _.description("Timestamp the transaction got into the network")
       )
       .modify(_.confirmationsQty)(_.description("Number of transaction confirmations"))
 
@@ -44,9 +44,11 @@ object TransactionInfo {
         val relatedInputs = inputs
           .filter(_.input.txId == tx.id)
           .map(InputInfo.apply)
-        val relatedOutputs = outputs.map { out =>
-          OutputInfo(out, groupedAssets.get(out.output.boxId).toList.flatten)
-        }
+        val relatedOutputs = outputs
+          .filter(_.output.txId == tx.id)
+          .map { out =>
+            OutputInfo(out, groupedAssets.get(out.output.boxId).toList.flatten)
+          }
         val id = tx.id
         val ts = tx.timestamp
         apply(id, tx.headerId, ts, numConfirmations, relatedInputs, relatedOutputs)

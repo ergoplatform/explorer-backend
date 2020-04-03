@@ -35,16 +35,15 @@ object FlatBlock {
         : Monad
   ](
     apiBlock: ApiFullBlock,
-    parentInfoOpt: Option[BlockInfo],
-    ts: Long
+    parentInfoOpt: Option[BlockInfo]
   )(protocolSettings: ProtocolSettings): F[FlatBlock] =
     BlockInfo
       .fromApi[F](apiBlock, parentInfoOpt)(protocolSettings)
       .map { blockInfo =>
         implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
 
-        val outs   = extractOutputs(apiBlock.transactions, apiBlock.header.mainChain, ts)
-        val txs    = extractTxs(apiBlock.transactions, ts, blockInfo.height)
+        val outs   = extractOutputs(apiBlock.transactions, apiBlock.header.mainChain, apiBlock.header.timestamp)
+        val txs    = extractTxs(apiBlock.transactions, apiBlock.header.timestamp, blockInfo.height)
         val inputs = extractInputs(apiBlock.transactions, apiBlock.header.mainChain)
         val assets = extractAssets(apiBlock.transactions)
         FlatBlock(

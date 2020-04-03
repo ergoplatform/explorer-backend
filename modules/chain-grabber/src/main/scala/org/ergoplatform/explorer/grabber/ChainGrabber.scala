@@ -1,9 +1,7 @@
 package org.ergoplatform.explorer.grabber
 
-import java.util.concurrent.TimeUnit
-
 import cats.effect.concurrent.Ref
-import cats.effect.{Clock, Sync, Timer}
+import cats.effect.{Sync, Timer}
 import cats.instances.list._
 import cats.syntax.applicative._
 import cats.syntax.applicativeError._
@@ -11,7 +9,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, Monad, MonadError, Parallel}
+import cats.{Monad, MonadError, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -19,7 +17,6 @@ import monocle.macros.syntax.lens._
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
-import org.ergoplatform.explorer.{CRaise, Id}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
@@ -27,6 +24,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.GrabberAppSettings
+import org.ergoplatform.explorer.{CRaise, Id}
 
 /** Fetches new blocks from the network divide them into
   * separate entities and finally puts them into db.
@@ -123,13 +121,11 @@ final class ChainGrabber[
           case parentOpt =>
             parentOpt.pure[D].pure[F]
         }
-        .flatMap { blockInfoOptDb =>
-          Clock[F].realTime(TimeUnit.MILLISECONDS).map { ts =>
-            blockInfoOptDb.flatMap { parentBlockInfoOpt =>
-              FlatBlock
-                .fromApi[D](block, parentBlockInfoOpt, ts)(settings.protocol)
-                .flatMap(flatBlock => insetBlock(flatBlock) as flatBlock.info)
-            }
+        .map { blockInfoOptDb =>
+          blockInfoOptDb.flatMap { parentBlockInfoOpt =>
+            FlatBlock
+              .fromApi[D](block, parentBlockInfoOpt)(settings.protocol)
+              .flatMap(flatBlock => insetBlock(flatBlock) as flatBlock.info)
           }
         }
     }
