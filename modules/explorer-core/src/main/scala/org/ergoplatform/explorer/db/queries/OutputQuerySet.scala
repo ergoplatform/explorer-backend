@@ -148,7 +148,7 @@ object OutputQuerySet extends QuerySet {
 
   def getAllByTxId(txId: TxId): Query0[ExtendedOutput] =
     sql"""
-         |select distinct on (i.box_id)
+         |select distinct on (o.box_id)
          |  o.box_id,
          |  o.tx_id,
          |  o.value,
@@ -170,7 +170,7 @@ object OutputQuerySet extends QuerySet {
   ): Query0[ExtendedOutput] = {
     val q =
       sql"""
-           |select distinct on (i.box_id)
+           |select distinct on (o.box_id)
            |  o.box_id,
            |  o.tx_id,
            |  o.value,

@@ -14,6 +14,6 @@ final case class Output(
   ergoTree: HexString, // serialized and hex-encoded ErgoTree
   addressOpt: Option[Address], // an address derived from ergoTree (if possible)
   additionalRegisters: Json, // arbitrary key-value dictionary
-  timestamp: Long, // approx time output appeared in the blockchain
+  timestamp: Long, // time output appeared in the blockchain
   mainChain: Boolean // chain status, `true` if this output resides in main chain
 )
