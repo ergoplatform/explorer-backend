@@ -16,7 +16,7 @@ final case class OutputInfo(
   address: Option[Address],
   assets: Seq[AssetInfo],
   additionalRegisters: Json,
-  spentTxId: Option[TxId],
+  spentTransactionId: Option[TxId],
   mainChain: Boolean
 )
 
