@@ -43,12 +43,12 @@ final class BoxesRoutes[
 
   private def getOutputsByAddressR: HttpRoutes[F] =
     getOutputsByAddressDef.toRoutes { address =>
-      service.getOutputsByErgoTree(address).compile.toList.adaptThrowable.value
+      service.getOutputsByAddress(address).compile.toList.adaptThrowable.value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
     getUnspentOutputsByAddressDef.toRoutes { address =>
-      service.getUnspentOutputsByErgoTree(address).compile.toList.adaptThrowable.value
+      service.getUnspentOutputsByAddress(address).compile.toList.adaptThrowable.value
     }
 }
 
