@@ -8,10 +8,10 @@ import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
 final case class FullBlockInfo(
-  headerInfo: HeaderInfo,
-  transactionsInfo: List[TransactionInfo],
+  header: HeaderInfo,
+  blockTransactions: List[TransactionInfo],
   extension: BlockExtensionInfo,
-  adProof: Option[AdProofInfo]
+  adProofs: Option[AdProofInfo]
 )
 
 object FullBlockInfo {
@@ -32,9 +32,9 @@ object FullBlockInfo {
     adProof: Option[AdProof],
     blockSize: Int
   ): FullBlockInfo = {
-    val txsInfo     = TransactionInfo.batch(txs.map(_ -> numConfirmations), inputs, outputs, assets)
-    val headerInfo  = HeaderInfo(h, blockSize)
-    val adProofInfo = adProof.map { AdProofInfo.apply }
+    val txsInfo            = TransactionInfo.batch(txs.map(_ -> numConfirmations), inputs, outputs, assets)
+    val headerInfo         = HeaderInfo(h, blockSize)
+    val adProofInfo        = adProof.map { AdProofInfo.apply }
     val blockExtensionInfo = BlockExtensionInfo(extension)
     new FullBlockInfo(headerInfo, txsInfo, blockExtensionInfo, adProofInfo)
   }

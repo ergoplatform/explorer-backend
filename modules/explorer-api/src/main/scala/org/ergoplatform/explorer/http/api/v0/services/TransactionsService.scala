@@ -1,19 +1,18 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.{FlatMap, Monad}
-import cats.effect.{Concurrent, Sync}
+import cats.effect.Concurrent
 import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
+import cats.{FlatMap, Monad}
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.{Chunk, Pipe, Stream}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
-import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
@@ -23,6 +22,7 @@ import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, UTransacti
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{Address, TxId}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 
 /** A service providing an access to the transactions data.
   */
