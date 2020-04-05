@@ -5,7 +5,7 @@ import io.circe.generic.semiauto.deriveCodec
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
-final case class BlockSummary(info: FullBlockInfo, references: BlockReferencesInfo)
+final case class BlockSummary(block: FullBlockInfo, references: BlockReferencesInfo)
 
 object BlockSummary {
 
@@ -13,7 +13,7 @@ object BlockSummary {
 
   implicit val schema: Schema[BlockSummary] =
     implicitly[Derived[Schema[BlockSummary]]].value
-      .modify(_.info)(_.description("Full block info"))
+      .modify(_.block)(_.description("Full block info"))
       .modify(_.references)(
         _.description("References to previous and next (if exists) blocks")
       )
