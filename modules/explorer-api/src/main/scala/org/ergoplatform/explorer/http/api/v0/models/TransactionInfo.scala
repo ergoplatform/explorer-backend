@@ -2,19 +2,24 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
+import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.db.models.{Asset, Transaction}
-import org.ergoplatform.explorer.{Id, TxId}
+import org.ergoplatform.explorer.protocol.constants
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
 final case class TransactionInfo(
   id: TxId,
-  headerId: Id,
+  miniBlockInfo: MiniBlockInfo,
   timestamp: Long,
-  confirmationsQty: Int,
+  confirmationsCount: Int,
   inputs: List[InputInfo],
-  outputs: List[OutputInfo]
+  outputs: List[OutputInfo],
+  size: Int,
+  totalCoins: Long,
+  totalFee: Long,
+  feePerByte: Double
 )
 
 object TransactionInfo {
@@ -24,13 +29,14 @@ object TransactionInfo {
   implicit val schema: Schema[TransactionInfo] =
     implicitly[Derived[Schema[TransactionInfo]]].value
       .modify(_.id)(_.description("Transaction ID"))
-      .modify(_.headerId)(
-        _.description("ID of the block the transaction was included in")
-      )
       .modify(_.timestamp)(
         _.description("Timestamp the transaction got into the network")
       )
-      .modify(_.confirmationsQty)(_.description("Number of transaction confirmations"))
+      .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
+      .modify(_.size)(_.description("Size of transaction in bytes"))
+      .modify(_.totalCoins)(_.description("Total amount of nanoErgs in transaction"))
+      .modify(_.totalFee)(_.description("Total amount of fee in transaction in nanoErgs"))
+      .modify(_.feePerByte)(_.description("Amount of nanoErgs paid for each byte of transaction"))
 
   def batch(
     txs: List[(Transaction, Int)],
@@ -49,9 +55,7 @@ object TransactionInfo {
           .map { out =>
             OutputInfo(out, groupedAssets.get(out.output.boxId).toList.flatten)
           }
-        val id = tx.id
-        val ts = tx.timestamp
-        apply(id, tx.headerId, ts, numConfirmations, relatedInputs, relatedOutputs)
+        apply(tx, numConfirmations, relatedInputs, relatedOutputs)
     }
   }
 
@@ -62,8 +66,46 @@ object TransactionInfo {
     outputs: List[ExtendedOutput],
     assets: List[Asset]
   ): TransactionInfo = {
-    val ins  = inputs.map(InputInfo.apply)
-    val outs = OutputInfo.batch(outputs, assets)
-    apply(tx.id, tx.headerId, tx.timestamp, numConfirmations, ins, outs)
+    val ins                                       = inputs.map(InputInfo.apply)
+    val outs                                      = OutputInfo.batch(outputs, assets)
+    apply(tx, numConfirmations, ins, outs)
   }
+
+  private def apply(
+    tx: Transaction,
+    numConfirmations: Int,
+    inputs: List[InputInfo],
+    outputs: List[OutputInfo]
+  ): TransactionInfo = {
+    val TxStats(totalCoins, totalFee, feePerByte) = txStats(tx, inputs, outputs)
+    val blockInfo                                 = MiniBlockInfo(tx.headerId, tx.inclusionHeight)
+    apply(
+      tx.id,
+      blockInfo,
+      tx.timestamp,
+      numConfirmations,
+      inputs,
+      outputs,
+      tx.size,
+      totalCoins,
+      totalFee,
+      feePerByte
+    )
+  }
+
+  private def txStats(
+    tx: Transaction,
+    inputs: List[InputInfo],
+    outputs: List[OutputInfo]
+  ): TxStats = {
+    val totalCoins = inputs.map(_.value.getOrElse(0L)).sum
+    val totalFee = outputs
+      .filter(_.ergoTree.unwrapped == constants.FeePropositionScriptHex)
+      .map(_.value)
+      .sum
+    val feePerByte = if (tx.size == 0) 0d else totalFee.toDouble / tx.size
+    TxStats(totalCoins, totalFee, feePerByte)
+  }
+
+  final private case class TxStats(totalCoins: Long, totalFee: Long, feePerByte: Double)
 }
