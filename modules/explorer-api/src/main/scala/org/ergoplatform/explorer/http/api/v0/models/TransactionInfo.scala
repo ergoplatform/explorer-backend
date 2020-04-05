@@ -1,10 +1,12 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.TxId
+import io.circe.{Codec, Decoder, Encoder, Json}
+import io.circe.generic.semiauto.{deriveCodec, deriveDecoder}
+import io.circe.syntax._
+import org.ergoplatform.explorer.{Id, TxId}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.db.models.{Asset, Transaction}
+import org.ergoplatform.explorer.http.api.v0.models.TransactionInfo.MiniBlockInfo
 import org.ergoplatform.explorer.protocol.constants
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
@@ -13,7 +15,7 @@ final case class TransactionInfo(
   id: TxId,
   miniBlockInfo: MiniBlockInfo,
   timestamp: Long,
-  confirmationsCount: Int,
+  confirmationsNum: Int,
   inputs: List[InputInfo],
   outputs: List[OutputInfo],
   size: Int,
@@ -24,7 +26,36 @@ final case class TransactionInfo(
 
 object TransactionInfo {
 
-  implicit val codec: Codec[TransactionInfo] = deriveCodec
+  final case class MiniBlockInfo(id: Id, height: Int)
+
+  implicit val decoder: Decoder[TransactionInfo] = deriveDecoder
+  implicit val encoder: Encoder[TransactionInfo] = { ts =>
+    Json.obj(
+      "summary" -> Json.obj(
+        "id"                 -> ts.id.asJson,
+        "timestamp"          -> ts.timestamp.asJson,
+        "size"               -> ts.size.asJson,
+        "confirmationsCount" -> ts.confirmationsNum.asJson,
+        "block"              -> ts.miniBlockInfo.asJson
+      ),
+      "ioSummary" -> Json.obj(
+        "totalCoinsTransferred" -> ts.totalCoins.asJson,
+        "totalFee"              -> ts.totalFee.asJson,
+        "feePerByte"            -> ts.feePerByte.asJson
+      ),
+      "inputs"  -> ts.inputs.asJson,
+      "outputs" -> ts.outputs.asJson
+    )
+  }
+
+  implicit val codecBlockInfo: Codec[MiniBlockInfo] = deriveCodec
+
+  implicit val schemaBlockInfo: Schema[MiniBlockInfo] =
+    implicitly[Derived[Schema[MiniBlockInfo]]].value
+      .modify(_.id)(_.description("Block ID"))
+      .modify(_.height)(_.description("Block height"))
+
+  implicit val codec: Codec[TransactionInfo] = Codec.from(decoder, encoder)
 
   implicit val schema: Schema[TransactionInfo] =
     implicitly[Derived[Schema[TransactionInfo]]].value
@@ -32,7 +63,7 @@ object TransactionInfo {
       .modify(_.timestamp)(
         _.description("Timestamp the transaction got into the network")
       )
-      .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
+      .modify(_.confirmationsNum)(_.description("Number of transaction confirmations"))
       .modify(_.size)(_.description("Size of transaction in bytes"))
       .modify(_.totalCoins)(_.description("Total amount of nanoErgs in transaction"))
       .modify(_.totalFee)(_.description("Total amount of fee in transaction in nanoErgs"))
