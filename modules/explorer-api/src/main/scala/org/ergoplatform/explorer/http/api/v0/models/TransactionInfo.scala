@@ -28,7 +28,10 @@ object TransactionInfo {
 
   final case class MiniBlockInfo(id: Id, height: Int)
 
+  final private case class TxStats(totalCoins: Long, totalFee: Long, feePerByte: Double)
+
   implicit val decoder: Decoder[TransactionInfo] = deriveDecoder
+
   implicit val encoder: Encoder[TransactionInfo] = { ts =>
     Json.obj(
       "summary" -> Json.obj(
@@ -48,6 +51,8 @@ object TransactionInfo {
     )
   }
 
+  implicit val codec: Codec[TransactionInfo] = Codec.from(decoder, encoder)
+
   implicit val codecBlockInfo: Codec[MiniBlockInfo] = deriveCodec
 
   implicit val schemaBlockInfo: Schema[MiniBlockInfo] =
@@ -55,7 +60,6 @@ object TransactionInfo {
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
 
-  implicit val codec: Codec[TransactionInfo] = Codec.from(decoder, encoder)
 
   implicit val schema: Schema[TransactionInfo] =
     implicitly[Derived[Schema[TransactionInfo]]].value
@@ -137,6 +141,4 @@ object TransactionInfo {
     val feePerByte = if (tx.size == 0) 0d else totalFee.toDouble / tx.size
     TxStats(totalCoins, totalFee, feePerByte)
   }
-
-  final private case class TxStats(totalCoins: Long, totalFee: Long, feePerByte: Double)
 }
