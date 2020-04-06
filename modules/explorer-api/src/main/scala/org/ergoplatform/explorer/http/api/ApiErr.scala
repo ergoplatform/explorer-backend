@@ -22,15 +22,6 @@ object ApiErr {
   implicit val encoder: Encoder[ApiErr] = e =>
     Json.obj("status" -> e.status.asJson, "reason" -> e.reason.asJson)
 
-  implicit val decoder: Decoder[ApiErr] = Decoder { c =>
-    for {
-      status <- c.downField("status").as[Int]
-      reason <- c.downField("reason").as[String]
-    } yield new ApiErr(status, reason) {}
-  }
-
-  implicit val codec: io.circe.Codec[ApiErr] = io.circe.Codec.from(decoder, encoder)
-
   private val unknownErrorS = implicitly[Schema[UnknownErr]]
   private val notFoundS     = implicitly[Schema[NotFound]]
   private val badInputS     = implicitly[Schema[BadRequest]]
