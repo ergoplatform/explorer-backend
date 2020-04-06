@@ -18,7 +18,9 @@ object TransactionsEndpointDefs {
     sendTransactionDef :: getTxByIdDef :: getUnconfirmedTxByIdDef :: getTxsSinceDef :: Nil
 
   def sendTransactionDef: Endpoint[ErgoLikeTransaction, ApiErr, Unit, Nothing] =
-    baseEndpointDef.post.in(PathPrefix / "send").in(jsonBody[ErgoLikeTransaction])
+    baseEndpointDef.post
+      .in(PathPrefix / "send")
+      .in(jsonBody[ErgoLikeTransaction])
 
   def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionInfo, Nothing] =
     baseEndpointDef.get
