@@ -50,14 +50,12 @@ object HttpApiV0 {
       searchRoutes  = SearchRoutes(blockChainService, txsService, AddressesService(trans))
       boxesRoutes   = BoxesRoutes(BoxesService(trans))
 
-      routes = H.handle(
-        infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
-        addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes
-      )
+      routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
+      addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes
       corsRoutes = CORS(routes)
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
-               .withHttpApp(Router("/" -> corsRoutes).orNotFound)
+               .withHttpApp(Router("/" -> H.handle(corsRoutes)).orNotFound)
                .resource
     } yield http
 }
