@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.cache.Redis
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.ergoplatform.explorer.settings.ApiAppSettings
 import org.ergoplatform.explorer.http.api.v0.HttpApiV0
+import org.ergoplatform.explorer.http.api.httpErrorHandler._
 import pureconfig.generic.auto._
 
 object Application extends TaskApp {

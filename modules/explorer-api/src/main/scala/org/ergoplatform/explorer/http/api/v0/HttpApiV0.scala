@@ -9,6 +9,7 @@ import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.http.api.algebra.HttpErrorHandler
 import org.ergoplatform.explorer.http.api.v0.routes._
 import org.ergoplatform.explorer.http.api.v0.services._
 import org.ergoplatform.explorer.settings.{HttpSettings, ProtocolSettings, UtxCacheSettings}
@@ -30,7 +31,9 @@ object HttpApiV0 {
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
   )(trans: D Trans F)(
-    implicit e: ErgoAddressEncoder
+    implicit
+    H: HttpErrorHandler[F, Throwable],
+    e: ErgoAddressEncoder
   ): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(trans))
@@ -47,8 +50,10 @@ object HttpApiV0 {
       searchRoutes  = SearchRoutes(blockChainService, txsService, AddressesService(trans))
       boxesRoutes   = BoxesRoutes(BoxesService(trans))
 
-      routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
-      addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes
+      routes = H.handle(
+        infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
+        addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes
+      )
       corsRoutes = CORS(routes)
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)

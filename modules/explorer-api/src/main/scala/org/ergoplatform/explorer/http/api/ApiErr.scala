@@ -1,26 +1,35 @@
 package org.ergoplatform.explorer.http.api
 
 import cats.ApplicativeError
-import io.circe.generic.auto._
+import io.circe.syntax._
+import io.circe.{Decoder, Encoder, Json}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
-import sttp.tapir.json.circe._
-import sttp.tapir.{CodecForOptional, CodecFormat, Schema}
+import sttp.tapir.Schema
 
 import scala.util.control.NoStackTrace
 
-abstract class ApiErr(val msg: String) extends Exception with NoStackTrace
+abstract class ApiErr(val status: Int, val reason: String) extends Exception with NoStackTrace
 
 object ApiErr {
 
-  final case class NotFound(what: String) extends ApiErr(s"$what not found")
+  final case class NotFound(what: String) extends ApiErr(404, s"$what not found")
 
-  final case class BadRequest(details: String) extends ApiErr(s"Bad input: $details")
+  final case class BadRequest(details: String) extends ApiErr(400, s"Bad input: $details")
 
-  final case class UnknownErr(message: String) extends ApiErr(s"Unknown error: $message")
+  final case class UnknownErr(message: String) extends ApiErr(500, s"Unknown error: $message")
 
-  implicit val codec: CodecForOptional[ApiErr, CodecFormat.Json, _] =
-    implicitly[CodecForOptional[ApiErr, CodecFormat.Json, _]]
+  implicit val encoder: Encoder[ApiErr] = e =>
+    Json.obj("status" -> e.status.asJson, "reason" -> e.reason.asJson)
+
+  implicit val decoder: Decoder[ApiErr] = Decoder { c =>
+    for {
+      status <- c.downField("status").as[Int]
+      reason <- c.downField("reason").as[String]
+    } yield new ApiErr(status, reason) {}
+  }
+
+  implicit val codec: io.circe.Codec[ApiErr] = io.circe.Codec.from(decoder, encoder)
 
   private val unknownErrorS = implicitly[Schema[UnknownErr]]
   private val notFoundS     = implicitly[Schema[NotFound]]
@@ -37,6 +46,7 @@ object ApiErr {
     implicit A: ApplicativeError[F, Throwable]
   ): AdaptThrowableEitherT[F, ApiErr] =
     new AdaptThrowableEitherT[F, ApiErr] {
+
       final def adapter: Throwable => ApiErr = {
         case AddressDecodingFailed(address, _) =>
           ApiErr.BadRequest(s"Failed to decode address '$address'")
