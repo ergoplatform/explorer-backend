@@ -15,12 +15,7 @@ object TransactionsEndpointDefs {
   private val PathPrefix = "transactions"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    sendTransactionDef :: getTxByIdDef :: getUnconfirmedTxByIdDef :: getTxsSinceDef :: Nil
-
-  def sendTransactionDef: Endpoint[ErgoLikeTransaction, ApiErr, Unit, Nothing] =
-    baseEndpointDef.post
-      .in(PathPrefix / "send")
-      .in(jsonBody[ErgoLikeTransaction])
+    getTxByIdDef :: getUnconfirmedTxByIdDef :: getTxsSinceDef :: sendTransactionDef :: Nil
 
   def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionInfo, Nothing] =
     baseEndpointDef.get
@@ -37,4 +32,9 @@ object TransactionsEndpointDefs {
       .in(paging)
       .in(PathPrefix / "since" / path[Int])
       .out(jsonBody[List[TransactionInfo]])
+
+  def sendTransactionDef: Endpoint[ErgoLikeTransaction, ApiErr, Unit, Nothing] =
+    baseEndpointDef.post
+      .in(PathPrefix / "send")
+      .in(jsonBody[ErgoLikeTransaction])
 }

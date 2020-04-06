@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.http.api
 
 import cats.ApplicativeError
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Codec, Decoder, Encoder, Json}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import sttp.tapir.Schema
@@ -21,6 +21,13 @@ object ApiErr {
 
   implicit val encoder: Encoder[ApiErr] = e =>
     Json.obj("status" -> e.status.asJson, "reason" -> e.reason.asJson)
+  implicit val decoder: Decoder[ApiErr] = Decoder { c =>
+    for {
+      status <- c.downField("status").as[Int]
+      reason <- c.downField("reason").as[String]
+    } yield new ApiErr(status, reason) {}
+  }
+  implicit val codec: Codec[ApiErr] = Codec.from(decoder, encoder)
 
   private val unknownErrorS = implicitly[Schema[UnknownErr]]
   private val notFoundS     = implicitly[Schema[NotFound]]

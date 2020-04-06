@@ -19,12 +19,7 @@ final class TransactionsRoutes[
   import org.ergoplatform.explorer.http.api.v0.defs.TransactionsEndpointDefs._
 
   val routes: HttpRoutes[F] =
-    sendTransactionR <+> getTxByIdR <+> getUnconfirmedTxByIdR <+> getTxsSinceR
-
-  private def sendTransactionR: HttpRoutes[F] =
-    sendTransactionDef.toRoutes { tx =>
-      service.submitTransaction(tx).adaptThrowable.value
-    }
+    getTxByIdR <+> getUnconfirmedTxByIdR <+> getTxsSinceR <+> sendTransactionR
 
   private def getTxByIdR: HttpRoutes[F] =
     getTxByIdDef.toRoutes { txId =>
@@ -53,6 +48,11 @@ final class TransactionsRoutes[
           .toList
           .adaptThrowable
           .value
+    }
+
+  private def sendTransactionR: HttpRoutes[F] =
+    sendTransactionDef.toRoutes { tx =>
+      service.submitTransaction(tx).adaptThrowable.value
     }
 }
 
