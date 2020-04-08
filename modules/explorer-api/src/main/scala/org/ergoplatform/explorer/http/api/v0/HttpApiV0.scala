@@ -9,7 +9,6 @@ import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.http.api.algebra.HttpErrorHandler
 import org.ergoplatform.explorer.http.api.v0.routes._
 import org.ergoplatform.explorer.http.api.v0.services._
 import org.ergoplatform.explorer.settings.{HttpSettings, ProtocolSettings, UtxCacheSettings}
@@ -30,11 +29,7 @@ object HttpApiV0 {
     protocolSettings: ProtocolSettings,
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
-  )(trans: D Trans F)(
-    implicit
-    H: HttpErrorHandler[F, Throwable],
-    e: ErgoAddressEncoder
-  ): Resource[F, Server[F]] =
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(trans))
       txsService        <- Resource.liftF(TransactionsService(utxCacheSettings, redis)(trans))
@@ -55,7 +50,7 @@ object HttpApiV0 {
       corsRoutes = CORS(routes)
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)
-               .withHttpApp(Router("/" -> H.handle(corsRoutes)).orNotFound)
+               .withHttpApp(Router("/" -> corsRoutes).orNotFound)
                .resource
     } yield http
 }
