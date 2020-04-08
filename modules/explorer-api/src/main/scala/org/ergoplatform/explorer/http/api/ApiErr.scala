@@ -47,9 +47,9 @@ object ApiErr {
 
       final def adapter: Throwable => ApiErr = {
         case AddressDecodingFailed(address, _) =>
-          ApiErr.BadRequest(s"Failed to decode address '$address'")
+          ApiErr.BadRequest(s"Failed to decode address '$address'"): ApiErr
         case e =>
-          ApiErr.UnknownErr(e.getMessage)
+          ApiErr.UnknownErr(e.getMessage): ApiErr
       }
     }
 }
