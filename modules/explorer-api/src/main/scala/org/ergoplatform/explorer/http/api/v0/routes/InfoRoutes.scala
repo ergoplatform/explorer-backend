@@ -13,7 +13,7 @@ import sttp.tapir.server.http4s._
 
 final class InfoRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
-](service: StatsService[F]) {
+](service: StatsService[F])(implicit opts: Http4sServerOptions[F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.InfoEndpointDefs._
 
@@ -38,6 +38,8 @@ final class InfoRoutes[
 
 object InfoRoutes {
 
-  def apply[F[_]: Sync: ContextShift](service: StatsService[F]): HttpRoutes[F] =
+  def apply[F[_]: Sync: ContextShift](service: StatsService[F])(
+    implicit opts: Http4sServerOptions[F]
+  ): HttpRoutes[F] =
     new InfoRoutes(service).routes
 }

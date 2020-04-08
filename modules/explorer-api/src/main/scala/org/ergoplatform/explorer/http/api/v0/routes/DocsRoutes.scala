@@ -10,7 +10,7 @@ import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.server.http4s._
 
-final class DocsRoutes[F[_]: Sync: ContextShift] {
+final class DocsRoutes[F[_]: Sync: ContextShift](implicit opts: Http4sServerOptions[F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DocsEndpointDefs._
 
@@ -40,6 +40,6 @@ final class DocsRoutes[F[_]: Sync: ContextShift] {
 
 object DocsRoutes {
 
-  def apply[F[_]: Sync: ContextShift]: HttpRoutes[F] =
+  def apply[F[_]: Sync: ContextShift](implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new DocsRoutes[F].routes
 }

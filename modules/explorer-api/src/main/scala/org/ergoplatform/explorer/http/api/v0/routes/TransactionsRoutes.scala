@@ -14,7 +14,9 @@ import sttp.tapir.server.http4s._
 
 final class TransactionsRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
-](service: TransactionsService[F, Stream]) {
+](service: TransactionsService[F, Stream])(
+  implicit opts: Http4sServerOptions[F]
+) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.TransactionsEndpointDefs._
 
@@ -60,6 +62,6 @@ object TransactionsRoutes {
 
   def apply[F[_]: Sync: ContextShift](
     service: TransactionsService[F, Stream]
-  ): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new TransactionsRoutes(service).routes
 }

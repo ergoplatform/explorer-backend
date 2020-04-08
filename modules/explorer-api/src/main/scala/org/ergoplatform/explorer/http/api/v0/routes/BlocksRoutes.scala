@@ -15,7 +15,9 @@ import sttp.tapir.server.http4s._
 
 final class BlocksRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
-](service: BlockChainService[F, fs2.Stream]) {
+](service: BlockChainService[F, fs2.Stream])(
+  implicit opts: Http4sServerOptions[F]
+) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.BlocksEndpointDefs._
 
@@ -58,6 +60,6 @@ object BlocksRoutes {
 
   def apply[F[_]: Sync: ContextShift](
     service: BlockChainService[F, fs2.Stream]
-  ): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new BlocksRoutes(service).routes
 }
