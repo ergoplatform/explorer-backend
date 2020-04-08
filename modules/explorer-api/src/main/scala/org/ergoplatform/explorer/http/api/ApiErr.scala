@@ -9,15 +9,15 @@ import sttp.tapir.Schema
 
 import scala.util.control.NoStackTrace
 
-abstract class ApiErr(val status: Int, val reason: String) extends Exception with NoStackTrace
+final case class ApiErr(status: Int, reason: String) extends Exception with NoStackTrace
 
 object ApiErr {
 
-  final case class NotFound(what: String) extends ApiErr(404, s"$what not found")
+  def notFound(what: String): ApiErr = ApiErr(404, s"$what not found")
 
-  final case class BadRequest(details: String) extends ApiErr(400, s"Bad input: $details")
+  def badRequest(details: String): ApiErr = ApiErr(400, s"Bad input: $details")
 
-  final case class UnknownErr(message: String) extends ApiErr(500, s"Unknown error: $message")
+  def unknownErr(message: String): ApiErr = ApiErr(500, s"Unknown error: $message")
 
   implicit val encoder: Encoder[ApiErr] = e =>
     Json.obj("status" -> e.status.asJson, "reason" -> e.reason.asJson)
@@ -25,20 +25,11 @@ object ApiErr {
     for {
       status <- c.downField("status").as[Int]
       reason <- c.downField("reason").as[String]
-    } yield new ApiErr(status, reason) {}
+    } yield ApiErr(status, reason)
   }
   implicit val codec: Codec[ApiErr] = Codec.from(decoder, encoder)
 
-  private val unknownErrorS = implicitly[Schema[UnknownErr]]
-  private val notFoundS     = implicitly[Schema[NotFound]]
-  private val badInputS     = implicitly[Schema[BadRequest]]
-
-  implicit val schema: Schema[ApiErr] =
-    Schema.oneOf[ApiErr, String](_.getMessage, _.toString)(
-      "unknownError" -> unknownErrorS,
-      "notFound"     -> notFoundS,
-      "badInput"     -> badInputS
-    )
+  implicit val schema: Schema[ApiErr] = implicitly[Schema[ApiErr]]
 
   implicit def adaptThrowable[F[_]](
     implicit A: ApplicativeError[F, Throwable]
@@ -47,9 +38,9 @@ object ApiErr {
 
       final def adapter: Throwable => ApiErr = {
         case AddressDecodingFailed(address, _) =>
-          ApiErr.BadRequest(s"Failed to decode address '$address'"): ApiErr
+          badRequest(s"Failed to decode address '$address'")
         case e =>
-          ApiErr.UnknownErr(e.getMessage): ApiErr
+          unknownErr(e.getMessage)
       }
     }
 }

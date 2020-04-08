@@ -27,7 +27,7 @@ final class TransactionsRoutes[
     getTxByIdDef.toRoutes { txId =>
       service
         .getTxInfo(txId)
-        .flatMap(_.liftTo[F](ApiErr.NotFound(s"Transaction with id: $txId")))
+        .flatMap(_.liftTo[F](ApiErr.notFound(s"Transaction with id: $txId")))
         .adaptThrowable
         .value
     }
@@ -36,7 +36,7 @@ final class TransactionsRoutes[
     getUnconfirmedTxByIdDef.toRoutes { txId =>
       service
         .getUnconfirmedTxInfo(txId)
-        .flatMap(_.liftTo[F](ApiErr.NotFound(s"Unconfirmed transaction with id: $txId")))
+        .flatMap(_.liftTo[F](ApiErr.notFound(s"Unconfirmed transaction with id: $txId")))
         .adaptThrowable
         .value
     }

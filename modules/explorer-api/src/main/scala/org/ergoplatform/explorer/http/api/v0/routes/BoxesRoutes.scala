@@ -26,7 +26,7 @@ final class BoxesRoutes[
     getOutputByIdDef.toRoutes { id =>
       service
         .getOutputById(id)
-        .flatMap(_.liftTo[F](ApiErr.NotFound(s"Output with id: $id")))
+        .flatMap(_.liftTo[F](ApiErr.notFound(s"Output with id: $id")))
         .adaptThrowable
         .value
     }

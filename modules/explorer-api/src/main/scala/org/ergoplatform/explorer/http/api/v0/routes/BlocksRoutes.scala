@@ -42,7 +42,7 @@ final class BlocksRoutes[
     getBlockSummaryByIdDef.toRoutes { id =>
       service
         .getBlockSummaryById(id)
-        .flatMap(_.liftTo[F](ApiErr.NotFound(s"Block with id: $id")))
+        .flatMap(_.liftTo[F](ApiErr.notFound(s"Block with id: $id")))
         .adaptThrowable
         .value
     }
