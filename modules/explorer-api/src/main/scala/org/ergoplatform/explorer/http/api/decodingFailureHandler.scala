@@ -9,7 +9,7 @@ import sttp.tapir.server.{DecodeFailureHandling, DefaultDecodeFailureHandler, Se
 
 object decodingFailureHandler {
 
-  implicit def myServerOptions[F[_]: Sync: ContextShift]: Http4sServerOptions[F] =
+  implicit def customServerOptions[F[_]: Sync: ContextShift]: Http4sServerOptions[F] =
     Http4sServerOptions.default.copy(
       decodeFailureHandler = decodingFailureHandler
     )
