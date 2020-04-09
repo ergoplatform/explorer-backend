@@ -14,7 +14,7 @@ import sttp.tapir.server.http4s._
 
 final class BoxesRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
-](service: BoxesService[F, fs2.Stream]) {
+](service: BoxesService[F, fs2.Stream])(implicit opts: Http4sServerOptions[F]) {
 
   import BoxesEndpointDefs._
 
@@ -26,7 +26,7 @@ final class BoxesRoutes[
     getOutputByIdDef.toRoutes { id =>
       service
         .getOutputById(id)
-        .flatMap(_.liftTo[F](ApiErr.NotFound(s"Output with id: $id")))
+        .flatMap(_.liftTo[F](ApiErr.notFound(s"Output with id: $id")))
         .adaptThrowable
         .value
     }
@@ -56,6 +56,6 @@ object BoxesRoutes {
 
   def apply[F[_]: Sync: ContextShift](
     service: BoxesService[F, fs2.Stream]
-  ): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new BoxesRoutes[F](service).routes
 }

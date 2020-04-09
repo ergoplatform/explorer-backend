@@ -1,47 +1,46 @@
 package org.ergoplatform.explorer.http.api
 
 import cats.ApplicativeError
-import io.circe.generic.auto._
+import io.circe.syntax._
+import io.circe.{Codec, Decoder, Encoder, Json}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
-import sttp.tapir.json.circe._
-import sttp.tapir.{CodecForOptional, CodecFormat, Schema}
+import sttp.tapir.Schema
 
 import scala.util.control.NoStackTrace
 
-abstract class ApiErr(val msg: String) extends Exception with NoStackTrace
+final case class ApiErr(status: Int, reason: String) extends Exception with NoStackTrace
 
 object ApiErr {
 
-  final case class NotFound(what: String) extends ApiErr(s"$what not found")
+  def notFound(what: String): ApiErr = ApiErr(404, s"$what not found")
 
-  final case class BadRequest(details: String) extends ApiErr(s"Bad input: $details")
+  def badRequest(details: String): ApiErr = ApiErr(400, s"Bad input: $details")
 
-  final case class UnknownErr(message: String) extends ApiErr(s"Unknown error: $message")
+  def unknownErr(message: String): ApiErr = ApiErr(500, s"Unknown error: $message")
 
-  implicit val codec: CodecForOptional[ApiErr, CodecFormat.Json, _] =
-    implicitly[CodecForOptional[ApiErr, CodecFormat.Json, _]]
+  implicit val encoder: Encoder[ApiErr] = e =>
+    Json.obj("status" -> e.status.asJson, "reason" -> e.reason.asJson)
+  implicit val decoder: Decoder[ApiErr] = Decoder { c =>
+    for {
+      status <- c.downField("status").as[Int]
+      reason <- c.downField("reason").as[String]
+    } yield ApiErr(status, reason)
+  }
+  implicit val codec: Codec[ApiErr] = Codec.from(decoder, encoder)
 
-  private val unknownErrorS = implicitly[Schema[UnknownErr]]
-  private val notFoundS     = implicitly[Schema[NotFound]]
-  private val badInputS     = implicitly[Schema[BadRequest]]
-
-  implicit val schema: Schema[ApiErr] =
-    Schema.oneOf[ApiErr, String](_.getMessage, _.toString)(
-      "unknownError" -> unknownErrorS,
-      "notFound"     -> notFoundS,
-      "badInput"     -> badInputS
-    )
+  implicit val schema: Schema[ApiErr] = implicitly[Schema[ApiErr]]
 
   implicit def adaptThrowable[F[_]](
     implicit A: ApplicativeError[F, Throwable]
   ): AdaptThrowableEitherT[F, ApiErr] =
     new AdaptThrowableEitherT[F, ApiErr] {
+
       final def adapter: Throwable => ApiErr = {
         case AddressDecodingFailed(address, _) =>
-          ApiErr.BadRequest(s"Failed to decode address '$address'")
+          badRequest(s"Failed to decode address '$address'")
         case e =>
-          ApiErr.UnknownErr(e.getMessage)
+          unknownErr(e.getMessage)
       }
     }
 }

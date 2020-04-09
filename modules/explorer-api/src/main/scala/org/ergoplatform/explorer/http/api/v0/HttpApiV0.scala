@@ -16,6 +16,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
+import sttp.tapir.server.http4s.Http4sServerOptions
 
 object HttpApiV0 {
 
@@ -30,7 +31,9 @@ object HttpApiV0 {
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
   )(trans: D Trans F)(
-    implicit e: ErgoAddressEncoder
+    implicit
+    encoder: ErgoAddressEncoder,
+    opts: Http4sServerOptions[F]
   ): Resource[F, Server[F]] =
     for {
       blockChainService <- Resource.liftF(BlockChainService(trans))

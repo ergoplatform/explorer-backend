@@ -11,7 +11,9 @@ import sttp.tapir.server.http4s._
 
 final class DexRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
-](service: DexService[F, fs2.Stream]) {
+](service: DexService[F, fs2.Stream])(
+  implicit opts: Http4sServerOptions[F]
+) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DexEndpointsDefs._
 
@@ -45,6 +47,6 @@ object DexRoutes {
 
   def apply[F[_]: Sync: ContextShift](
     service: DexService[F, fs2.Stream]
-  ): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new DexRoutes(service).routes
 }

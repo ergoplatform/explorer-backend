@@ -18,7 +18,7 @@ final class AddressesRoutes[
 ](
   addressesService: AddressesService[F, Stream],
   transactionsService: TransactionsService[F, Stream]
-) {
+)(implicit opts: Http4sServerOptions[F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.AddressesEndpointDefs._
 
@@ -63,6 +63,6 @@ object AddressesRoutes {
   def apply[F[_]: Sync: ContextShift](
     addressesService: AddressesService[F, Stream],
     transactionsService: TransactionsService[F, Stream]
-  ): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new AddressesRoutes(addressesService, transactionsService).routes
 }
