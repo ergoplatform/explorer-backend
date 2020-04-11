@@ -4,6 +4,8 @@ import cats.Monad
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import cats.syntax.semigroupk._
 import dev.profunktor.redis4cats.algebra.RedisCommands
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
@@ -36,8 +38,9 @@ object HttpApiV0 {
     opts: Http4sServerOptions[F]
   ): Resource[F, Server[F]] =
     for {
-      blockChainService <- Resource.liftF(BlockChainService(trans))
-      txsService        <- Resource.liftF(TransactionsService(utxCacheSettings, redis)(trans))
+      implicit0(log: Logger[F]) <- Resource.liftF(Slf4jLogger.create)
+      blockChainService         <- Resource.liftF(BlockChainService(trans))
+      txsService                <- Resource.liftF(TransactionsService(utxCacheSettings, redis)(trans))
       blockRoutes   = BlocksRoutes(blockChainService)
       assetRoutes   = AssetsRoutes(AssetsService(trans))
       dexRoutes     = DexRoutes(DexService(trans))

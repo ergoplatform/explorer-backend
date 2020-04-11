@@ -4,6 +4,7 @@ import cats.effect.{ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.semigroupk._
 import cats.syntax.option._
+import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
@@ -54,7 +55,7 @@ final class BoxesRoutes[
 
 object BoxesRoutes {
 
-  def apply[F[_]: Sync: ContextShift](
+  def apply[F[_]: Sync: ContextShift: Logger](
     service: BoxesService[F, fs2.Stream]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new BoxesRoutes[F](service).routes

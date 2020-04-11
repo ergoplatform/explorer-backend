@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.effect.{ContextShift, Sync}
 import cats.syntax.semigroupk._
+import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
@@ -45,7 +46,7 @@ final class DexRoutes[
 
 object DexRoutes {
 
-  def apply[F[_]: Sync: ContextShift](
+  def apply[F[_]: Sync: ContextShift: Logger](
     service: DexService[F, fs2.Stream]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new DexRoutes(service).routes

@@ -1,6 +1,9 @@
 package org.ergoplatform.explorer.http.api
 
-import cats.ApplicativeError
+import cats.MonadError
+import cats.syntax.applicative._
+import cats.syntax.functor._
+import io.chrisdavenport.log4cats.Logger
 import io.circe.syntax._
 import io.circe.{Codec, Decoder, Encoder, Json}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
@@ -21,6 +24,7 @@ object ApiErr {
 
   implicit val encoder: Encoder[ApiErr] = e =>
     Json.obj("status" -> e.status.asJson, "reason" -> e.reason.asJson)
+
   implicit val decoder: Decoder[ApiErr] = Decoder { c =>
     for {
       status <- c.downField("status").as[Int]
@@ -31,16 +35,16 @@ object ApiErr {
 
   implicit val schema: Schema[ApiErr] = implicitly[Schema[ApiErr]]
 
-  implicit def adaptThrowable[F[_]](
-    implicit A: ApplicativeError[F, Throwable]
+  implicit def adaptThrowable[F[_]: Logger](
+    implicit F: MonadError[F, Throwable]
   ): AdaptThrowableEitherT[F, ApiErr] =
     new AdaptThrowableEitherT[F, ApiErr] {
 
-      final def adapter: Throwable => ApiErr = {
+      final def adapter: Throwable => F[ApiErr] = {
         case AddressDecodingFailed(address, _) =>
-          badRequest(s"Failed to decode address '$address'")
+          badRequest(s"Failed to decode address '$address'").pure
         case e =>
-          unknownErr(e.getMessage)
+          Logger[F].error(s"Unknown error: ${e.getMessage}") as unknownErr(e.getMessage)
       }
     }
 }

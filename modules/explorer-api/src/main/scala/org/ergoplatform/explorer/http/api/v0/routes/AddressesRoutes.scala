@@ -5,6 +5,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.semigroupk._
 import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.models.Items
@@ -60,7 +61,7 @@ final class AddressesRoutes[
 
 object AddressesRoutes {
 
-  def apply[F[_]: Sync: ContextShift](
+  def apply[F[_]: Sync: ContextShift: Logger](
     addressesService: AddressesService[F, Stream],
     transactionsService: TransactionsService[F, Stream]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =

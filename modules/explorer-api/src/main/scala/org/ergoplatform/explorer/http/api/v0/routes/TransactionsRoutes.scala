@@ -5,6 +5,7 @@ import cats.syntax.flatMap._
 import cats.syntax.option._
 import cats.syntax.semigroupk._
 import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
@@ -60,7 +61,7 @@ final class TransactionsRoutes[
 
 object TransactionsRoutes {
 
-  def apply[F[_]: Sync: ContextShift](
+  def apply[F[_]: Sync: ContextShift: Logger](
     service: TransactionsService[F, Stream]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new TransactionsRoutes(service).routes

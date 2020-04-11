@@ -3,15 +3,12 @@ package org.ergoplatform.explorer.http.api.v0.routes
 import cats.effect.{ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v0.models.SearchResult
-import org.ergoplatform.explorer.http.api.v0.services.{
-  AddressesService,
-  BlockChainService,
-  TransactionsService
-}
+import org.ergoplatform.explorer.http.api.v0.services.{AddressesService, BlockChainService, TransactionsService}
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
@@ -39,7 +36,7 @@ final class SearchRoutes[
 
 object SearchRoutes {
 
-  def apply[F[_]: Sync: ContextShift](
+  def apply[F[_]: Sync: ContextShift: Logger](
     blocksService: BlockChainService[F, fs2.Stream],
     txsService: TransactionsService[F, fs2.Stream],
     addressesService: AddressesService[F, fs2.Stream]
