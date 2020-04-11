@@ -51,7 +51,7 @@ package object explorer {
 
   /** Persistent modifier id (header, block_transaction, etc.)
     */
-  @newtype case class Id(value: String)
+  @newtype case class Id(value: HexString)
 
   object Id {
     // doobie instances
@@ -66,10 +66,15 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[Id] = deriving
 
     implicit def jsonCodec: Codec.JsonCodec[Id] =
-      implicitly[Codec.JsonCodec[String]].map(Id.apply)(_.value)
+      HexString.jsonCodec.map(Id.apply)(_.value)
 
     implicit def schema: Schema[Id] =
       jsonCodec.meta.schema.description("Modifier ID")
+
+    def fromString[
+      F[_]: CRaise[*[_], RefinementFailed]: Applicative
+    ](s: String): F[Id] =
+      HexString.fromString(s).map(Id.apply)
   }
 
   @newtype case class TxId(value: String)

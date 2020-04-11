@@ -53,7 +53,7 @@ object commonGenerators {
     )
 
   def idGen: Gen[Id] =
-    hexStringGen.map(_.coerce[Id])
+    hexStringGen.map(x => Id.fromString[Try](x).get)
 
   def txIdGen: Gen[TxId] =
     hexStringGen.map(_.coerce[TxId])

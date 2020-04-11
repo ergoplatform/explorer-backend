@@ -125,7 +125,7 @@ object BlockChainService {
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {
-        headerOpt <- headerRepo.get(id).asStream
+        header <- headerRepo.get(id).asStream.unNone
         txs <- transactionRepo.getAllByBlockId(id).fold(List.empty[Transaction]) {
                  case (acc, tx) => tx +: acc
                }
@@ -139,8 +139,8 @@ object BlockChainService {
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream
       } yield
-        (headerOpt, blockSizeOpt, extensionOpt)
-          .mapN { (header, size, ext) =>
+        (blockSizeOpt, extensionOpt)
+          .mapN { (size, ext) =>
             val numConfirmations = bestHeight - header.height
             FullBlockInfo(
               header,

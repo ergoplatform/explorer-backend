@@ -8,7 +8,7 @@ import sttp.tapir.generic.Derived
 
 final case class SearchResult(
   blocks: List[BlockInfo],
-  transactionIds: List[TxId],
+  transactions: List[TxId],
   addresses: List[Address]
 )
 
@@ -19,6 +19,6 @@ object SearchResult {
   implicit val schema: Schema[SearchResult] =
     implicitly[Derived[Schema[SearchResult]]].value
       .modify(_.blocks)(_.description("Blocks matching search query"))
-      .modify(_.transactionIds)(_.description("Ids of transaction matching search query"))
+      .modify(_.transactions)(_.description("Ids of transactions matching search query"))
       .modify(_.addresses)(_.description("Addresses matching search query"))
 }
