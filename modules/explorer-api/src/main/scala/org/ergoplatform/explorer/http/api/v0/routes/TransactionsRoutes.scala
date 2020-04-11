@@ -1,14 +1,13 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.effect.{ContextShift, Sync}
-import cats.syntax.flatMap._
-import cats.syntax.option._
 import cats.syntax.semigroupk._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
+import org.ergoplatform.explorer.http.api.syntax.routes._
 import org.ergoplatform.explorer.http.api.v0.services.TransactionsService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
@@ -28,8 +27,8 @@ final class TransactionsRoutes[
     getTxByIdDef.toRoutes { txId =>
       service
         .getTxInfo(txId)
-        .flatMap(_.liftTo[F](ApiErr.notFound(s"Transaction with id: $txId")))
         .adaptThrowable
+        .orNotFound(s"Transaction with id: $txId")
         .value
     }
 
@@ -37,8 +36,8 @@ final class TransactionsRoutes[
     getUnconfirmedTxByIdDef.toRoutes { txId =>
       service
         .getUnconfirmedTxInfo(txId)
-        .flatMap(_.liftTo[F](ApiErr.notFound(s"Unconfirmed transaction with id: $txId")))
         .adaptThrowable
+        .orNotFound(s"Unconfirmed transaction with id: $txId")
         .value
     }
 
