@@ -44,7 +44,7 @@ object ApiErr {
         case AddressDecodingFailed(address, _) =>
           badRequest(s"Failed to decode address '$address'").pure
         case e =>
-          Logger[F].error(s"Unknown error: ${e.getMessage}") as unknownErr(e.getMessage)
+          Logger[F].error(s"Unknown error: $e: ${e.getMessage}") as unknownErr(e.getMessage)
       }
     }
 }
