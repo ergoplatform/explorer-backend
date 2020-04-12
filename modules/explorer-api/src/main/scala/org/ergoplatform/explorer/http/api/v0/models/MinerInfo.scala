@@ -6,7 +6,7 @@ import org.ergoplatform.explorer.Address
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
-final case class MinerInfo(addressId: Address, name: String)
+final case class MinerInfo(address: Address, name: String)
 
 object MinerInfo {
 
@@ -14,6 +14,6 @@ object MinerInfo {
 
   implicit val schema: Schema[MinerInfo] =
     implicitly[Derived[Schema[MinerInfo]]].value
-      .modify(_.addressId)(_.description("Miner reward address"))
+      .modify(_.address)(_.description("Miner reward address"))
       .modify(_.name)(_.description("Miner name"))
 }
