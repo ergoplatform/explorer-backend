@@ -1,11 +1,13 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
+import cats.effect.Sync
 import cats.instances.option._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
+import cats.syntax.apply._
 import cats.syntax.traverse._
-import cats.{~>, Monad}
+import cats.{Monad, ~>}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
@@ -13,18 +15,9 @@ import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.repositories.{
-  UAssetRepo,
-  UInputRepo,
-  UOutputRepo,
-  UTransactionRepo
-}
+import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
 import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{
-  UInputInfo,
-  UOutputInfo,
-  UTransactionInfo
-}
+import org.ergoplatform.explorer.http.api.v0.models.{UInputInfo, UOutputInfo, UTransactionInfo}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.{Address, CRaise, Err, HexString, TxId}
 import org.ergoplatform.explorer.syntax.stream._
@@ -60,10 +53,11 @@ trait OffChainService[F[_], S[_[_], _]] {
 
 object OffChainService {
 
-  def apply[F[_], D[_]: CRaise[*[_], Err]: Monad: LiftConnectionIO](
+  def apply[F[_]: Sync, D[_]: CRaise[*[_], Err]: Monad: LiftConnectionIO](
     xa: D ~> F
-  )(implicit e: ErgoAddressEncoder): OffChainService[F, Stream] =
-    new Live(UTransactionRepo[D], UInputRepo[D], UOutputRepo[D], UAssetRepo[D])(xa)
+  )(implicit e: ErgoAddressEncoder): F[OffChainService[F, Stream]] =
+    (UTransactionRepo[F, D], UInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
+      .mapN(new Live(_, _, _, _)(xa))
 
   final private class Live[
     F[_],

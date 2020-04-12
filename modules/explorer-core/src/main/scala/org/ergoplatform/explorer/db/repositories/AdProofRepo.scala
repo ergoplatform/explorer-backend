@@ -1,9 +1,12 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.effect.Sync
 import cats.syntax.functor._
+import doobie.LogHandler
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.AdProof
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
@@ -23,10 +26,12 @@ trait AdProofRepo[D[_]] {
 
 object AdProofRepo {
 
-  def apply[D[_]: LiftConnectionIO]: AdProofRepo[D] =
-    new Live[D]
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[AdProofRepo[D]] =
+    DoobieLogHandler.create[F].map { implicit lh =>
+      new Live[D]
+    }
 
-  final private class Live[D[_]: LiftConnectionIO] extends AdProofRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends AdProofRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{AdProofQuerySet => QS}
 

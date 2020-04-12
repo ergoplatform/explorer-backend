@@ -51,8 +51,7 @@ class OutputRepoSpec
               val matching = outputs.tail
                 .map { extOut =>
                   extOut.copy(
-                    output =
-                      extOut.output.copy(addressOpt = address.some, ergoTree = ergoTree)
+                    output = extOut.output.copy(addressOpt = address.some, ergoTree = ergoTree)
                   )
                 }
               matching.foreach { extOut =>
@@ -179,10 +178,10 @@ class OutputRepoSpec
       AssetRepo[D, fs2.Stream]
     ) => Any
   ): Any = {
-    val headerRepo = repositories.HeaderRepo[D]
-    val txRepo     = repositories.TransactionRepo[D]
-    val outRepo    = repositories.OutputRepo[D]
-    val assetRepo  = repositories.AssetRepo[D]
+    val headerRepo = repositories.HeaderRepo[IO, D].unsafeRunSync()
+    val txRepo     = repositories.TransactionRepo[IO, D].unsafeRunSync()
+    val outRepo    = repositories.OutputRepo[IO, D].unsafeRunSync()
+    val assetRepo  = repositories.AssetRepo[IO, D].unsafeRunSync()
     body(headerRepo, txRepo, outRepo, assetRepo)
   }
 }

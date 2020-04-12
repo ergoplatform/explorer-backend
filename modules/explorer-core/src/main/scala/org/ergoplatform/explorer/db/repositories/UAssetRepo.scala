@@ -1,11 +1,15 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.data.NonEmptyList
+import cats.effect.Sync
 import cats.syntax.functor._
 import doobie.implicits._
+import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.BoxId
+import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UAsset
+import org.ergoplatform.explorer.db.repositories.TransactionRepo.Live
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 
 /** [[UAsset]] data access operations.
@@ -25,16 +29,19 @@ trait UAssetRepo[D[_]] {
   def getAllByBoxId(boxId: BoxId): D[List[UAsset]]
 
   /** Get all assets belonging to a given list of `boxId`.
-   */
+    */
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[UAsset]]
 }
 
 object UAssetRepo {
 
-  def apply[D[_]: LiftConnectionIO]: UAssetRepo[D] =
-    new Live[D]
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[UAssetRepo[D]] =
+    DoobieLogHandler.create[F].map { implicit lh =>
+      new Live[D]
+    }
 
-  final private class Live[D[_]: LiftConnectionIO] extends UAssetRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
+    extends UAssetRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{UAssetQuerySet => QS}
 

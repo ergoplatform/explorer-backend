@@ -2,7 +2,9 @@ package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.Monad
 import cats.data.NonEmptyList
+import cats.effect.Sync
 import cats.syntax.list._
+import cats.syntax.functor._
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
@@ -33,19 +35,15 @@ trait AssetsService[F[_], S[_[_], _]] {
 object AssetsService {
 
   def apply[
-    F[_],
+    F[_]: Sync,
     D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
-  ](
-    trans: D Trans F
-  ): AssetsService[F, Stream] =
-    new Live(AssetRepo[D])(trans)
+  ](trans: D Trans F): F[AssetsService[F, Stream]] =
+    AssetRepo[F, D].map(new Live(_)(trans))
 
   final private class Live[
     F[_],
     D[_]: CRaise[*[_], InconsistentDbData]: Monad
-  ](
-    assetRepo: AssetRepo[D, Stream]
-  )(trans: D Trans F)
+  ](assetRepo: AssetRepo[D, Stream])(trans: D Trans F)
     extends AssetsService[F, Stream] {
 
     def getAllIssuingBoxes(paging: Paging): Stream[F, OutputInfo] =

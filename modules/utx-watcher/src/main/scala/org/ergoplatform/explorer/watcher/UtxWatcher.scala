@@ -6,6 +6,7 @@ import cats.syntax.applicative._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
+import cats.syntax.apply._
 import cats.syntax.traverse._
 import cats.{~>, Applicative, Monad}
 import fs2.Stream
@@ -77,14 +78,8 @@ object UtxWatcher {
     settings: UtxWatcherSettings,
     network: ErgoNetworkClient[F, Stream]
   )(xa: D ~> F): F[UtxWatcher[F, D]] =
-    Slf4jLogger.create[F].map { implicit logger =>
-      new UtxWatcher(
-        settings,
-        network,
-        UTransactionRepo[D],
-        UInputRepo[D],
-        UOutputRepo[D],
-        UAssetRepo[D]
-      )(xa)
+    Slf4jLogger.create[F].flatMap { implicit logger =>
+      (UTransactionRepo[F, D], UInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
+        .mapN(new UtxWatcher(settings, network, _, _, _, _)(xa))
     }
 }

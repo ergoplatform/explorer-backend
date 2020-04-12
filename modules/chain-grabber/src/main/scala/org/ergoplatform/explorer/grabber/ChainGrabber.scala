@@ -8,8 +8,9 @@ import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
+import cats.syntax.apply._
 import cats.syntax.traverse._
-import cats.{Monad, MonadError, Parallel, ~>}
+import cats.{~>, Monad, MonadError, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -164,20 +165,17 @@ object ChainGrabber {
     network: ErgoNetworkClient[F, Stream]
   )(xa: D ~> F): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
-      Ref.of[F, Option[BlockInfo]](None).map { cache =>
-        new ChainGrabber[F, D](
-          cache,
-          settings,
-          network,
-          HeaderRepo[D],
-          BlockInfoRepo[D],
-          BlockExtensionRepo[D],
-          AdProofRepo[D],
-          TransactionRepo[D],
-          InputRepo[D],
-          OutputRepo[D],
-          AssetRepo[D]
-        )(xa)
+      Ref.of[F, Option[BlockInfo]](None).flatMap { cache =>
+        (
+          HeaderRepo[F, D],
+          BlockInfoRepo[F, D],
+          BlockExtensionRepo[F, D],
+          AdProofRepo[F, D],
+          TransactionRepo[F, D],
+          InputRepo[F, D],
+          OutputRepo[F, D],
+          AssetRepo[F, D]
+        ).mapN(new ChainGrabber[F, D](cache, settings, network, _, _, _, _, _, _, _, _)(xa))
       }
     }
 }

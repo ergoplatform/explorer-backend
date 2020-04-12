@@ -5,6 +5,7 @@ import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
+import cats.syntax.apply._
 import cats.syntax.traverse._
 import cats.{FlatMap, Monad}
 import dev.profunktor.redis4cats.algebra.RedisCommands
@@ -64,19 +65,18 @@ object TransactionsService {
     redis: RedisCommands[F, String, String]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[TransactionsService[F, Stream]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
-      ErgoLikeTransactionRepo[F](utxCacheSettings, redis).map { etxRepo =>
-        new Live(
-          HeaderRepo[D],
-          TransactionRepo[D],
-          UTransactionRepo[D],
-          InputRepo[D],
-          UInputRepo[D],
-          OutputRepo[D],
-          UOutputRepo[D],
-          AssetRepo[D],
-          UAssetRepo[D],
-          etxRepo
-        )(trans)
+      ErgoLikeTransactionRepo[F](utxCacheSettings, redis).flatMap { etxRepo =>
+        (
+          HeaderRepo[F, D],
+          TransactionRepo[F, D],
+          UTransactionRepo[F, D],
+          InputRepo[F, D],
+          UInputRepo[F, D],
+          OutputRepo[F, D],
+          UOutputRepo[F, D],
+          AssetRepo[F, D],
+          UAssetRepo[F, D],
+        ).mapN(new Live(_, _, _, _, _, _, _, _, _, etxRepo)(trans))
       }
     }
 

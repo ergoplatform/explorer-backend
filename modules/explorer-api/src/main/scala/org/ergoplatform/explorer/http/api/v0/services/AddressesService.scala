@@ -1,11 +1,13 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.Monad
+import cats.effect.Sync
 import cats.instances.option._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
+import cats.syntax.apply._
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
@@ -40,15 +42,11 @@ trait AddressesService[F[_], S[_[_], _]] {
 object AddressesService {
 
   def apply[
-    F[_],
+    F[_]: Sync,
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
-  ](trans: D Trans F)(implicit e: ErgoAddressEncoder): AddressesService[F, Stream] =
-    new Live(
-      OutputRepo[D],
-      UOutputRepo[D],
-      AssetRepo[D],
-      UAssetRepo[D]
-    )(trans)
+  ](trans: D Trans F)(implicit e: ErgoAddressEncoder): F[AddressesService[F, Stream]] =
+    (OutputRepo[F, D], UOutputRepo[F, D], AssetRepo[F, D], UAssetRepo[F, D])
+      .mapN(new Live(_, _, _, _)(trans))
 
   final private class Live[
     F[_],

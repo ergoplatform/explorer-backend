@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.queries
 
+import doobie.LogHandler
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.fragment.Fragment
@@ -36,7 +37,7 @@ object BlockInfoQuerySet extends QuerySet {
     "total_coins_in_txs"
   )
 
-  def getBlockInfo(headerId: Id): Query0[BlockInfo] =
+  def getBlockInfo(headerId: Id)(implicit lh: LogHandler): Query0[BlockInfo] =
     sql"select * from blocks_info where header_id = $headerId"
       .query[BlockInfo]
 
@@ -45,7 +46,7 @@ object BlockInfoQuerySet extends QuerySet {
     limit: Int,
     ordering: OrderingString,
     orderBy: String
-  ): Query0[ExtendedBlockInfo] = {
+  )(implicit lh: LogHandler): Query0[ExtendedBlockInfo] = {
     val ord =
       Fragment.const(s"order by bi.$orderBy $ordering")
     val lim =
@@ -80,11 +81,11 @@ object BlockInfoQuerySet extends QuerySet {
     (q ++ ord ++ lim).query[ExtendedBlockInfo]
   }
 
-  def getManySince(ts: Long): Query0[BlockInfo] =
+  def getManySince(ts: Long)(implicit lh: LogHandler): Query0[BlockInfo] =
     sql"select * from blocks_info where timestamp >= $ts"
       .query[BlockInfo]
 
-  def getManyExtendedByIdLike(q: String): Query0[ExtendedBlockInfo] =
+  def getManyExtendedByIdLike(q: String)(implicit lh: LogHandler): Query0[ExtendedBlockInfo] =
     sql"""
          |select
          |  bi.header_id,
@@ -113,59 +114,59 @@ object BlockInfoQuerySet extends QuerySet {
          |where bi.header_id like ${s"%$q%"}
          |""".stripMargin.query[ExtendedBlockInfo]
 
-  def getBlockSize(id: Id): Query0[Int] =
+  def getBlockSize(id: Id)(implicit lh: LogHandler): Query0[Int] =
     sql"select block_size from blocks_info where header_id = $id"
       .query[Int]
 
-  def totalDifficultySince(ts: Long): Query0[Long] =
+  def totalDifficultySince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
     sql"""
          |select coalesce(cast(sum(difficulty) as bigint), 0) from blocks_info
          |where timestamp >= $ts
          |""".stripMargin.query[Long]
 
-  def circulatingSupplySince(ts: Long): Query0[Long] =
+  def circulatingSupplySince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
     sql"""
          |select coalesce(cast(sum(o.value) as bigint), 0) from node_transactions t
          |right join node_outputs o on t.id = o.tx_id
          |where t.timestamp >= $ts
          |""".stripMargin.query[Long]
 
-  def totalCoinsSince(ts: Long): Query0[ChartPoint] =
+  def totalCoinsSince(ts: Long)(implicit lh: LogHandler): Query0[ChartPoint] =
     sql"""
          |select min(timestamp) as t, cast(max(total_coins_issued) as bigint) from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[ChartPoint]
 
-  def avgBlockSizeSince(ts: Long): Query0[ChartPoint] =
+  def avgBlockSizeSince(ts: Long)(implicit lh: LogHandler): Query0[ChartPoint] =
     sql"""
          |select min(timestamp) as t, cast(avg(block_size) as bigint) from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[ChartPoint]
 
-  def avgTxsQtySince(ts: Long): Query0[ChartPoint] =
+  def avgTxsQtySince(ts: Long)(implicit lh: LogHandler): Query0[ChartPoint] =
     sql"""
          |select min(timestamp) as t, cast(avg(txs_count) as bigint) from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[ChartPoint]
 
-  def totalTxsQtySince(ts: Long): Query0[ChartPoint] =
+  def totalTxsQtySince(ts: Long)(implicit lh: LogHandler): Query0[ChartPoint] =
     sql"""
          |select min(timestamp) as t, cast(sum(txs_count) as bigint) from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[ChartPoint]
 
-  def totalBlockChainSizeSince(ts: Long): Query0[ChartPoint] =
+  def totalBlockChainSizeSince(ts: Long)(implicit lh: LogHandler): Query0[ChartPoint] =
     sql"""
          |select min(timestamp) as t, cast(max(block_chain_total_size) as bigint) from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[ChartPoint]
 
-  def avgDifficultiesSince(ts: Long): Query0[ChartPoint] =
+  def avgDifficultiesSince(ts: Long)(implicit lh: LogHandler): Query0[ChartPoint] =
     sql"""
          |select min(timestamp) as t, cast(avg(difficulty) as bigint) from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
@@ -179,7 +180,7 @@ object BlockInfoQuerySet extends QuerySet {
          |group by date order by t asc
          |""".stripMargin.query[ChartPoint]
 
-  def totalMinerRevenueSince(ts: Long): Query0[ChartPoint] =
+  def totalMinerRevenueSince(ts: Long)(implicit lh: LogHandler): Query0[ChartPoint] =
     sql"""
          |select min(timestamp) as t, cast(sum(miner_revenue) as bigint) from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))

@@ -30,7 +30,7 @@ object OutputQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def getByBoxId(boxId: BoxId): Query0[ExtendedOutput] =
+  def getByBoxId(boxId: BoxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -53,7 +53,7 @@ object OutputQuerySet extends QuerySet {
     ergoTree: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -74,7 +74,7 @@ object OutputQuerySet extends QuerySet {
 
   def getAllMainUnspentIdsByErgoTree(
     ergoTree: HexString
-  ): Query0[BoxId] =
+  )(implicit lh: LogHandler): Query0[BoxId] =
     sql"""
          |select o.box_id from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
@@ -85,7 +85,7 @@ object OutputQuerySet extends QuerySet {
 
   def sumOfAllMainUnspentByErgoTree(
     ergoTree: HexString
-  ): Query0[Long] =
+  )(implicit lh: LogHandler): Query0[Long] =
     sql"""
          |select sum(o.value) from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
@@ -98,7 +98,7 @@ object OutputQuerySet extends QuerySet {
     ergoTree: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -124,7 +124,7 @@ object OutputQuerySet extends QuerySet {
     ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -146,7 +146,7 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
-  def getAllByTxId(txId: TxId): Query0[ExtendedOutput] =
+  def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select distinct on (o.box_id)
          |  o.box_id,
@@ -167,7 +167,7 @@ object OutputQuerySet extends QuerySet {
 
   def getAllByTxIds(
     txIds: NonEmptyList[TxId]
-  ): Query0[ExtendedOutput] = {
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
     val q =
       sql"""
            |select distinct on (o.box_id)
@@ -189,11 +189,13 @@ object OutputQuerySet extends QuerySet {
       .query[ExtendedOutput]
   }
 
-  def getAllLike(substring: String): Query0[Address] =
+  def getAllLike(substring: String)(implicit lh: LogHandler): Query0[Address] =
     sql"select address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
 
-  def updateChainStatusByHeaderId(headerId: Id)(newChainStatus: Boolean): Update0 =
+  def updateChainStatusByHeaderId(
+    headerId: Id
+  )(newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
          |update node_outputs set main_chain = $newChainStatus from node_outputs o
          |left join node_transactions t on t.id = o.tx_id
@@ -201,27 +203,30 @@ object OutputQuerySet extends QuerySet {
          |where h.id = $headerId
          |""".stripMargin.update
 
-  def sumOfAllUnspentOutputsSince(ts: Long): Query0[BigDecimal] =
+  def sumOfAllUnspentOutputsSince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
     sql"""
-         |select coalesce(cast(sum(o.value) as decimal), 0)
-         |from node_outputs o left join node_inputs i on o.box_id = i.box_id
-         |where i.box_id is null and o.timestamp >= $ts
-         |""".stripMargin.query[BigDecimal]
-
-  def estimatedOutputsSince(ts: Long)(genesisAddress: Address): Query0[BigDecimal] =
-    sql"""
-         |select coalesce(cast(sum(o.value) as decimal), 0)
+         |select coalesce(cast(sum(o.value) as bigint), 0)
          |from node_outputs o
-         |left join node_inputs i on (o.box_id = i.box_id and i.box_id is null)
-         |where o.address <> '$genesisAddress' and o.timestamp >= $ts
-         |""".query[BigDecimal]
+         |left join node_inputs i on o.box_id = i.box_id
+         |where i.box_id is null and o.timestamp >= $ts
+         |""".stripMargin.query[Long]
+
+  def estimatedOutputsSince(
+    ts: Long
+  )(genesisAddress: Address)(implicit lh: LogHandler): Query0[Long] =
+    sql"""
+         |select coalesce(cast(sum(o.value) as bigint), 0)
+         |from node_outputs o
+         |join node_inputs i on o.box_id = i.box_id
+         |where i.box_id is null and o.address <> '$genesisAddress' and o.timestamp >= $ts
+         |""".stripMargin.query[Long]
 
   def getMainUnspentSellOrderByTokenId(
     tokenId: TokenId,
     ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -249,7 +254,7 @@ object OutputQuerySet extends QuerySet {
     ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,

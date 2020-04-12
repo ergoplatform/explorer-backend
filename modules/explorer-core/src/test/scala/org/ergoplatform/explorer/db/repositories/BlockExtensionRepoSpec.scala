@@ -1,10 +1,10 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
-import org.ergoplatform.explorer.db.{RealDbTest, repositories}
+import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -32,5 +32,8 @@ class BlockExtensionRepoSpec
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (HeaderRepo[D], BlockExtensionRepo[D]) => Any
   ): Any =
-    body(repositories.HeaderRepo[D], repositories.BlockExtensionRepo[D])
+    body(
+      repositories.HeaderRepo[IO, D].unsafeRunSync(),
+      repositories.BlockExtensionRepo[IO, D].unsafeRunSync()
+    )
 }

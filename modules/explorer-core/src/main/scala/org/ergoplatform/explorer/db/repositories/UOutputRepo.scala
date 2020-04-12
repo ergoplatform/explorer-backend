@@ -1,15 +1,19 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.data.NonEmptyList
+import cats.effect.Sync
 import fs2.Stream
 import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
+import doobie.util.log.LogHandler
+import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.{HexString, TxId}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.UOutput
 import org.ergoplatform.explorer.db.doobieInstances._
+import org.ergoplatform.explorer.db.repositories.UInputRepo.Live
 
 /** [[UOutput]] data access operations.
   */
@@ -46,10 +50,13 @@ trait UOutputRepo[D[_], S[_[_], _]] {
 
 object UOutputRepo {
 
-  def apply[D[_]: LiftConnectionIO]: UOutputRepo[D, Stream] =
-    new Live[D]
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[UOutputRepo[D, Stream]] =
+    DoobieLogHandler.create[F].map { implicit lh =>
+      new Live[D]
+    }
 
-  final private class Live[D[_]: LiftConnectionIO] extends UOutputRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
+    extends UOutputRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{UOutputQuerySet => QS}
 

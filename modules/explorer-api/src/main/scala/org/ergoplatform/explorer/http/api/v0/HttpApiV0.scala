@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0
 
 import cats.Monad
-import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.syntax.semigroupk._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import io.chrisdavenport.log4cats.Logger
@@ -40,18 +40,22 @@ object HttpApiV0 {
     for {
       implicit0(log: Logger[F]) <- Resource.liftF(Slf4jLogger.create)
       blockChainService         <- Resource.liftF(BlockChainService(trans))
+      assetsService             <- Resource.liftF(AssetsService(trans))
+      dexService                <- Resource.liftF(DexService(trans))
+      addressesService          <- Resource.liftF(AddressesService(trans))
+      statsService              <- Resource.liftF(StatsService(protocolSettings)(trans))
+      boxesService              <- Resource.liftF(BoxesService(trans))
       txsService                <- Resource.liftF(TransactionsService(utxCacheSettings, redis)(trans))
       blockRoutes   = BlocksRoutes(blockChainService)
-      assetRoutes   = AssetsRoutes(AssetsService(trans))
-      dexRoutes     = DexRoutes(DexService(trans))
+      assetRoutes   = AssetsRoutes(assetsService)
+      dexRoutes     = DexRoutes(dexService)
       txRoutes      = TransactionsRoutes(txsService)
-      addressRoutes = AddressesRoutes(AddressesService(trans), txsService)
-      statsService  = StatsService(protocolSettings)(trans)
+      addressRoutes = AddressesRoutes(addressesService, txsService)
       infoRoutes    = InfoRoutes(statsService)
       statsRoutes   = StatsRoutes(statsService)
       docsRoutes    = DocsRoutes[F]
-      searchRoutes  = SearchRoutes(blockChainService, txsService, AddressesService(trans))
-      boxesRoutes   = BoxesRoutes(BoxesService(trans))
+      searchRoutes  = SearchRoutes(blockChainService, txsService, addressesService)
+      boxesRoutes   = BoxesRoutes(boxesService)
 
       routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
       addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes

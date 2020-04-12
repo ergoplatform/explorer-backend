@@ -57,18 +57,18 @@ object BlockChainService {
   ](xa: D Trans F): F[BlockChainService[F, Stream]] =
     Slf4jLogger
       .create[F]
-      .map { implicit logger =>
-        new Live(
-          HeaderRepo[D],
-          BlockInfoRepo[D],
-          TransactionRepo[D],
-          BlockExtensionRepo[D],
-          AdProofRepo[D],
-          TransactionRepo[D],
-          InputRepo[D],
-          OutputRepo[D],
-          AssetRepo[D]
-        )(xa)
+      .flatMap { implicit logger =>
+        (
+          HeaderRepo[F, D],
+          BlockInfoRepo[F, D],
+          TransactionRepo[F, D],
+          BlockExtensionRepo[F, D],
+          AdProofRepo[F, D],
+          TransactionRepo[F, D],
+          InputRepo[F, D],
+          OutputRepo[F, D],
+          AssetRepo[F, D]
+        ).mapN(new Live(_, _, _, _, _, _, _, _, _)(xa))
       }
 
   final private class Live[

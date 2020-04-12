@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.queries
 
+import doobie.LogHandler
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
@@ -21,21 +22,21 @@ object TransactionQuerySet extends QuerySet {
     "size"
   )
 
-  def getMain(id: TxId): Query0[Transaction] =
+  def getMain(id: TxId)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |left join node_headers h on h.id = t.header_id
          |where h.main_chain = true and t.id = $id
          |""".stripMargin.query[Transaction]
 
-  def getAllMainByIdSubstring(idStr: String): Query0[Transaction] =
+  def getAllMainByIdSubstring(idStr: String)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |left join node_headers h on h.id = t.header_id
          |where t.id like ${s"%$idStr%"} and h.main_chain = true
          |""".stripMargin.query[Transaction]
 
-  def getAllByBlockId(id: Id): Query0[Transaction] =
+  def getAllByBlockId(id: Id)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |where t.header_id = $id
@@ -45,7 +46,7 @@ object TransactionQuerySet extends QuerySet {
     address: Address,
     offset: Int,
     limit: Int
-  ): Query0[Transaction] =
+  )(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
          |select distinct t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size
          |from node_outputs os
@@ -57,7 +58,7 @@ object TransactionQuerySet extends QuerySet {
          |offset ${offset.toLong} limit ${limit.toLong}
          |""".stripMargin.query[Transaction]
 
-  def countRelatedToAddress(address: Address): Query0[Int] =
+  def countRelatedToAddress(address: Address)(implicit lh: LogHandler): Query0[Int] =
     sql"""
          |select count(distinct t.id)
          |from node_outputs os
@@ -74,7 +75,7 @@ object TransactionQuerySet extends QuerySet {
     height: Int,
     offset: Int,
     limit: Int
-  ): Query0[Transaction] =
+  )(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |left join node_headers h on h.id = t.header_id
@@ -83,6 +84,6 @@ object TransactionQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[Transaction]
 
-  def getIdsLike(q: String): Query0[TxId] =
+  def getIdsLike(q: String)(implicit lh: LogHandler): Query0[TxId] =
     sql"select id from node_transactions where id like ${s"%$q%"}".query[TxId]
 }

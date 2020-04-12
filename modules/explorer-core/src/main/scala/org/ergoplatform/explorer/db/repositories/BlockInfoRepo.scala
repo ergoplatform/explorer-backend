@@ -1,13 +1,17 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.effect.Sync
 import cats.syntax.functor._
 import doobie.free.implicits._
+import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.constraints.OrderingString
+import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.{ChartPoint, ExtendedBlockInfo}
+import org.ergoplatform.explorer.db.repositories.BlockExtensionRepo.Live
 
 /** [[BlockInfo]] data access operations.
   */
@@ -65,10 +69,13 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
 
 object BlockInfoRepo {
 
-  def apply[D[_]: LiftConnectionIO]: BlockInfoRepo[D, fs2.Stream] =
-    new Live[D]
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[BlockInfoRepo[D, fs2.Stream]] =
+    DoobieLogHandler.create[F].map { implicit lh =>
+      new Live[D]
+    }
 
-  final private class Live[D[_]: LiftConnectionIO] extends BlockInfoRepo[D, fs2.Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
+    extends BlockInfoRepo[D, fs2.Stream] {
 
     import org.ergoplatform.explorer.db.queries.{BlockInfoQuerySet => QS}
 

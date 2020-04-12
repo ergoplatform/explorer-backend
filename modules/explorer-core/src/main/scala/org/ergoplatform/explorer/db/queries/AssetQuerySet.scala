@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
 import doobie.implicits._
-import doobie.Fragments
+import doobie.{Fragments, LogHandler}
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
@@ -24,10 +24,10 @@ object AssetQuerySet extends QuerySet {
     "value"
   )
 
-  def getAllByBoxId(boxId: BoxId): Query0[Asset] =
+  def getAllByBoxId(boxId: BoxId)(implicit lh: LogHandler): Query0[Asset] =
     sql"select * from node_assets where box_id = $boxId".query[Asset]
 
-  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): Query0[Asset] =
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[Asset] =
     (sql"select * from node_assets " ++ Fragments.in(fr"where box_id", boxIds))
       .query[Asset]
 
@@ -35,7 +35,7 @@ object AssetQuerySet extends QuerySet {
     tokenId: TokenId,
     offset: Int,
     limit: Int
-  ): Query0[Address] =
+  )(implicit lh: LogHandler): Query0[Address] =
     sql"""
          |select distinct on (o.address) o.address from node_assets a
          |left join node_outputs o on a.box_id = o.box_id
@@ -49,7 +49,7 @@ object AssetQuerySet extends QuerySet {
   /** Get boxes where tokens where issued
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
-  def getAllIssuingBoxes(offset: Int, limit: Int): Query0[ExtendedOutput] =
+  def getAllIssuingBoxes(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -76,7 +76,7 @@ object AssetQuerySet extends QuerySet {
 
   def getIssuingBoxes(
     tokenIds: NonEmptyList[TokenId]
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     (sql"""
           |select
           |  o.box_id,

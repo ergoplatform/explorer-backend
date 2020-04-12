@@ -1,10 +1,10 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
-import org.ergoplatform.explorer.db.{RealDbTest, repositories}
+import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -51,7 +51,8 @@ class TransactionRepoSpec
           headerRepo.insert(header).runWithIO()
           txs.foreach { tx =>
             txRepo.insert(tx).runWithIO()
-            txRepo.getAllMainByIdSubstring(tx.id.value.take(8))
+            txRepo
+              .getAllMainByIdSubstring(tx.id.value.take(8))
               .runWithIO() shouldBe List(tx)
           }
       }
@@ -66,7 +67,10 @@ class TransactionRepoSpec
           txs.foreach { tx =>
             txRepo.insert(tx).runWithIO()
           }
-          txRepo.getAllByBlockId(header.id).compile.toList
+          txRepo
+            .getAllByBlockId(header.id)
+            .compile
+            .toList
             .runWithIO() should contain theSameElementsAs txs
       }
     }
@@ -75,5 +79,8 @@ class TransactionRepoSpec
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (HeaderRepo[D], TransactionRepo[D, fs2.Stream]) => Any
   ): Any =
-    body(repositories.HeaderRepo[D], repositories.TransactionRepo[D])
+    body(
+      repositories.HeaderRepo[IO, D].unsafeRunSync(),
+      repositories.TransactionRepo[IO, D].unsafeRunSync()
+    )
 }

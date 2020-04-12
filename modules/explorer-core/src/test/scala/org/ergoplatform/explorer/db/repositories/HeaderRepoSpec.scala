@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -48,5 +48,5 @@ class HeaderRepoSpec
   private def withHeaderRepo[D[_]: LiftConnectionIO: Sync](
     body: HeaderRepo[D] => Any
   ): Any =
-    body(repositories.HeaderRepo[D])
+    body(repositories.HeaderRepo[IO, D].unsafeRunSync())
 }

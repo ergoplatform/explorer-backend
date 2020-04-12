@@ -1,19 +1,16 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.effect.Clock
+import cats.effect.{Clock, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.apply._
 import cats.{FlatMap, Functor, Monad}
 import fs2.Stream
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.repositories.{
-  BlockInfoRepo,
-  HeaderRepo,
-  OutputRepo,
-  TransactionRepo
-}
+import org.ergoplatform.explorer.db.repositories.{BlockInfoRepo, HeaderRepo, OutputRepo, TransactionRepo}
 import org.ergoplatform.explorer.http.api.v0.domain.stats
 import org.ergoplatform.explorer.http.api.v0.models.{BlockChainInfo, StatsSummary}
 import org.ergoplatform.explorer.settings.ProtocolSettings
@@ -32,18 +29,13 @@ trait StatsService[F[_]] {
 object StatsService {
 
   def apply[
-    F[_]: Clock: Functor: FlatMap,
+    F[_]: Clock: Sync,
     D[_]: LiftConnectionIO: Monad
   ](
     protocolSettings: ProtocolSettings
-  )(trans: D Trans F): StatsService[F] =
-    new Live(
-      protocolSettings,
-      BlockInfoRepo[D],
-      HeaderRepo[D],
-      TransactionRepo[D],
-      OutputRepo[D]
-    )(trans)
+  )(trans: D Trans F): F[StatsService[F]] =
+    (BlockInfoRepo[F, D], HeaderRepo[F, D], TransactionRepo[F, D], OutputRepo[F, D])
+      .mapN(new Live(protocolSettings, _, _, _, _)(trans))
 
   final private class Live[F[_]: Clock: Functor: FlatMap, D[_]: Monad](
     protocolSettings: ProtocolSettings,
