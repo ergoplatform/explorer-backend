@@ -9,9 +9,9 @@ import sttp.tapir.generic.Derived
 
 final case class InputInfo(
   id: BoxId,
-  proof: Option[HexString],
+  spendingProof: Option[HexString],
   value: Option[Long],
-  txId: TxId,
+  transactionId: TxId,
   outputTransactionId: Option[TxId],
   address: Option[Address]
 )
@@ -23,9 +23,9 @@ object InputInfo {
   implicit val schema: Schema[InputInfo] =
     implicitly[Derived[Schema[InputInfo]]].value
       .modify(_.id)(_.description("ID of the corresponding box"))
-      .modify(_.proof)(_.description("Hex-encoded serialized sigma proof"))
+      .modify(_.spendingProof)(_.description("Hex-encoded serialized sigma proof"))
       .modify(_.value)(_.description("Number of nanoErgs in the corresponding box"))
-      .modify(_.txId)(_.description("ID of the transaction this input was used in"))
+      .modify(_.transactionId)(_.description("ID of the transaction this input was used in"))
       .modify(_.outputTransactionId)(
         _.description("ID of the transaction outputting corresponding box")
       )
