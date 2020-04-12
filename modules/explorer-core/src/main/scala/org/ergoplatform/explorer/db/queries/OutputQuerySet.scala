@@ -213,13 +213,17 @@ object OutputQuerySet extends QuerySet {
 
   def estimatedOutputsSince(
     ts: Long
-  )(genesisAddress: Address)(implicit lh: LogHandler): Query0[Long] =
-    sql"""
-         |select coalesce(cast(sum(o.value) as bigint), 0)
-         |from node_outputs o
-         |join node_inputs i on o.box_id = i.box_id
-         |where i.box_id is null and o.address <> '$genesisAddress' and o.timestamp >= $ts
-         |""".stripMargin.query[Long]
+  )(genesisAddress: Address)(implicit lh: LogHandler): Query0[BigDecimal] =
+    Fragment
+      .const(
+        s"""
+          SELECT COALESCE(CAST(SUM(o.value) as DECIMAL),0)
+          FROM node_outputs_replica o
+          LEFT JOIN node_inputs_replica i ON (o.box_id = i.box_id AND i.box_id IS NULL)
+          WHERE o.address <> '$genesisAddress' AND o.timestamp >= $ts
+      """
+      )
+      .query[BigDecimal]
 
   def getMainUnspentSellOrderByTokenId(
     tokenId: TokenId,

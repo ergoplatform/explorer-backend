@@ -204,6 +204,6 @@ object OutputRepo {
       QS.sumOfAllUnspentOutputsSince(ts).unique.map(BigDecimal(_)).liftConnectionIO
 
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
-      QS.estimatedOutputsSince(ts)(genesisAddress).unique.map(BigDecimal(_)).liftConnectionIO
+      QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
   }
 }

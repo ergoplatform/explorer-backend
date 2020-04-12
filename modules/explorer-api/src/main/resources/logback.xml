@@ -1,6 +1,6 @@
 <configuration debug="true">
 
-    <variable name="LEVEL" value="${LOG_LEVEL:-TRACE}"/>
+    <variable name="LEVEL" value="${LOG_LEVEL:-DEBUG}"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
