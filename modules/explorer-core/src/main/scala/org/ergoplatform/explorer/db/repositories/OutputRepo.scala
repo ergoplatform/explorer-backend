@@ -201,7 +201,7 @@ object OutputRepo {
       QS.getAllLike(query).to[List].liftConnectionIO
 
     def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal] =
-      QS.sumOfAllUnspentOutputsSince(ts).unique.map(BigDecimal(_)).liftConnectionIO
+      QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnectionIO
 
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
       QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO

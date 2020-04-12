@@ -5,7 +5,6 @@ import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
-import doobie.util.update.Update0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
 
@@ -193,23 +192,13 @@ object OutputQuerySet extends QuerySet {
     sql"select address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
 
-  def updateChainStatusByHeaderId(
-    headerId: Id
-  )(newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+  def sumOfAllUnspentOutputsSince(ts: Long)(implicit lh: LogHandler): Query0[BigDecimal] =
     sql"""
-         |update node_outputs set main_chain = $newChainStatus from node_outputs o
-         |left join node_transactions t on t.id = o.tx_id
-         |left join node_headers h on t.header_id = h.id
-         |where h.id = $headerId
-         |""".stripMargin.update
-
-  def sumOfAllUnspentOutputsSince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
-    sql"""
-         |select coalesce(cast(sum(o.value) as bigint), 0)
+         |select coalesce(cast(sum(o.value) as decimal), 0)
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where i.box_id is null and o.timestamp >= $ts
-         |""".stripMargin.query[Long]
+         |""".stripMargin.query[BigDecimal]
 
   def estimatedOutputsSince(
     ts: Long
@@ -217,11 +206,11 @@ object OutputQuerySet extends QuerySet {
     Fragment
       .const(
         s"""
-          SELECT COALESCE(CAST(SUM(o.value) as DECIMAL),0)
-          FROM node_outputs_replica o
-          LEFT JOIN node_inputs_replica i ON (o.box_id = i.box_id AND i.box_id IS NULL)
-          WHERE o.address <> '$genesisAddress' AND o.timestamp >= $ts
-      """
+           |select coalesce(cast(sum(o.value) as decimal), 0)
+           |from node_outputs o
+           |join node_inputs i on o.box_id = i.box_id
+           |where i.box_id is null and o.timestamp >= $ts and o.address <> '$genesisAddress'
+           |""".stripMargin
       )
       .query[BigDecimal]
 
