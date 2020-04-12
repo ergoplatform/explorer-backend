@@ -19,7 +19,11 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v0.models.{
+  TransactionInfo,
+  TransactionSummary,
+  UTransactionInfo
+}
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{Address, TxId}
@@ -31,7 +35,7 @@ trait TransactionsService[F[_], S[_[_], _]] {
 
   /** Get transaction info by `id`.
     */
-  def getTxInfo(id: TxId): F[Option[TransactionInfo]]
+  def getTxInfo(id: TxId): F[Option[TransactionSummary]]
 
   /** Get unconfirmed transaction info by `id`.
     */
@@ -75,7 +79,7 @@ object TransactionsService {
           OutputRepo[F, D],
           UOutputRepo[F, D],
           AssetRepo[F, D],
-          UAssetRepo[F, D],
+          UAssetRepo[F, D]
         ).mapN(new Live(_, _, _, _, _, _, _, _, _, etxRepo)(trans))
       }
     }
@@ -94,7 +98,7 @@ object TransactionsService {
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends TransactionsService[F, Stream] {
 
-    def getTxInfo(id: TxId): F[Option[TransactionInfo]] =
+    def getTxInfo(id: TxId): F[Option[TransactionSummary]] =
       (for {
         txOpt <- transactionRepo.getMain(id)
         ins   <- txOpt.toList.flatTraverse(tx => inputRepo.getAllByTxId(tx.id))
@@ -103,7 +107,7 @@ object TransactionsService {
         assets     <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
         bestHeight <- headerRepo.getBestHeight
         txInfo = txOpt.map(tx =>
-          TransactionInfo(tx, bestHeight - tx.inclusionHeight, ins, outs, assets)
+          TransactionSummary(tx, bestHeight - tx.inclusionHeight, ins, outs, assets)
         )
       } yield txInfo) ||> trans.xa
 
