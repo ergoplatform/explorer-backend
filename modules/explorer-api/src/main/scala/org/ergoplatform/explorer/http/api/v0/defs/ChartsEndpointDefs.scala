@@ -2,13 +2,12 @@ package org.ergoplatform.explorer.http.api.v0.defs
 
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.v0.models.StatsSummary
-import sttp.tapir.Endpoint
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
-object StatsEndpointDefs {
+object ChartsEndpointDefs {
 
-  private val PathPrefix = "stats"
+  private val PathPrefix = "charts"
 
   def endpoints: List[Endpoint[_, _, _, _]] = getCurrentStatsDef :: Nil
 

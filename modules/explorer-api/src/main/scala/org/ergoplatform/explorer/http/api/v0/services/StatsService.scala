@@ -1,19 +1,32 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
+import java.util.concurrent.TimeUnit
+
 import cats.effect.{Clock, Sync}
+import cats.syntax.apply._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import cats.syntax.apply._
 import cats.{FlatMap, Functor, Monad}
 import fs2.Stream
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.repositories.{BlockInfoRepo, HeaderRepo, OutputRepo, TransactionRepo}
+import org.ergoplatform.explorer.db.repositories.{
+  BlockInfoRepo,
+  HeaderRepo,
+  OutputRepo,
+  TransactionRepo
+}
 import org.ergoplatform.explorer.http.api.v0.domain.stats
-import org.ergoplatform.explorer.http.api.v0.models.{BlockChainInfo, StatsSummary}
+import org.ergoplatform.explorer.http.api.v0.models.{
+  BlockChainInfo,
+  ChartPoint,
+  MinerShareStatsSegment,
+  StatsSummary
+}
 import org.ergoplatform.explorer.settings.ProtocolSettings
+
+import scala.concurrent.duration.FiniteDuration
 
 trait StatsService[F[_]] {
 
@@ -24,6 +37,24 @@ trait StatsService[F[_]] {
   /** Get short blockchain info.
     */
   def getBlockChainInfo: F[BlockChainInfo]
+
+  def getTotalCoins(timespan: FiniteDuration): F[List[ChartPoint]]
+
+  def getAvgBlockSize(timespan: FiniteDuration): F[List[ChartPoint]]
+
+  def getBlockChainSize(timespan: FiniteDuration): F[List[ChartPoint]]
+
+  def getAvgDifficulty(timespan: FiniteDuration): F[List[ChartPoint]]
+
+  def getAvgTransactionsNumPerBlock(timespan: FiniteDuration): F[List[ChartPoint]]
+
+  def getTransactionsNum(timespan: FiniteDuration): F[List[ChartPoint]]
+
+  def getMinersRevenue(timespan: FiniteDuration): F[List[ChartPoint]]
+
+  def getHashRate(timespan: FiniteDuration): F[List[ChartPoint]]
+
+  def minerShares(timespan: FiniteDuration): F[List[MinerShareStatsSegment]]
 }
 
 object StatsService {
@@ -43,9 +74,8 @@ object StatsService {
     headerRepo: HeaderRepo[D],
     transactionRepo: TransactionRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream]
-  )(
-    trans: D Trans F
-  ) extends StatsService[F] {
+  )(trans: D Trans F)
+    extends StatsService[F] {
 
     def getCurrentStats: F[StatsSummary] =
       stats.getPastPeriodTsMillis.flatMap { ts =>
@@ -70,5 +100,57 @@ object StatsService {
           }
         } yield info) ||> trans.xa
       }
+
+    def getTotalCoins(timespan: FiniteDuration): F[List[ChartPoint]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.totalCoinsSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+      )
+
+    def getAvgBlockSize(timespan: FiniteDuration): F[List[ChartPoint]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.avgBlockSizeSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+      )
+
+    def getBlockChainSize(timespan: FiniteDuration): F[List[ChartPoint]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.totalBlockChainSizeSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+      )
+
+    def getAvgDifficulty(timespan: FiniteDuration): F[List[ChartPoint]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.avgDifficultiesSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+      )
+
+    def getAvgTransactionsNumPerBlock(timespan: FiniteDuration): F[List[ChartPoint]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.avgTxsQtySince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+      )
+
+    def getTransactionsNum(timespan: FiniteDuration): F[List[ChartPoint]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.totalTxsQtySince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+      )
+
+    def getMinersRevenue(timespan: FiniteDuration): F[List[ChartPoint]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.totalMinerRevenueSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+      )
+
+    def getHashRate(timespan: FiniteDuration): F[List[ChartPoint]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.totalDifficultiesSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+      )
+
+    def minerShares(timespan: FiniteDuration): F[List[MinerShareStatsSegment]] =
+      shiftedTs(timespan)(
+        blockInfoRepo.minerStatsSince(_).map(MinerShareStatsSegment.batch) ||> trans.xa
+      )
+
+    private def shiftedTs[G[_]: Clock: FlatMap, R](
+      timespan: FiniteDuration
+    )(fn: Long => G[R]): G[R] =
+      Clock[G]
+        .realTime(TimeUnit.MILLISECONDS)
+        .flatMap(ts => fn(ts - timespan.toMillis))
   }
 }

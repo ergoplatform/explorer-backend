@@ -1,3 +1,3 @@
 package org.ergoplatform.explorer.db.models.aggregates
 
-final case class ChartPoint(ts: Long, value: Long)
+final case class TimePoint[A](ts: Long, value: A)

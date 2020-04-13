@@ -55,11 +55,9 @@ object ErgoLikeTransactionRepo {
       s"$KeyPrefix:${tx.id}" |> { key =>
         (redis.get(CounterKey) >>= { count =>
           (getCount(count) + 1) |> { newCount =>
-            Transaction(redis).run(
-              redis.set(CounterKey, newCount.toString),
-              redis.append(key, tx.asJson.noSpaces),
-              redis.expire(key, utxCacheSettings.transactionTtl)
-            )
+            redis.set(CounterKey, newCount.toString) >>
+            redis.append(key, tx.asJson.noSpaces) >>
+            redis.expire(key, utxCacheSettings.transactionTtl)
           }
         }) >> Logger[F].info(s"Unconfirmed transaction '${tx.id}' has been cached")
       }
