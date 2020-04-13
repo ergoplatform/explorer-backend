@@ -25,12 +25,14 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
       .metered(settings.tickInterval)
       .flatMap(_ => broadcastPool)
       .handleErrorWith { e =>
-        Stream.eval(Logger[F].error(e)(s"An error occurred while broadcasting local utx pool"))
+        Stream.eval(Logger[F].error(e)(s"An error occurred while broadcasting local utx pool")) >> run
       }
 
   private def broadcastPool: Stream[F, Unit] =
     repo.getAll.evalMap { tx =>
-      network.submitTransaction(tx) >> repo.delete(tx.id)
+      Logger[F].info(s"Broadcasting transaction ${tx.id}") >>
+      network.submitTransaction(tx) >>
+      repo.delete(tx.id)
     }
 }
 

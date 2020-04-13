@@ -15,8 +15,9 @@ import io.circe.jawn.CirceSupportParser.facade
 import jawnfs2._
 import org.ergoplatform.explorer.Err.ProcessingErr.TransactionDecodingFailed
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
+import org.ergoplatform.explorer.protocol.ergoInstances._
 import org.ergoplatform.explorer.{CRaise, Id, UrlString}
-import org.ergoplatform.{ErgoLikeTransaction, JsonCodecs}
+import org.ergoplatform.ErgoLikeTransaction
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.client.Client
@@ -65,8 +66,7 @@ object ErgoNetworkClient {
   ](
     client: Client[F],
     masterNodesAddresses: NonEmptyList[UrlString]
-  ) extends ErgoNetworkClient[F, Stream]
-    with JsonCodecs {
+  ) extends ErgoNetworkClient[F, Stream] {
 
     def getBestHeight: F[Int] =
       retrying(Logger[F].error(_)) { url =>
