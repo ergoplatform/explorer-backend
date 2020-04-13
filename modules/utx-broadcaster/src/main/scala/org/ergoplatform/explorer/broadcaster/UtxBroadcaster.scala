@@ -3,10 +3,12 @@ package org.ergoplatform.explorer.broadcaster
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.applicativeError._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.InvalidTransaction
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
@@ -31,7 +33,9 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
   private def broadcastPool: Stream[F, Unit] =
     repo.getAll.evalMap { tx =>
       Logger[F].info(s"Broadcasting transaction ${tx.id}") >>
-      network.submitTransaction(tx) >>
+      network
+        .submitTransaction(tx)
+        .recoverWith { case _: InvalidTransaction => repo.delete(tx.id) } >>
       repo.delete(tx.id)
     }
 }

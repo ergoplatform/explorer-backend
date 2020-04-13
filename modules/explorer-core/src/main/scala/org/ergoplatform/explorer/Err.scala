@@ -46,6 +46,20 @@ object Err {
           .getOrElse("")
       )
 
+    abstract class NetworkErr(msg: String) extends RequestProcessingErr(msg)
+
+    object NetworkErr {
+
+      final case class InvalidTransaction(id: String)
+        extends NetworkErr(s"Transaction with id '$id' declined by the network")
+
+      final case class TransactionSubmissionFailed(id: String)
+        extends NetworkErr(s"Failed to submit transaction with id '$id' to the network")
+
+      final case class RequestFailed(urls: List[UrlString])
+        extends NetworkErr(s"Failed to execute request, URLs tries ${urls.mkString(", ")}")
+    }
+
     abstract class DexErr(msg: String) extends RequestProcessingErr(msg)
 
     object DexErr {
