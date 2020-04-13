@@ -52,15 +52,18 @@ object ErgoLikeTransactionRepo {
 
     def put(tx: ErgoLikeTransaction): F[Unit] =
       s"$KeyPrefix:${tx.id}" |> { key =>
-        (redis.get(CounterKey) >>= { count =>
-          (getCount(count) + 1) |> { newCount =>
-            Transaction(redis).run(
-              redis.set(CounterKey, newCount.toString),
-              redis.append(key, tx.asJson.noSpaces),
-              redis.expire(key, utxCacheSettings.transactionTtl)
-            )
-          }
-        }) >> Logger[F].info(s"Unconfirmed transaction '${tx.id}' has been cached")
+        redis.get(key).flatMap {
+          case None =>
+            (redis.get(CounterKey) >>= { count =>
+              (getCount(count) + 1) |> { newCount =>
+                redis.set(CounterKey, newCount.toString) >>
+                redis.append(key, tx.asJson.noSpaces) >>
+                redis.expire(key, utxCacheSettings.transactionTtl)
+              }
+            }) >> Logger[F].info(s"Unconfirmed transaction '${tx.id}' has been cached")
+          case _ =>
+            Logger[F].debug(s"An attempt to persist transaction '${tx.id}' twice")
+        }
       }
 
     def getAll: Stream[F, ErgoLikeTransaction] =
