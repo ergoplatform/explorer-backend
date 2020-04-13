@@ -53,11 +53,14 @@ object ErgoLikeTransactionRepo {
 
     def put(tx: ErgoLikeTransaction): F[Unit] =
       s"$KeyPrefix:${tx.id}" |> { key =>
-        (redis.get(CounterKey) >>= { count =>
+        (Logger[F].info(s"Getting counter") >> redis.get(CounterKey).flatTap(x => Logger[F].info(s"Got counter ${x}")) >>= { count =>
           (getCount(count) + 1) |> { newCount =>
+            Logger[F].info(s"Inserting new data, count: $count") >>
             redis.set(CounterKey, newCount.toString) >>
+              Logger[F].info(s"Settings counter") >>
             redis.append(key, tx.asJson.noSpaces) >>
-            redis.expire(key, utxCacheSettings.transactionTtl)
+              Logger[F].info(s"Appending tx") >>
+            redis.expire(key, utxCacheSettings.transactionTtl) flatTap(_ => Logger[F].info(s"Done"))
           }
         }) >> Logger[F].info(s"Unconfirmed transaction '${tx.id}' has been cached")
       }
