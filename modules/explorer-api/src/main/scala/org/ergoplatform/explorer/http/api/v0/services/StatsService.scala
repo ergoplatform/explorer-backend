@@ -21,7 +21,7 @@ import org.ergoplatform.explorer.http.api.v0.domain.stats
 import org.ergoplatform.explorer.http.api.v0.models.{
   BlockChainInfo,
   ChartPoint,
-  MinerShareStatsSegment,
+  HashRateDistributionSegment,
   StatsSummary
 }
 import org.ergoplatform.explorer.settings.ProtocolSettings
@@ -54,7 +54,7 @@ trait StatsService[F[_]] {
 
   def getHashRate(timespan: FiniteDuration): F[List[ChartPoint]]
 
-  def minerShares(timespan: FiniteDuration): F[List[MinerShareStatsSegment]]
+  def getHashRateDistribution(timespan: FiniteDuration): F[List[HashRateDistributionSegment]]
 }
 
 object StatsService {
@@ -141,9 +141,9 @@ object StatsService {
         blockInfoRepo.totalDifficultiesSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
       )
 
-    def minerShares(timespan: FiniteDuration): F[List[MinerShareStatsSegment]] =
+    def getHashRateDistribution(timespan: FiniteDuration): F[List[HashRateDistributionSegment]] =
       shiftedTs(timespan)(
-        blockInfoRepo.minerStatsSince(_).map(MinerShareStatsSegment.batch) ||> trans.xa
+        blockInfoRepo.minerStatsSince(_).map(HashRateDistributionSegment.batch) ||> trans.xa
       )
 
     private def shiftedTs[G[_]: Clock: FlatMap, R](
