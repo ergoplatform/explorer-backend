@@ -11,10 +11,10 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.parser._
 import io.circe.syntax._
 import mouse.any._
-import org.ergoplatform.explorer.cache.redisInstances._
+import org.ergoplatform.ErgoLikeTransaction
 import org.ergoplatform.explorer.cache.redisTransaction.Transaction
 import org.ergoplatform.explorer.settings.UtxCacheSettings
-import org.ergoplatform.{ErgoLikeTransaction, JsonCodecs}
+import org.ergoplatform.explorer.protocol.ergoInstances._
 import scorex.util.ModifierId
 
 import scala.util.Try
@@ -45,22 +45,20 @@ object ErgoLikeTransactionRepo {
   ](
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
-  ) extends ErgoLikeTransactionRepo[F, Stream]
-    with JsonCodecs {
+  ) extends ErgoLikeTransactionRepo[F, Stream] {
 
     private val KeyPrefix  = "txs"
     private val CounterKey = "txs:count"
 
     def put(tx: ErgoLikeTransaction): F[Unit] =
       s"$KeyPrefix:${tx.id}" |> { key =>
-        (Logger[F].info(s"Getting counter") >> redis.get(CounterKey).flatTap(x => Logger[F].info(s"Got counter ${x}")) >>= { count =>
+        (redis.get(CounterKey) >>= { count =>
           (getCount(count) + 1) |> { newCount =>
-            Logger[F].info(s"Inserting new data, count: $count") >>
-            redis.set(CounterKey, newCount.toString) >>
-              Logger[F].info(s"Settings counter") >>
-            redis.append(key, tx.asJson.noSpaces) >>
-              Logger[F].info(s"Appending tx") >>
-            redis.expire(key, utxCacheSettings.transactionTtl) flatTap(_ => Logger[F].info(s"Done"))
+            Transaction(redis).run(
+              redis.set(CounterKey, newCount.toString),
+              redis.append(key, tx.asJson.noSpaces),
+              redis.expire(key, utxCacheSettings.transactionTtl)
+            )
           }
         }) >> Logger[F].info(s"Unconfirmed transaction '${tx.id}' has been cached")
       }
