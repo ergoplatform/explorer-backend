@@ -10,6 +10,8 @@ import org.ergoplatform.explorer.http.api.v0.services.StatsService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
+import scala.concurrent.duration._
+
 final class ChartsRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: StatsService[F])(implicit opts: Http4sServerOptions[F]) {
@@ -62,8 +64,8 @@ final class ChartsRoutes[
     }
 
   private def getHashRateDistributionR: HttpRoutes[F] =
-    getHashRateDistributionDef.toRoutes { timespan =>
-      service.getHashRateDistribution(timespan).adaptThrowable.value
+    getHashRateDistributionDef.toRoutes { _ =>
+      service.getHashRateDistribution(24.hours).adaptThrowable.value
     }
 }
 

@@ -54,9 +54,8 @@ object ChartsEndpointDefs {
     baseEndpointDef.get.in(PathPrefix / "hash-rate").in(timespan).out(jsonBody[List[ChartPoint]])
 
   def getHashRateDistributionDef
-    : Endpoint[FiniteDuration, ApiErr, List[HashRateDistributionSegment], Nothing] =
+    : Endpoint[Unit, ApiErr, List[HashRateDistributionSegment], Nothing] =
     baseEndpointDef.get
       .in(PathPrefix / "hash-rate-distribution")
-      .in(timespan)
       .out(jsonBody[List[HashRateDistributionSegment]])
 }
