@@ -46,7 +46,7 @@ trait StatsService[F[_]] {
 
   def getAvgDifficulty(timespan: FiniteDuration): F[List[ChartPoint]]
 
-  def getAvgTransactionsNumPerBlock(timespan: FiniteDuration): F[List[ChartPoint]]
+  def getAvgTxsNumPerBlock(timespan: FiniteDuration): F[List[ChartPoint]]
 
   def getTransactionsNum(timespan: FiniteDuration): F[List[ChartPoint]]
 
@@ -121,7 +121,7 @@ object StatsService {
         blockInfoRepo.avgDifficultiesSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
       )
 
-    def getAvgTransactionsNumPerBlock(timespan: FiniteDuration): F[List[ChartPoint]] =
+    def getAvgTxsNumPerBlock(timespan: FiniteDuration): F[List[ChartPoint]] =
       shiftedTs(timespan)(
         blockInfoRepo.avgTxsQtySince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
       )

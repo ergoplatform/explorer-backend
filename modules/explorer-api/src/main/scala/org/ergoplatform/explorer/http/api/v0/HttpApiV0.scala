@@ -53,12 +53,13 @@ object HttpApiV0 {
       addressRoutes = AddressesRoutes(addressesService, txsService)
       infoRoutes    = InfoRoutes(statsService)
       statsRoutes   = StatsRoutes(statsService)
+      chartsRoutes  = ChartsRoutes(statsService)
       docsRoutes    = DocsRoutes[F]
       searchRoutes  = SearchRoutes(blockChainService, txsService, addressesService)
       boxesRoutes   = BoxesRoutes(boxesService)
 
       routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
-      addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes
+      addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes <+> chartsRoutes
       corsRoutes = CORS(routes)
       http <- BlazeServerBuilder[F]
                .bindHttp(settings.port, settings.host)

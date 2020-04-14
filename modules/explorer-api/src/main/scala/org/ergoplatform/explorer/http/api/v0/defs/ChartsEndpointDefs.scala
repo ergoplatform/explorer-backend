@@ -13,8 +13,8 @@ object ChartsEndpointDefs {
   private val PathPrefix = "charts"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    getTotalCoinsAmtDef :: getAvgBlockSizeDef :: getBlockChainSizeDef :: getAvgTxsPerBlockDef ::
-    getTotalTxsPerBlockDef :: getAvgDifficultyDef :: getMinersRevenueDef :: getHashRateDef ::
+    getTotalCoinsAmtDef :: getAvgBlockSizeDef :: getBlockChainSizeDef :: getAvgTxsNumPerBlockDef ::
+    getTotalTxsNumDef :: getAvgDifficultyDef :: getMinersRevenueDef :: getHashRateDef ::
     getHashRateDistributionDef :: Nil
 
   def getTotalCoinsAmtDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
@@ -29,13 +29,13 @@ object ChartsEndpointDefs {
       .in(timespan)
       .out(jsonBody[List[ChartPoint]])
 
-  def getAvgTxsPerBlockDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getAvgTxsNumPerBlockDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
     baseEndpointDef.get
       .in(PathPrefix / "transactions-per-block")
       .in(timespan)
       .out(jsonBody[List[ChartPoint]])
 
-  def getTotalTxsPerBlockDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getTotalTxsNumDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
     baseEndpointDef.get
       .in(PathPrefix / "transactions-number")
       .in(timespan)
