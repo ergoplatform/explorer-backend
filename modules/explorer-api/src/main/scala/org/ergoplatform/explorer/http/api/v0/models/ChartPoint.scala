@@ -4,7 +4,7 @@ import io.circe.Codec
 import io.circe.derivation.deriveCodec
 import org.ergoplatform.explorer.db.models.aggregates.TimePoint
 
-final case class ChartPoint(ts: Long, value: Long)
+final case class ChartPoint(timestamp: Long, value: Long)
 
 object ChartPoint {
 
