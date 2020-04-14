@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0
 
 import cats.Monad
-import cats.effect.{ConcurrentEffect, ContextShift, Resource, Sync, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import cats.syntax.semigroupk._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import io.chrisdavenport.log4cats.Logger
