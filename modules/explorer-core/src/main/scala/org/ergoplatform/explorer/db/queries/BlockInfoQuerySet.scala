@@ -133,7 +133,11 @@ object BlockInfoQuerySet extends QuerySet {
 
   def totalCoinsSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
-         |select min(timestamp) as t, cast(max(total_coins_issued) as bigint) from blocks_info
+         |select
+         |min(timestamp) as t,
+         |cast(max(total_coins_issued) as bigint),
+         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
@@ -147,42 +151,66 @@ object BlockInfoQuerySet extends QuerySet {
 
   def avgTxsQtySince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
-         |select min(timestamp) as t, cast(avg(txs_count) as bigint) from blocks_info
+         |select
+         |min(timestamp) as t,
+         |cast(avg(txs_count) as bigint),
+         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
   def totalTxsQtySince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
-         |select min(timestamp) as t, cast(sum(txs_count) as bigint) from blocks_info
+         |select
+         |min(timestamp) as t,
+         |cast(sum(txs_count) as bigint),
+         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
   def totalBlockChainSizeSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
-         |select min(timestamp) as t, cast(max(block_chain_total_size) as bigint) from blocks_info
+         |select
+         |min(timestamp) as t,
+         |cast(max(block_chain_total_size) as bigint),
+         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
   def avgDifficultiesSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
-         |select min(timestamp) as t, cast(avg(difficulty) as bigint) from blocks_info
+         |select
+         |min(timestamp) as t,
+         |cast(avg(difficulty) as bigint),
+         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
   def totalDifficultiesSince(ts: Long): Query0[TimePoint[Long]] =
     sql"""
-         |select min(timestamp) as t, cast(sum(difficulty) as bigint) from blocks_info
+         |select
+         |min(timestamp) as t,
+         |cast(sum(difficulty) as bigint),
+         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
   def totalMinerRevenueSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
-         |select min(timestamp) as t, cast(sum(miner_revenue) as bigint) from blocks_info
+         |select
+         |min(timestamp) as t,
+         |cast(sum(miner_revenue) as bigint),
+         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
