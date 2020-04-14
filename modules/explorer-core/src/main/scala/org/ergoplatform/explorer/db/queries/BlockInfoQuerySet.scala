@@ -219,7 +219,7 @@ object BlockInfoQuerySet extends QuerySet {
     sql"""
          |select bi.miner_address, coalesce(cast(sum(bi.difficulty) as bigint), 0),
          |coalesce(cast(sum(bi.block_mining_time) as bigint), 0), count(*) as count, m.miner_name
-         |from blocks_info_replica bi left join known_miners m on (bi.miner_address = m.miner_address)
+         |from blocks_info bi left join known_miners m on (bi.miner_address = m.miner_address)
          |where timestamp >= $ts
          |group by bi.miner_address, m.miner_name
          |order by count desc
