@@ -42,7 +42,7 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.box_id = $boxId
@@ -65,7 +65,7 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.ergo_tree = $ergoTree and o.main_chain = true
@@ -110,7 +110,7 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  null
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.main_chain = true
@@ -136,7 +136,7 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  null
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.main_chain = true
@@ -158,7 +158,7 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.tx_id = $txId
@@ -180,7 +180,7 @@ object OutputQuerySet extends QuerySet {
            |  o.additional_registers,
            |  o.timestamp,
            |  o.main_chain,
-           |  i.tx_id
+           |  case i.main_chain when false then null else i.tx_id end
            |from node_outputs o
            |left join node_inputs i on o.box_id = i.box_id
            |""".stripMargin
@@ -232,7 +232,7 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  null
          |from node_outputs o
          |inner join node_assets a on o.box_id = a.box_id and a.token_id = $tokenId
          |left join node_inputs i on o.box_id = i.box_id
@@ -260,7 +260,7 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  null
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.main_chain = true
