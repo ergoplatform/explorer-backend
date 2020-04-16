@@ -42,11 +42,10 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
+         |  (select tx.id from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true)
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.box_id = $boxId
-         |order by case i.main_chain when false then null else i.tx_id end desc
          |limit 1
          |""".stripMargin.query[ExtendedOutput]
 
