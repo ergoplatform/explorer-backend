@@ -81,6 +81,7 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
+         |  and (select tx.id from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true) is null
          |""".stripMargin.query[BoxId]
 
   def sumOfAllMainUnspentByErgoTree(
@@ -92,6 +93,7 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
+         |  and (select tx.id from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true) is null
          |""".stripMargin.query[Long]
 
   def getMainUnspentByErgoTree(
@@ -117,6 +119,7 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
+         |  and (select tx.id from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true) is null
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
@@ -143,6 +146,7 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
+         |  and (select tx.id from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true) is null
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
@@ -240,6 +244,7 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
+         |  and (select tx.id from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true) is null
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
@@ -268,6 +273,7 @@ object OutputQuerySet extends QuerySet {
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
          |  and o.ergo_tree like ${"%" + tokenId + "%"}
+         |  and (select tx.id from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true) is null
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
