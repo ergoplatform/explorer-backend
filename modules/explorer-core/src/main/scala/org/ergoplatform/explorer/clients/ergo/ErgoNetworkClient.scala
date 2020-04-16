@@ -125,10 +125,10 @@ object ErgoNetworkClient {
             )
         }
         .flatMap { res =>
-          if (!res.exists(_.isSuccess))
-            TransactionSubmissionFailed(tx.id.toString).raise[F, Unit]
-          else if (res.exists(_.responseClass == Status.ClientError))
+          if (res.exists(_.responseClass == Status.ClientError))
             InvalidTransaction(tx.id.toString).raise[F, Unit]
+          else if (!res.exists(_.isSuccess))
+            TransactionSubmissionFailed(tx.id.toString).raise[F, Unit]
           else ().pure[F]
         }
 
