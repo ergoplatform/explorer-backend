@@ -82,7 +82,7 @@ object ErgoLikeTransactionRepo {
 
     def delete(id: ModifierId): F[Unit] =
       (count >>= { c =>
-        redis.hDel(KeyPrefix, id) >> redis.set(CounterKey, (c - 1).toString)
+        redis.del(s"$KeyPrefix:$id") >> redis.set(CounterKey, (c - 1).toString)
       }) >> Logger[F].debug(s"Transaction '$id' removed from cache")
 
     def count: F[Int] =

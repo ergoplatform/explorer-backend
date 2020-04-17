@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.broadcaster
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.applicative._
 import cats.syntax.applicativeError._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.Stream
@@ -36,7 +37,7 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
       Logger[F].info(s"Broadcasting transaction ${tx.id}") >>
       network
         .submitTransaction(tx)
-        .recoverWith { case _: InvalidTransaction => repo.delete(tx.id) } >>
+        .recoverWith { case _: InvalidTransaction => ().pure } >>
       repo.delete(tx.id)
     }
 }
