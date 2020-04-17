@@ -70,6 +70,7 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.ergo_tree = $ergoTree and o.main_chain = true
+         |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
   def getAllMainUnspentIdsByErgoTree(
@@ -87,7 +88,7 @@ object OutputQuerySet extends QuerySet {
     ergoTree: HexString
   )(implicit lh: LogHandler): Query0[Long] =
     sql"""
-         |select sum(o.value) from node_outputs o
+         |select coalesce(cast(sum(o.value) as bigint), 0) from node_outputs o
          |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
