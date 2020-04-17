@@ -12,6 +12,7 @@ import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.{Chunk, Pipe, Stream}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.estatico.newtype.ops._
 import mouse.anyf._
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.db.Trans
@@ -19,11 +20,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{
-  TransactionInfo,
-  TransactionSummary,
-  UTransactionInfo
-}
+import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, TransactionSummary, TxIdResponse, UTransactionInfo}
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{Address, TxId}
@@ -59,7 +56,7 @@ trait TransactionsService[F[_], S[_[_], _]] {
 
   /** Submit a transaction to the network.
     */
-  def submitTransaction(tx: ErgoLikeTransaction): F[Unit]
+  def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse]
 }
 
 object TransactionsService {
@@ -142,9 +139,9 @@ object TransactionsService {
     def getIdsLike(query: String): F[List[TxId]] =
       transactionRepo.getIdsLike(query) ||> trans.xa
 
-    def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
+    def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse] =
       Logger[F].trace(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
-      ergoLikeTxRepo.put(tx)
+      ergoLikeTxRepo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
 
     private def assembleInfo: Pipe[D, Chunk[Transaction], TransactionInfo] =
       _.flatMap { txChunk =>

@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.broadcaster
 
+import cats.effect.concurrent.Ref
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -32,14 +33,21 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
       }
 
   private def broadcastPool: Stream[F, Unit] =
-    Stream.eval(Logger[F].info(s"Broadcast transactions ..")) >>
-    repo.getAll.evalMap { tx =>
-      Logger[F].info(s"Broadcasting transaction ${tx.id}") >>
-      network
-        .submitTransaction(tx)
-        .recoverWith { case _: InvalidTransaction => ().pure } >>
-      repo.delete(tx.id)
-    }
+    Stream
+      .eval(Ref.of(0))
+      .flatTap { count =>
+        repo.getAll.evalMap { tx =>
+          Logger[F].info(s"Broadcasting transaction ${tx.id}") >>
+          count.update(_ + 1) >>
+          network
+            .submitTransaction(tx)
+            .recoverWith { case _: InvalidTransaction => ().pure } >>
+          repo.delete(tx.id)
+        }
+      }
+      .flatMap { cRef =>
+        Stream.eval(cRef.get >>= (c => Logger[F].info(s"$c transactions processed")))
+      }
 }
 
 object UtxBroadcaster {

@@ -19,7 +19,7 @@ object DoobieLogHandler {
       logger.trace {
         s"""Successful Statement Execution:
            |
-           |  ${s.lines.dropWhile(_.trim.isEmpty).mkString("\n  ")}
+           |  ${s.lines.dropWhile(_.trim.isEmpty).toArray.mkString("\n  ")}
            |
            | arguments = [${a.mkString(", ")}]
            |   elapsed = ${e1.toMillis} ms exec + ${e2.toMillis} ms processing (${(e1 + e2).toMillis} ms total)
@@ -30,7 +30,7 @@ object DoobieLogHandler {
       logger.error {
         s"""Failed Resultset Processing:
            |
-           |  ${s.lines.dropWhile(_.trim.isEmpty).mkString("\n  ")}
+           |  ${s.lines.dropWhile(_.trim.isEmpty).toArray.mkString("\n  ")}
            |
            | arguments = [${a.mkString(", ")}]
            |   elapsed = ${e1.toMillis} ms exec + ${e2.toMillis} ms processing (failed) (${(e1 + e2).toMillis} ms total)
@@ -42,7 +42,7 @@ object DoobieLogHandler {
       logger.error {
         s"""Failed Statement Execution:
            |
-           |  ${s.lines.dropWhile(_.trim.isEmpty).mkString("\n  ")}
+           |  ${s.lines.dropWhile(_.trim.isEmpty).toArray.mkString("\n  ")}
            |
            | arguments = [${a.mkString(", ")}]
            |   elapsed = ${e1.toMillis} ms exec (failed)

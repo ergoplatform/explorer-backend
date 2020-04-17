@@ -7,13 +7,12 @@ import cats.syntax.functor._
 import doobie.refined.implicits._
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.{Refined, Validate}
-import eu.timepit.refined.{W, refineV}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
+import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.UrlString.fromString
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
@@ -29,7 +28,9 @@ package object explorer {
   object constraints {
 
     final case class ValidOrdering()
+
     object ValidOrdering {
+
       implicit def validLongValidate: Validate.Plain[String, ValidOrdering] =
         Validate.fromPredicate(
           x => x.toLowerCase == "asc" || x.toLowerCase == "desc",
@@ -177,9 +178,7 @@ package object explorer {
 
     implicit def configReader: ConfigReader[Address] =
       implicitly[ConfigReader[String]].emap { s =>
-        fromString[Either[RefinementFailed, *]](s).leftMap(e =>
-          CannotConvert(s, s"Refined", e.msg)
-        )
+        fromString[Either[RefinementFailed, *]](s).leftMap(e => CannotConvert(s, s"Refined", e.msg))
       }
 
     def fromString[
@@ -244,9 +243,7 @@ package object explorer {
 
     implicit def configReader: ConfigReader[UrlString] =
       implicitly[ConfigReader[String]].emap { s =>
-        fromString[Either[RefinementFailed, *]](s).leftMap(e =>
-          CannotConvert(s, s"Refined", e.msg)
-        )
+        fromString[Either[RefinementFailed, *]](s).leftMap(e => CannotConvert(s, s"Refined", e.msg))
       }
 
     def fromString[
