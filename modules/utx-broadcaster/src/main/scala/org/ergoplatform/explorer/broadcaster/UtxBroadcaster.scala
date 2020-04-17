@@ -25,13 +25,14 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
     Stream(()).repeat
       .covary[F]
       .metered(settings.tickInterval)
+      .evalTap(_ => Logger[F].info("Tick"))
       .flatMap(_ => broadcastPool)
       .handleErrorWith { e =>
         Stream.eval(Logger[F].error(e)(s"An error occurred while broadcasting local utx pool")) >> run
       }
 
   private def broadcastPool: Stream[F, Unit] =
-    repo.getAll.evalMap { tx =>
+    Stream.eval(Logger[F].info(s"Preparing to broadcast")) >> repo.getAll.evalTap(tx => Logger[F].info(s"From cache: ${tx.id}")).evalMap { tx =>
       Logger[F].info(s"Broadcasting transaction ${tx.id}") >>
       network
         .submitTransaction(tx)
