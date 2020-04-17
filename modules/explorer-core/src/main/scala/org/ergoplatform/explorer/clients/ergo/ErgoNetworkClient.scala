@@ -5,6 +5,7 @@ import cats.effect.Sync
 import cats.syntax.functor._
 import cats.syntax.flatMap._
 import cats.syntax.parallel._
+import cats.syntax.applicative._
 import cats.instances.list._
 import cats.{ApplicativeError, Monad, Parallel}
 import fs2.Stream
@@ -15,12 +16,19 @@ import io.circe.jawn.CirceSupportParser.facade
 import jawnfs2._
 import org.ergoplatform.explorer.Err.ProcessingErr.TransactionDecodingFailed
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
+import org.ergoplatform.explorer.protocol.ergoInstances._
 import org.ergoplatform.explorer.{CRaise, Id, UrlString}
-import org.ergoplatform.{ErgoLikeTransaction, JsonCodecs}
+import org.ergoplatform.ErgoLikeTransaction
+import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.{
+  InvalidTransaction,
+  RequestFailed,
+  TransactionSubmissionFailed
+}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.client.Client
-import org.http4s.{Method, Request, Uri}
+import org.http4s.{Method, Request, Status, Uri}
 import tofu.syntax.raise._
 
 /** A service providing an access to the Ergo network.
@@ -61,12 +69,11 @@ object ErgoNetworkClient {
       }
 
   final private class Live[
-    F[_]: Sync: Parallel: Logger: CRaise[*[_], TransactionDecodingFailed]
+    F[_]: Sync: Parallel: Logger: CRaise[*[_], TransactionDecodingFailed]: CRaise[*[_], NetworkErr]
   ](
     client: Client[F],
     masterNodesAddresses: NonEmptyList[UrlString]
-  ) extends ErgoNetworkClient[F, Stream]
-    with JsonCodecs {
+  ) extends ErgoNetworkClient[F, Stream] {
 
     def getBestHeight: F[Int] =
       retrying(Logger[F].error(_)) { url =>
@@ -107,17 +114,25 @@ object ErgoNetworkClient {
       }
 
     def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
-      masterNodesAddresses.toList.parTraverse { url =>
-        client
-          .expect[TxResponse](
-            Request[F](
-              Method.POST,
-              Uri.unsafeFromString(s"$url/transactions")
-            ).withEntity(tx)
-          )
-      }.void
+      masterNodesAddresses.toList
+        .parTraverse { url =>
+          client
+            .status(
+              Request[F](
+                Method.POST,
+                Uri.unsafeFromString(s"$url/transactions")
+              ).withEntity(tx)
+            )
+        }
+        .flatMap { res =>
+          if (res.exists(_.responseClass == Status.ClientError))
+            InvalidTransaction(tx.id.toString).raise[F, Unit]
+          else if (!res.exists(_.isSuccess))
+            TransactionSubmissionFailed(tx.id.toString).raise[F, Unit]
+          else ().pure[F]
+        }
 
-    private def retrying[M[_]: Monad, A](logError: String => M[Unit])(
+    private def retrying[M[_]: Monad: CRaise[*[_], RequestFailed], A](logError: String => M[Unit])(
       f: UrlString => M[A]
     )(implicit G: ApplicativeError[M, Throwable]): M[A] = {
       def attempt(urls: List[UrlString])(i: Int): M[A] =
@@ -128,7 +143,7 @@ object ErgoNetworkClient {
               attempt(tl)(i + 1)
             }
           case Nil =>
-            G.raiseError(new Exception(s"Gave up after $i attempts"))
+            RequestFailed(urls).raise[M, A]
         }
       attempt(masterNodesAddresses.toList)(0)
     }

@@ -1,11 +1,11 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.data.NonEmptyList
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
-import org.ergoplatform.explorer.db.{RealDbTest, repositories}
+import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -50,5 +50,8 @@ class InputRepoSpec
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (OutputRepo[D, fs2.Stream], InputRepo[D]) => Any
   ): Any =
-    body(repositories.OutputRepo[D], repositories.InputRepo[D])
+    body(
+      repositories.OutputRepo[IO, D].unsafeRunSync(),
+      repositories.InputRepo[IO, D].unsafeRunSync()
+    )
 }

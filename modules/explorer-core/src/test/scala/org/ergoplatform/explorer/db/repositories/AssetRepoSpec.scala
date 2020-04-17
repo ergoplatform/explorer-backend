@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.data.NonEmptyList
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import doobie.ConnectionIO
 import org.ergoplatform.explorer.db
 import org.ergoplatform.explorer.db.RealDbTest
@@ -56,7 +56,10 @@ class AssetRepoSpec
 
         val outsIssuingToken = issuedTokens.map(_._2).map(ExtendedOutput(_, None))
 
-        assetRepo.getAllIssuingBoxes(0, Int.MaxValue).compile.toList
+        assetRepo
+          .getAllIssuingBoxes(0, Int.MaxValue)
+          .compile
+          .toList
           .runWithIO() should contain theSameElementsAs outsIssuingToken
 
         // test all
@@ -80,15 +83,15 @@ class AssetRepoSpec
   private def withLiveRepo[D[_]: LiftConnectionIO: Sync](
     body: AssetRepo[D, fs2.Stream] => Any
   ): Any =
-    body(db.repositories.AssetRepo[D])
+    body(db.repositories.AssetRepo[IO, D].unsafeRunSync())
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (AssetRepo[D, fs2.Stream], OutputRepo[D, fs2.Stream], InputRepo[D]) => Any
   ): Any =
     body(
-      db.repositories.AssetRepo[D],
-      db.repositories.OutputRepo[D],
-      db.repositories.InputRepo[D]
+      db.repositories.AssetRepo[IO, D].unsafeRunSync(),
+      db.repositories.OutputRepo[IO, D].unsafeRunSync(),
+      db.repositories.InputRepo[IO, D].unsafeRunSync()
     )
 
 }

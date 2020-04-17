@@ -5,7 +5,6 @@ import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
-import doobie.util.update.Update0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
 
@@ -30,7 +29,7 @@ object OutputQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def getByBoxId(boxId: BoxId): Query0[ExtendedOutput] =
+  def getByBoxId(boxId: BoxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -43,17 +42,18 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  (select tx.id from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true)
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.box_id = $boxId
+         |limit 1
          |""".stripMargin.query[ExtendedOutput]
 
   def getMainByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -66,18 +66,19 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.ergo_tree = $ergoTree and o.main_chain = true
+         |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
   def getAllMainUnspentIdsByErgoTree(
     ergoTree: HexString
-  ): Query0[BoxId] =
+  )(implicit lh: LogHandler): Query0[BoxId] =
     sql"""
          |select o.box_id from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
@@ -85,10 +86,10 @@ object OutputQuerySet extends QuerySet {
 
   def sumOfAllMainUnspentByErgoTree(
     ergoTree: HexString
-  ): Query0[Long] =
+  )(implicit lh: LogHandler): Query0[Long] =
     sql"""
-         |select sum(o.value) from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |select coalesce(cast(sum(o.value) as bigint), 0) from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
@@ -98,7 +99,7 @@ object OutputQuerySet extends QuerySet {
     ergoTree: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -111,9 +112,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  null
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
@@ -124,7 +125,7 @@ object OutputQuerySet extends QuerySet {
     ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -137,16 +138,16 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  null
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
-  def getAllByTxId(txId: TxId): Query0[ExtendedOutput] =
+  def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select distinct on (o.box_id)
          |  o.box_id,
@@ -159,7 +160,7 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.tx_id = $txId
@@ -167,7 +168,7 @@ object OutputQuerySet extends QuerySet {
 
   def getAllByTxIds(
     txIds: NonEmptyList[TxId]
-  ): Query0[ExtendedOutput] = {
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
     val q =
       sql"""
            |select distinct on (o.box_id)
@@ -181,7 +182,7 @@ object OutputQuerySet extends QuerySet {
            |  o.additional_registers,
            |  o.timestamp,
            |  o.main_chain,
-           |  i.tx_id
+           |  case i.main_chain when false then null else i.tx_id end
            |from node_outputs o
            |left join node_inputs i on o.box_id = i.box_id
            |""".stripMargin
@@ -189,39 +190,38 @@ object OutputQuerySet extends QuerySet {
       .query[ExtendedOutput]
   }
 
-  def getAllLike(substring: String): Query0[Address] =
+  def getAllLike(substring: String)(implicit lh: LogHandler): Query0[Address] =
     sql"select address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
 
-  def updateChainStatusByHeaderId(headerId: Id)(newChainStatus: Boolean): Update0 =
-    sql"""
-         |update node_outputs set main_chain = $newChainStatus from node_outputs o
-         |left join node_transactions t on t.id = o.tx_id
-         |left join node_headers h on t.header_id = h.id
-         |where h.id = $headerId
-         |""".stripMargin.update
-
-  def sumOfAllUnspentOutputsSince(ts: Long): Query0[BigDecimal] =
-    sql"""
-         |select coalesce(cast(sum(o.value) as decimal), 0)
-         |from node_outputs o left join node_inputs i on o.box_id = i.box_id
-         |where i.box_id is null and o.timestamp >= $ts
-         |""".stripMargin.query[BigDecimal]
-
-  def estimatedOutputsSince(ts: Long)(genesisAddress: Address): Query0[BigDecimal] =
+  def sumOfAllUnspentOutputsSince(ts: Long)(implicit lh: LogHandler): Query0[BigDecimal] =
     sql"""
          |select coalesce(cast(sum(o.value) as decimal), 0)
          |from node_outputs o
-         |left join node_inputs i on (o.box_id = i.box_id and i.box_id is null)
-         |where o.address <> '$genesisAddress' and o.timestamp >= $ts
-         |""".query[BigDecimal]
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |where i.box_id is null and o.timestamp >= $ts
+         |""".stripMargin.query[BigDecimal]
+
+  def estimatedOutputsSince(
+    ts: Long
+  )(genesisAddress: Address)(implicit lh: LogHandler): Query0[BigDecimal] =
+    Fragment
+      .const(
+        s"""
+           |select coalesce(cast(sum(o.value) as decimal), 0)
+           |from node_outputs o
+           |join node_inputs i on o.box_id = i.box_id
+           |where i.box_id is null and o.timestamp >= $ts and o.address <> '$genesisAddress'
+           |""".stripMargin
+      )
+      .query[BigDecimal]
 
   def getMainUnspentSellOrderByTokenId(
     tokenId: TokenId,
     ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -234,10 +234,10 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  null
          |from node_outputs o
          |inner join node_assets a on o.box_id = a.box_id and a.token_id = $tokenId
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
@@ -249,7 +249,7 @@ object OutputQuerySet extends QuerySet {
     ergoTreeTemplate: HexString,
     offset: Int,
     limit: Int
-  ): Query0[ExtendedOutput] =
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select
          |  o.box_id,
@@ -262,9 +262,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  i.tx_id
+         |  null
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree like ${"%" + ergoTreeTemplate}

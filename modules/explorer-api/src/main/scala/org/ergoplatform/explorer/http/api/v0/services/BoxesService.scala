@@ -2,8 +2,10 @@ package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.Monad
 import cats.data.OptionT
+import cats.effect.Sync
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.apply._
 import cats.syntax.list._
 import mouse.anyf._
 import fs2.{Chunk, Pipe, Stream}
@@ -45,10 +47,10 @@ trait BoxesService[F[_], S[_[_], _]] {
 object BoxesService {
 
   def apply[
-    F[_],
+    F[_]: Sync,
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: LiftConnectionIO: Monad
-  ](trans: D Trans F)(implicit e: ErgoAddressEncoder): BoxesService[F, Stream] =
-    new Live(OutputRepo[D], AssetRepo[D])(trans)
+  ](trans: D Trans F)(implicit e: ErgoAddressEncoder): F[BoxesService[F, Stream]] =
+    (OutputRepo[F, D], AssetRepo[F, D]).mapN(new Live(_, _)(trans))
 
   final private class Live[
     F[_],

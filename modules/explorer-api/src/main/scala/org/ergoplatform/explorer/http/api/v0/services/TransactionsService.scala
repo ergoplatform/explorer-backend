@@ -5,12 +5,14 @@ import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
+import cats.syntax.apply._
 import cats.syntax.traverse._
 import cats.{FlatMap, Monad}
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.{Chunk, Pipe, Stream}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.estatico.newtype.ops._
 import mouse.anyf._
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.db.Trans
@@ -18,7 +20,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, TransactionSummary, TxIdResponse, UTransactionInfo}
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{Address, TxId}
@@ -30,7 +32,7 @@ trait TransactionsService[F[_], S[_[_], _]] {
 
   /** Get transaction info by `id`.
     */
-  def getTxInfo(id: TxId): F[Option[TransactionInfo]]
+  def getTxInfo(id: TxId): F[Option[TransactionSummary]]
 
   /** Get unconfirmed transaction info by `id`.
     */
@@ -54,7 +56,7 @@ trait TransactionsService[F[_], S[_[_], _]] {
 
   /** Submit a transaction to the network.
     */
-  def submitTransaction(tx: ErgoLikeTransaction): F[Unit]
+  def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse]
 }
 
 object TransactionsService {
@@ -64,19 +66,18 @@ object TransactionsService {
     redis: RedisCommands[F, String, String]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[TransactionsService[F, Stream]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
-      ErgoLikeTransactionRepo[F](utxCacheSettings, redis).map { etxRepo =>
-        new Live(
-          HeaderRepo[D],
-          TransactionRepo[D],
-          UTransactionRepo[D],
-          InputRepo[D],
-          UInputRepo[D],
-          OutputRepo[D],
-          UOutputRepo[D],
-          AssetRepo[D],
-          UAssetRepo[D],
-          etxRepo
-        )(trans)
+      ErgoLikeTransactionRepo[F](utxCacheSettings, redis).flatMap { etxRepo =>
+        (
+          HeaderRepo[F, D],
+          TransactionRepo[F, D],
+          UTransactionRepo[F, D],
+          InputRepo[F, D],
+          UInputRepo[F, D],
+          OutputRepo[F, D],
+          UOutputRepo[F, D],
+          AssetRepo[F, D],
+          UAssetRepo[F, D]
+        ).mapN(new Live(_, _, _, _, _, _, _, _, _, etxRepo)(trans))
       }
     }
 
@@ -94,7 +95,7 @@ object TransactionsService {
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends TransactionsService[F, Stream] {
 
-    def getTxInfo(id: TxId): F[Option[TransactionInfo]] =
+    def getTxInfo(id: TxId): F[Option[TransactionSummary]] =
       (for {
         txOpt <- transactionRepo.getMain(id)
         ins   <- txOpt.toList.flatTraverse(tx => inputRepo.getAllByTxId(tx.id))
@@ -103,7 +104,7 @@ object TransactionsService {
         assets     <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
         bestHeight <- headerRepo.getBestHeight
         txInfo = txOpt.map(tx =>
-          TransactionInfo(tx, bestHeight - tx.inclusionHeight, ins, outs, assets)
+          TransactionSummary(tx, bestHeight - tx.inclusionHeight, ins, outs, assets)
         )
       } yield txInfo) ||> trans.xa
 
@@ -138,9 +139,9 @@ object TransactionsService {
     def getIdsLike(query: String): F[List[TxId]] =
       transactionRepo.getIdsLike(query) ||> trans.xa
 
-    def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
+    def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse] =
       Logger[F].trace(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
-      ergoLikeTxRepo.put(tx)
+      ergoLikeTxRepo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
 
     private def assembleInfo: Pipe[D, Chunk[Transaction], TransactionInfo] =
       _.flatMap { txChunk =>

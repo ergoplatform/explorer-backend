@@ -5,6 +5,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.Fragments.in
+import doobie.LogHandler
 import doobie.util.update.Update0
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.{HexString, TxId}
@@ -19,17 +20,17 @@ object UTransactionQuerySet extends QuerySet {
     "size"
   )
 
-  def dropMany(ids: NonEmptyList[TxId]): Update0 =
+  def dropMany(ids: NonEmptyList[TxId])(implicit lh: LogHandler): Update0 =
     in(sql"delete from node_u_transactions where id", ids).update
 
-  def get(id: TxId): Query0[UTransaction] =
+  def get(id: TxId)(implicit lh: LogHandler): Query0[UTransaction] =
     sql"select * from node_u_transactions where id = $id".query[UTransaction]
 
   def getAllRelatedToErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
-  ): Query0[UTransaction] =
+  )(implicit lh: LogHandler): Query0[UTransaction] =
     sql"""
          |select t.id, t.creation_timestamp, t.size from node_u_transactions t
          |left join node_u_inputs ui on ui.tx_id = t.id
@@ -38,6 +39,6 @@ object UTransactionQuerySet extends QuerySet {
          |where uo.ergo_tree = $ergoTree or o.ergo_tree = $ergoTree
          |""".stripMargin.query[UTransaction]
 
-  def getAllIds: Query0[TxId] =
+  def getAllIds(implicit lh: LogHandler): Query0[TxId] =
     sql"select id from node_u_transactions".query[TxId]
 }

@@ -4,6 +4,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.{HexString, Id}
+import scorex.util.encode.Base16
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
@@ -21,7 +22,7 @@ final case class HeaderInfo(
   size: Int,
   extensionHash: HexString,
   powSolutions: PowSolutionInfo,
-  votes: String
+  votes: (Byte, Byte, Byte)
 )
 
 object HeaderInfo {
@@ -60,7 +61,19 @@ object HeaderInfo {
       size,
       h.extensionHash,
       powSolutions,
-      h.votes
+      expandVotes(h.votes)
     )
+  }
+
+  private def expandVotes(votesHex: String) = {
+    val defaultVotes = (0: Byte, 0: Byte, 0: Byte)
+    val paramsQty = 3
+    Base16
+      .decode(votesHex)
+      .map {
+        case votes if votes.length == paramsQty => (votes(0): Byte, votes(1): Byte, votes(2): Byte)
+        case _                                  => defaultVotes
+      }
+      .getOrElse(defaultVotes)
   }
 }

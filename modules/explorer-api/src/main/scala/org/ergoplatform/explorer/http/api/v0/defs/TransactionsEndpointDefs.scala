@@ -5,7 +5,12 @@ import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.commonDirectives._
-import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v0.models.{
+  TransactionInfo,
+  TransactionSummary,
+  TxIdResponse,
+  UTransactionInfo
+}
 import org.ergoplatform.explorer.protocol.ergoInstances._
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -17,10 +22,10 @@ object TransactionsEndpointDefs {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getTxByIdDef :: getUnconfirmedTxByIdDef :: getTxsSinceDef :: sendTransactionDef :: Nil
 
-  def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionInfo, Nothing] =
+  def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionSummary, Nothing] =
     baseEndpointDef.get
       .in(PathPrefix / path[TxId])
-      .out(jsonBody[TransactionInfo])
+      .out(jsonBody[TransactionSummary])
 
   def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionInfo, Nothing] =
     baseEndpointDef.get
@@ -33,8 +38,9 @@ object TransactionsEndpointDefs {
       .in(PathPrefix / "since" / path[Int])
       .out(jsonBody[List[TransactionInfo]])
 
-  def sendTransactionDef: Endpoint[ErgoLikeTransaction, ApiErr, Unit, Nothing] =
+  def sendTransactionDef: Endpoint[ErgoLikeTransaction, ApiErr, TxIdResponse, Nothing] =
     baseEndpointDef.post
       .in(PathPrefix / "send")
       .in(jsonBody[ErgoLikeTransaction])
+      .out(jsonBody[TxIdResponse])
 }

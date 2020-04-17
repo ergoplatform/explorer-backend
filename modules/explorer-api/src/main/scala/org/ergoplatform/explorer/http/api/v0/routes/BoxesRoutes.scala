@@ -1,12 +1,12 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.effect.{ContextShift, Sync}
-import cats.syntax.flatMap._
 import cats.syntax.semigroupk._
-import cats.syntax.option._
+import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
+import org.ergoplatform.explorer.http.api.syntax.routes._
 import org.ergoplatform.explorer.http.api.v0.defs.BoxesEndpointDefs
 import org.ergoplatform.explorer.http.api.v0.services.BoxesService
 import org.http4s.HttpRoutes
@@ -26,8 +26,8 @@ final class BoxesRoutes[
     getOutputByIdDef.toRoutes { id =>
       service
         .getOutputById(id)
-        .flatMap(_.liftTo[F](ApiErr.notFound(s"Output with id: $id")))
         .adaptThrowable
+        .orNotFound(s"Output with id: $id")
         .value
     }
 
@@ -54,7 +54,7 @@ final class BoxesRoutes[
 
 object BoxesRoutes {
 
-  def apply[F[_]: Sync: ContextShift](
+  def apply[F[_]: Sync: ContextShift: Logger](
     service: BoxesService[F, fs2.Stream]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new BoxesRoutes[F](service).routes

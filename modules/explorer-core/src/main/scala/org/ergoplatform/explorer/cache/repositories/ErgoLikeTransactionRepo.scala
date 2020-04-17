@@ -11,10 +11,10 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.parser._
 import io.circe.syntax._
 import mouse.any._
-import org.ergoplatform.explorer.cache.redisInstances._
+import org.ergoplatform.ErgoLikeTransaction
 import org.ergoplatform.explorer.cache.redisTransaction.Transaction
 import org.ergoplatform.explorer.settings.UtxCacheSettings
-import org.ergoplatform.{ErgoLikeTransaction, JsonCodecs}
+import org.ergoplatform.explorer.protocol.ergoInstances._
 import scorex.util.ModifierId
 
 import scala.util.Try
@@ -45,23 +45,25 @@ object ErgoLikeTransactionRepo {
   ](
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
-  ) extends ErgoLikeTransactionRepo[F, Stream]
-    with JsonCodecs {
+  ) extends ErgoLikeTransactionRepo[F, Stream] {
 
     private val KeyPrefix  = "txs"
     private val CounterKey = "txs:count"
 
     def put(tx: ErgoLikeTransaction): F[Unit] =
       s"$KeyPrefix:${tx.id}" |> { key =>
-        (redis.get(CounterKey) >>= { count =>
-          (getCount(count) + 1) |> { newCount =>
-            Transaction(redis).run(
-              redis.set(CounterKey, newCount.toString),
-              redis.append(key, tx.asJson.noSpaces),
-              redis.expire(key, utxCacheSettings.transactionTtl)
-            )
-          }
-        }) >> Logger[F].info(s"Unconfirmed transaction '${tx.id}' has been cached")
+        redis.get(key).flatMap {
+          case None =>
+            (redis.get(CounterKey) >>= { count =>
+              (getCount(count) + 1) |> { newCount =>
+                redis.set(CounterKey, newCount.toString) >>
+                redis.append(key, tx.asJson.noSpaces) >>
+                redis.expire(key, utxCacheSettings.transactionTtl)
+              }
+            }) >> Logger[F].info(s"Unconfirmed transaction '${tx.id}' has been cached")
+          case _ =>
+            Logger[F].debug(s"An attempt to persist transaction '${tx.id}' twice")
+        }
       }
 
     def getAll: Stream[F, ErgoLikeTransaction] =
@@ -80,7 +82,7 @@ object ErgoLikeTransactionRepo {
 
     def delete(id: ModifierId): F[Unit] =
       (count >>= { c =>
-        Transaction(redis).run(redis.hDel(KeyPrefix, id), redis.set(CounterKey, (c - 1).toString))
+        redis.del(s"$KeyPrefix:$id") >> redis.set(CounterKey, (c - 1).toString)
       }) >> Logger[F].debug(s"Transaction '$id' removed from cache")
 
     def count: F[Int] =

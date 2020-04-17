@@ -1,12 +1,16 @@
 package org.ergoplatform.explorer.broadcaster
 
+import cats.effect.concurrent.Ref
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.applicative._
+import cats.syntax.applicativeError._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.InvalidTransaction
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
@@ -25,13 +29,25 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
       .metered(settings.tickInterval)
       .flatMap(_ => broadcastPool)
       .handleErrorWith { e =>
-        Stream.eval(Logger[F].error(e)(s"An error occurred while broadcasting local utx pool"))
+        Stream.eval(Logger[F].error(e)(s"An error occurred while broadcasting local utx pool")) >> run
       }
 
   private def broadcastPool: Stream[F, Unit] =
-    repo.getAll.evalMap { tx =>
-      network.submitTransaction(tx) >> repo.delete(tx.id)
-    }
+    Stream
+      .eval(Ref.of(0))
+      .flatTap { count =>
+        repo.getAll.evalMap { tx =>
+          Logger[F].info(s"Broadcasting transaction ${tx.id}") >>
+          count.update(_ + 1) >>
+          network
+            .submitTransaction(tx)
+            .recoverWith { case _: InvalidTransaction => ().pure } >>
+          repo.delete(tx.id)
+        }
+      }
+      .flatMap { cRef =>
+        Stream.eval(cRef.get >>= (c => Logger[F].info(s"$c transactions processed")))
+      }
 }
 
 object UtxBroadcaster {

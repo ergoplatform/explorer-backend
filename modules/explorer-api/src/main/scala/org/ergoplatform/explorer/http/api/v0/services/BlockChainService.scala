@@ -57,18 +57,18 @@ object BlockChainService {
   ](xa: D Trans F): F[BlockChainService[F, Stream]] =
     Slf4jLogger
       .create[F]
-      .map { implicit logger =>
-        new Live(
-          HeaderRepo[D],
-          BlockInfoRepo[D],
-          TransactionRepo[D],
-          BlockExtensionRepo[D],
-          AdProofRepo[D],
-          TransactionRepo[D],
-          InputRepo[D],
-          OutputRepo[D],
-          AssetRepo[D]
-        )(xa)
+      .flatMap { implicit logger =>
+        (
+          HeaderRepo[F, D],
+          BlockInfoRepo[F, D],
+          TransactionRepo[F, D],
+          BlockExtensionRepo[F, D],
+          AdProofRepo[F, D],
+          TransactionRepo[F, D],
+          InputRepo[F, D],
+          OutputRepo[F, D],
+          AssetRepo[F, D]
+        ).mapN(new Live(_, _, _, _, _, _, _, _, _)(xa))
       }
 
   final private class Live[
@@ -125,7 +125,7 @@ object BlockChainService {
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {
-        headerOpt <- headerRepo.get(id).asStream
+        header <- headerRepo.get(id).asStream.unNone
         txs <- transactionRepo.getAllByBlockId(id).fold(List.empty[Transaction]) {
                  case (acc, tx) => tx +: acc
                }
@@ -139,8 +139,8 @@ object BlockChainService {
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream
       } yield
-        (headerOpt, blockSizeOpt, extensionOpt)
-          .mapN { (header, size, ext) =>
+        (blockSizeOpt, extensionOpt)
+          .mapN { (size, ext) =>
             val numConfirmations = bestHeight - header.height
             FullBlockInfo(
               header,

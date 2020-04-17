@@ -25,19 +25,19 @@ object UOutputQuerySet extends QuerySet {
     "additional_registers"
   )
 
-  def getAll(offset: Int, limit: Int): Query0[UOutput] =
+  def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[UOutput] =
     sql"select * from node_u_outputs offset $offset limit $limit".query[UOutput]
 
-  def getAllByTxId(txId: TxId): Query0[UOutput] =
+  def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[UOutput] =
     sql"select * from node_u_outputs where tx_id = $txId".query[UOutput]
 
-  def getAllByTxIds(txIds: NonEmptyList[TxId]): Query0[UOutput] =
+  def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UOutput] =
     in(sql"select * from node_u_outputs where tx_id", txIds).query[UOutput]
 
-  def getAllByErgoTree(ergoTree: HexString): Query0[UOutput] =
+  def getAllByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
     sql"select * from node_u_outputs where ergo_tree = $ergoTree".query[UOutput]
 
-  def getAllUnspentByErgoTree(ergoTree: HexString): Query0[UOutput] =
+  def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
     sql"""
          |select
          |  o.box_id,

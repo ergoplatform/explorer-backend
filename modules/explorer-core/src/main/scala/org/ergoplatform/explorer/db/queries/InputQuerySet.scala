@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
-import doobie.Fragments
+import doobie.{Fragments, LogHandler}
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
@@ -25,7 +25,7 @@ object InputQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def getAllByTxId(txId: TxId): Query0[ExtendedInput] =
+  def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedInput] =
     sql"""
          |select distinct on (i.box_id)
          |  i.box_id,
@@ -41,7 +41,7 @@ object InputQuerySet extends QuerySet {
          |where i.tx_id = $txId
          |""".stripMargin.query[ExtendedInput]
 
-  def getAllByTxIds(txsId: NonEmptyList[TxId]): Query0[ExtendedInput] = {
+  def getAllByTxIds(txsId: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedInput] = {
     val q =
       sql"""
            |select distinct on (i.box_id)
@@ -60,7 +60,9 @@ object InputQuerySet extends QuerySet {
       .query[ExtendedInput]
   }
 
-  def updateChainStatusByHeaderId(headerId: Id)(newChainStatus: Boolean): Update0 =
+  def updateChainStatusByHeaderId(
+    headerId: Id
+  )(newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
          |update node_inputs set main_chain = $newChainStatus from node_inputs i
          |left join node_transactions t on t.id = i.tx_id

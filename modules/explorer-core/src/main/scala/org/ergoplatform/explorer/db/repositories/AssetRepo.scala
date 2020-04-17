@@ -1,13 +1,17 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.data.NonEmptyList
+import cats.effect.Sync
 import cats.implicits._
 import doobie.implicits._
+import doobie.util.log.LogHandler
 import fs2.Stream
+import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.repositories.AdProofRepo.Live
 import org.ergoplatform.explorer.{Address, BoxId, TokenId}
 
 /** [[Asset]] data access operations.
@@ -51,10 +55,13 @@ trait AssetRepo[D[_], S[_[_], _]] {
 
 object AssetRepo {
 
-  def apply[D[_]: LiftConnectionIO]: AssetRepo[D, Stream] =
-    new Live[D]
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[AssetRepo[D, Stream]] =
+    DoobieLogHandler.create[F].map { implicit lh =>
+      new Live[D]
+    }
 
-  final private class Live[D[_]: LiftConnectionIO] extends AssetRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
+    extends AssetRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{AssetQuerySet => QS}
 

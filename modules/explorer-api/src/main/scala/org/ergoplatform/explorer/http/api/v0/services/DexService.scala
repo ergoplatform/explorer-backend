@@ -1,6 +1,8 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.Monad
+import cats.effect.Sync
+import cats.syntax.apply._
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RefinementFailed
@@ -26,17 +28,17 @@ trait DexService[F[_], S[_[_], _]] {
 object DexService {
 
   def apply[
-    F[_],
+    F[_]: Sync,
     D[_]: LiftConnectionIO: Monad: CRaise[*[_], DexErr]: CRaise[*[_], RefinementFailed]
-  ](trans: D Trans F): DexService[F, Stream] =
-    new Live(AssetRepo[D], OutputRepo[D])(trans)
+  ](trans: D Trans F): F[DexService[F, Stream]] =
+    (OutputRepo[F, D], AssetRepo[F, D]).mapN(new Live(_, _)(trans))
 
   final private class Live[
     F[_],
     D[_]: Monad: CRaise[*[_], DexErr]: CRaise[*[_], RefinementFailed]
   ](
-    assetRepo: AssetRepo[D, Stream],
-    outputRepo: OutputRepo[D, Stream]
+    outputRepo: OutputRepo[D, Stream],
+    assetRepo: AssetRepo[D, Stream]
   )(trans: D Trans F)
     extends DexService[F, Stream] {
 

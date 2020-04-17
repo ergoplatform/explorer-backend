@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.effect.{ContextShift, Sync}
+import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
@@ -24,7 +25,7 @@ final class StatsRoutes[
 
 object StatsRoutes {
 
-  def apply[F[_]: Sync: ContextShift](service: StatsService[F])(
+  def apply[F[_]: Sync: ContextShift: Logger](service: StatsService[F])(
     implicit opts: Http4sServerOptions[F]
   ): HttpRoutes[F] =
     new StatsRoutes(service).routes

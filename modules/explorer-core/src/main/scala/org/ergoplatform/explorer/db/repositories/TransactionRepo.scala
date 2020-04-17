@@ -1,11 +1,15 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.effect.Sync
 import cats.implicits._
 import fs2.Stream
 import doobie.free.implicits._
+import doobie.util.log.LogHandler
+import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Transaction
+import org.ergoplatform.explorer.db.repositories.OutputRepo.Live
 import org.ergoplatform.explorer.{Address, Id, TxId}
 
 /** [[Transaction]] data access operations.
@@ -57,16 +61,19 @@ trait TransactionRepo[D[_], S[_[_], _]] {
   ): S[D, Transaction]
 
   /** Get all ids matching the given `query`.
-   */
+    */
   def getIdsLike(query: String): D[List[TxId]]
 }
 
 object TransactionRepo {
 
-  def apply[D[_]: LiftConnectionIO]: TransactionRepo[D, Stream] =
-    new Live[D]
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[TransactionRepo[D, Stream]] =
+    DoobieLogHandler.create[F].map { implicit lh =>
+      new Live[D]
+    }
 
-  final private class Live[D[_]: LiftConnectionIO] extends TransactionRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
+    extends TransactionRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{TransactionQuerySet => QS}
 
