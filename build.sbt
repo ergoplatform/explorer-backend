@@ -11,7 +11,8 @@ lazy val commonSettings = Seq(
     case "module-info.class"                          => MergeStrategy.discard
     case other if other.contains("io.netty.versions") => MergeStrategy.first
     case other                                        => (assemblyMergeStrategy in assembly).value(other)
-  }
+  },
+  libraryDependencies ++= dependencies.CompilerPlugins
 )
 
 lazy val allConfigDependency = "compile->compile;test->test"
@@ -21,13 +22,13 @@ lazy val explorer = project
   .withId("explorer-backend")
   .settings(commonSettings)
   .settings(moduleName := "explorer-backend", name := "ExplorerBackend")
-  .aggregate(core, httpApi, grabber, utxWatcher)
+  .aggregate(core, httpApi, grabber, utxWatcher, dex)
 
 lazy val core = utils
   .mkModule("explorer-core", "ExplorerCore")
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= dependencies.core ++ dependencies.Testing ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.core ++ dependencies.Testing
   )
 
 lazy val httpApi = utils
@@ -35,7 +36,7 @@ lazy val httpApi = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.http.api.Application"),
-    libraryDependencies ++= dependencies.api ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.api
   )
   .dependsOn(core)
 
@@ -44,7 +45,7 @@ lazy val grabber = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.grabber.Application"),
-    libraryDependencies ++= dependencies.grabber ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.grabber
   )
   .dependsOn(core % allConfigDependency)
 
@@ -53,7 +54,7 @@ lazy val utxWatcher = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.watcher.Application"),
-    libraryDependencies ++= dependencies.utxWatcher ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.utxWatcher
   )
   .dependsOn(core)
 
@@ -62,7 +63,16 @@ lazy val utxBroadcaster = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.broadcaster.Application"),
-    libraryDependencies ++= dependencies.utxBroadcaster ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.utxBroadcaster
+  )
+  .dependsOn(core)
+
+lazy val dex = utils
+  .mkModule("dex", "DEX")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.dex.Application"),
+    libraryDependencies ++= dependencies.Kafka
   )
   .dependsOn(core)
 

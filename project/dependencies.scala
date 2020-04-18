@@ -54,6 +54,10 @@ object dependencies {
     "co.fs2" %% "fs2-core" % Fs2Version
   )
 
+  val Kafka: List[ModuleID] = List(
+    "com.github.fd4s" %% "fs2-kafka" % Fs2KafkaVersion
+  )
+
   val Tofu: List[ModuleID] = List(
     "ru.tinkoff" %% "tofu-core" % TofuVersion
   )
