@@ -5,10 +5,10 @@ import cats.effect.Sync
 import cats.syntax.functor._
 import doobie.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.BoxId
+import org.ergoplatform.explorer.{BoxId, HexString}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.UAsset
+import org.ergoplatform.explorer.db.models.{Asset, UAsset}
 import org.ergoplatform.explorer.db.repositories.TransactionRepo.Live
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 
@@ -31,6 +31,10 @@ trait UAssetRepo[D[_]] {
   /** Get all assets belonging to a given list of `boxId`.
     */
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[UAsset]]
+
+  /** Get all unspent assets belonging to a given `address`.
+    */
+  def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UAsset]]
 }
 
 object UAssetRepo {
@@ -40,8 +44,7 @@ object UAssetRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends UAssetRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends UAssetRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{UAssetQuerySet => QS}
 
@@ -56,5 +59,8 @@ object UAssetRepo {
 
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[UAsset]] =
       QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
+
+    def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UAsset]] =
+      QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
   }
 }

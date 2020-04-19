@@ -6,7 +6,7 @@ import doobie.{Fragments, LogHandler}
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, TokenId}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 import org.ergoplatform.explorer.db.models.Asset
 
 /** A set of queries for doobie implementation of  [AssetRepo].
@@ -30,6 +30,18 @@ object AssetQuerySet extends QuerySet {
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[Asset] =
     (sql"select * from node_assets " ++ Fragments.in(fr"where box_id", boxIds))
       .query[Asset]
+
+  def getAllMainUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[Asset] =
+    sql"""
+         |select a.token_id, a.box_id, a.token_id, a.value from node_assets a
+         |inner join (
+         |  select o.box_id from node_outputs o
+         |  left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |  where o.main_chain = true
+         |    and (i.box_id is null or i.main_chain = false)
+         |    and o.ergo_tree = $ergoTree
+         |) as uo on uo.box_id = a.box_id
+         """.stripMargin.query[Asset]
 
   def getAllHoldingAddresses(
     tokenId: TokenId,
@@ -100,4 +112,12 @@ object AssetQuerySet extends QuerySet {
           |  and a.token_id = i_issued.box_id
           |""".stripMargin ++ Fragments.in(fr"and a.token_id", tokenIds))
       .query[ExtendedOutput]
+
+  def getIssuingBoxesQty(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(a.token_id) from (
+         |  select distinct on (a.token_id) * from node_assets a
+         |  left join node_outputs o on o.box_id = a.box_id where o.main_chain = true
+         |) as a
+         """.stripMargin.query[Int]
 }

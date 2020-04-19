@@ -28,12 +28,12 @@ final class BlocksRoutes[
   private def getBlocksR: HttpRoutes[F] =
     getBlocksDef.toRoutes {
       case (paging, sorting) =>
-        service.getBestHeight.flatMap { maxHeight =>
+        service.getBestHeight.flatMap { totalNum =>
           service
             .getBlocks(paging, sorting)
             .compile
             .toList // API v0 format does not allow to use streaming
-            .map(Items(_, maxHeight))
+            .map(Items(_, totalNum))
             .adaptThrowable
             .value
         }

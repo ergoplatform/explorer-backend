@@ -3,9 +3,12 @@ package org.ergoplatform.explorer.http.api.v0.routes
 import cats.data.NonEmptyList
 import cats.effect.{ContextShift, Sync}
 import cats.syntax.semigroupk._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
+import org.ergoplatform.explorer.http.api.models.Items
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v0.services.AssetsService
 import org.http4s.HttpRoutes
@@ -24,12 +27,15 @@ final class AssetsRoutes[
 
   private def getAllIssuingBoxesR: HttpRoutes[F] =
     getAllIssuingBoxesDef.toRoutes { paging =>
-      service
-        .getAllIssuingBoxes(paging)
-        .compile
-        .toList
-        .adaptThrowable
-        .value
+      service.getIssuingBoxesQty.flatMap { totalNum =>
+        service
+          .getAllIssuingBoxes(paging)
+          .compile
+          .toList
+          .map(Items(_, totalNum))
+          .adaptThrowable
+          .value
+      }
     }
 
   private def getIssuingBoxR: HttpRoutes[F] =

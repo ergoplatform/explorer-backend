@@ -12,7 +12,7 @@ import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.AdProofRepo.Live
-import org.ergoplatform.explorer.{Address, BoxId, TokenId}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
 /** [[Asset]] data access operations.
   */
@@ -34,6 +34,8 @@ trait AssetRepo[D[_], S[_[_], _]] {
     */
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]]
 
+  def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]]
+
   /** Get all addresses holding an asset with a given `assetId`.
     */
   def getAllHoldingAddresses(
@@ -51,6 +53,10 @@ trait AssetRepo[D[_], S[_[_], _]] {
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
   def getIssuingBoxesByTokenIds(tokenIds: NonEmptyList[TokenId]): D[List[ExtendedOutput]]
+
+  /** Get total number of issuing boxes (on the main chain).
+    */
+  def getIssuingBoxesQty: D[Int]
 }
 
 object AssetRepo {
@@ -77,6 +83,9 @@ object AssetRepo {
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]] =
       QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
 
+    def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]] =
+      QS.getAllMainUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
+
     def getAllHoldingAddresses(
       tokenId: TokenId,
       offset: Int,
@@ -95,5 +104,8 @@ object AssetRepo {
       tokenIds: NonEmptyList[TokenId]
     ): D[List[ExtendedOutput]] =
       QS.getIssuingBoxes(tokenIds).to[List].liftConnectionIO
+
+    def getIssuingBoxesQty: D[Int] =
+      QS.getIssuingBoxesQty.unique.liftConnectionIO
   }
 }

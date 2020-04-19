@@ -2,10 +2,10 @@ package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
 import doobie.implicits._
-import doobie.{Fragments, LogHandler}
 import doobie.util.query.Query0
-import org.ergoplatform.explorer.BoxId
+import doobie.{Fragments, LogHandler}
 import org.ergoplatform.explorer.db.models.UAsset
+import org.ergoplatform.explorer.{BoxId, HexString}
 
 object UAssetQuerySet extends QuerySet {
 
@@ -23,4 +23,14 @@ object UAssetQuerySet extends QuerySet {
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[UAsset] =
     (sql"select * from node_u_assets " ++ Fragments.in(fr"where box_id", boxIds))
       .query[UAsset]
+
+  def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UAsset] =
+    sql"""
+         |select a.token_id, a.box_id, a.value from node_u_assets a
+         |inner join (
+         |  select o.box_id from node_u_outputs o
+         |  left join node_u_inputs i on i.box_id = o.box_id
+         |  where i.box_id is null and o.ergo_tree = $ergoTree
+         |) as uo on uo.box_id = a.box_id
+         """.stripMargin.query[UAsset]
 }

@@ -8,6 +8,7 @@ import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
 import cats.syntax.apply._
+import cats.instances.list._
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
@@ -61,19 +62,12 @@ object AddressesService {
 
     def getAddressInfo(address: Address): F[AddressInfo] =
       (for {
-        ergoTree      <- utils.addressToErgoTreeHex(address)
-        outs          <- outputRepo.getAllMainByErgoTree(ergoTree)
-        unspentOutIds <- outputRepo.getAllMainUnspentIdsByErgoTree(ergoTree)
-        balance       <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree)
-        assets <- unspentOutIds.toNel
-                   .traverse(assetRepo.getAllByBoxIds)
-                   .map(_.toList.flatten)
+        ergoTree            <- utils.addressToErgoTreeHex(address)
+        outs                <- outputRepo.getAllMainByErgoTree(ergoTree)
+        balance             <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree)
+        assets              <- assetRepo.getAllMainUnspentByErgoTree(ergoTree)
         unspentOffChainOuts <- uOutputRepo.getAllUnspentByErgoTree(ergoTree)
-        offChainAssets <- unspentOffChainOuts
-                           .map(_.boxId)
-                           .toNel
-                           .traverse(uAssetRepo.getAllByBoxIds)
-                           .map(_.toList.flatten)
+        offChainAssets      <- uAssetRepo.getAllUnspentByErgoTree(ergoTree)
       } yield {
         val txsQty          = outs.map(_.output.txId).distinct.size
         val offChainBalance = unspentOffChainOuts.map(_.value).sum
