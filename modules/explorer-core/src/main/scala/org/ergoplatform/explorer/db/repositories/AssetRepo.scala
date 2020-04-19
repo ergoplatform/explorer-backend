@@ -53,6 +53,10 @@ trait AssetRepo[D[_], S[_[_], _]] {
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
   def getIssuingBoxesByTokenIds(tokenIds: NonEmptyList[TokenId]): D[List[ExtendedOutput]]
+
+  /** Get total number of issuing boxes (on the main chain).
+    */
+  def getIssuingBoxesQty: D[Int]
 }
 
 object AssetRepo {
@@ -100,5 +104,8 @@ object AssetRepo {
       tokenIds: NonEmptyList[TokenId]
     ): D[List[ExtendedOutput]] =
       QS.getIssuingBoxes(tokenIds).to[List].liftConnectionIO
+
+    def getIssuingBoxesQty: D[Int] =
+      QS.getIssuingBoxesQty.unique.liftConnectionIO
   }
 }

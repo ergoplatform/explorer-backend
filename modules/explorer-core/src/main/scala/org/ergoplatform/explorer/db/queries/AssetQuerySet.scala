@@ -112,4 +112,12 @@ object AssetQuerySet extends QuerySet {
           |  and a.token_id = i_issued.box_id
           |""".stripMargin ++ Fragments.in(fr"and a.token_id", tokenIds))
       .query[ExtendedOutput]
+
+  def getIssuingBoxesQty(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(a.token_id) from (
+         |  select distinct on (a.token_id) * from node_assets a
+         |  left join node_outputs o on o.box_id = a.box_id where o.main_chain = true
+         |) as a
+         """.stripMargin.query[Int]
 }
