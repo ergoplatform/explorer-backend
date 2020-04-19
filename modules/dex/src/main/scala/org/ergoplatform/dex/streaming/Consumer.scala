@@ -21,13 +21,14 @@ object Consumer {
   def apply[F[_]: ConcurrentEffect: ContextShift: Timer](
     settings: KafkaSettings
   )(implicit blocker: Blocker): Consumer[F, Stream] = {
+    val consumerStream = kafka.consumerStream[F]
     val consumerSettings =
       ConsumerSettings[F, String, Option[Output]]
         .withBlocker(blocker)
         .withAutoOffsetReset(AutoOffsetReset.Earliest)
         .withGroupId(settings.groupId)
         .withClientId(settings.clientId)
-    new Live(kafka.consumerStream[F], consumerSettings, settings.topicId)
+    new Live(consumerStream, consumerSettings, settings.topicId)
   }
 
   final private class Live[F[_]: ContextShift: Timer: Functor](
