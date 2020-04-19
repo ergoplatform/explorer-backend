@@ -92,7 +92,7 @@ object BlockInfoRepo {
       ordering: OrderingString,
       orderBy: String
     ): fs2.Stream[D, ExtendedBlockInfo] =
-      QS.getManyExtended(offset, limit, ordering, orderBy)
+      QS.getManyExtendedMain(offset, limit, ordering, orderBy)
         .stream
         .translate(LiftConnectionIO[D].liftConnectionIOK)
 

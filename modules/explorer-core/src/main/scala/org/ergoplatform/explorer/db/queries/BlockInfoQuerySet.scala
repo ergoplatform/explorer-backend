@@ -41,7 +41,7 @@ object BlockInfoQuerySet extends QuerySet {
     sql"select * from blocks_info where header_id = $headerId"
       .query[BlockInfo]
 
-  def getManyExtended(
+  def getManyExtendedMain(
     offset: Int,
     limit: Int,
     ordering: OrderingString,
@@ -76,7 +76,9 @@ object BlockInfoQuerySet extends QuerySet {
          |  bi.total_coins_in_txs,
          |  mi.miner_name
          |from blocks_info bi
+         |left join node_headers h on h.id = bi.header_id
          |left join known_miners mi on bi.miner_address = mi.miner_address
+         |where h.main_chain = true
          |""".stripMargin
     (q ++ ord ++ lim).query[ExtendedBlockInfo]
   }
