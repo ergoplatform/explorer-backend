@@ -8,6 +8,7 @@ import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
 import cats.syntax.apply._
+import cats.instances.list._
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
@@ -65,15 +66,18 @@ object AddressesService {
         outs          <- outputRepo.getAllMainByErgoTree(ergoTree)
         unspentOutIds <- outputRepo.getAllMainUnspentIdsByErgoTree(ergoTree)
         balance       <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree)
-        assets <- unspentOutIds.toNel
-                   .traverse(assetRepo.getAllByBoxIds)
-                   .map(_.toList.flatten)
+        assets <- unspentOutIds
+                   .grouped(Short.MaxValue)
+                   .toList
+                   .map(_.toNel.traverse(assetRepo.getAllByBoxIds))
+                   .flatTraverse(_.map(_.toList.flatten))
         unspentOffChainOuts <- uOutputRepo.getAllUnspentByErgoTree(ergoTree)
         offChainAssets <- unspentOffChainOuts
                            .map(_.boxId)
-                           .toNel
-                           .traverse(uAssetRepo.getAllByBoxIds)
-                           .map(_.toList.flatten)
+                           .grouped(Short.MaxValue)
+                           .toList
+                           .map(_.toNel.traverse(uAssetRepo.getAllByBoxIds))
+                           .flatTraverse(_.map(_.toList.flatten))
       } yield {
         val txsQty          = outs.map(_.output.txId).distinct.size
         val offChainBalance = unspentOffChainOuts.map(_.value).sum
