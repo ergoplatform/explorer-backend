@@ -12,7 +12,7 @@ import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.AdProofRepo.Live
-import org.ergoplatform.explorer.{Address, BoxId, TokenId}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
 /** [[Asset]] data access operations.
   */
@@ -33,6 +33,8 @@ trait AssetRepo[D[_], S[_[_], _]] {
   /** Get all assets belonging to a given list of `boxId`.
     */
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]]
+
+  def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]]
 
   /** Get all addresses holding an asset with a given `assetId`.
     */
@@ -76,6 +78,9 @@ object AssetRepo {
 
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]] =
       QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
+
+    def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]] =
+      QS.getAllMainUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
 
     def getAllHoldingAddresses(
       tokenId: TokenId,
