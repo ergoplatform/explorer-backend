@@ -20,7 +20,7 @@ object AssetQuerySet extends QuerySet {
   val fields: List[String] = List(
     "token_id",
     "box_id",
-    "c",
+    "header_id",
     "value"
   )
 
