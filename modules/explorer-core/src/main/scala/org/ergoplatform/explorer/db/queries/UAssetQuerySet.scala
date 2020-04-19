@@ -27,8 +27,10 @@ object UAssetQuerySet extends QuerySet {
   def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UAsset] =
     sql"""
          |select a.token_id, a.box_id, a.value from node_u_assets a
-         |inner join node_u_outputs o
-         |left join node_u_inputs i on i.box_id = o.box_id
-         |where i.box_id is null and o.ergo_tree = $ergoTree
+         |inner join (
+         |  select o.box_id from node_u_outputs o
+         |  left join node_u_inputs i on i.box_id = o.box_id
+         |  where i.box_id is null and o.ergo_tree = $ergoTree
+         |) as uo on uo.box_id = a.box_id
          """.stripMargin.query[UAsset]
 }
