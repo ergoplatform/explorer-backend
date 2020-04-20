@@ -37,8 +37,15 @@ object UTransactionQuerySet extends QuerySet {
          |left join node_u_outputs uo on uo.tx_id = t.id
          |left join node_outputs o on o.box_id = ui.box_id
          |where uo.ergo_tree = $ergoTree or o.ergo_tree = $ergoTree
+         |offset $offset limit $limit
          |""".stripMargin.query[UTransaction]
+
+  def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[UTransaction] =
+    sql"select * from node_u_transactions offset $offset limit $limit".query[UTransaction]
 
   def getAllIds(implicit lh: LogHandler): Query0[TxId] =
     sql"select id from node_u_transactions".query[TxId]
+
+  def countUnconfirmedTxs(implicit lh: LogHandler): Query0[Int] =
+    sql"select count(*) from node_u_transactions".query[Int]
 }

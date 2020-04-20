@@ -70,7 +70,7 @@ object StatsService {
 
   final private class Live[F[_]: Clock: Functor: FlatMap, D[_]: Monad](
     protocolSettings: ProtocolSettings,
-    blockInfoRepo: BlockInfoRepo[D, Stream],
+    blockInfoRepo: BlockInfoRepo[D],
     headerRepo: HeaderRepo[D],
     transactionRepo: TransactionRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream]

@@ -38,7 +38,7 @@ final class ChainGrabber[
   settings: GrabberAppSettings,
   network: ErgoNetworkClient[F, Stream],
   headerRepo: HeaderRepo[D],
-  blockInfoRepo: BlockInfoRepo[D, Stream],
+  blockInfoRepo: BlockInfoRepo[D],
   blockExtensionRepo: BlockExtensionRepo[D],
   adProofRepo: AdProofRepo[D],
   txRepo: TransactionRepo[D, Stream],
