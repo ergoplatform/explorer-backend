@@ -60,12 +60,15 @@ object TransactionQuerySet extends QuerySet {
 
   def countRelatedToAddress(address: Address)(implicit lh: LogHandler): Query0[Int] =
     sql"""
-         |select count(distinct t.id)
-         |from node_outputs os
-         |left join node_inputs inp on inp.box_id = os.box_id
-         |left join node_transactions t on (os.tx_id = t.id or inp.tx_id = t.id)
-         |left join node_headers h on h.id = t.header_id
-         |where os.address = $address and h.main_chain = true
+         |select count(distinct t.id) from node_transactions t
+         |inner join (
+         |  select os.tx_id from node_outputs os
+         |  where os.main_chain = true and os.address = $address
+         |  union
+         |  select i.tx_id from node_outputs os
+         |  left join node_inputs i on i.box_id = os.box_id
+         |  where os.main_chain = true and os.address = $address
+         |) as os on os.tx_id = t.id
          |""".stripMargin.query[Int]
 
   def countMainSince(ts: Long): Query0[Int] =
