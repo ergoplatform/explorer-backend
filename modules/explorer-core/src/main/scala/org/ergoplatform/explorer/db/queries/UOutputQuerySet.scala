@@ -50,6 +50,6 @@ object UOutputQuerySet extends QuerySet {
          |  o.additional_registers
          |from node_u_outputs o
          |left join node_u_inputs i on i.box_id = o.box_id
-         |where i.box_id is null
+         |where i.box_id is null and o.ergo_tree = $ergoTree
          |""".stripMargin.query[UOutput]
 }

@@ -30,6 +30,10 @@ trait AssetsService[F[_], S[_[_], _]] {
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
   def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): S[F, OutputInfo]
+
+  /** Get total number of issuing boxes in the blockchain (number of assets).
+    */
+  def getIssuingBoxesQty: F[Int]
 }
 
 object AssetsService {
@@ -65,5 +69,8 @@ object AssetsService {
                    .asStream
         outputInfo <- Stream.emits(OutputInfo.batch(extOuts, assets)).covary[D]
       } yield outputInfo) ||> trans.xas
+
+    def getIssuingBoxesQty: F[Int] =
+      assetRepo.getIssuingBoxesQty ||> trans.xa
   }
 }
