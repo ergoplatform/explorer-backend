@@ -14,7 +14,7 @@ import org.ergoplatform.explorer.db.models.aggregates.{ExtendedBlockInfo, MinerS
 
 /** [[BlockInfo]] data access operations.
   */
-trait BlockInfoRepo[D[_], S[_[_], _]] {
+trait BlockInfoRepo[D[_]] {
 
   /** Put a given `blockInfo` to persistence.
     */
@@ -31,7 +31,7 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
     limit: Int,
     order: OrderingString,
     sortBy: String
-  ): S[D, ExtendedBlockInfo]
+  ): D[List[ExtendedBlockInfo]]
 
   /** Get all blocks appeared in the main chain after the given timestamp `ts`.
     */
@@ -70,13 +70,13 @@ trait BlockInfoRepo[D[_], S[_[_], _]] {
 
 object BlockInfoRepo {
 
-  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[BlockInfoRepo[D, fs2.Stream]] =
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[BlockInfoRepo[D]] =
     DoobieLogHandler.create[F].map { implicit lh =>
       new Live[D]
     }
 
   final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends BlockInfoRepo[D, fs2.Stream] {
+    extends BlockInfoRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{BlockInfoQuerySet => QS}
 
@@ -91,10 +91,8 @@ object BlockInfoRepo {
       limit: Int,
       ordering: OrderingString,
       orderBy: String
-    ): fs2.Stream[D, ExtendedBlockInfo] =
-      QS.getManyExtendedMain(offset, limit, ordering, orderBy)
-        .stream
-        .translate(LiftConnectionIO[D].liftConnectionIOK)
+    ): D[List[ExtendedBlockInfo]] =
+      QS.getManyExtendedMain(offset, limit, ordering, orderBy).to[List].liftConnectionIO
 
     def getManySince(ts: Long): D[List[BlockInfo]] =
       QS.getManySince(ts).to[List].liftConnectionIO

@@ -1,17 +1,20 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.Monad
+import cats.{Functor, Monad, Traverse}
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.syntax.list._
+import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.traverse._
+import cats.instances.list._
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.Paging
+import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{CRaise, TokenId}
@@ -24,16 +27,12 @@ trait AssetsService[F[_], S[_[_], _]] {
   /** Get boxes where given tokens where issued
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
-  def getAllIssuingBoxes(paging: Paging): S[F, OutputInfo]
+  def getAllIssuingBoxes(paging: Paging): F[Items[OutputInfo]]
 
   /** Get boxes where given tokens where issued
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
   def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): S[F, OutputInfo]
-
-  /** Get total number of issuing boxes in the blockchain (number of assets).
-    */
-  def getIssuingBoxesQty: F[Int]
 }
 
 object AssetsService {
@@ -50,11 +49,17 @@ object AssetsService {
   ](assetRepo: AssetRepo[D, Stream])(trans: D Trans F)
     extends AssetsService[F, Stream] {
 
-    def getAllIssuingBoxes(paging: Paging): Stream[F, OutputInfo] =
-      (for {
-        extOut <- assetRepo.getAllIssuingBoxes(paging.offset, paging.limit)
-        assets <- assetRepo.getAllByBoxId(extOut.output.boxId).asStream
-      } yield OutputInfo(extOut, assets)) ||> trans.xas
+    def getAllIssuingBoxes(paging: Paging): F[Items[OutputInfo]] =
+      assetRepo.getIssuingBoxesQty.flatMap { total =>
+        assetRepo
+          .getAllIssuingBoxes(paging.offset, paging.limit)
+          .flatMap {
+            _.traverse(extOut =>
+              assetRepo.getAllByBoxId(extOut.output.boxId).map(OutputInfo(extOut, _))
+            )
+          }
+          .map(Items(_, total))
+      } ||> trans.xa
 
     def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): Stream[F, OutputInfo] =
       (for {
@@ -69,8 +74,5 @@ object AssetsService {
                    .asStream
         outputInfo <- Stream.emits(OutputInfo.batch(extOuts, assets)).covary[D]
       } yield outputInfo) ||> trans.xas
-
-    def getIssuingBoxesQty: F[Int] =
-      assetRepo.getIssuingBoxesQty ||> trans.xa
   }
 }

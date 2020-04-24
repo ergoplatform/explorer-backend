@@ -136,9 +136,9 @@ object BlockInfoQuerySet extends QuerySet {
   def totalCoinsSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
          |select
-         |min(timestamp) as t,
-         |cast(max(total_coins_issued) as bigint),
-         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |  min(timestamp) as t,
+         |  cast(max(total_coins_issued) as bigint),
+         |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
@@ -146,7 +146,11 @@ object BlockInfoQuerySet extends QuerySet {
 
   def avgBlockSizeSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
-         |select min(timestamp) as t, cast(avg(block_size) as bigint) from blocks_info
+         |select
+         |  min(timestamp) as t,
+         |  cast(avg(block_size) as bigint),
+         |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
@@ -154,9 +158,9 @@ object BlockInfoQuerySet extends QuerySet {
   def avgTxsQtySince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
          |select
-         |min(timestamp) as t,
-         |cast(avg(txs_count) as bigint),
-         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |  min(timestamp) as t,
+         |  cast(avg(txs_count) as bigint),
+         |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
@@ -165,9 +169,9 @@ object BlockInfoQuerySet extends QuerySet {
   def totalTxsQtySince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
          |select
-         |min(timestamp) as t,
-         |cast(sum(txs_count) as bigint),
-         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |  min(timestamp) as t,
+         |  cast(sum(txs_count) as bigint),
+         |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
@@ -176,9 +180,9 @@ object BlockInfoQuerySet extends QuerySet {
   def totalBlockChainSizeSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
          |select
-         |min(timestamp) as t,
-         |cast(max(block_chain_total_size) as bigint),
-         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |  min(timestamp) as t,
+         |  cast(max(block_chain_total_size) as bigint),
+         |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
@@ -187,9 +191,9 @@ object BlockInfoQuerySet extends QuerySet {
   def avgDifficultiesSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
          |select
-         |min(timestamp) as t,
-         |cast(avg(difficulty) as bigint),
-         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |  min(timestamp) as t,
+         |  cast(avg(difficulty) as bigint),
+         |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
@@ -198,9 +202,9 @@ object BlockInfoQuerySet extends QuerySet {
   def totalDifficultiesSince(ts: Long): Query0[TimePoint[Long]] =
     sql"""
          |select
-         |min(timestamp) as t,
-         |cast(sum(difficulty) as bigint),
-         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |  min(timestamp) as t,
+         |  cast(sum(difficulty) as bigint),
+         |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
@@ -209,9 +213,9 @@ object BlockInfoQuerySet extends QuerySet {
   def totalMinerRevenueSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
          |select
-         |min(timestamp) as t,
-         |cast(sum(miner_revenue) as bigint),
-         |to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
+         |  min(timestamp) as t,
+         |  cast(sum(miner_revenue) as bigint),
+         |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
@@ -219,8 +223,12 @@ object BlockInfoQuerySet extends QuerySet {
 
   def minerStatsSince(ts: Long)(implicit lh: LogHandler): Query0[MinerStats] =
     sql"""
-         |select bi.miner_address, coalesce(cast(sum(bi.difficulty) as bigint), 0),
-         |coalesce(cast(sum(bi.block_mining_time) as bigint), 0), count(*) as count, m.miner_name
+         |select
+         |  bi.miner_address,
+         |  coalesce(cast(sum(bi.difficulty) as bigint), 0),
+         |  coalesce(cast(sum(bi.block_mining_time) as bigint), 0),
+         |  count(*) as count,
+         |  m.miner_name
          |from blocks_info bi left join known_miners m on (bi.miner_address = m.miner_address)
          |where timestamp >= $ts
          |group by bi.miner_address, m.miner_name

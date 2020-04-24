@@ -38,7 +38,7 @@ class AssetRepoSpec
   property("insert/getIssuingBoxes/getAllIssuingBoxes") {
     withLiveRepos[ConnectionIO] { (assetRepo, outputRepo, inputRepo) =>
       forSingleInstance(issueTokensGen(5)) { issuedTokens =>
-        assetRepo.getAllIssuingBoxes(0, Int.MaxValue).compile.toList.runWithIO() shouldBe empty
+        assetRepo.getAllIssuingBoxes(0, Int.MaxValue).runWithIO() shouldBe empty
         val issuedTokenIds = NonEmptyList.fromList(issuedTokens.map(_._3.tokenId)).get
         assetRepo.getIssuingBoxesByTokenIds(issuedTokenIds).runWithIO() shouldBe empty
 
@@ -58,8 +58,6 @@ class AssetRepoSpec
 
         assetRepo
           .getAllIssuingBoxes(0, Int.MaxValue)
-          .compile
-          .toList
           .runWithIO() should contain theSameElementsAs outsIssuingToken
 
         // test all

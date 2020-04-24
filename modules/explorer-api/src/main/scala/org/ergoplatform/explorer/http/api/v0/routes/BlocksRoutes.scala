@@ -16,7 +16,7 @@ import sttp.tapir.server.http4s._
 
 final class BlocksRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
-](service: BlockChainService[F, fs2.Stream])(
+](service: BlockChainService[F])(
   implicit opts: Http4sServerOptions[F]
 ) {
 
@@ -28,15 +28,10 @@ final class BlocksRoutes[
   private def getBlocksR: HttpRoutes[F] =
     getBlocksDef.toRoutes {
       case (paging, sorting) =>
-        service.getBestHeight.flatMap { totalNum =>
-          service
-            .getBlocks(paging, sorting)
-            .compile
-            .toList // API v0 format does not allow to use streaming
-            .map(Items(_, totalNum))
-            .adaptThrowable
-            .value
-        }
+        service
+          .getBlocks(paging, sorting)
+          .adaptThrowable
+          .value
     }
 
   private def getBlockSummaryByIdR: HttpRoutes[F] =
@@ -60,7 +55,7 @@ final class BlocksRoutes[
 object BlocksRoutes {
 
   def apply[F[_]: Sync: ContextShift: Logger](
-    service: BlockChainService[F, fs2.Stream]
+    service: BlockChainService[F]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new BlocksRoutes(service).routes
 }

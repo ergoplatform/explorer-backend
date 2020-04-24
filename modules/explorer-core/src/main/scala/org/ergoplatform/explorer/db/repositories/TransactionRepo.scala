@@ -42,7 +42,7 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     address: Address,
     offset: Int,
     limit: Int
-  ): S[D, Transaction]
+  ): D[List[Transaction]]
 
   /** Get total number of transactions related to a given `address`.
     */
@@ -58,7 +58,7 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     height: Int,
     offset: Int,
     limit: Int
-  ): S[D, Transaction]
+  ): D[List[Transaction]]
 
   /** Get all ids matching the given `query`.
     */
@@ -98,8 +98,8 @@ object TransactionRepo {
       address: Address,
       offset: Int,
       limit: Int
-    ): Stream[D, Transaction] =
-      QS.getAllRelatedToAddress(address, offset, limit).stream.translate(liftK)
+    ): D[List[Transaction]] =
+      QS.getAllRelatedToAddress(address, offset, limit).to[List].liftConnectionIO
 
     def countRelatedToAddress(address: Address): D[Int] =
       QS.countRelatedToAddress(address).unique.liftConnectionIO
@@ -111,8 +111,8 @@ object TransactionRepo {
       height: Int,
       offset: Int,
       limit: Int
-    ): Stream[D, Transaction] =
-      QS.getAllMainSince(height, offset, limit).stream.translate(liftK)
+    ): D[List[Transaction]] =
+      QS.getAllMainSince(height, offset, limit).to[List].liftConnectionIO
 
     def getIdsLike(query: String): D[List[TxId]] =
       QS.getIdsLike(query).to[List].liftConnectionIO
