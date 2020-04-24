@@ -18,15 +18,20 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.{Paging, Sorting}
-import org.ergoplatform.explorer.http.api.v0.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
+import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
+import org.ergoplatform.explorer.http.api.v0.models.{
+  BlockInfo,
+  BlockReferencesInfo,
+  BlockSummary,
+  FullBlockInfo
+}
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{CRaise, Id}
 import tofu.syntax.raise._
 
 /** A service providing an access to the blockchain data.
   */
-trait BlockChainService[F[_], S[_[_], _]] {
+trait BlockChainService[F[_]] {
 
   /** Get height of the best block.
     */
@@ -38,7 +43,7 @@ trait BlockChainService[F[_], S[_[_], _]] {
 
   /** Get a slice of block info items.
     */
-  def getBlocks(paging: Paging, sorting: Sorting): S[F, BlockInfo]
+  def getBlocks(paging: Paging, sorting: Sorting): F[Items[BlockInfo]]
 
   /** Get all blocks with id matching a given `query`.
     */
@@ -54,7 +59,7 @@ object BlockChainService {
   def apply[
     F[_]: Sync,
     D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
-  ](xa: D Trans F): F[BlockChainService[F, Stream]] =
+  ](xa: D Trans F): F[BlockChainService[F]] =
     Slf4jLogger
       .create[F]
       .flatMap { implicit logger =>
@@ -64,11 +69,10 @@ object BlockChainService {
           TransactionRepo[F, D],
           BlockExtensionRepo[F, D],
           AdProofRepo[F, D],
-          TransactionRepo[F, D],
           InputRepo[F, D],
           OutputRepo[F, D],
           AssetRepo[F, D]
-        ).mapN(new Live(_, _, _, _, _, _, _, _, _)(xa))
+        ).mapN(new Live(_, _, _, _, _, _, _, _)(xa))
       }
 
   final private class Live[
@@ -76,16 +80,15 @@ object BlockChainService {
     D[_]: CRaise[*[_], InconsistentDbData]: Monad
   ](
     headerRepo: HeaderRepo[D],
-    blockInfoRepo: BlockInfoRepo[D, Stream],
+    blockInfoRepo: BlockInfoRepo[D],
     transactionRepo: TransactionRepo[D, Stream],
     blockExtensionRepo: BlockExtensionRepo[D],
     adProofRepo: AdProofRepo[D],
-    txRepo: TransactionRepo[D, Stream],
     inputRepo: InputRepo[D],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
   )(trans: D Trans F)
-    extends BlockChainService[F, Stream] {
+    extends BlockChainService[F] {
 
     def getBestHeight: F[Int] =
       (headerRepo.getBestHeight ||> trans.xa)
@@ -98,20 +101,22 @@ object BlockChainService {
           parentOpt <- blockInfoOpt
                         .flatTraverse(h => headerRepo.getByParentId(h.header.id))
                         .asStream
-        } yield
-          blockInfoOpt.map { blockInfo =>
-            val refs =
-              BlockReferencesInfo(blockInfo.header.parentId, parentOpt.map(_.id))
-            BlockSummary(blockInfo, refs)
-          }
+        } yield blockInfoOpt.map { blockInfo =>
+          val refs =
+            BlockReferencesInfo(blockInfo.header.parentId, parentOpt.map(_.id))
+          BlockSummary(blockInfo, refs)
+        }
 
       (summary ||> trans.xas).compile.last.map(_.flatten)
     }
 
-    def getBlocks(paging: Paging, sorting: Sorting): Stream[F, BlockInfo] =
-      blockInfoRepo
-        .getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
-        .map(BlockInfo(_)) ||> trans.xas
+    def getBlocks(paging: Paging, sorting: Sorting): F[Items[BlockInfo]] =
+      headerRepo.getBestHeight.flatMap { total =>
+        blockInfoRepo
+          .getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
+          .map(_.map(BlockInfo(_)))
+          .map(Items(_, total))
+      } ||> trans.xa
 
     def getBlocksByIdLike(query: String): F[List[BlockInfo]] =
       blockInfoRepo
@@ -138,21 +143,20 @@ object BlockChainService {
         assets       <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream
-      } yield
-        (blockSizeOpt, extensionOpt)
-          .mapN { (size, ext) =>
-            val numConfirmations = bestHeight - header.height
-            FullBlockInfo(
-              header,
-              txs,
-              numConfirmations,
-              inputs,
-              outputs,
-              assets,
-              ext,
-              adProofsOpt,
-              size
-            )
-          }
+      } yield (blockSizeOpt, extensionOpt)
+        .mapN { (size, ext) =>
+          val numConfirmations = bestHeight - header.height
+          FullBlockInfo(
+            header,
+            txs,
+            numConfirmations,
+            inputs,
+            outputs,
+            assets,
+            ext,
+            adProofsOpt,
+            size
+          )
+        }
   }
 }

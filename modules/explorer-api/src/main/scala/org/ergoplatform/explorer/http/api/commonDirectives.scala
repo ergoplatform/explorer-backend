@@ -21,7 +21,7 @@ object commonDirectives {
 
   val timespan: EndpointInput[FiniteDuration] =
     query[Option[String]]("timespan").map {
-      _.flatMap(parseTimespan).getOrElse(FiniteDuration(Long.MaxValue, TimeUnit.DAYS))
+      _.flatMap(parseTimespan).getOrElse(FiniteDuration(365, TimeUnit.DAYS))
     } { _ => "".some }
 
   def sorting(

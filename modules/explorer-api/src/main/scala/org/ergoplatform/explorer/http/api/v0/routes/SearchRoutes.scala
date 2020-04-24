@@ -15,8 +15,8 @@ import sttp.tapir.server.http4s._
 final class SearchRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
 ](
-  blocksService: BlockChainService[F, fs2.Stream],
-  txsService: TransactionsService[F, fs2.Stream],
+  blocksService: BlockChainService[F],
+  txsService: TransactionsService[F],
   addressesService: AddressesService[F, fs2.Stream]
 )(implicit opts: Http4sServerOptions[F]) {
 
@@ -37,8 +37,8 @@ final class SearchRoutes[
 object SearchRoutes {
 
   def apply[F[_]: Sync: ContextShift: Logger](
-    blocksService: BlockChainService[F, fs2.Stream],
-    txsService: TransactionsService[F, fs2.Stream],
+    blocksService: BlockChainService[F],
+    txsService: TransactionsService[F],
     addressesService: AddressesService[F, fs2.Stream]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new SearchRoutes(blocksService, txsService, addressesService).routes

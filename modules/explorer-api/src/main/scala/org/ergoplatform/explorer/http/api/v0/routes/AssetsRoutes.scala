@@ -27,15 +27,10 @@ final class AssetsRoutes[
 
   private def getAllIssuingBoxesR: HttpRoutes[F] =
     getAllIssuingBoxesDef.toRoutes { paging =>
-      service.getIssuingBoxesQty.flatMap { totalNum =>
-        service
-          .getAllIssuingBoxes(paging)
-          .compile
-          .toList
-          .map(Items(_, totalNum))
-          .adaptThrowable
-          .value
-      }
+      service
+        .getAllIssuingBoxes(paging)
+        .adaptThrowable
+        .value
     }
 
   private def getIssuingBoxR: HttpRoutes[F] =

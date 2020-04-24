@@ -39,9 +39,17 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, UTransaction]
 
+  /** Get all unconfirmed transactions.
+    */
+  def getAll(offset: Int, limit: Int): D[List[UTransaction]]
+
   /** Get ids of all unconfirmed transactions.
     */
   def getAllIds: D[List[TxId]]
+
+  /** Get total number of unconfirmed transactions.
+    */
+  def countAll: D[Int]
 }
 
 object UTransactionRepo {
@@ -77,7 +85,13 @@ object UTransactionRepo {
         .stream
         .translate(LiftConnectionIO[D].liftConnectionIOK)
 
+    def getAll(offset: Int, limit: Int): D[List[UTransaction]] =
+      QS.getAll(offset, limit).to[List].liftConnectionIO
+
     def getAllIds: D[List[TxId]] =
       QS.getAllIds.to[List].liftConnectionIO
+
+    def countAll: D[Int] =
+      QS.countUnconfirmedTxs.unique.liftConnectionIO
   }
 }

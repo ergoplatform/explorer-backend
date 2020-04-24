@@ -18,7 +18,7 @@ final class AddressesRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
 ](
   addressesService: AddressesService[F, Stream],
-  transactionsService: TransactionsService[F, Stream]
+  transactionsService: TransactionsService[F]
 )(implicit opts: Http4sServerOptions[F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.AddressesEndpointDefs._
@@ -35,16 +35,9 @@ final class AddressesRoutes[
     getTxsByAddressDef.toRoutes {
       case (address, paging) =>
         transactionsService
-          .countTxsInfoByAddress(address)
-          .flatMap { totalNumTxs =>
-            transactionsService
-              .getTxsInfoByAddress(address, paging)
-              .compile
-              .toList
-              .map(Items(_, totalNumTxs))
-              .adaptThrowable
-              .value
-          }
+          .getTxsInfoByAddress(address, paging)
+          .adaptThrowable
+          .value
     }
 
   def getAssetHoldersR: HttpRoutes[F] =
@@ -63,7 +56,7 @@ object AddressesRoutes {
 
   def apply[F[_]: Sync: ContextShift: Logger](
     addressesService: AddressesService[F, Stream],
-    transactionsService: TransactionsService[F, Stream]
+    transactionsService: TransactionsService[F]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new AddressesRoutes(addressesService, transactionsService).routes
 }
