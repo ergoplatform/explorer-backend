@@ -44,6 +44,7 @@ object TransactionInfo {
           .map(InputInfo.apply)
         val relatedOutputs = outputs
           .filter(_.output.txId == tx.id)
+          .sortBy(_.output.index)
           .map { out =>
             OutputInfo(out, groupedAssets.get(out.output.boxId).toList.flatten)
           }
