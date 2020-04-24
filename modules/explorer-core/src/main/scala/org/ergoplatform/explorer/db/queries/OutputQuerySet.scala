@@ -95,8 +95,7 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |left join node_transactions tx on tx.id = o.tx_id
-         |left join node_headers h on h.id = tx.header_id
-         |where o.main_chain = true and h.height <= $maxHeight and o.ergo_tree = $ergoTree
+         |where o.main_chain = true and tx.inclusion_height <= $maxHeight and o.ergo_tree = $ergoTree
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
