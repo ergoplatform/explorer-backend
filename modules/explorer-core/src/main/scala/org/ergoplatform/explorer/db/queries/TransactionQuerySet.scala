@@ -29,11 +29,11 @@ object TransactionQuerySet extends QuerySet {
          |where h.main_chain = true and t.id = $id
          |""".stripMargin.query[Transaction]
 
-  def getAllMainByIdSubstring(idStr: String)(implicit lh: LogHandler): Query0[Transaction] =
+  def getAllMainByIdSubstring(idSubstr: String)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size from node_transactions t
          |left join node_headers h on h.id = t.header_id
-         |where t.id like ${s"%$idStr%"} and h.main_chain = true
+         |where t.id like ${s"%idSubstr%"} and h.main_chain = true
          |""".stripMargin.query[Transaction]
 
   def getAllByBlockId(id: Id)(implicit lh: LogHandler): Query0[Transaction] =

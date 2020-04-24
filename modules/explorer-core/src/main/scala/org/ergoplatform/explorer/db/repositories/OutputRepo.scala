@@ -33,9 +33,9 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]]
 
-  /** Get all outputs with a given `ergoTree` from persistence.
+  /** Get all outputs with a given `ergoTree` appeared in the blockchain before `maxHeight`.
     */
-  def getAllMainByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]]
+  def getAllMainByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]]
 
   /** Get outputs with a given `ergoTree` from persistence.
     */
@@ -125,8 +125,8 @@ object OutputRepo {
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
       QS.getByBoxId(boxId).option.liftConnectionIO
 
-    def getAllMainByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
-      QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue)
+    def getAllMainByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]] =
+      QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue, maxHeight = maxHeight)
         .to[List]
         .liftConnectionIO
 

@@ -69,7 +69,34 @@ object OutputQuerySet extends QuerySet {
          |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |where o.ergo_tree = $ergoTree and o.main_chain = true
+         |where o.main_chain = true and o.ergo_tree = $ergoTree
+         |offset $offset limit $limit
+         |""".stripMargin.query[ExtendedOutput]
+
+  def getMainByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    maxHeight: Int
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  case i.main_chain when false then null else i.tx_id end
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_transactions tx on tx.id = o.tx_id
+         |left join node_headers h on h.id = tx.header_id
+         |where o.main_chain = true and h.height <= $maxHeight and o.ergo_tree = $ergoTree
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 

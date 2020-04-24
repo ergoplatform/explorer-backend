@@ -27,8 +27,8 @@ final class AddressesRoutes[
     getAddressR <+> getTxsByAddressR <+> getAssetHoldersR
 
   def getAddressR: HttpRoutes[F] =
-    getAddressDef.toRoutes { address =>
-      addressesService.getAddressInfo(address).adaptThrowable.value
+    getAddressDef.toRoutes { case (address, minConfirmations) =>
+      addressesService.getAddressInfo(address, minConfirmations).adaptThrowable.value
     }
 
   def getTxsByAddressR: HttpRoutes[F] =

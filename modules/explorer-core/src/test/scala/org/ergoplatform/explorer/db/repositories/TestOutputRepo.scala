@@ -16,7 +16,10 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
 
   override def getByBoxId(boxId: BoxId): F[Option[ExtendedOutput]] = ???
 
-  override def getAllMainByErgoTree(ergoTree: HexString): F[scala.List[ExtendedOutput]] = ???
+  override def getAllMainByErgoTree(
+    ergoTree: HexString,
+    minConfirmations: Int
+  ): F[scala.List[ExtendedOutput]] = ???
 
   override def getMainByErgoTree(
     ergoTree: HexString,
@@ -49,7 +52,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
   ): F[scala.List[ExtendedOutput]] = ???
 
   override def getAllLike(
-                           query: String
+    query: String
   ): F[scala.List[Address]] = ???
 
   override def sumOfAllUnspentOutputsSince(ts: Long): F[BigDecimal] = ???

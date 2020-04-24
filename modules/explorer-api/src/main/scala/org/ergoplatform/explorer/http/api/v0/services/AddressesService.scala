@@ -5,6 +5,7 @@ import cats.effect.Sync
 import cats.instances.option._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.applicative._
 import cats.syntax.list._
 import cats.syntax.traverse._
 import cats.syntax.apply._
@@ -29,7 +30,7 @@ trait AddressesService[F[_], S[_[_], _]] {
 
   /** Get summary info for the given `address`.
     */
-  def getAddressInfo(address: Address): F[AddressInfo]
+  def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo]
 
   /** Get all addresses holding an asset with a given `assetId`.
     */
@@ -46,13 +47,14 @@ object AddressesService {
     F[_]: Sync,
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
   ](trans: D Trans F)(implicit e: ErgoAddressEncoder): F[AddressesService[F, Stream]] =
-    (OutputRepo[F, D], UOutputRepo[F, D], AssetRepo[F, D], UAssetRepo[F, D])
-      .mapN(new Live(_, _, _, _)(trans))
+    (HeaderRepo[F, D], OutputRepo[F, D], UOutputRepo[F, D], AssetRepo[F, D], UAssetRepo[F, D])
+      .mapN(new Live(_, _, _, _, _)(trans))
 
   final private class Live[
     F[_],
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad
   ](
+    headerRepo: HeaderRepo[D],
     outputRepo: OutputRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
@@ -60,10 +62,11 @@ object AddressesService {
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends AddressesService[F, Stream] {
 
-    def getAddressInfo(address: Address): F[AddressInfo] =
+    def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo] =
       (for {
         ergoTree            <- utils.addressToErgoTreeHex(address)
-        outs                <- outputRepo.getAllMainByErgoTree(ergoTree)
+        height              <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
+        outs                <- outputRepo.getAllMainByErgoTree(ergoTree, height - minConfirmations)
         balance             <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree)
         assets              <- assetRepo.getAllMainUnspentByErgoTree(ergoTree)
         unspentOffChainOuts <- uOutputRepo.getAllUnspentByErgoTree(ergoTree)
