@@ -14,8 +14,6 @@ import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
-import org.ergoplatform.explorer.db.repositories.InputRepo.Live
-import org.ergoplatform.explorer.protocol.dex
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */

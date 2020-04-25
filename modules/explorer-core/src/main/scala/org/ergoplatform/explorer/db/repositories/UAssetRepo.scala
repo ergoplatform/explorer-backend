@@ -5,12 +5,11 @@ import cats.effect.Sync
 import cats.syntax.functor._
 import doobie.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.{BoxId, HexString}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.{Asset, UAsset}
-import org.ergoplatform.explorer.db.repositories.TransactionRepo.Live
+import org.ergoplatform.explorer.db.models.UAsset
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.{BoxId, HexString}
 
 /** [[UAsset]] data access operations.
   */

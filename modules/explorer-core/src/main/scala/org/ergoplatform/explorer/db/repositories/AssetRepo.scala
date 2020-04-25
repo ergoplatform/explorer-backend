@@ -11,7 +11,6 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.db.repositories.AdProofRepo.Live
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
 /** [[Asset]] data access operations.

@@ -9,7 +9,6 @@ import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Transaction
-import org.ergoplatform.explorer.db.repositories.OutputRepo.Live
 import org.ergoplatform.explorer.{Address, Id, TxId}
 
 /** [[Transaction]] data access operations.

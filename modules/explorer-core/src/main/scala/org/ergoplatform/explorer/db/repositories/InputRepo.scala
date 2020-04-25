@@ -13,7 +13,6 @@ import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Input
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
 import org.ergoplatform.explorer.db.doobieInstances._
-import org.ergoplatform.explorer.db.repositories.HeaderRepo.Live
 
 /** [[Input]] and [[ExtendedInput]] data access operations.
   */
