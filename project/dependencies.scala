@@ -55,7 +55,10 @@ object dependencies {
   )
 
   val Tofu: List[ModuleID] = List(
-    "ru.tinkoff" %% "tofu-core" % TofuVersion
+    "ru.tinkoff" %% "tofu-core" % TofuVersion,
+    "ru.tinkoff" %% "tofu-concurrent" % TofuVersion,
+    "ru.tinkoff" %% "tofu-optics-core" % TofuVersion,
+    "ru.tinkoff" %% "tofu-optics-macro" % TofuVersion
   )
 
   val Ergo: List[ModuleID] = List(

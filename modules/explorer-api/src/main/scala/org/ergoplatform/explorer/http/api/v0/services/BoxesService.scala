@@ -13,7 +13,7 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.db.Trans
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, OutputRepo}
 import org.ergoplatform.explorer.{Address, BoxId, CRaise, HexString}

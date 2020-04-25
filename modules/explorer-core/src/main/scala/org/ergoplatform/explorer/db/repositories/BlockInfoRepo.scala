@@ -7,7 +7,7 @@ import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedBlockInfo, MinerStats, TimePoint}
@@ -81,10 +81,10 @@ object BlockInfoRepo {
     import org.ergoplatform.explorer.db.queries.{BlockInfoQuerySet => QS}
 
     def insert(blockInfo: BlockInfo): D[Unit] =
-      QS.insert(blockInfo).void.liftConnectionIO
+      QS.insert(blockInfo).void.liftConnIO
 
     def get(id: Id): D[Option[BlockInfo]] =
-      QS.getBlockInfo(id).option.liftConnectionIO
+      QS.getBlockInfo(id).option.liftConnIO
 
     def getMany(
       offset: Int,
@@ -92,48 +92,48 @@ object BlockInfoRepo {
       ordering: OrderingString,
       orderBy: String
     ): D[List[ExtendedBlockInfo]] =
-      QS.getManyExtendedMain(offset, limit, ordering, orderBy).to[List].liftConnectionIO
+      QS.getManyExtendedMain(offset, limit, ordering, orderBy).to[List].liftConnIO
 
     def getManySince(ts: Long): D[List[BlockInfo]] =
-      QS.getManySince(ts).to[List].liftConnectionIO
+      QS.getManySince(ts).to[List].liftConnIO
 
     def getManyByIdLike(query: String): D[List[ExtendedBlockInfo]] =
-      QS.getManyExtendedByIdLike(query).to[List].liftConnectionIO
+      QS.getManyExtendedByIdLike(query).to[List].liftConnIO
 
     def getBlockSize(id: Id): D[Option[Int]] =
-      QS.getBlockSize(id).option.liftConnectionIO
+      QS.getBlockSize(id).option.liftConnIO
 
     def totalDifficultySince(ts: Long): D[Long] =
-      QS.totalDifficultySince(ts).unique.liftConnectionIO
+      QS.totalDifficultySince(ts).unique.liftConnIO
 
     def circulatingSupplySince(ts: Long): D[Long] =
-      QS.circulatingSupplySince(ts).unique.liftConnectionIO
+      QS.circulatingSupplySince(ts).unique.liftConnIO
 
     def totalCoinsSince(ts: Long): D[List[TimePoint[Long]]] =
-      QS.totalCoinsSince(ts).to[List].liftConnectionIO
+      QS.totalCoinsSince(ts).to[List].liftConnIO
 
     def avgBlockSizeSince(ts: Long): D[List[TimePoint[Long]]] =
-      QS.avgBlockSizeSince(ts).to[List].liftConnectionIO
+      QS.avgBlockSizeSince(ts).to[List].liftConnIO
 
     def avgTxsQtySince(ts: Long): D[List[TimePoint[Long]]] =
-      QS.avgTxsQtySince(ts).to[List].liftConnectionIO
+      QS.avgTxsQtySince(ts).to[List].liftConnIO
 
     def totalTxsQtySince(ts: Long): D[List[TimePoint[Long]]] =
-      QS.totalTxsQtySince(ts).to[List].liftConnectionIO
+      QS.totalTxsQtySince(ts).to[List].liftConnIO
 
     def totalBlockChainSizeSince(ts: Long): D[List[TimePoint[Long]]] =
-      QS.totalBlockChainSizeSince(ts).to[List].liftConnectionIO
+      QS.totalBlockChainSizeSince(ts).to[List].liftConnIO
 
     def avgDifficultiesSince(ts: Long): D[List[TimePoint[Long]]] =
-      QS.avgDifficultiesSince(ts).to[List].liftConnectionIO
+      QS.avgDifficultiesSince(ts).to[List].liftConnIO
 
     def totalDifficultiesSince(ts: Long): D[List[TimePoint[Long]]] =
-      QS.totalDifficultiesSince(ts).to[List].liftConnectionIO
+      QS.totalDifficultiesSince(ts).to[List].liftConnIO
 
     def totalMinerRevenueSince(ts: Long): D[List[TimePoint[Long]]] =
-      QS.totalMinerRevenueSince(ts).to[List].liftConnectionIO
+      QS.totalMinerRevenueSince(ts).to[List].liftConnIO
 
     def minerStatsSince(ts: Long): D[List[MinerStats]] =
-      QS.minerStatsSince(ts).to[List].liftConnectionIO
+      QS.minerStatsSince(ts).to[List].liftConnIO
   }
 }

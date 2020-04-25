@@ -5,7 +5,7 @@ import cats.effect.{IO, Sync, SyncIO}
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks

@@ -15,7 +15,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.FlatUTransaction
 import org.ergoplatform.explorer.db.repositories.{
   UAssetRepo,

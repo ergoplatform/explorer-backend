@@ -9,7 +9,7 @@ import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UInput
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.doobieInstances._
@@ -52,18 +52,18 @@ object UInputRepo {
     import org.ergoplatform.explorer.db.queries.{UInputQuerySet => QS}
 
     def insert(input: UInput): D[Unit] =
-      QS.insert(input).void.liftConnectionIO
+      QS.insert(input).void.liftConnIO
 
     def insetMany(inputs: List[UInput]): D[Unit] =
-      QS.insertMany(inputs).void.liftConnectionIO
+      QS.insertMany(inputs).void.liftConnIO
 
     def getAll(offset: Int, limit: Int): Stream[D, UInput] =
-      QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
+      QS.getAll(offset, limit).stream.translate(implicitly[LiftConnectionIO[D]].liftF)
 
     def getAllByTxId(txId: TxId): D[List[UInput]] =
-      QS.getAllByTxId(txId).to[List].liftConnectionIO
+      QS.getAllByTxId(txId).to[List].liftConnIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UInput]] =
-      QS.getAllByTxIxs(txIds).to[List].liftConnectionIO
+      QS.getAllByTxIxs(txIds).to[List].liftConnIO
   }
 }

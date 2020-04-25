@@ -6,7 +6,7 @@ import cats.syntax.functor._
 import doobie.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UAsset
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{BoxId, HexString}
@@ -48,18 +48,18 @@ object UAssetRepo {
     import org.ergoplatform.explorer.db.queries.{UAssetQuerySet => QS}
 
     def insert(asset: UAsset): D[Unit] =
-      QS.insert(asset).void.liftConnectionIO
+      QS.insert(asset).void.liftConnIO
 
     def insertMany(assets: List[UAsset]): D[Unit] =
-      QS.insertMany(assets).void.liftConnectionIO
+      QS.insertMany(assets).void.liftConnIO
 
     def getAllByBoxId(boxId: BoxId): D[List[UAsset]] =
-      QS.getAllByBoxId(boxId).to[List].liftConnectionIO
+      QS.getAllByBoxId(boxId).to[List].liftConnIO
 
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[UAsset]] =
-      QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
+      QS.getAllByBoxIds(boxIds).to[List].liftConnIO
 
     def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UAsset]] =
-      QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
+      QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnIO
   }
 }

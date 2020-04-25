@@ -7,7 +7,7 @@ import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.protocol.constants
@@ -63,29 +63,29 @@ object HeaderRepo {
     import org.ergoplatform.explorer.db.queries.{HeaderQuerySet => QS}
 
     def insert(h: Header): D[Unit] =
-      QS.insert(h).void.liftConnectionIO
+      QS.insert(h).void.liftConnIO
 
     def get(id: Id): D[Option[Header]] =
-      QS.get(id).option.liftConnectionIO
+      QS.get(id).option.liftConnIO
 
     def getLast: D[Option[Header]] =
-      QS.getLast.option.liftConnectionIO
+      QS.getLast.option.liftConnIO
 
     def getByParentId(parentId: Id): D[Option[Header]] =
-      QS.getByParentId(parentId).option.liftConnectionIO
+      QS.getByParentId(parentId).option.liftConnIO
 
     def getAllByHeight(height: Int): D[List[Header]] =
-      QS.getAllByHeight(height).to[List].liftConnectionIO
+      QS.getAllByHeight(height).to[List].liftConnIO
 
     def getHeightOf(id: Id): D[Option[Int]] =
-      QS.getHeightOf(id).option.liftConnectionIO
+      QS.getHeightOf(id).option.liftConnIO
 
     def getBestHeight: D[Int] =
       QS.getBestHeight.option
         .map(_.getOrElse(constants.PreGenesisHeight))
-        .liftConnectionIO
+        .liftConnIO
 
     def updateChainStatusById(id: Id, newChainStatus: Boolean): D[Unit] =
-      QS.updateChainStatusById(id, newChainStatus).run.void.liftConnectionIO
+      QS.updateChainStatusById(id, newChainStatus).run.void.liftConnIO
   }
 }

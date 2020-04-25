@@ -13,7 +13,7 @@ import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
 import org.ergoplatform.explorer.http.api.models.Paging

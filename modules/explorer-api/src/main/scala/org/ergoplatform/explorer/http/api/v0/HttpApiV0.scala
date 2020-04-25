@@ -10,7 +10,7 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.http.api.v0.routes._
 import org.ergoplatform.explorer.http.api.v0.services._
 import org.ergoplatform.explorer.settings.{HttpSettings, ProtocolSettings, UtxCacheSettings}

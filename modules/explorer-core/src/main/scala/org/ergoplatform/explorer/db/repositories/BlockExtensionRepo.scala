@@ -7,7 +7,7 @@ import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockExtension
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.doobieInstances._
@@ -38,9 +38,9 @@ object BlockExtensionRepo {
     import org.ergoplatform.explorer.db.queries.{BlockExtensionQuerySet => QS}
 
     def insert(extension: BlockExtension): D[Unit] =
-      QS.insert(extension).void.liftConnectionIO
+      QS.insert(extension).void.liftConnIO
 
     def getByHeaderId(headerId: Id): D[Option[BlockExtension]] =
-      QS.getByHeaderId(headerId).option.liftConnectionIO
+      QS.getByHeaderId(headerId).option.liftConnIO
   }
 }

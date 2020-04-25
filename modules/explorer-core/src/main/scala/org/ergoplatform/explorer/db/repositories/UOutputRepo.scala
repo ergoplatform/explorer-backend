@@ -9,7 +9,7 @@ import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.{HexString, TxId}
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.UOutput
 import org.ergoplatform.explorer.db.doobieInstances._
@@ -60,24 +60,24 @@ object UOutputRepo {
     import org.ergoplatform.explorer.db.queries.{UOutputQuerySet => QS}
 
     def insert(output: UOutput): D[Unit] =
-      QS.insert(output).void.liftConnectionIO
+      QS.insert(output).void.liftConnIO
 
     def insertMany(outputs: List[UOutput]): D[Unit] =
-      QS.insertMany(outputs).void.liftConnectionIO
+      QS.insertMany(outputs).void.liftConnIO
 
     def getAll(offset: Int, limit: Int): Stream[D, UOutput] =
-      QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
+      QS.getAll(offset, limit).stream.translate(implicitly[LiftConnectionIO[D]].liftF)
 
     def getAllByTxId(txId: TxId): D[List[UOutput]] =
-      QS.getAllByTxId(txId).to[List].liftConnectionIO
+      QS.getAllByTxId(txId).to[List].liftConnIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UOutput]] =
-      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
+      QS.getAllByTxIds(txIds).to[List].liftConnIO
 
     def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]] =
-      QS.getAllByErgoTree(ergoTree).to[List].liftConnectionIO
+      QS.getAllByErgoTree(ergoTree).to[List].liftConnIO
 
     def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]] =
-      QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
+      QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnIO
   }
 }

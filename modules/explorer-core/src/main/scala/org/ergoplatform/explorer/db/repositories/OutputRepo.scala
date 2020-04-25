@@ -8,7 +8,7 @@ import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
@@ -112,21 +112,21 @@ object OutputRepo {
 
     import org.ergoplatform.explorer.db.queries.{OutputQuerySet => QS}
 
-    private val liftK = LiftConnectionIO[D].liftConnectionIOK
+    private val liftK = implicitly[LiftConnectionIO[D]].liftF
 
     def insert(output: Output): D[Unit] =
-      QS.insert(output).void.liftConnectionIO
+      QS.insert(output).void.liftConnIO
 
     def insertMany(outputs: List[Output]): D[Unit] =
-      QS.insertMany(outputs).void.liftConnectionIO
+      QS.insertMany(outputs).void.liftConnIO
 
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
-      QS.getByBoxId(boxId).option.liftConnectionIO
+      QS.getByBoxId(boxId).option.liftConnIO
 
     def getAllMainByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]] =
       QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue, maxHeight = maxHeight)
         .to[List]
-        .liftConnectionIO
+        .liftConnIO
 
     def getMainByErgoTree(
       ergoTree: HexString,
@@ -138,10 +138,10 @@ object OutputRepo {
     def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): D[List[BoxId]] =
       QS.getAllMainUnspentIdsByErgoTree(ergoTree)
         .to[List]
-        .liftConnectionIO
+        .liftConnIO
 
     def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long] =
-      QS.sumOfAllMainUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+      QS.sumOfAllMainUnspentByErgoTree(ergoTree).unique.liftConnIO
 
     def getMainUnspentByErgoTree(
       ergoTree: HexString,
@@ -160,10 +160,10 @@ object OutputRepo {
         .translate(liftK)
 
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
-      QS.getAllByTxId(txId).to[List].liftConnectionIO
+      QS.getAllByTxId(txId).to[List].liftConnIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
-      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
+      QS.getAllByTxIds(txIds).to[List].liftConnIO
 
     def getAllMainUnspentSellOrderByTokenId(
       tokenId: TokenId,
@@ -196,12 +196,12 @@ object OutputRepo {
         .translate(liftK)
 
     def getAllLike(query: String): D[List[Address]] =
-      QS.getAllLike(query).to[List].liftConnectionIO
+      QS.getAllLike(query).to[List].liftConnIO
 
     def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal] =
-      QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnectionIO
+      QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnIO
 
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
-      QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
+      QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnIO
   }
 }

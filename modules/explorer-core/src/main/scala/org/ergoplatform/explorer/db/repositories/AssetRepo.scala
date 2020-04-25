@@ -7,7 +7,7 @@ import doobie.implicits._
 import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
@@ -71,19 +71,19 @@ object AssetRepo {
     import org.ergoplatform.explorer.db.queries.{AssetQuerySet => QS}
 
     def insert(asset: Asset): D[Unit] =
-      QS.insert(asset).void.liftConnectionIO
+      QS.insert(asset).void.liftConnIO
 
     def insertMany(assets: List[Asset]): D[Unit] =
-      QS.insertMany(assets).void.liftConnectionIO
+      QS.insertMany(assets).void.liftConnIO
 
     def getAllByBoxId(boxId: BoxId): D[List[Asset]] =
-      QS.getAllByBoxId(boxId).to[List].liftConnectionIO
+      QS.getAllByBoxId(boxId).to[List].liftConnIO
 
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]] =
-      QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
+      QS.getAllByBoxIds(boxIds).to[List].liftConnIO
 
     def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]] =
-      QS.getAllMainUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
+      QS.getAllMainUnspentByErgoTree(ergoTree).to[List].liftConnIO
 
     def getAllHoldingAddresses(
       tokenId: TokenId,
@@ -92,17 +92,17 @@ object AssetRepo {
     ): Stream[D, Address] =
       QS.getAllHoldingAddresses(tokenId, offset, limit)
         .stream
-        .translate(LiftConnectionIO[D].liftConnectionIOK)
+        .translate(implicitly[LiftConnectionIO[D]].liftF)
 
     def getAllIssuingBoxes(offset: Int, limit: Int): D[List[ExtendedOutput]] =
-      QS.getAllIssuingBoxes(offset, limit).to[List].liftConnectionIO
+      QS.getAllIssuingBoxes(offset, limit).to[List].liftConnIO
 
     def getIssuingBoxesByTokenIds(
       tokenIds: NonEmptyList[TokenId]
     ): D[List[ExtendedOutput]] =
-      QS.getIssuingBoxes(tokenIds).to[List].liftConnectionIO
+      QS.getIssuingBoxes(tokenIds).to[List].liftConnIO
 
     def getIssuingBoxesQty: D[Int] =
-      QS.getIssuingBoxesQty.unique.liftConnectionIO
+      QS.getIssuingBoxesQty.unique.liftConnIO
   }
 }

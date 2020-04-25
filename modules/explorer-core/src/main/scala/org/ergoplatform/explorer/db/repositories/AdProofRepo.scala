@@ -7,7 +7,7 @@ import doobie.free.implicits._
 import doobie.refined.implicits._
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.AdProof
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 
@@ -36,9 +36,9 @@ object AdProofRepo {
     import org.ergoplatform.explorer.db.queries.{AdProofQuerySet => QS}
 
     def insert(proof: AdProof): D[Unit] =
-      QS.insert(proof).void.liftConnectionIO
+      QS.insert(proof).void.liftConnIO
 
     def getByHeaderId(headerId: Id): D[Option[AdProof]] =
-      QS.getByHeaderId(headerId).option.liftConnectionIO
+      QS.getByHeaderId(headerId).option.liftConnIO
   }
 }

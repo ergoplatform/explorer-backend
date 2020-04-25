@@ -5,7 +5,7 @@ import cats.instances.try_._
 import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.TokenId
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.ergoplatform.explorer.protocol.dex

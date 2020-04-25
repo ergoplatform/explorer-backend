@@ -8,7 +8,7 @@ import doobie.refined.implicits._
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{refineV, W}
+import eu.timepit.refined.{W, refineV}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
@@ -19,11 +19,14 @@ import pureconfig.error.CannotConvert
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 import tofu.Raise.ContravariantRaise
+import tofu.lift.Lift
 import tofu.syntax.raise._
 
 package object explorer {
 
   type CRaise[F[_], -E] = ContravariantRaise[F, E]
+
+  type LiftConnectionIO[F[_]] = Lift[doobie.ConnectionIO, F]
 
   object constraints {
 

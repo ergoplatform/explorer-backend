@@ -10,7 +10,7 @@ import cats.{FlatMap, Functor, Monad}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.explorer.db.Trans
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.{
   BlockInfoRepo,
   HeaderRepo,
