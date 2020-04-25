@@ -84,7 +84,8 @@ object generators {
       coinbase <- Gen.oneOf(true, false)
       ts       <- Gen.posNum[Long]
       size     <- Gen.posNum[Int]
-    } yield Transaction(id, headerId, height, coinbase, ts, size)
+      index     <- Gen.posNum[Int]
+    } yield Transaction(id, headerId, height, coinbase, ts, size, index)
 
   def headerWithTxsGen(mainChain: Boolean): Gen[(Header, List[Transaction])] =
     for {

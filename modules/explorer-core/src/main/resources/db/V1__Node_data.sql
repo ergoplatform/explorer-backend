@@ -78,6 +78,7 @@ CREATE TABLE node_transactions
     coinbase         BOOLEAN     NOT NULL,
     timestamp        BIGINT      NOT NULL,
     size             INTEGER     NOT NULL,
+    index            INTEGER     NOT NULL,
     PRIMARY KEY (id, header_id)
 );
 

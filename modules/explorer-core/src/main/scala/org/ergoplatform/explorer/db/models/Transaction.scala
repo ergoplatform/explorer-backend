@@ -10,5 +10,6 @@ final case class Transaction(
   inclusionHeight: Int,
   isCoinbase: Boolean,
   timestamp: Long, // approx time output appeared in the blockchain
-  size: Int // transaction size in bytes
+  size: Int, // transaction size in bytes
+  index: Int // index of transaction inside a block
 )
