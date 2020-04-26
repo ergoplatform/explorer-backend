@@ -62,6 +62,10 @@ trait TransactionRepo[D[_], S[_[_], _]] {
   /** Get all ids matching the given `query`.
     */
   def getIdsLike(query: String): D[List[TxId]]
+
+  /** Update main_chain flag with a given `newChainStatus` for all txs related to given `headerId`.
+    */
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 }
 
 object TransactionRepo {
@@ -115,5 +119,8 @@ object TransactionRepo {
 
     def getIdsLike(query: String): D[List[TxId]] =
       QS.getIdsLike(query).to[List].liftConnectionIO
+
+    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }

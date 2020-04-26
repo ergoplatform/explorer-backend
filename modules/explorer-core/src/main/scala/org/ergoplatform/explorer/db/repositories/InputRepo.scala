@@ -6,7 +6,7 @@ import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.TxId
+import org.ergoplatform.explorer.{Id, TxId}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
@@ -33,6 +33,10 @@ trait InputRepo[D[_]] {
   /** Get all inputs related to a given list of `txId`.
     */
   def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedInput]]
+
+  /** Update main_chain status for all inputs related to given `headerId`.
+    */
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 }
 
 object InputRepo {
@@ -58,5 +62,8 @@ object InputRepo {
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedInput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
+
+    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }

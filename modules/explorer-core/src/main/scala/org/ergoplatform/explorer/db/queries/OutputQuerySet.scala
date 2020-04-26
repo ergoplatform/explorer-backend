@@ -19,6 +19,7 @@ object OutputQuerySet extends QuerySet {
   val fields: List[String] = List(
     "box_id",
     "tx_id",
+    "header_id",
     "value",
     "creation_height",
     "index",
@@ -34,6 +35,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -58,6 +60,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -83,6 +86,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -130,6 +134,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -156,6 +161,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -178,6 +184,7 @@ object OutputQuerySet extends QuerySet {
          |select distinct on (o.box_id)
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -200,6 +207,7 @@ object OutputQuerySet extends QuerySet {
            |select distinct on (o.box_id)
            |  o.box_id,
            |  o.tx_id,
+           |  o.header_id,
            |  o.value,
            |  o.creation_height,
            |  o.index,
@@ -252,6 +260,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -280,6 +289,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -298,4 +308,9 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+    sql"""
+         |update node_outputs set main_chain = $newChainStatus
+         |where header_id = $headerId
+         """.stripMargin.update
 }

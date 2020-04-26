@@ -76,7 +76,7 @@ object generators {
       blockExtensionGen.map(x => header -> x.copy(headerId = header.id))
     }
 
-  def transactionGen: Gen[Transaction] =
+  def transactionGen(mainChain: Boolean): Gen[Transaction] =
     for {
       id       <- txIdGen
       headerId <- idGen
@@ -85,13 +85,13 @@ object generators {
       ts       <- Gen.posNum[Long]
       size     <- Gen.posNum[Int]
       index     <- Gen.posNum[Int]
-    } yield Transaction(id, headerId, height, coinbase, ts, size, index)
+    } yield Transaction(id, headerId, height, coinbase, ts, size, index, mainChain)
 
   def headerWithTxsGen(mainChain: Boolean): Gen[(Header, List[Transaction])] =
     for {
       header <- headerGen.map(_.copy(mainChain = mainChain))
       txs <- Gen
-              .nonEmptyListOf(transactionGen)
+              .nonEmptyListOf(transactionGen(mainChain = mainChain))
               .map(_.map(_.copy(headerId = header.id)))
     } yield (header, txs)
 
@@ -99,6 +99,7 @@ object generators {
     for {
       boxId   <- boxIdGen
       txId    <- txIdGen
+      headerId <- idGen
       value   <- Gen.posNum[Long]
       height  <- Gen.posNum[Int]
       idx     <- Gen.posNum[Int]
@@ -109,6 +110,7 @@ object generators {
     } yield Output(
       boxId,
       txId,
+      headerId,
       value,
       height,
       idx,
@@ -126,7 +128,7 @@ object generators {
   ): Gen[(Header, Transaction, List[ExtendedOutput])] =
     for {
       header <- headerGen.map(_.copy(mainChain = mainChain))
-      tx     <- transactionGen.map(_.copy(headerId = header.id))
+      tx     <- transactionGen(mainChain = mainChain).map(_.copy(headerId = header.id))
       outs   <- Gen.nonEmptyListOf(outputGen(mainChain)).map(_.map(_.copy(txId = tx.id)))
       extOuts = outs.map(o => ExtendedOutput(o, None))
     } yield (header, tx, extOuts)
@@ -135,9 +137,10 @@ object generators {
     for {
       boxId <- boxIdGen
       txId  <- txIdGen
+      headerId <- idGen
       proof <- hexStringRGen
       ext   <- jsonFieldsGen
-    } yield Input(boxId, txId, proof.some, ext, mainChain)
+    } yield Input(boxId, txId, headerId, proof.some, ext, mainChain)
 
   def extInputWithOutputGen(mainChain: Boolean = true): Gen[(Output, ExtendedInput)] =
     outputGen(mainChain).flatMap { out =>
@@ -166,7 +169,7 @@ object generators {
     mainChain: Boolean
   ): Gen[(Transaction, List[Input])] =
     for {
-      tx  <- transactionGen
+      tx  <- transactionGen(mainChain)
       ins <- Gen.nonEmptyListOf(inputGen(mainChain)).map(_.map(_.copy(txId = tx.id)))
     } yield tx -> ins
 
@@ -174,7 +177,7 @@ object generators {
     mainChain: Boolean
   ): Gen[(Transaction, List[Output])] =
     for {
-      tx   <- transactionGen
+      tx   <- transactionGen(mainChain)
       outs <- Gen.nonEmptyListOf(outputGen(mainChain)).map(_.map(_.copy(txId = tx.id)))
     } yield tx -> outs
 

@@ -4,6 +4,7 @@ import doobie.LogHandler
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
+import doobie.util.update.Update0
 import org.ergoplatform.explorer.{Address, Id, TxId}
 import org.ergoplatform.explorer.db.models.Transaction
 
@@ -20,7 +21,8 @@ object TransactionQuerySet extends QuerySet {
     "coinbase",
     "timestamp",
     "size",
-    "index"
+    "index",
+    "main_chain"
   )
 
   def getMain(id: TxId)(implicit lh: LogHandler): Query0[Transaction] =
@@ -95,4 +97,10 @@ object TransactionQuerySet extends QuerySet {
 
   def getIdsLike(q: String)(implicit lh: LogHandler): Query0[TxId] =
     sql"select id from node_transactions where id like ${s"%$q%"}".query[TxId]
+
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+    sql"""
+         |update node_transactions set main_chain = $newChainStatus
+         |where header_id = $headerId
+         |""".stripMargin.update
 }

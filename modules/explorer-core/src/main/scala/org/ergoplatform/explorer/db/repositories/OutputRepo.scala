@@ -12,7 +12,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId, TxId}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TokenId, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
@@ -98,6 +98,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
   def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal]
 
   def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal]
+
+  /** Update main_chain status for all outputs related to given `headerId`.
+    */
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 }
 
 object OutputRepo {
@@ -203,5 +207,8 @@ object OutputRepo {
 
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
       QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
+
+    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }
