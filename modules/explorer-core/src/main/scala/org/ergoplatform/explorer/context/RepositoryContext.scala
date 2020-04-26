@@ -24,7 +24,7 @@ final case class RepositoryContext[D[_], S[_[_], _]](
 
 object RepositoryContext {
 
-  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[RepositoryContext[D, fs2.Stream]] =
+  def make[F[_]: Sync, D[_]: LiftConnectionIO]: F[RepositoryContext[D, fs2.Stream]] =
     (
       AdProofRepo[F, D],
       AssetRepo[F, D],

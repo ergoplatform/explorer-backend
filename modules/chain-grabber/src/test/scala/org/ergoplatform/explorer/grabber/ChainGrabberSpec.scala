@@ -27,16 +27,16 @@ class ChainGrabberSpec
   private lazy val settings =
     GrabberAppSettings(1.second, mainnetNodes, dbSettings, protocolSettings)
 
-  property("Network scanning") {
-    forAll(consistentChainGen(12)) { apiBlocks =>
-      whenever(apiBlocks.map(_.transactions.transactions).forall(_.nonEmpty)) {
-        val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
-        ChainGrabber[IO, ConnectionIO](settings, networkService)(xa.trans)
-          .flatMap(_.run.take(1L).compile.drain)
-          .unsafeRunSync()
-      }
-    }
-  }
+//  property("Network scanning") {
+//    forAll(consistentChainGen(12)) { apiBlocks =>
+//      whenever(apiBlocks.map(_.transactions.transactions).forall(_.nonEmpty)) {
+//        val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
+//        ChainGrabber[IO, ConnectionIO](settings, networkService)(xa.trans)
+//          .flatMap(_.run.take(1L).compile.drain)
+//          .unsafeRunSync()
+//      }
+//    }
+//  }
 
   private def consistentChainGen(length: Int): Gen[List[ApiFullBlock]] =
     Gen

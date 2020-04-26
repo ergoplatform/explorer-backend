@@ -8,24 +8,20 @@ import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
-import cats.syntax.apply._
 import cats.syntax.traverse._
-import cats.{~>, Monad, MonadError, Parallel}
+import cats.{Monad, MonadError, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
-import org.ergoplatform.explorer.LiftConnectionIO
+import org.ergoplatform.explorer.context._
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
-import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
-import org.ergoplatform.explorer.settings.GrabberAppSettings
-import org.ergoplatform.explorer.{CRaise, Id}
+import org.ergoplatform.explorer.{CRaise, Id, LiftConnectionIO}
 
 /** Fetches new blocks from the network divide them into
   * separate entities and finally puts them into db.
@@ -33,34 +29,28 @@ import org.ergoplatform.explorer.{CRaise, Id}
 final class ChainGrabber[
   F[_]: Sync: Parallel: Logger: Timer,
   D[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
-](
-  lastBlockCache: Ref[F, Option[BlockInfo]],
-  settings: GrabberAppSettings,
-  network: ErgoNetworkClient[F, Stream],
-  headerRepo: HeaderRepo[D],
-  blockInfoRepo: BlockInfoRepo[D],
-  blockExtensionRepo: BlockExtensionRepo[D],
-  adProofRepo: AdProofRepo[D],
-  txRepo: TransactionRepo[D, Stream],
-  inputRepo: InputRepo[D],
-  outputRepo: OutputRepo[D, Stream],
-  assetRepo: AssetRepo[D, Stream]
-)(xa: D ~> F) {
+](lastBlockCache: Ref[F, Option[BlockInfo]])(implicit F: HasGrabberContext[F, D]) {
 
   def run: Stream[F, Unit] =
-    Stream(()).repeat
-      .covary[F]
-      .metered(settings.pollInterval)
-      .evalMap { _ =>
-        Logger[F].info("Starting sync job ..") >> grab.handleErrorWith { e =>
-          Logger[F].warn(e)(
-            "An error occurred while syncing with the network. Restarting ..."
-          )
-        }
+    Stream
+      .eval(F.ask(_.settings.pollInterval))
+      .flatMap { pollInterval =>
+        Stream(()).repeat
+          .covary[F]
+          .metered(pollInterval)
+          .evalMap { _ =>
+            Logger[F].info("Starting sync job ..") >> grab.handleErrorWith { e =>
+              Logger[F].warn(e)(
+                "An error occurred while syncing with the network. Restarting ..."
+              )
+            }
+          }
       }
 
   private def grab: F[Unit] =
     for {
+      network       <- F.ask(_.networkClient)
+      xa            <- F.ask(_.trans.xa)
       networkHeight <- network.getBestHeight
       localHeight   <- getLastGrabbedBlockHeight
       _             <- Logger[F].info(s"Current network height : $networkHeight")
@@ -83,7 +73,9 @@ final class ChainGrabber[
     existingHeaderIds: List[Id] = List.empty
   ): F[D[List[BlockInfo]]] =
     for {
-      ids <- network.getBlockIdsAtHeight(height)
+      network    <- F.ask(_.networkClient)
+      headerRepo <- F.ask(_.repos.headerRepo)
+      ids        <- network.getBlockIdsAtHeight(height)
       apiBlocks <- ids
                     .filterNot(existingHeaderIds.contains)
                     .parTraverse(network.getFullBlockById)
@@ -105,54 +97,56 @@ final class ChainGrabber[
     } yield updatedForks >> blocks
 
   private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
-    lastBlockCache.get.flatMap { cachedBlockOpt =>
-      cachedBlockOpt
-        .exists(_.headerId == block.header.id)
-        .pure[F]
-        .ifM(
-          cachedBlockOpt.pure[F],
-          getParentBlockInfo(block.header.parentId)
-        )
-        .flatMap {
-          case None if block.header.height != constants.GenesisHeight => // fork
-            getHeaderIdsAtHeight(block.header.height - 1).flatMap { existingHeaders =>
-              grabBlocksFromHeight(block.header.height - 1, existingHeaders)
-                .map(_.map(_.headOption))
-            }
-          case parentOpt =>
-            parentOpt.pure[D].pure[F]
-        }
-        .map { blockInfoOptDb =>
-          blockInfoOptDb.flatMap { parentBlockInfoOpt =>
-            FlatBlock
-              .fromApi[D](block, parentBlockInfoOpt)(settings.protocol)
-              .flatMap(flatBlock => insetBlock(flatBlock) as flatBlock.info)
+    F.askF { ctx =>
+      lastBlockCache.get.flatMap { cachedBlockOpt =>
+        cachedBlockOpt
+          .exists(_.headerId == block.header.id)
+          .pure[F]
+          .ifM(
+            cachedBlockOpt.pure[F],
+            getParentBlockInfo(block.header.parentId)
+          )
+          .flatMap {
+            case None if block.header.height != constants.GenesisHeight => // fork
+              getHeaderIdsAtHeight(block.header.height - 1).flatMap { existingHeaders =>
+                grabBlocksFromHeight(block.header.height - 1, existingHeaders)
+                  .map(_.map(_.headOption))
+              }
+            case parentOpt =>
+              parentOpt.pure[D].pure[F]
           }
-        }
+          .map { blockInfoOptDb =>
+            blockInfoOptDb.flatMap { parentBlockInfoOpt =>
+              FlatBlock
+                .fromApi[D](block, parentBlockInfoOpt)(ctx.settings.protocol)
+                .flatMap(flatBlock => insetBlock(flatBlock)(ctx.repos) as flatBlock.info)
+            }
+          }
+      }
     }
 
   private def getLastGrabbedBlockHeight: F[Int] =
-    headerRepo.getBestHeight ||> xa
+    F.askF(ctx => ctx.repos.headerRepo.getBestHeight ||> ctx.trans.xa)
 
   private def getHeaderIdsAtHeight(height: Int): F[List[Id]] =
-    (headerRepo.getAllByHeight(height) ||> xa).map(_.map(_.id))
+    F.askF(ctx => (ctx.repos.headerRepo.getAllByHeight(height) ||> ctx.trans.xa).map(_.map(_.id)))
 
   private def getParentBlockInfo(headerId: Id): F[Option[BlockInfo]] =
-    blockInfoRepo.get(headerId) ||> xa
+    F.askF(ctx => ctx.repos.blockInfoRepo.get(headerId) ||> ctx.trans.xa)
 
   private def getScanRange(localHeight: Int, networkHeight: Int): List[Int] =
     if (networkHeight == localHeight) List.empty
     else (localHeight + 1 to networkHeight).toList
 
-  private def insetBlock(block: FlatBlock): D[Unit] =
-    headerRepo.insert(block.header) >>
-    blockInfoRepo.insert(block.info) >>
-    blockExtensionRepo.insert(block.extension) >>
-    block.adProofOpt.map(adProofRepo.insert).getOrElse(().pure[D]) >>
-    txRepo.insertMany(block.txs) >>
-    inputRepo.insetMany(block.inputs) >>
-    outputRepo.insertMany(block.outputs) >>
-    assetRepo.insertMany(block.assets)
+  private def insetBlock(block: FlatBlock)(repos: RepositoryContext[D, fs2.Stream]): D[Unit] =
+    repos.headerRepo.insert(block.header) >>
+    repos.blockInfoRepo.insert(block.info) >>
+    repos.blockExtensionRepo.insert(block.extension) >>
+    block.adProofOpt.map(repos.adProofsRepo.insert).getOrElse(().pure[D]) >>
+    repos.transactionRepo.insertMany(block.txs) >>
+    repos.inputRepo.insetMany(block.inputs) >>
+    repos.outputRepo.insertMany(block.outputs) >>
+    repos.assetRepo.insertMany(block.assets)
 }
 
 object ChainGrabber {
@@ -160,22 +154,8 @@ object ChainGrabber {
   def apply[
     F[_]: Sync: Parallel: Timer,
     D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
-  ](
-    settings: GrabberAppSettings,
-    network: ErgoNetworkClient[F, Stream]
-  )(xa: D ~> F): F[ChainGrabber[F, D]] =
+  ](implicit F: HasGrabberContext[F, D]): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
-      Ref.of[F, Option[BlockInfo]](None).flatMap { cache =>
-        (
-          HeaderRepo[F, D],
-          BlockInfoRepo[F, D],
-          BlockExtensionRepo[F, D],
-          AdProofRepo[F, D],
-          TransactionRepo[F, D],
-          InputRepo[F, D],
-          OutputRepo[F, D],
-          AssetRepo[F, D]
-        ).mapN(new ChainGrabber[F, D](cache, settings, network, _, _, _, _, _, _, _, _)(xa))
-      }
+      Ref.of[F, Option[BlockInfo]](None).map(new ChainGrabber[F, D](_))
     }
 }

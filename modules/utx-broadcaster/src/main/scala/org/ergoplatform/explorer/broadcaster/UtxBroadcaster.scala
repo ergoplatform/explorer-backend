@@ -23,13 +23,15 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
   repo: ErgoLikeTransactionRepo[F, Stream]
 ) {
 
+  private val log = Logger[F]
+
   def run: Stream[F, Unit] =
     Stream(()).repeat
       .covary[F]
       .metered(settings.tickInterval)
       .flatMap(_ => broadcastPool)
       .handleErrorWith { e =>
-        Stream.eval(Logger[F].error(e)(s"An error occurred while broadcasting local utx pool")) >> run
+        Stream.eval(log.error(e)(s"An error occurred while broadcasting local utx pool")) >> run
       }
 
   private def broadcastPool: Stream[F, Unit] =
@@ -37,16 +39,18 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
       .eval(Ref.of(0))
       .flatTap { count =>
         repo.getAll.evalMap { tx =>
-          Logger[F].info(s"Broadcasting transaction ${tx.id}") >>
+          log.info(s"Broadcasting transaction ${tx.id}") >>
           count.update(_ + 1) >>
           network
             .submitTransaction(tx)
-            .recoverWith { case _: InvalidTransaction => ().pure } >>
+            .recoverWith {
+              case _: InvalidTransaction => log.info(s"Transaction ${tx.id} invalidated")
+            } >>
           repo.delete(tx.id)
         }
       }
       .flatMap { cRef =>
-        Stream.eval(cRef.get >>= (c => Logger[F].info(s"$c transactions processed")))
+        Stream.eval(cRef.get >>= (c => log.info(s"$c transactions processed")))
       }
 }
 

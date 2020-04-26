@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.Sync
 import cats.implicits._
+import derevo.derive
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
@@ -11,10 +12,12 @@ import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.protocol.constants
+import tofu.data.derived.ContextEmbed
+import tofu.higherKind.derived.embed
 
 /** [[Header]] data access operations.
   */
-trait HeaderRepo[D[_]] {
+@derive(embed) trait HeaderRepo[D[_]] {
 
   /** Put a given `h` to persistence.
     */
@@ -50,7 +53,7 @@ trait HeaderRepo[D[_]] {
   def updateChainStatusById(id: Id, newChainStatus: Boolean): D[Unit]
 }
 
-object HeaderRepo {
+object HeaderRepo extends ContextEmbed[HeaderRepo] {
 
   def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[HeaderRepo[D]] =
     DoobieLogHandler.create[F].map { implicit lh =>
