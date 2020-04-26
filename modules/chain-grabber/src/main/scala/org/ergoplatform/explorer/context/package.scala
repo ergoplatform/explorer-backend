@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer
 
-import tofu.{HasContext, HasLocal}
+import tofu.optics.Contains
+import tofu.{HasContext, HasLocal, WithContext}
 
 package object context {
 
@@ -9,4 +10,13 @@ package object context {
   type HasSettings[F[_]] = F HasContext SettingsContext
 
   type HasRepo[F[_], Repo] = F HasLocal Repo
+
+  type HasRepos[F[_], D[_]] = F HasContext RepositoryContext[D, fs2.Stream]
+
+  implicit def extractContext[F[_], D[_], A](
+    implicit
+    F: HasGrabberContext[F, D],
+    lens: GrabberContext[F, D] Contains A
+  ): F WithContext A =
+    F.extract(lens)
 }

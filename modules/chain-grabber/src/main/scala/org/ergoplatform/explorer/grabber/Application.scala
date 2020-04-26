@@ -5,7 +5,7 @@ import cats.syntax.functor._
 import doobie.free.connection.ConnectionIO
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
-import org.ergoplatform.explorer.context.GrabberContext
+import org.ergoplatform.explorer.context._
 import tofu.{Context, HasContext}
 
 import scala.concurrent.ExecutionContext.Implicits.global

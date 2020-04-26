@@ -2,16 +2,19 @@ package org.ergoplatform.explorer.grabber
 
 import cats.effect._
 import doobie.free.connection.ConnectionIO
+import doobie.util.transactor.Transactor
 import monocle.macros.syntax.lens._
 import org.ergoplatform.explorer.MainNetConfiguration
-import org.ergoplatform.explorer.db.RealDbTest
+import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.context.{GrabberContext, RepositoryContext, SettingsContext}
+import org.ergoplatform.explorer.db.{RealDbTest, Trans}
 import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
-import org.ergoplatform.explorer.settings.GrabberAppSettings
 import org.scalacheck.ScalacheckShapeless._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import tofu.{Context, HasContext}
 
 import scala.concurrent.duration._
 
@@ -24,19 +27,29 @@ class ChainGrabberSpec
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.testConstants._
 
-  private lazy val settings =
-    GrabberAppSettings(1.second, mainnetNodes, dbSettings, protocolSettings)
+  property("Network scanning") {
+    forAll(consistentChainGen(12)) { apiBlocks =>
+      whenever(apiBlocks.map(_.transactions.transactions).forall(_.nonEmpty)) {
+        val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
+        makeContext(networkService, xa)
+          .flatMap { ctx =>
+            implicit val c: HasContext[IO, GrabberContext[IO, ConnectionIO]] = Context.const(ctx)
+            ChainGrabber[IO, ConnectionIO]
+              .flatMap(_.run.take(1L).compile.drain)
+          }
+          .unsafeRunSync()
+      }
+    }
+  }
 
-//  property("Network scanning") {
-//    forAll(consistentChainGen(12)) { apiBlocks =>
-//      whenever(apiBlocks.map(_.transactions.transactions).forall(_.nonEmpty)) {
-//        val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
-//        ChainGrabber[IO, ConnectionIO](settings, networkService)(xa.trans)
-//          .flatMap(_.run.take(1L).compile.drain)
-//          .unsafeRunSync()
-//      }
-//    }
-//  }
+  private def makeContext(
+    ns: ErgoNetworkClient[IO, fs2.Stream],
+    xa: Transactor[IO]
+  ): IO[GrabberContext[IO, ConnectionIO]] =
+    RepositoryContext.make[IO, ConnectionIO].map { repos =>
+      val settings = SettingsContext(1.second, mainnetNodes, dbSettings, protocolSettings)
+      GrabberContext(settings, repos, ns, Trans.fromDoobie(xa))
+    }
 
   private def consistentChainGen(length: Int): Gen[List[ApiFullBlock]] =
     Gen

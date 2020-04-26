@@ -6,8 +6,6 @@ import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.http4s.client.blaze.BlazeClientBuilder
-import tofu.WithContext
-import tofu.optics.Contains
 import tofu.optics.macros.{ClassyOptics, promote}
 
 import scala.concurrent.ExecutionContext
@@ -21,13 +19,6 @@ final case class GrabberContext[F[_], D[_]](
 )
 
 object GrabberContext {
-
-  implicit def extractContext[F[_], D[_], A](
-    implicit
-    F: HasGrabberContext[F, D],
-    lens: GrabberContext[F, D] Contains A
-  ): F WithContext A =
-    F.extract(lens)
 
   def make[
     F[_]: ConcurrentEffect: ContextShift: Parallel

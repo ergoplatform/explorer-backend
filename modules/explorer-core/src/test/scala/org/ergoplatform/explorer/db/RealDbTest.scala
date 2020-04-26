@@ -4,12 +4,12 @@ import cats.effect.IO
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import doobie.util.transactor.Transactor
 import doobie.implicits._
-import org.ergoplatform.explorer.CatsInstances
+import org.ergoplatform.explorer.CatsPlatform
 import org.flywaydb.core.Flyway
 import org.scalactic.source.Position
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, TestSuite}
 
-trait RealDbTest extends CatsInstances with BeforeAndAfter with BeforeAndAfterAll {
+trait RealDbTest extends CatsPlatform with BeforeAndAfter with BeforeAndAfterAll {
   self: TestSuite =>
 
   implicit lazy val xa: Transactor[IO] =

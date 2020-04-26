@@ -31,6 +31,9 @@ final class ChainGrabber[
   D[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
 ](lastBlockCache: Ref[F, Option[BlockInfo]])(implicit F: HasGrabberContext[F, D]) {
 
+  private val settings = implicitly[HasSettings[F]]
+  private val repos    = implicitly[HasRepos[F, D]]
+
   def run: Stream[F, Unit] =
     Stream
       .eval(F.ask(_.settings.pollInterval))
@@ -97,31 +100,33 @@ final class ChainGrabber[
     } yield updatedForks >> blocks
 
   private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
-    F.askF { ctx =>
-      lastBlockCache.get.flatMap { cachedBlockOpt =>
-        cachedBlockOpt
-          .exists(_.headerId == block.header.id)
-          .pure[F]
-          .ifM(
-            cachedBlockOpt.pure[F],
-            getParentBlockInfo(block.header.parentId)
-          )
-          .flatMap {
-            case None if block.header.height != constants.GenesisHeight => // fork
-              getHeaderIdsAtHeight(block.header.height - 1).flatMap { existingHeaders =>
-                grabBlocksFromHeight(block.header.height - 1, existingHeaders)
-                  .map(_.map(_.headOption))
-              }
-            case parentOpt =>
-              parentOpt.pure[D].pure[F]
-          }
-          .map { blockInfoOptDb =>
-            blockInfoOptDb.flatMap { parentBlockInfoOpt =>
-              FlatBlock
-                .fromApi[D](block, parentBlockInfoOpt)(ctx.settings.protocol)
-                .flatMap(flatBlock => insetBlock(flatBlock)(ctx.repos) as flatBlock.info)
+    settings.askF { settings =>
+      insertBlock.flatMap { insert =>
+        lastBlockCache.get.flatMap { cachedBlockOpt =>
+          cachedBlockOpt
+            .exists(_.headerId == block.header.id)
+            .pure[F]
+            .ifM(
+              cachedBlockOpt.pure[F],
+              getParentBlockInfo(block.header.parentId)
+            )
+            .flatMap {
+              case None if block.header.height != constants.GenesisHeight => // fork
+                getHeaderIdsAtHeight(block.header.height - 1).flatMap { existingHeaders =>
+                  grabBlocksFromHeight(block.header.height - 1, existingHeaders)
+                    .map(_.map(_.headOption))
+                }
+              case parentOpt =>
+                parentOpt.pure[D].pure[F]
             }
-          }
+            .map { blockInfoOptDb =>
+              blockInfoOptDb.flatMap { parentBlockInfoOpt =>
+                FlatBlock
+                  .fromApi[D](block, parentBlockInfoOpt)(settings.protocol)
+                  .flatMap(flatBlock => insert(flatBlock) as flatBlock.info)
+              }
+            }
+        }
       }
     }
 
@@ -138,15 +143,17 @@ final class ChainGrabber[
     if (networkHeight == localHeight) List.empty
     else (localHeight + 1 to networkHeight).toList
 
-  private def insetBlock(block: FlatBlock)(repos: RepositoryContext[D, fs2.Stream]): D[Unit] =
-    repos.headerRepo.insert(block.header) >>
-    repos.blockInfoRepo.insert(block.info) >>
-    repos.blockExtensionRepo.insert(block.extension) >>
-    block.adProofOpt.map(repos.adProofsRepo.insert).getOrElse(().pure[D]) >>
-    repos.transactionRepo.insertMany(block.txs) >>
-    repos.inputRepo.insetMany(block.inputs) >>
-    repos.outputRepo.insertMany(block.outputs) >>
-    repos.assetRepo.insertMany(block.assets)
+  private def insertBlock: F[FlatBlock => D[Unit]] =
+    repos.ask { repos => block =>
+      repos.headerRepo.insert(block.header) >>
+      repos.blockInfoRepo.insert(block.info) >>
+      repos.blockExtensionRepo.insert(block.extension) >>
+      block.adProofOpt.map(repos.adProofsRepo.insert).getOrElse(().pure[D]) >>
+      repos.transactionRepo.insertMany(block.txs) >>
+      repos.inputRepo.insetMany(block.inputs) >>
+      repos.outputRepo.insertMany(block.outputs) >>
+      repos.assetRepo.insertMany(block.assets)
+    }
 }
 
 object ChainGrabber {

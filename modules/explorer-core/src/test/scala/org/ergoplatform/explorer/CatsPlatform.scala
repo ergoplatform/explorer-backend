@@ -3,7 +3,7 @@ package org.ergoplatform.explorer
 import cats.effect.{ContextShift, IO, Timer}
 import doobie.util.ExecutionContexts
 
-trait CatsInstances {
+trait CatsPlatform {
 
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContexts.synchronous)
 
