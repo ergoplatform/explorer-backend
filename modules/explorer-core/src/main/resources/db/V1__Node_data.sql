@@ -93,7 +93,7 @@ CREATE TABLE node_inputs
 (
     box_id      VARCHAR(64) NOT NULL,
     tx_id       VARCHAR(64) NOT NULL,
-    header_id   VARCHAR(64) REFERENCES node_headers (id),
+    header_id   VARCHAR(64) NOT NULL,
     proof_bytes VARCHAR,
     extension   JSON        NOT NULL,
     main_chain  BOOLEAN     NOT NULL,
@@ -110,7 +110,7 @@ CREATE TABLE node_outputs
 (
     box_id               VARCHAR(64) NOT NULL,
     tx_id                VARCHAR(64) NOT NULL,
-    header_id            VARCHAR(64) REFERENCES node_headers (id),
+    header_id            VARCHAR(64) NOT NULL,
     value                BIGINT      NOT NULL,
     creation_height      INTEGER     NOT NULL,
     index                INTEGER     NOT NULL,

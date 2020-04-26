@@ -66,6 +66,7 @@ object AssetQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -93,6 +94,7 @@ object AssetQuerySet extends QuerySet {
           |select
           |  o.box_id,
           |  o.tx_id,
+          |  o.header_id,
           |  o.value,
           |  o.creation_height,
           |  o.index,

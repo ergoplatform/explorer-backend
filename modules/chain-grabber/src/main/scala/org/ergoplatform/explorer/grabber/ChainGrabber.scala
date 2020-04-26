@@ -115,8 +115,10 @@ final class ChainGrabber[
         )
         .flatMap {
           case None if block.header.height != constants.GenesisHeight => // fork
-            getHeaderIdsAtHeight(block.header.height - 1).flatMap { existingHeaders =>
-              grabBlocksFromHeight(block.header.height - 1, existingHeaders)
+            val forkHeight = block.header.height - 1
+            Logger[F].info(s"Processing fork at height $forkHeight") >>
+            getHeaderIdsAtHeight(forkHeight).flatMap { existingHeaders =>
+              grabBlocksFromHeight(forkHeight, existingHeaders)
                 .map(_.map(_.headOption))
             }
           case parentOpt =>
