@@ -8,11 +8,11 @@ import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.LiftConnectionIO
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId, TxId}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TokenId, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
@@ -45,7 +45,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
-  def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long]
+  def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, minConfirmations: Int): D[Long]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
@@ -98,6 +98,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
   def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal]
 
   def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal]
+
+  /** Update main_chain status for all outputs related to given `headerId`.
+    */
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 }
 
 object OutputRepo {
@@ -112,21 +116,21 @@ object OutputRepo {
 
     import org.ergoplatform.explorer.db.queries.{OutputQuerySet => QS}
 
-    private val liftK = implicitly[LiftConnectionIO[D]].liftF
+    private val liftK = LiftConnectionIO[D].liftConnectionIOK
 
     def insert(output: Output): D[Unit] =
-      QS.insert(output).void.liftConnIO
+      QS.insert(output).void.liftConnectionIO
 
     def insertMany(outputs: List[Output]): D[Unit] =
-      QS.insertMany(outputs).void.liftConnIO
+      QS.insertMany(outputs).void.liftConnectionIO
 
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
-      QS.getByBoxId(boxId).option.liftConnIO
+      QS.getByBoxId(boxId).option.liftConnectionIO
 
     def getAllMainByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]] =
       QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue, maxHeight = maxHeight)
         .to[List]
-        .liftConnIO
+        .liftConnectionIO
 
     def getMainByErgoTree(
       ergoTree: HexString,
@@ -138,10 +142,10 @@ object OutputRepo {
     def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): D[List[BoxId]] =
       QS.getAllMainUnspentIdsByErgoTree(ergoTree)
         .to[List]
-        .liftConnIO
+        .liftConnectionIO
 
-    def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long] =
-      QS.sumOfAllMainUnspentByErgoTree(ergoTree).unique.liftConnIO
+    def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
+      QS.sumOfAllMainUnspentByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
 
     def getMainUnspentByErgoTree(
       ergoTree: HexString,
@@ -160,10 +164,10 @@ object OutputRepo {
         .translate(liftK)
 
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
-      QS.getAllByTxId(txId).to[List].liftConnIO
+      QS.getAllByTxId(txId).to[List].liftConnectionIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
-      QS.getAllByTxIds(txIds).to[List].liftConnIO
+      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
 
     def getAllMainUnspentSellOrderByTokenId(
       tokenId: TokenId,
@@ -196,12 +200,15 @@ object OutputRepo {
         .translate(liftK)
 
     def getAllLike(query: String): D[List[Address]] =
-      QS.getAllLike(query).to[List].liftConnIO
+      QS.getAllLike(query).to[List].liftConnectionIO
 
     def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal] =
-      QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnIO
+      QS.sumOfAllUnspentOutputsSince(ts).unique.liftConnectionIO
 
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
-      QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnIO
+      QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
+
+    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }

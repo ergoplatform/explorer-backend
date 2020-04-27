@@ -66,8 +66,9 @@ object AddressesService {
       (for {
         ergoTree            <- utils.addressToErgoTreeHex(address)
         height              <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
-        outs                <- outputRepo.getAllMainByErgoTree(ergoTree, height - minConfirmations)
-        balance             <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree)
+        maxHeight            = height - minConfirmations
+        outs                <- outputRepo.getAllMainByErgoTree(ergoTree, maxHeight)
+        balance             <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree, maxHeight)
         assets              <- assetRepo.getAllMainUnspentByErgoTree(ergoTree)
         unspentOffChainOuts <- uOutputRepo.getAllUnspentByErgoTree(ergoTree)
         offChainAssets      <- uAssetRepo.getAllUnspentByErgoTree(ergoTree)

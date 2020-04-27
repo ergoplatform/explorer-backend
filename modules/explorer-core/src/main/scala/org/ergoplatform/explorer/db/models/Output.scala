@@ -1,13 +1,14 @@
 package org.ergoplatform.explorer.db.models
 
 import io.circe.Json
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TxId}
 
 /** Entity representing `node_outputs` table.
   */
 final case class Output(
   boxId: BoxId,
   txId: TxId,
+  headerId: Id,
   value: Long, // amount of nanoERG in thee corresponding box
   creationHeight: Int, // the height this output was created
   index: Int, // index of the output in the transaction

@@ -44,7 +44,7 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
           network
             .submitTransaction(tx)
             .recoverWith {
-              case _: InvalidTransaction => log.info(s"Transaction ${tx.id} invalidated")
+              case _: InvalidTransaction => log.info(s"Transaction ${tx.id} was invalidated")
             } >>
           repo.delete(tx.id)
         }

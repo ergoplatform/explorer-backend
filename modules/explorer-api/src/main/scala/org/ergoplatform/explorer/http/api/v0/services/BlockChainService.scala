@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.effect.Sync
 import cats.instances.option._
+import cats.instances.list._
 import cats.syntax.apply._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -131,9 +132,7 @@ object BlockChainService {
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {
         header <- headerRepo.get(id).asStream.unNone
-        txs <- transactionRepo.getAllByBlockId(id).fold(List.empty[Transaction]) {
-                 case (acc, tx) => tx +: acc
-               }
+        txs <- transactionRepo.getAllByBlockId(id).fold(Array.empty[Transaction])(_ :+ _).map(_.toList)
         blockSizeOpt <- blockInfoRepo.getBlockSize(id).asStream
         bestHeight   <- headerRepo.getBestHeight.asStream
         txIdsNel     <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream

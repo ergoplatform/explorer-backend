@@ -79,6 +79,7 @@ CREATE TABLE node_transactions
     timestamp        BIGINT      NOT NULL,
     size             INTEGER     NOT NULL,
     index            INTEGER     NOT NULL,
+    main_chain       BOOLEAN     NOT NULL,
     PRIMARY KEY (id, header_id)
 );
 
@@ -92,9 +93,11 @@ CREATE TABLE node_inputs
 (
     box_id      VARCHAR(64) NOT NULL,
     tx_id       VARCHAR(64) NOT NULL,
+    header_id   VARCHAR(64) NOT NULL,
     proof_bytes VARCHAR,
     extension   JSON        NOT NULL,
-    main_chain  BOOLEAN     NOT NULL
+    main_chain  BOOLEAN     NOT NULL,
+    PRIMARY KEY (box_id, header_id)
 );
 
 CREATE INDEX "node_inputs__tx_id" ON node_inputs (tx_id);
@@ -107,6 +110,7 @@ CREATE TABLE node_outputs
 (
     box_id               VARCHAR(64) NOT NULL,
     tx_id                VARCHAR(64) NOT NULL,
+    header_id            VARCHAR(64) NOT NULL,
     value                BIGINT      NOT NULL,
     creation_height      INTEGER     NOT NULL,
     index                INTEGER     NOT NULL,
@@ -114,7 +118,8 @@ CREATE TABLE node_outputs
     address              VARCHAR,
     additional_registers JSON        NOT NULL,
     timestamp            BIGINT      NOT NULL,
-    main_chain           BOOLEAN     NOT NULL
+    main_chain           BOOLEAN     NOT NULL,
+    PRIMARY KEY (box_id, header_id)
 );
 
 CREATE INDEX "node_outputs__box_id" ON node_outputs (box_id);

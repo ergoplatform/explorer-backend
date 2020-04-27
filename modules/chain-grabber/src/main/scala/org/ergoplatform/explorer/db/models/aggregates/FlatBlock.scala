@@ -45,7 +45,12 @@ object FlatBlock {
           apiBlock.header.mainChain,
           apiBlock.header.timestamp
         )
-        val txs    = extractTxs(apiBlock.transactions, apiBlock.header.timestamp, blockInfo.height)
+        val txs = extractTxs(
+          apiBlock.transactions,
+          apiBlock.header.timestamp,
+          blockInfo.height,
+          apiBlock.header.mainChain
+        )
         val inputs = extractInputs(apiBlock.transactions, apiBlock.header.mainChain)
         val assets = extractAssets(apiBlock.transactions)
         FlatBlock(
@@ -60,17 +65,22 @@ object FlatBlock {
         )
       }
 
-  private def extractTxs(apiTxs: ApiBlockTransactions, ts: Long, height: Int): List[Transaction] = {
+  private def extractTxs(
+    apiTxs: ApiBlockTransactions,
+    ts: Long,
+    height: Int,
+    chainStatus: Boolean
+  ): List[Transaction] = {
     val txs = apiTxs.transactions.zipWithIndex
     val coinbaseTxOpt = txs.lastOption
       .map {
         case (tx, i) =>
-          Transaction(tx.id, apiTxs.headerId, height, isCoinbase = true, ts, tx.size, i)
+          Transaction(tx.id, apiTxs.headerId, height, isCoinbase = true, ts, tx.size, i, chainStatus)
       }
     val restTxs = txs.init
       .map {
         case (tx, i) =>
-          Transaction(tx.id, apiTxs.headerId, height, isCoinbase = false, ts, tx.size, i)
+          Transaction(tx.id, apiTxs.headerId, height, isCoinbase = false, ts, tx.size, i, chainStatus)
       }
     restTxs ++ coinbaseTxOpt
   }
@@ -84,6 +94,7 @@ object FlatBlock {
         Input(
           i.boxId,
           apiTx.id,
+          apiTxs.headerId,
           i.spendingProof.proofBytes,
           i.spendingProof.extension,
           mainChain
@@ -108,6 +119,7 @@ object FlatBlock {
             Output(
               o.boxId,
               apiTx.id,
+              apiTxs.headerId,
               o.value,
               o.creationHeight,
               index,
