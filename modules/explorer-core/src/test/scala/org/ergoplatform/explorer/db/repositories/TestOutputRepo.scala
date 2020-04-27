@@ -33,7 +33,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
-  override def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): F[Long] = ???
+  override def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): F[Long] = ???
 
   override def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): F[List[BoxId]] = ???
 

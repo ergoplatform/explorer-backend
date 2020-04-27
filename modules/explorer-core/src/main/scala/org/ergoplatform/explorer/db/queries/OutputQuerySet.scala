@@ -115,12 +115,15 @@ object OutputQuerySet extends QuerySet {
          |""".stripMargin.query[BoxId]
 
   def sumOfAllMainUnspentByErgoTree(
-    ergoTree: HexString
+    ergoTree: HexString,
+    maxHeight: Int
   )(implicit lh: LogHandler): Query0[Long] =
     sql"""
          |select coalesce(cast(sum(o.value) as bigint), 0) from node_outputs o
          |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_transactions tx on tx.id = o.tx_id
          |where o.main_chain = true
+         |  and tx.inclusion_height <= $maxHeight
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]

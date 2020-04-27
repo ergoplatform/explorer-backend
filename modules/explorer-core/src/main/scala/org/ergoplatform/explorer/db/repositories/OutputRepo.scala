@@ -45,7 +45,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
-  def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long]
+  def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, minConfirmations: Int): D[Long]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
@@ -144,8 +144,8 @@ object OutputRepo {
         .to[List]
         .liftConnectionIO
 
-    def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long] =
-      QS.sumOfAllMainUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+    def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
+      QS.sumOfAllMainUnspentByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
 
     def getMainUnspentByErgoTree(
       ergoTree: HexString,
