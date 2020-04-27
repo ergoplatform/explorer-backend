@@ -181,7 +181,7 @@ object OutputQuerySet extends QuerySet {
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
-         |select distinct on (o.box_id)
+         |select distinct on (o.index, o.box_id)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
