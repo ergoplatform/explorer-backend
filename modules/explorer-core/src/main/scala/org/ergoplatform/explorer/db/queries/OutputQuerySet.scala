@@ -197,6 +197,7 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.tx_id = $txId
+         |order by o.index asc
          |""".stripMargin.query[ExtendedOutput]
 
   def getAllByTxIds(
