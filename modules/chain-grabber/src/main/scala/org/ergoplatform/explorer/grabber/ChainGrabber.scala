@@ -142,7 +142,7 @@ final class ChainGrabber[
     if (networkHeight == localHeight) List.empty
     else (localHeight + 1 to networkHeight).toList
 
-  private def updateChainStatus(headerId: Id, newChainStatus: Boolean) =
+  private def updateChainStatus(headerId: Id, newChainStatus: Boolean): D[Unit] =
     D.askF { repos =>
       repos.headerRepo.updateChainStatusById(headerId, newChainStatus) >>
       repos.transactionRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
