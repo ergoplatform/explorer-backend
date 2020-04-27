@@ -132,7 +132,7 @@ object BlockChainService {
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {
         header <- headerRepo.get(id).asStream.unNone
-        txs <- transactionRepo.getAllByBlockId(id).foldMonoid[List[Transaction]]
+        txs <- transactionRepo.getAllByBlockId(id).fold(Array.empty[Transaction])(_ :+ _).map(_.toList)
         blockSizeOpt <- blockInfoRepo.getBlockSize(id).asStream
         bestHeight   <- headerRepo.getBestHeight.asStream
         txIdsNel     <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream
