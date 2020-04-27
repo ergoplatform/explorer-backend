@@ -6,10 +6,9 @@ import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.{Id, TxId}
+import org.ergoplatform.explorer.{Id, LiftConnectionIO, TxId}
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 import org.ergoplatform.explorer.db.models.Input
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
 import org.ergoplatform.explorer.db.doobieInstances._
@@ -52,18 +51,18 @@ object InputRepo {
     import org.ergoplatform.explorer.db.queries.{InputQuerySet => QS}
 
     def insert(input: Input): D[Unit] =
-      QS.insert(input).void.liftConnectionIO
+      QS.insert(input).void.liftConnIO
 
     def insetMany(inputs: List[Input]): D[Unit] =
-      QS.insertMany(inputs).void.liftConnectionIO
+      QS.insertMany(inputs).void.liftConnIO
 
     def getAllByTxId(txId: TxId): D[List[ExtendedInput]] =
-      QS.getAllByTxId(txId).to[List].liftConnectionIO
+      QS.getAllByTxId(txId).to[List].liftConnIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedInput]] =
-      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
+      QS.getAllByTxIds(txIds).to[List].liftConnIO
 
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
-      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnIO
   }
 }

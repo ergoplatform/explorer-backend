@@ -6,10 +6,9 @@ import fs2.Stream
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 import org.ergoplatform.explorer.db.models.Transaction
-import org.ergoplatform.explorer.{Address, Id, TxId}
+import org.ergoplatform.explorer.{Address, Id, LiftConnectionIO, TxId}
 
 /** [[Transaction]] data access operations.
   */
@@ -80,19 +79,19 @@ object TransactionRepo {
 
     import org.ergoplatform.explorer.db.queries.{TransactionQuerySet => QS}
 
-    private val liftK = LiftConnectionIO[D].liftConnectionIOK
+    private val liftK = implicitly[LiftConnectionIO[D]].liftF
 
     def insert(tx: Transaction): D[Unit] =
-      QS.insert(tx).void.liftConnectionIO
+      QS.insert(tx).void.liftConnIO
 
     def insertMany(txs: List[Transaction]): D[Unit] =
-      QS.insertMany(txs).void.liftConnectionIO
+      QS.insertMany(txs).void.liftConnIO
 
     def getMain(id: TxId): D[Option[Transaction]] =
-      QS.getMain(id).option.liftConnectionIO
+      QS.getMain(id).option.liftConnIO
 
     def getAllMainByIdSubstring(idStr: String): D[List[Transaction]] =
-      QS.getAllMainByIdSubstring(idStr).to[List].liftConnectionIO
+      QS.getAllMainByIdSubstring(idStr).to[List].liftConnIO
 
     def getAllByBlockId(id: Id): Stream[D, Transaction] =
       QS.getAllByBlockId(id).stream.translate(liftK)
@@ -102,25 +101,25 @@ object TransactionRepo {
       offset: Int,
       limit: Int
     ): D[List[Transaction]] =
-      QS.getAllRelatedToAddress(address, offset, limit).to[List].liftConnectionIO
+      QS.getAllRelatedToAddress(address, offset, limit).to[List].liftConnIO
 
     def countRelatedToAddress(address: Address): D[Int] =
-      QS.countRelatedToAddress(address).unique.liftConnectionIO
+      QS.countRelatedToAddress(address).unique.liftConnIO
 
     def countMainSince(ts: Long): D[Int] =
-      QS.countMainSince(ts).unique.liftConnectionIO
+      QS.countMainSince(ts).unique.liftConnIO
 
     def getMainSince(
       height: Int,
       offset: Int,
       limit: Int
     ): D[List[Transaction]] =
-      QS.getAllMainSince(height, offset, limit).to[List].liftConnectionIO
+      QS.getAllMainSince(height, offset, limit).to[List].liftConnIO
 
     def getIdsLike(query: String): D[List[TxId]] =
-      QS.getIdsLike(query).to[List].liftConnectionIO
+      QS.getIdsLike(query).to[List].liftConnIO
 
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
-      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnIO
   }
 }

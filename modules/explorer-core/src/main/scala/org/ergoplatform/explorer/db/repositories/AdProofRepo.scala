@@ -9,7 +9,7 @@ import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.AdProof
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 
 /** [[AdProof]] data access operations.
   */

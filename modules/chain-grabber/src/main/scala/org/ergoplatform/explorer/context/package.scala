@@ -11,7 +11,7 @@ package object context {
 
   type HasRepo[F[_], Repo] = F HasLocal Repo
 
-  type HasRepos[F[_], D[_]] = F HasContext RepositoryContext[D, fs2.Stream]
+  type HasRepos[D[_]] = D HasContext RepositoryContext[D, fs2.Stream]
 
   implicit def extractContext[F[_], D[_], A](
     implicit

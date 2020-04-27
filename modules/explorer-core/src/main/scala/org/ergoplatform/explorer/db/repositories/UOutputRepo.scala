@@ -10,7 +10,7 @@ import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.{HexString, TxId}
 import org.ergoplatform.explorer.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 import org.ergoplatform.explorer.db.models.UOutput
 import org.ergoplatform.explorer.db.doobieInstances._
 

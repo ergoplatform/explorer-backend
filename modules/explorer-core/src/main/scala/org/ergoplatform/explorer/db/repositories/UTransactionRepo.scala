@@ -8,7 +8,7 @@ import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 import org.ergoplatform.explorer.{HexString, LiftConnectionIO, TxId}
 
 trait UTransactionRepo[D[_], S[_[_], _]] {

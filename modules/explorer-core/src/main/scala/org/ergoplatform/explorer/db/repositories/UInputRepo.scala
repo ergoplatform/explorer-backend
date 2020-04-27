@@ -11,7 +11,7 @@ import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UInput
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[UInput]] data access operations.

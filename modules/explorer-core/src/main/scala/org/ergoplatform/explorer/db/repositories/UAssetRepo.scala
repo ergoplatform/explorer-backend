@@ -8,7 +8,7 @@ import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UAsset
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 import org.ergoplatform.explorer.{BoxId, HexString}
 
 /** [[UAsset]] data access operations.

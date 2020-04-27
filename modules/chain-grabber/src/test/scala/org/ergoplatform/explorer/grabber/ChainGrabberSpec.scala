@@ -3,7 +3,9 @@ package org.ergoplatform.explorer.grabber
 import cats.effect._
 import doobie.free.connection.ConnectionIO
 import doobie.util.transactor.Transactor
+import doobie.free.connection.AsyncConnectionIO
 import monocle.macros.syntax.lens._
+import mouse.anyf._
 import org.ergoplatform.explorer.MainNetConfiguration
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.context.{GrabberContext, RepositoryContext, SettingsContext}
@@ -32,8 +34,9 @@ class ChainGrabberSpec
       whenever(apiBlocks.map(_.transactions.transactions).forall(_.nonEmpty)) {
         val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
         makeContext(networkService, xa)
-          .flatMap { ctx =>
+          .flatMap { case (ctx, repos) =>
             implicit val c: HasContext[IO, GrabberContext[IO, ConnectionIO]] = Context.const(ctx)
+            implicit val r: HasContext[ConnectionIO, RepositoryContext[ConnectionIO, fs2.Stream]] = Context.const(repos)
             ChainGrabber[IO, ConnectionIO]
               .flatMap(_.run.take(1L).compile.drain)
           }
@@ -45,11 +48,11 @@ class ChainGrabberSpec
   private def makeContext(
     ns: ErgoNetworkClient[IO, fs2.Stream],
     xa: Transactor[IO]
-  ): IO[GrabberContext[IO, ConnectionIO]] =
+  ): IO[(GrabberContext[IO, ConnectionIO], RepositoryContext[ConnectionIO, fs2.Stream])] =
     RepositoryContext.make[IO, ConnectionIO].map { repos =>
       val settings = SettingsContext(1.second, mainnetNodes, dbSettings, protocolSettings)
       GrabberContext(settings, repos, ns, Trans.fromDoobie(xa))
-    }
+    }.flatMap(ctx => (RepositoryContext.make[ConnectionIO, ConnectionIO] ||> xa.trans).map(ctx -> _))
 
   private def consistentChainGen(length: Int): Gen[List[ApiFullBlock]] =
     Gen

@@ -8,7 +8,7 @@ import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}

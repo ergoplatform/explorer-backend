@@ -9,7 +9,7 @@ import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.syntax.liftConnIO._
 import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.protocol.constants
 import tofu.data.derived.ContextEmbed
