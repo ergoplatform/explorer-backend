@@ -19,6 +19,7 @@ object OutputQuerySet extends QuerySet {
   val fields: List[String] = List(
     "box_id",
     "tx_id",
+    "header_id",
     "value",
     "creation_height",
     "index",
@@ -34,6 +35,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -58,6 +60,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -69,7 +72,34 @@ object OutputQuerySet extends QuerySet {
          |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |where o.ergo_tree = $ergoTree and o.main_chain = true
+         |where o.main_chain = true and o.ergo_tree = $ergoTree
+         |offset $offset limit $limit
+         |""".stripMargin.query[ExtendedOutput]
+
+  def getMainByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    maxHeight: Int
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  case i.main_chain when false then null else i.tx_id end
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_transactions tx on tx.id = o.tx_id
+         |where o.main_chain = true and tx.inclusion_height <= $maxHeight and o.ergo_tree = $ergoTree
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
@@ -85,12 +115,15 @@ object OutputQuerySet extends QuerySet {
          |""".stripMargin.query[BoxId]
 
   def sumOfAllMainUnspentByErgoTree(
-    ergoTree: HexString
+    ergoTree: HexString,
+    maxHeight: Int
   )(implicit lh: LogHandler): Query0[Long] =
     sql"""
          |select coalesce(cast(sum(o.value) as bigint), 0) from node_outputs o
          |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_transactions tx on tx.id = o.tx_id
          |where o.main_chain = true
+         |  and tx.inclusion_height <= $maxHeight
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
@@ -104,6 +137,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -130,6 +164,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -149,9 +184,10 @@ object OutputQuerySet extends QuerySet {
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
-         |select distinct on (o.box_id)
+         |select distinct on (o.index, o.box_id)
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -164,6 +200,7 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.tx_id = $txId
+         |order by o.index asc
          |""".stripMargin.query[ExtendedOutput]
 
   def getAllByTxIds(
@@ -174,6 +211,7 @@ object OutputQuerySet extends QuerySet {
            |select distinct on (o.box_id)
            |  o.box_id,
            |  o.tx_id,
+           |  o.header_id,
            |  o.value,
            |  o.creation_height,
            |  o.index,
@@ -226,6 +264,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -254,6 +293,7 @@ object OutputQuerySet extends QuerySet {
          |select
          |  o.box_id,
          |  o.tx_id,
+         |  o.header_id,
          |  o.value,
          |  o.creation_height,
          |  o.index,
@@ -272,4 +312,9 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+    sql"""
+         |update node_outputs set main_chain = $newChainStatus
+         |where header_id = $headerId
+         """.stripMargin.update
 }

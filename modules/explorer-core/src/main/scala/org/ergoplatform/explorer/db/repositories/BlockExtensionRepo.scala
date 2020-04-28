@@ -11,7 +11,6 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockExtension
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.doobieInstances._
-import org.ergoplatform.explorer.db.repositories.AssetRepo.Live
 
 /** [[BlockExtension]] data access operations.
   */

@@ -40,7 +40,7 @@ object UTransactionInfo {
     assets: List[UAsset]
   ): UTransactionInfo = {
     val inputsInfo  = ins.map(UInputInfo.apply)
-    val outputsInfo = outs.map(UOutputInfo(_, assets))
+    val outputsInfo = outs.sortBy(_.index).map(UOutputInfo(_, assets))
     new UTransactionInfo(tx.id, inputsInfo, outputsInfo, tx.creationTimestamp, tx.size)
   }
 
@@ -57,7 +57,7 @@ object UTransactionInfo {
       .traverse { tx =>
         for {
           inputs  <- inputsByTx.get(tx.id)
-          outputs <- outsByTx.get(tx.id)
+          outputs <- outsByTx.get(tx.id).map(_.sortBy(_.index))
           assets  <- outputs
                        .foldLeft(List.empty[UAsset]) { (acc, o) =>
                          assetsByBox.get(o.boxId).toList.flatten ++ acc

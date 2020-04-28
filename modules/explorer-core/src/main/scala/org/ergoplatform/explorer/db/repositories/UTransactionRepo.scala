@@ -9,7 +9,6 @@ import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.repositories.UOutputRepo.Live
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{HexString, TxId}
 

@@ -98,7 +98,7 @@ final class ChainGrabber[
       updatedForks <- exStatuses
                        .foldLeft(().pure[D]) {
                          case (acc, (id, status)) =>
-                           acc >> headerRepo.updateChainStatusById(id, status)
+                           acc >> updateChainStatus(id, status)
                        }
                        .pure[F]
       blocks <- apiBlocks.parTraverse(processBlock).map(_.sequence)
@@ -115,8 +115,10 @@ final class ChainGrabber[
         )
         .flatMap {
           case None if block.header.height != constants.GenesisHeight => // fork
-            getHeaderIdsAtHeight(block.header.height - 1).flatMap { existingHeaders =>
-              grabBlocksFromHeight(block.header.height - 1, existingHeaders)
+            val forkHeight = block.header.height - 1
+            Logger[F].info(s"Processing fork at height $forkHeight") >>
+            getHeaderIdsAtHeight(forkHeight).flatMap { existingHeaders =>
+              grabBlocksFromHeight(forkHeight, existingHeaders)
                 .map(_.map(_.headOption))
             }
           case parentOpt =>
@@ -126,7 +128,7 @@ final class ChainGrabber[
           blockInfoOptDb.flatMap { parentBlockInfoOpt =>
             FlatBlock
               .fromApi[D](block, parentBlockInfoOpt)(settings.protocol)
-              .flatMap(flatBlock => insetBlock(flatBlock) as flatBlock.info)
+              .flatMap(flatBlock => insertBlock(flatBlock) as flatBlock.info)
           }
         }
     }
@@ -144,7 +146,13 @@ final class ChainGrabber[
     if (networkHeight == localHeight) List.empty
     else (localHeight + 1 to networkHeight).toList
 
-  private def insetBlock(block: FlatBlock): D[Unit] =
+  private def updateChainStatus(headerId: Id, newChainStatus: Boolean) =
+    headerRepo.updateChainStatusById(headerId, newChainStatus) >>
+    txRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
+    outputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
+    inputRepo.updateChainStatusByHeaderId(headerId, newChainStatus)
+
+  private def insertBlock(block: FlatBlock): D[Unit] =
     headerRepo.insert(block.header) >>
     blockInfoRepo.insert(block.info) >>
     blockExtensionRepo.insert(block.extension) >>
