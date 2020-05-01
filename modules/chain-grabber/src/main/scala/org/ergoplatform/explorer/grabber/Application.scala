@@ -2,16 +2,14 @@ package org.ergoplatform.explorer.grabber
 
 import cats.effect.{ExitCode, Resource}
 import cats.syntax.functor._
-import mouse.anyf._
-import doobie.free.connection.ConnectionIO
+import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
-import org.ergoplatform.explorer.context._
-import tofu.{Context, HasContext}
-import doobie.free.connection.AsyncConnectionIO
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.context._
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.http4s.client.blaze.BlazeClientBuilder
+import tofu.{Context, HasContext}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -36,11 +34,10 @@ object Application extends TaskApp {
     for {
       logger   <- Resource.liftF(Slf4jLogger.create[Task])
       settings <- Resource.liftF(SettingsContext.make[Task](configPathOpt))
-      repos    <- Resource.liftF(RepositoryContext.make[Task, ConnectionIO])
       client   <- BlazeClientBuilder[Task](global).resource
       xa       <- DoobieTrans[Task]("GrabberPool", settings.db)
       ns       <- Resource.liftF(ErgoNetworkClient[Task](client, settings.masterNodesAddresses))
-      ctx = GrabberContext(settings, repos, ns, Trans.fromDoobie(xa))
-      repos <- Resource.liftF(RepositoryContext.make[ConnectionIO, ConnectionIO] ||> xa.trans)
+      ctx = GrabberContext(settings, ns, Trans.fromDoobie(xa))
+      repos <- Resource.liftF(RepositoryContext.make[ConnectionIO, ConnectionIO]).mapK(xa.trans)
     } yield (logger, ctx, repos)
 }

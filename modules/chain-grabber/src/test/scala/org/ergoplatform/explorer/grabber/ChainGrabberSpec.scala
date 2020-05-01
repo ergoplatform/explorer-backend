@@ -34,11 +34,14 @@ class ChainGrabberSpec
       whenever(apiBlocks.map(_.transactions.transactions).forall(_.nonEmpty)) {
         val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
         makeContext(networkService, xa)
-          .flatMap { case (ctx, repos) =>
-            implicit val c: HasContext[IO, GrabberContext[IO, ConnectionIO]] = Context.const(ctx)
-            implicit val r: HasContext[ConnectionIO, RepositoryContext[ConnectionIO, fs2.Stream]] = Context.const(repos)
-            ChainGrabber[IO, ConnectionIO]
-              .flatMap(_.run.take(1L).compile.drain)
+          .flatMap {
+            case (ctx, repos) =>
+              implicit val c: HasContext[IO, GrabberContext[IO, ConnectionIO]] = Context.const(ctx)
+              implicit val r
+                : HasContext[ConnectionIO, RepositoryContext[ConnectionIO, fs2.Stream]] =
+                Context.const(repos)
+              ChainGrabber[IO, ConnectionIO]
+                .flatMap(_.run.take(1L).compile.drain)
           }
           .unsafeRunSync()
       }
@@ -48,11 +51,11 @@ class ChainGrabberSpec
   private def makeContext(
     ns: ErgoNetworkClient[IO, fs2.Stream],
     xa: Transactor[IO]
-  ): IO[(GrabberContext[IO, ConnectionIO], RepositoryContext[ConnectionIO, fs2.Stream])] =
-    RepositoryContext.make[IO, ConnectionIO].map { repos =>
-      val settings = SettingsContext(1.second, mainnetNodes, dbSettings, protocolSettings)
-      GrabberContext(settings, repos, ns, Trans.fromDoobie(xa))
-    }.flatMap(ctx => (RepositoryContext.make[ConnectionIO, ConnectionIO] ||> xa.trans).map(ctx -> _))
+  ): IO[(GrabberContext[IO, ConnectionIO], RepositoryContext[ConnectionIO, fs2.Stream])] = {
+    val settings = SettingsContext(1.second, mainnetNodes, dbSettings, protocolSettings)
+    val ctx      = GrabberContext(settings, ns, Trans.fromDoobie(xa))
+    (RepositoryContext.make[ConnectionIO, ConnectionIO] ||> xa.trans).map(ctx -> _)
+  }
 
   private def consistentChainGen(length: Int): Gen[List[ApiFullBlock]] =
     Gen

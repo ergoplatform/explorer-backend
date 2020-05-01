@@ -16,13 +16,14 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
-import org.ergoplatform.explorer.context.{HasGrabberContext, HasRepos, HasSettings}
+import org.ergoplatform.explorer.context.{HasGrabberContext, HasRepos, _}
+import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
-import org.ergoplatform.explorer.context._
 import org.ergoplatform.explorer.{CRaise, Id, LiftConnectionIO}
+import tofu.syntax.context._
 
 /** Fetches new blocks from the network divide them into
   * separate entities and finally puts them into db.
@@ -32,11 +33,9 @@ final class ChainGrabber[
   D[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
 ](lastBlockCache: Ref[F, Option[BlockInfo]])(implicit F: HasGrabberContext[F, D], D: HasRepos[D]) {
 
-  private val settings = implicitly[HasSettings[F]]
-
   def run: Stream[F, Unit] =
     Stream
-      .eval(F.ask(_.settings.pollInterval))
+      .eval(context[F].map(_.settings.pollInterval))
       .flatMap { pollInterval =>
         Stream(()).repeat
           .covary[F]
@@ -52,8 +51,8 @@ final class ChainGrabber[
 
   private def grab: F[Unit] =
     for {
-      network       <- F.ask(_.networkClient)
-      xa            <- F.ask(_.trans.xa)
+      network       <- context[F].map(_.networkClient)
+      xa            <- context[F].map(_.trans.xa)
       networkHeight <- network.getBestHeight
       localHeight   <- getLastGrabbedBlockHeight
       _             <- Logger[F].info(s"Current network height : $networkHeight")
@@ -76,7 +75,7 @@ final class ChainGrabber[
     existingHeaderIds: List[Id] = List.empty
   ): F[D[List[BlockInfo]]] =
     for {
-      network <- F.ask(_.networkClient)
+      network <- context[F].map(_.networkClient)
       ids     <- network.getBlockIdsAtHeight(height)
       apiBlocks <- ids
                     .filterNot(existingHeaderIds.contains)
@@ -99,7 +98,7 @@ final class ChainGrabber[
     } yield updatedForks >> blocks
 
   private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
-    settings.askF { settings =>
+    hasContext[F, SettingsContext] >>= { settings =>
       lastBlockCache.get.flatMap { cachedBlockOpt =>
         cachedBlockOpt
           .exists(_.headerId == block.header.id)
@@ -130,20 +129,23 @@ final class ChainGrabber[
     }
 
   private def getLastGrabbedBlockHeight: F[Int] =
-    F.askF(ctx => D.askF(_.headerRepo.getBestHeight) ||> ctx.trans.xa)
+    hasContext[F, D Trans F] >>=
+      (trans => (context[D] >>= (_.headerRepo.getBestHeight)) ||> trans.xa)
 
   private def getHeaderIdsAtHeight(height: Int): F[List[Id]] =
-    F.askF(ctx => D.askF(_.headerRepo.getAllByHeight(height)) ||> ctx.trans.xa).map(_.map(_.id))
+    hasContext[F, D Trans F] >>=
+      (trans => (context[D] >>= (_.headerRepo.getAllByHeight(height).map(_.map(_.id)))) ||> trans.xa)
 
   private def getParentBlockInfo(headerId: Id): F[Option[BlockInfo]] =
-    F.askF(ctx => D.askF(_.blockInfoRepo.get(headerId)) ||> ctx.trans.xa)
+    hasContext[F, D Trans F] >>=
+      (trans => (context[D] >>= (_.blockInfoRepo.get(headerId))) ||> trans.xa)
 
   private def getScanRange(localHeight: Int, networkHeight: Int): List[Int] =
     if (networkHeight == localHeight) List.empty
     else (localHeight + 1 to networkHeight).toList
 
   private def updateChainStatus(headerId: Id, newChainStatus: Boolean): D[Unit] =
-    D.askF { repos =>
+    context[D] >>= { repos =>
       repos.headerRepo.updateChainStatusById(headerId, newChainStatus) >>
       repos.transactionRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
       repos.outputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
@@ -151,7 +153,7 @@ final class ChainGrabber[
     }
 
   private def insertBlock(block: FlatBlock): D[Unit] =
-    D.askF { repos =>
+    context[D] >>= { repos =>
       repos.headerRepo.insert(block.header) >>
       repos.blockInfoRepo.insert(block.info) >>
       repos.blockExtensionRepo.insert(block.extension) >>
