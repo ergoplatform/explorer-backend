@@ -150,4 +150,6 @@ object dependencies {
   lazy val utxWatcher: List[ModuleID] = Monix
 
   lazy val utxBroadcaster: List[ModuleID] = Monix
+
+  lazy val dex: List[ModuleID] = Kafka
 }

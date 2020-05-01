@@ -72,7 +72,7 @@ lazy val dex = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.dex.Application"),
-    libraryDependencies ++= dependencies.Kafka
+    libraryDependencies ++= dependencies.dex
   )
   .dependsOn(core)
 
