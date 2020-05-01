@@ -9,7 +9,6 @@ import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Transaction
-import org.ergoplatform.explorer.db.repositories.OutputRepo.Live
 import org.ergoplatform.explorer.{Address, Id, TxId}
 
 /** [[Transaction]] data access operations.
@@ -63,6 +62,10 @@ trait TransactionRepo[D[_], S[_[_], _]] {
   /** Get all ids matching the given `query`.
     */
   def getIdsLike(query: String): D[List[TxId]]
+
+  /** Update main_chain flag with a given `newChainStatus` for all txs related to given `headerId`.
+    */
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 }
 
 object TransactionRepo {
@@ -116,5 +119,8 @@ object TransactionRepo {
 
     def getIdsLike(query: String): D[List[TxId]] =
       QS.getIdsLike(query).to[List].liftConnectionIO
+
+    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }

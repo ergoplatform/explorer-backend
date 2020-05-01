@@ -30,9 +30,7 @@ final case class FlatBlock(
 object FlatBlock {
 
   def fromApi[
-    F[_]: CRaise[*[_], ProcessingErr]
-        : CRaise[*[_], RefinementFailed]
-        : Monad
+    F[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
   ](
     apiBlock: ApiFullBlock,
     parentInfoOpt: Option[BlockInfo]
@@ -42,8 +40,17 @@ object FlatBlock {
       .map { blockInfo =>
         implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
 
-        val outs   = extractOutputs(apiBlock.transactions, apiBlock.header.mainChain, apiBlock.header.timestamp)
-        val txs    = extractTxs(apiBlock.transactions, apiBlock.header.timestamp, blockInfo.height)
+        val outs = extractOutputs(
+          apiBlock.transactions,
+          apiBlock.header.mainChain,
+          apiBlock.header.timestamp
+        )
+        val txs = extractTxs(
+          apiBlock.transactions,
+          apiBlock.header.timestamp,
+          blockInfo.height,
+          apiBlock.header.mainChain
+        )
         val inputs = extractInputs(apiBlock.transactions, apiBlock.header.mainChain)
         val assets = extractAssets(apiBlock.transactions)
         FlatBlock(
@@ -58,13 +65,24 @@ object FlatBlock {
         )
       }
 
-  private def extractTxs(apiTxs: ApiBlockTransactions, ts: Long, height: Int): List[Transaction] = {
-    val txs = apiTxs.transactions
+  private def extractTxs(
+    apiTxs: ApiBlockTransactions,
+    ts: Long,
+    height: Int,
+    chainStatus: Boolean
+  ): List[Transaction] = {
+    val txs = apiTxs.transactions.zipWithIndex
     val coinbaseTxOpt = txs.lastOption
-      .map(tx => Transaction(tx.id, apiTxs.headerId, height, isCoinbase = true, ts, txs.last.size))
+      .map {
+        case (tx, i) =>
+          Transaction(tx.id, apiTxs.headerId, height, isCoinbase = true, ts, tx.size, i, chainStatus)
+      }
     val restTxs = txs.init
-      .map(tx => Transaction(tx.id, apiTxs.headerId, height, isCoinbase = false, ts, tx.size))
-    coinbaseTxOpt.toList ++ restTxs
+      .map {
+        case (tx, i) =>
+          Transaction(tx.id, apiTxs.headerId, height, isCoinbase = false, ts, tx.size, i, chainStatus)
+      }
+    restTxs ++ coinbaseTxOpt
   }
 
   private def extractInputs(
@@ -72,14 +90,14 @@ object FlatBlock {
     mainChain: Boolean
   ): List[Input] =
     apiTxs.transactions.flatMap { apiTx =>
-      apiTx.inputs.map(
-        i =>
-          Input(
-            i.boxId,
-            apiTx.id,
-            i.spendingProof.proofBytes,
-            i.spendingProof.extension,
-            mainChain
+      apiTx.inputs.map(i =>
+        Input(
+          i.boxId,
+          apiTx.id,
+          apiTxs.headerId,
+          i.spendingProof.proofBytes,
+          i.spendingProof.extension,
+          mainChain
         )
       )
     }
@@ -101,6 +119,7 @@ object FlatBlock {
             Output(
               o.boxId,
               apiTx.id,
+              apiTxs.headerId,
               o.value,
               o.creationHeight,
               index,

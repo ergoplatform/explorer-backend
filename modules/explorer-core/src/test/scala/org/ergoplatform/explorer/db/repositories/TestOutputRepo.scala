@@ -16,7 +16,10 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
 
   override def getByBoxId(boxId: BoxId): F[Option[ExtendedOutput]] = ???
 
-  override def getAllMainByErgoTree(ergoTree: HexString): F[scala.List[ExtendedOutput]] = ???
+  override def getAllMainByErgoTree(
+    ergoTree: HexString,
+    minConfirmations: Int
+  ): F[scala.List[ExtendedOutput]] = ???
 
   override def getMainByErgoTree(
     ergoTree: HexString,
@@ -30,7 +33,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
-  override def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): F[Long] = ???
+  override def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): F[Long] = ???
 
   override def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): F[List[BoxId]] = ???
 
@@ -49,7 +52,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
   ): F[scala.List[ExtendedOutput]] = ???
 
   override def getAllLike(
-                           query: String
+    query: String
   ): F[scala.List[Address]] = ???
 
   override def sumOfAllUnspentOutputsSince(ts: Long): F[BigDecimal] = ???
@@ -71,6 +74,8 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
     offset: Int,
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = fs2.Stream.emits(source.buyOrders)
+
+  override def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): F[Unit] = ???
 }
 
 object TestOutputRepo {

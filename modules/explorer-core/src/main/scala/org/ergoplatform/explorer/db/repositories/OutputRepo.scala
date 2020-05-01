@@ -12,10 +12,8 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId, TxId}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TokenId, TxId}
 import org.ergoplatform.explorer.db.doobieInstances._
-import org.ergoplatform.explorer.db.repositories.InputRepo.Live
-import org.ergoplatform.explorer.protocol.dex
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */
@@ -33,9 +31,9 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]]
 
-  /** Get all outputs with a given `ergoTree` from persistence.
+  /** Get all outputs with a given `ergoTree` appeared in the blockchain before `maxHeight`.
     */
-  def getAllMainByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]]
+  def getAllMainByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]]
 
   /** Get outputs with a given `ergoTree` from persistence.
     */
@@ -47,7 +45,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
-  def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long]
+  def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, minConfirmations: Int): D[Long]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
@@ -100,6 +98,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
   def sumOfAllUnspentOutputsSince(ts: Long): D[BigDecimal]
 
   def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal]
+
+  /** Update main_chain status for all outputs related to given `headerId`.
+    */
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 }
 
 object OutputRepo {
@@ -125,8 +127,8 @@ object OutputRepo {
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
       QS.getByBoxId(boxId).option.liftConnectionIO
 
-    def getAllMainByErgoTree(ergoTree: HexString): D[List[ExtendedOutput]] =
-      QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue)
+    def getAllMainByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]] =
+      QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue, maxHeight = maxHeight)
         .to[List]
         .liftConnectionIO
 
@@ -142,8 +144,8 @@ object OutputRepo {
         .to[List]
         .liftConnectionIO
 
-    def sumOfAllMainUnspentByErgoTree(ergoTree: HexString): D[Long] =
-      QS.sumOfAllMainUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+    def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
+      QS.sumOfAllMainUnspentByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
 
     def getMainUnspentByErgoTree(
       ergoTree: HexString,
@@ -205,5 +207,8 @@ object OutputRepo {
 
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
       QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
+
+    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }

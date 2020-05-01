@@ -19,6 +19,9 @@ object commonDirectives {
           Paging(offsetOpt.getOrElse(0), limitOpt.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }
 
+  val confirmations: EndpointInput[Int] =
+    query[Option[Int]]("minConfirmations").map(_.getOrElse(0))(_.some)
+
   val timespan: EndpointInput[FiniteDuration] =
     query[Option[String]]("timespan").map {
       _.flatMap(parseTimespan).getOrElse(FiniteDuration(365, TimeUnit.DAYS))

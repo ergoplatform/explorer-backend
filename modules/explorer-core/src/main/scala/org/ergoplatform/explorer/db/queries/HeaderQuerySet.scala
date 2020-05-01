@@ -51,8 +51,8 @@ object HeaderQuerySet extends QuerySet {
 
   def updateChainStatusById(id: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
-         |update node_headers set main_chain = $newChainStatus from node_headers h
-         |where h.id = $id
+         |update node_headers set main_chain = $newChainStatus
+         |where id = $id
          |""".stripMargin.update
 
   def getBestHeight(implicit lh: LogHandler): Query0[Int] =

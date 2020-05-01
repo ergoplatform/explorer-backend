@@ -10,7 +10,6 @@ import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Header
-import org.ergoplatform.explorer.db.repositories.BlockInfoRepo.Live
 import org.ergoplatform.explorer.protocol.constants
 
 /** [[Header]] data access operations.
