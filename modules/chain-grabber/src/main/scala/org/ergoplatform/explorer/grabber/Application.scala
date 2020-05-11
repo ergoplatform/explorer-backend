@@ -9,7 +9,7 @@ import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.context._
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.http4s.client.blaze.BlazeClientBuilder
-import tofu.{Context, HasContext}
+import tofu.Context
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -20,9 +20,8 @@ object Application extends TaskApp {
   def run(args: List[String]): Task[ExitCode] =
     resources(args.headOption).use {
       case (logger, ctx, repos) =>
-        implicit val c: HasContext[Task, GrabberContext[Task, ConnectionIO]] = Context.const(ctx)
-        implicit val r: HasContext[ConnectionIO, RepositoryContext[ConnectionIO, fs2.Stream]] =
-          Context.const(repos)
+        implicit val c: HasGrabberContext[Task, ConnectionIO] = Context.const(ctx)
+        implicit val r: HasRepos[ConnectionIO]                = Context.const(repos)
         logger.info("Starting Grabber service ..") >>
         ChainGrabber[Task, ConnectionIO]
           .flatMap(_.run.compile.drain)
@@ -38,6 +37,6 @@ object Application extends TaskApp {
       xa       <- DoobieTrans[Task]("GrabberPool", settings.db)
       ns       <- Resource.liftF(ErgoNetworkClient[Task](client, settings.masterNodesAddresses))
       ctx = GrabberContext(settings, ns, Trans.fromDoobie(xa))
-      repos <- Resource.liftF(RepositoryContext.make[ConnectionIO, ConnectionIO]).mapK(xa.trans)
+      repos <- Resource.liftF(RepositoryContext.make[Task, ConnectionIO])
     } yield (logger, ctx, repos)
 }

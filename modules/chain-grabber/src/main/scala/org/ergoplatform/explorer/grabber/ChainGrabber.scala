@@ -9,7 +9,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Monad, MonadError, Parallel}
+import cats.{Monad, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -17,7 +17,6 @@ import monocle.macros.syntax.lens._
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.context.{HasGrabberContext, HasRepos, _}
-import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
 import org.ergoplatform.explorer.protocol.constants
@@ -51,8 +50,8 @@ final class ChainGrabber[
 
   private def grab: F[Unit] =
     for {
-      network       <- context[F].map(_.networkClient)
-      xa            <- context[F].map(_.trans.xa)
+      network       <- networkClientCtx
+      xa            <- transCtx.map(_.xa)
       networkHeight <- network.getBestHeight
       localHeight   <- getLastGrabbedBlockHeight
       _             <- Logger[F].info(s"Current network height : $networkHeight")
@@ -75,7 +74,7 @@ final class ChainGrabber[
     existingHeaderIds: List[Id] = List.empty
   ): F[D[List[BlockInfo]]] =
     for {
-      network <- context[F].map(_.networkClient)
+      network <- networkClientCtx
       ids     <- network.getBlockIdsAtHeight(height)
       apiBlocks <- ids
                     .filterNot(existingHeaderIds.contains)
@@ -98,7 +97,7 @@ final class ChainGrabber[
     } yield updatedForks >> blocks
 
   private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
-    hasContext[F, SettingsContext] >>= { settings =>
+    settingsCtx >>= { settings =>
       lastBlockCache.get.flatMap { cachedBlockOpt =>
         cachedBlockOpt
           .exists(_.headerId == block.header.id)
@@ -129,23 +128,21 @@ final class ChainGrabber[
     }
 
   private def getLastGrabbedBlockHeight: F[Int] =
-    hasContext[F, D Trans F] >>=
-      (trans => (context[D] >>= (_.headerRepo.getBestHeight)) ||> trans.xa)
+    transCtx >>= (trans => (reposCtx >>= (_.headerRepo.getBestHeight)) ||> trans.xa)
 
   private def getHeaderIdsAtHeight(height: Int): F[List[Id]] =
-    hasContext[F, D Trans F] >>=
-      (trans => (context[D] >>= (_.headerRepo.getAllByHeight(height).map(_.map(_.id)))) ||> trans.xa)
+    transCtx >>=
+      (trans => (reposCtx >>= (_.headerRepo.getAllByHeight(height).map(_.map(_.id)))) ||> trans.xa)
 
   private def getParentBlockInfo(headerId: Id): F[Option[BlockInfo]] =
-    hasContext[F, D Trans F] >>=
-      (trans => (context[D] >>= (_.blockInfoRepo.get(headerId))) ||> trans.xa)
+    transCtx >>= (trans => (reposCtx >>= (_.blockInfoRepo.get(headerId))) ||> trans.xa)
 
   private def getScanRange(localHeight: Int, networkHeight: Int): List[Int] =
     if (networkHeight == localHeight) List.empty
     else (localHeight + 1 to networkHeight).toList
 
   private def updateChainStatus(headerId: Id, newChainStatus: Boolean): D[Unit] =
-    context[D] >>= { repos =>
+    reposCtx >>= { repos =>
       repos.headerRepo.updateChainStatusById(headerId, newChainStatus) >>
       repos.transactionRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
       repos.outputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
@@ -153,7 +150,7 @@ final class ChainGrabber[
     }
 
   private def insertBlock(block: FlatBlock): D[Unit] =
-    context[D] >>= { repos =>
+    reposCtx >>= { repos =>
       repos.headerRepo.insert(block.header) >>
       repos.blockInfoRepo.insert(block.info) >>
       repos.blockExtensionRepo.insert(block.extension) >>
@@ -169,7 +166,7 @@ object ChainGrabber {
 
   def apply[
     F[_]: Sync: Parallel: Timer,
-    D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
+    D[_]: LiftConnectionIO: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
   ](implicit F: HasGrabberContext[F, D], D: HasRepos[D]): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).map(new ChainGrabber[F, D](_))
