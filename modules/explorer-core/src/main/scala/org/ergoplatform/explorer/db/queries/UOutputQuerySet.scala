@@ -32,7 +32,7 @@ object UOutputQuerySet extends QuerySet {
     sql"select * from node_u_outputs where tx_id = $txId".query[UOutput]
 
   def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UOutput] =
-    in(sql"select * from node_u_outputs where tx_id", txIds).query[UOutput]
+    in(sql"select * from node_u_outputs where tx_id ", txIds).query[UOutput]
 
   def getAllByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
     sql"select * from node_u_outputs where ergo_tree = $ergoTree".query[UOutput]

@@ -57,7 +57,7 @@ object Err {
         extends NetworkErr(s"Failed to submit transaction with id '$id' to the network")
 
       final case class RequestFailed(urls: List[UrlString])
-        extends NetworkErr(s"Failed to execute request, URLs tries ${urls.mkString(", ")}")
+        extends NetworkErr(s"Failed to execute request, URLs tried ${urls.mkString(", ")}")
     }
 
     abstract class DexErr(msg: String) extends RequestProcessingErr(msg)

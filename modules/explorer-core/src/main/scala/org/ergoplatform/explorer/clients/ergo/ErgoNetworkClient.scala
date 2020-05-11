@@ -104,11 +104,11 @@ object ErgoNetworkClient {
           .stream(makeGetRequest(s"$url/transactions/unconfirmed"))
           .flatMap(_.body.chunks.parseJsonStream)
           .flatMap { json =>
-            implicitly[Decoder[ApiTransaction]]
+            implicitly[Decoder[List[ApiTransaction]]]
               .decodeJson(json)
               .fold(
                 _ => Stream.eval(TransactionDecodingFailed(json.noSpaces).raise),
-                Stream.emit
+                Stream.emits
               )
           }
       }
@@ -143,7 +143,7 @@ object ErgoNetworkClient {
               attempt(tl)(i + 1)
             }
           case Nil =>
-            RequestFailed(urls).raise[M, A]
+            RequestFailed(masterNodesAddresses.toList).raise[M, A]
         }
       attempt(masterNodesAddresses.toList)(0)
     }
