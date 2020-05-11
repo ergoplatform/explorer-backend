@@ -21,7 +21,7 @@ object UTransactionQuerySet extends QuerySet {
   )
 
   def dropMany(ids: NonEmptyList[TxId])(implicit lh: LogHandler): Update0 =
-    in(sql"delete from node_u_transactions where id", ids).update
+    in(sql"delete from node_u_transactions where id ", ids).update
 
   def get(id: TxId)(implicit lh: LogHandler): Query0[UTransaction] =
     sql"select * from node_u_transactions where id = $id".query[UTransaction]
