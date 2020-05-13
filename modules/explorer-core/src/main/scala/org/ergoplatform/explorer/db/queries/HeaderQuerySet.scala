@@ -56,6 +56,6 @@ object HeaderQuerySet extends QuerySet {
          |""".stripMargin.update
 
   def getBestHeight(implicit lh: LogHandler): Query0[Int] =
-    sql"select height from blocks_info order by height desc limit 1"
+    sql"select max(height) from node_headers where main_chain = true"
       .query[Int]
 }
