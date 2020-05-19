@@ -26,7 +26,7 @@ object FlatUTransaction {
   def fromApi[F[_]: Clock: Functor](
     apiTx: ApiTransaction
   )(implicit enc: ErgoAddressEncoder): F[FlatUTransaction] =
-    Clock[F].realTime(TimeUnit.NANOSECONDS).map { ts =>
+    Clock[F].realTime(TimeUnit.MILLISECONDS).map { ts =>
       val tx = UTransaction(apiTx.id, ts, apiTx.size)
       val ins = apiTx.inputs.map { apiIn =>
         UInput(

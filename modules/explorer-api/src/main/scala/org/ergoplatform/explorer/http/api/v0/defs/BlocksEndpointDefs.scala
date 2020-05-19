@@ -21,7 +21,7 @@ object BlocksEndpointDefs {
   def getBlocksDef: Endpoint[(Paging, Sorting), ApiErr, Items[BlockInfo], Nothing] =
     baseEndpointDef.get
       .in(paging)
-      .in(sorting(allowedSortingFields, defaultField = "height".some))
+      .in(sorting(allowedSortingFields, defaultFieldOpt = "height".some))
       .in(PathPrefix)
       .out(jsonBody[Items[BlockInfo]])
 
@@ -41,8 +41,9 @@ object BlocksEndpointDefs {
       "timestamp"         -> "timestamp",
       "transactionscount" -> "txs_count",
       "size"              -> "block_size",
-      "miner"             -> "miner_name",
       "difficulty"        -> "difficulty",
-      "minerreward"       -> "miner_reward"
+      "minerreward"       -> "miner_reward",
+      "blockfee"          -> "block_fee",
+      "blockcoins"        -> "block_coins"
     )
 }

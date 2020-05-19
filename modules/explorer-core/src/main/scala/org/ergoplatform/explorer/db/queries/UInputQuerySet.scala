@@ -29,5 +29,5 @@ object UInputQuerySet extends QuerySet {
     sql"select * from node_u_inputs where tx_id = $txId".query[UInput]
 
   def getAllByTxIxs(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UInput] =
-    in(sql"select * from node_u_inputs where tx_id ", txIds).query[UInput]
+    in(fr"select * from node_u_inputs where tx_id", txIds).query[UInput]
 }
