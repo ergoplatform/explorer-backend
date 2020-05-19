@@ -4,6 +4,8 @@ import java.util.concurrent.TimeUnit
 
 import cats.data.NonEmptyMap
 import cats.syntax.option._
+import cats.syntax.flatMap._
+import cats.instances.option._
 import org.ergoplatform.explorer.http.api.models.{Paging, Sorting}
 import sttp.tapir.{query, EndpointInput, Validator}
 
@@ -25,21 +27,25 @@ object commonDirectives {
   val timespan: EndpointInput[FiniteDuration] =
     query[Option[String]]("timespan").map {
       _.flatMap(parseTimespan).getOrElse(FiniteDuration(365, TimeUnit.DAYS))
-    } { _ => "".some }
+    } { _.toString.some }
 
   def sorting(
     allowedFields: NonEmptyMap[String, String],
-    defaultField: Option[String] = None
+    defaultFieldOpt: Option[String] = None
   ): EndpointInput[Sorting] =
     (query[Option[String]]("sortBy").validate(
       Validator.`enum`(none :: allowedFields.keys.toNonEmptyList.toList.map(_.some))
     ) and query[Option[Sorting.SortOrder]]("sortDirection"))
       .map {
         case (fieldOpt, orderOpt) =>
-          val field = fieldOpt getOrElse (defaultField getOrElse allowedFields.head._2)
-          val ord   = orderOpt.getOrElse(Sorting.Desc)
-          Sorting(fieldOpt.getOrElse(field), ord)
-      } { case Sorting(sortBy, order) => sortBy.some -> order.some }
+          val specFieldOpt = fieldOpt >>= (allowedFields(_))
+          val field        = specFieldOpt getOrElse (defaultFieldOpt getOrElse allowedFields.head._2)
+          val ord          = orderOpt getOrElse Sorting.Desc
+          Sorting(field, ord)
+      } {
+        case Sorting(sortBy, order) =>
+          allowedFields.toNel.find(_._2 == sortBy).map(_._1) -> order.some
+      }
 
   private val TimespanRegex = "^([0-9]+)(days|day|years|year)$".r
 
