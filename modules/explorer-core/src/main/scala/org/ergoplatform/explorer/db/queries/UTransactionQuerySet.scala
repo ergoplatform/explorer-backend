@@ -48,4 +48,13 @@ object UTransactionQuerySet extends QuerySet {
 
   def countUnconfirmedTxs(implicit lh: LogHandler): Query0[Int] =
     sql"select count(*) from node_u_transactions".query[Int]
+
+  def countByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(*) from node_u_transactions t
+         |left join node_u_inputs ui on ui.tx_id = t.id
+         |left join node_u_outputs uo on uo.tx_id = t.id
+         |left join node_outputs o on o.box_id = ui.box_id
+         |where uo.ergo_tree = $ergoTree or o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Int]
 }

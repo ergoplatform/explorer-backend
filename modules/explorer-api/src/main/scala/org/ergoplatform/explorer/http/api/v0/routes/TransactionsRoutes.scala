@@ -7,13 +7,13 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
-import org.ergoplatform.explorer.http.api.v0.services.TransactionsService
+import org.ergoplatform.explorer.http.api.v0.services.{OffChainService, TransactionsService}
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
 final class TransactionsRoutes[
   F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
-](service: TransactionsService[F])(
+](txsService: TransactionsService[F], offChainService: OffChainService[F])(
   implicit opts: Http4sServerOptions[F]
 ) {
 
@@ -24,7 +24,7 @@ final class TransactionsRoutes[
 
   private def getTxByIdR: HttpRoutes[F] =
     getTxByIdDef.toRoutes { txId =>
-      service
+      txsService
         .getTxInfo(txId)
         .adaptThrowable
         .orNotFound(s"Transaction with id: $txId")
@@ -33,7 +33,7 @@ final class TransactionsRoutes[
 
   private def getUnconfirmedTxsR: HttpRoutes[F] =
     getUnconfirmedTxsDef.toRoutes { paging =>
-      service
+      offChainService
         .getUnconfirmedTxs(paging)
         .adaptThrowable
         .value
@@ -41,7 +41,7 @@ final class TransactionsRoutes[
 
   private def getUnconfirmedTxByIdR: HttpRoutes[F] =
     getUnconfirmedTxByIdDef.toRoutes { txId =>
-      service
+      offChainService
         .getUnconfirmedTxInfo(txId)
         .adaptThrowable
         .orNotFound(s"Unconfirmed transaction with id: $txId")
@@ -51,7 +51,7 @@ final class TransactionsRoutes[
   private def getTxsSinceR: HttpRoutes[F] =
     getTxsSinceDef.toRoutes {
       case (paging, height) =>
-        service
+        txsService
           .getTxsSince(height, paging)
           .adaptThrowable
           .value
@@ -59,14 +59,15 @@ final class TransactionsRoutes[
 
   private def sendTransactionR: HttpRoutes[F] =
     sendTransactionDef.toRoutes { tx =>
-      service.submitTransaction(tx).adaptThrowable.value
+      offChainService.submitTransaction(tx).adaptThrowable.value
     }
 }
 
 object TransactionsRoutes {
 
   def apply[F[_]: Sync: ContextShift: Logger](
-    service: TransactionsService[F]
+    txsService: TransactionsService[F],
+    offChainService: OffChainService[F]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
-    new TransactionsRoutes(service).routes
+    new TransactionsRoutes(txsService, offChainService).routes
 }

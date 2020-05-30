@@ -20,7 +20,7 @@ object TransactionsEndpointDefs {
   private val PathPrefix = "transactions"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    getTxByIdDef :: getUnconfirmedTxsDef :: getUnconfirmedTxByIdDef ::
+    getTxByIdDef :: getUnconfirmedTxByIdDef :: getUnconfirmedTxsDef ::
     getTxsSinceDef :: sendTransactionDef :: Nil
 
   def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionSummary, Nothing] =
