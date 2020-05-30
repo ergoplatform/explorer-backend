@@ -20,7 +20,8 @@ final class TransactionsRoutes[
   import org.ergoplatform.explorer.http.api.v0.defs.TransactionsEndpointDefs._
 
   val routes: HttpRoutes[F] =
-    getUnconfirmedTxsR <+> getUnconfirmedTxByIdR <+> getTxsSinceR <+> sendTransactionR <+> getTxByIdR
+    getUnconfirmedTxsByAddressR <+> getUnconfirmedTxByIdR <+> getUnconfirmedTxsR <+>
+    getTxsSinceR <+> sendTransactionR <+> getTxByIdR
 
   private def getTxByIdR: HttpRoutes[F] =
     getTxByIdDef.toRoutes { txId =>
@@ -46,6 +47,15 @@ final class TransactionsRoutes[
         .adaptThrowable
         .orNotFound(s"Unconfirmed transaction with id: $txId")
         .value
+    }
+
+  private def getUnconfirmedTxsByAddressR: HttpRoutes[F] =
+    getUnconfirmedTxsByAddressDef.toRoutes {
+      case (paging, address) =>
+        offChainService
+          .getUnconfirmedTxsByAddress(address, paging)
+          .adaptThrowable
+          .value
     }
 
   private def getTxsSinceR: HttpRoutes[F] =
