@@ -15,7 +15,9 @@ Dependencies:
 
 `modules/explorer-api`
 
-Provides a set of HTTP API methods for querying chain/off-chain data
+Provides a set of HTTP API methods for querying chain/off-chain data.
+
+Specification: https://api.ergoplatform.com/docs/openapi
 
 Dependencies:
 - Postgres (Schema `modules/explorer-core/src/main/resources/db/V1__Node_data.sql`)
