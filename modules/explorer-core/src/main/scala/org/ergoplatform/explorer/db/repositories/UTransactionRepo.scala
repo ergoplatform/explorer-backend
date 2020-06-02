@@ -36,7 +36,7 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
     ergoTree: HexString,
     offset: Int,
     limit: Int
-  ): S[D, UTransaction]
+  ): D[List[UTransaction]]
 
   /** Get all unconfirmed transactions.
     */
@@ -49,6 +49,10 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
   /** Get total number of unconfirmed transactions.
     */
   def countAll: D[Int]
+
+  /** Count unconfirmed transactions related to the given `ergoTree`.
+    */
+  def countByErgoTree(ergoTree: HexString): D[Int]
 }
 
 object UTransactionRepo {
@@ -79,10 +83,10 @@ object UTransactionRepo {
       ergoTree: HexString,
       offset: Int,
       limit: Int
-    ): Stream[D, UTransaction] =
+    ): D[List[UTransaction]] =
       QS.getAllRelatedToErgoTree(ergoTree, offset, limit)
-        .stream
-        .translate(LiftConnectionIO[D].liftConnectionIOK)
+        .to[List]
+        .liftConnectionIO
 
     def getAll(offset: Int, limit: Int): D[List[UTransaction]] =
       QS.getAll(offset, limit).to[List].liftConnectionIO
@@ -92,5 +96,8 @@ object UTransactionRepo {
 
     def countAll: D[Int] =
       QS.countUnconfirmedTxs.unique.liftConnectionIO
+
+    def countByErgoTree(ergoTree: HexString): D[Int] =
+      QS.countByErgoTree(ergoTree).unique.liftConnectionIO
   }
 }

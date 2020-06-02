@@ -1,128 +1,145 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.effect.Sync
-import cats.instances.option._
+import cats.Monad
+import cats.data.OptionT
+import cats.effect.Concurrent
+import cats.instances.list._
+import cats.syntax.apply._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
-import cats.syntax.apply._
 import cats.syntax.traverse._
-import cats.{Monad, ~>}
+import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.estatico.newtype.ops._
 import mouse.anyf._
-import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
-import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
+import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
+import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
-import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{UInputInfo, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.db.repositories.{
+  UAssetRepo,
+  UInputRepo,
+  UOutputRepo,
+  UTransactionRepo
+}
+import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo}
 import org.ergoplatform.explorer.protocol.utils
-import org.ergoplatform.explorer.{Address, CRaise, Err, HexString, TxId}
-import org.ergoplatform.explorer.syntax.stream._
-import tofu.syntax.raise._
+import org.ergoplatform.explorer.settings.UtxCacheSettings
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 
 /** A service providing an access to unconfirmed transactions data.
   */
-trait OffChainService[F[_], S[_[_], _]] {
+trait OffChainService[F[_]] {
+
+  /** Get unconfirmed transactions.
+    */
+  def getUnconfirmedTxs(paging: Paging): F[Items[UTransactionInfo]]
 
   /** Get unconfirmed transaction with a given `id`.
     */
-  def getUnconfirmedTxById(id: TxId): F[Option[UTransactionInfo]]
+  def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionInfo]]
 
   /** Get all unconfirmed transactions related to the given `address`.
     */
-  def getUnconfirmedTxsByAddress(address: Address, paging: Paging): S[F, UTransactionInfo]
+  def getUnconfirmedTxsByAddress(address: Address, paging: Paging): F[Items[UTransactionInfo]]
 
   /** Get all unconfirmed transactions related to the given `ergoTree`.
     */
   def getUnconfirmedTxsByErgoTree(
     ergoTree: HexString,
     paging: Paging
-  ): S[F, UTransactionInfo]
+  ): F[Items[UTransactionInfo]]
 
-  /** Get all inputs containing in unconfirmed transactions.
+  /** Submit a transaction to the network.
     */
-  def getAllUnconfirmedInputs: S[F, UInputInfo]
-
-  /** Get all outputs containing in unconfirmed transactions.
-    */
-  def getAllUnconfirmedOutputs: S[F, UOutputInfo]
+  def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse]
 }
 
 object OffChainService {
 
-  def apply[F[_]: Sync, D[_]: CRaise[*[_], Err]: Monad: LiftConnectionIO](
-    xa: D ~> F
-  )(implicit e: ErgoAddressEncoder): F[OffChainService[F, Stream]] =
-    (UTransactionRepo[F, D], UInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
-      .mapN(new Live(_, _, _, _)(xa))
+  def apply[F[_]: Concurrent, D[_]: Monad: LiftConnectionIO](
+    utxCacheSettings: UtxCacheSettings,
+    redis: RedisCommands[F, String, String]
+  )(
+    trans: D Trans F
+  )(implicit e: ErgoAddressEncoder): F[OffChainService[F]] =
+    Slf4jLogger.create[F].flatMap { implicit logger =>
+      ErgoLikeTransactionRepo[F](utxCacheSettings, redis).flatMap { etxRepo =>
+        (UTransactionRepo[F, D], UInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
+          .mapN(new Live(_, _, _, _, etxRepo)(trans))
+      }
+    }
 
   final private class Live[
-    F[_],
-    D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
+    F[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad: Logger,
+    D[_]: Monad
   ](
     txRepo: UTransactionRepo[D, Stream],
     inRepo: UInputRepo[D, Stream],
     outRepo: UOutputRepo[D, Stream],
-    assetRepo: UAssetRepo[D]
-  )(xa: D ~> F)(implicit e: ErgoAddressEncoder)
-    extends OffChainService[F, Stream] {
+    assetRepo: UAssetRepo[D],
+    ergoLikeTxRepo: ErgoLikeTransactionRepo[F, Stream]
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
+    extends OffChainService[F] {
 
-    def getUnconfirmedTxById(id: TxId): F[Option[UTransactionInfo]] =
-      txRepo.get(id).flatMap(_.traverse(completeTransaction)) ||> xa
+    def getUnconfirmedTxs(paging: Paging): F[Items[UTransactionInfo]] =
+      txRepo.countAll.flatMap { total =>
+        txRepo
+          .getAll(paging.offset, paging.limit)
+          .map(_.grouped(100))
+          .flatMap(_.toList.flatTraverse(assembleUInfo))
+          .map(Items(_, total))
+      } ||> trans.xa
+
+    def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionInfo]] =
+      (for {
+        txOpt <- txRepo.get(id)
+        ins   <- txOpt.toList.flatTraverse(tx => inRepo.getAllByTxId(tx.id))
+        outs  <- txOpt.toList.flatTraverse(tx => outRepo.getAllByTxId(tx.id))
+        boxIdsNel = outs.map(_.boxId).toNel
+        assets <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
+        txInfo = txOpt.map(UTransactionInfo(_, ins, outs, assets))
+      } yield txInfo) ||> trans.xa
 
     def getUnconfirmedTxsByAddress(
       address: Address,
       paging: Paging
-    ): Stream[F, UTransactionInfo] =
+    ): F[Items[UTransactionInfo]] =
       utils
-        .addressToErgoTreeHex(address)
-        .asStream
-        .flatMap(getUtxInfoBatched(_, paging))
-        .translate(xa)
+        .addressToErgoTreeHex[F](address)
+        .flatMap(getUnconfirmedTxsByErgoTree(_, paging))
 
     def getUnconfirmedTxsByErgoTree(
       ergoTree: HexString,
       paging: Paging
-    ): Stream[F, UTransactionInfo] =
-      getUtxInfoBatched(ergoTree, paging).translate(xa)
+    ): F[Items[UTransactionInfo]] =
+      txRepo.countByErgoTree(ergoTree).flatMap { total =>
+        txRepo
+          .getAllRelatedToErgoTree(ergoTree, paging.offset, paging.limit)
+          .map(_.grouped(100))
+          .flatMap(_.toList.flatTraverse(assembleUInfo))
+          .map(Items(_, total))
+      } ||> trans.xa
 
-    def getAllUnconfirmedInputs: Stream[F, UInputInfo] =
-      inRepo.getAll(offset = 0, limit = Int.MaxValue).map(UInputInfo.apply).translate(xa)
+    def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse] =
+      Logger[F].info(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
+      ergoLikeTxRepo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
 
-    def getAllUnconfirmedOutputs: Stream[F, UOutputInfo] =
-      (for {
-        out    <- outRepo.getAll(offset = 0, limit = Int.MaxValue)
-        assets <- assetRepo.getAllByBoxId(out.boxId).asStream
-      } yield UOutputInfo(out, assets)).translate(xa)
-
-    private def completeTransaction(tx: UTransaction): D[UTransactionInfo] =
-      for {
-        ins  <- inRepo.getAllByTxId(tx.id)
-        outs <- outRepo.getAllByTxId(tx.id)
-        boxIdsNel <- outs
-                      .map(_.boxId)
-                      .toNel
-                      .orRaise[D](InconsistentDbData("Empty outputs"))
-        assets <- assetRepo.getAllByBoxIds(boxIdsNel)
-      } yield UTransactionInfo(tx, ins, outs, assets)
-
-    private def getUtxInfoBatched(
-      ergoTree: HexString,
-      paging: Paging
-    ): Stream[D, UTransactionInfo] =
-      for {
-        txChunk <- txRepo
-                    .getAllRelatedToErgoTree(ergoTree, paging.offset, paging.limit)
-                    .chunkN(100)
-        txIdsNel  <- txChunk.map(_.id).toList.toNel.toStream.covary[D]
-        ins       <- inRepo.getAllByTxIds(txIdsNel).asStream
-        outs      <- outRepo.getAllByTxIds(txIdsNel).asStream
-        boxIdsNel <- outs.map(_.boxId).toNel.toStream.covary[D]
-        assets    <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
-        utxInfo   <- Stream.emits(UTransactionInfo.batch(txChunk.toList, ins, outs, assets))
-      } yield utxInfo
+    private def assembleUInfo: List[UTransaction] => D[List[UTransactionInfo]] =
+      txChunk =>
+        (for {
+          txIdsNel  <- OptionT.fromOption[D](txChunk.map(_.id).toNel)
+          ins       <- OptionT.liftF(inRepo.getAllByTxIds(txIdsNel))
+          outs      <- OptionT.liftF(outRepo.getAllByTxIds(txIdsNel))
+          boxIdsNel <- OptionT.fromOption[D](outs.map(_.boxId).toNel)
+          assets    <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
+          txInfo = UTransactionInfo.batch(txChunk, ins, outs, assets)
+        } yield txInfo).value.map(_.toList.flatten)
   }
 }

@@ -8,7 +8,7 @@ import sttp.tapir.{Schema, SchemaType}
 import sttp.tapir.generic.Derived
 
 final case class UOutputInfo(
-  boxId: BoxId,
+  id: BoxId,
   value: Long,
   creationHeight: Int,
   ergoTree: HexString,
@@ -22,7 +22,7 @@ object UOutputInfo {
 
   implicit val schema: Schema[UOutputInfo] =
     implicitly[Derived[Schema[UOutputInfo]]].value
-      .modify(_.boxId)(_.description("Id of the corresponding box"))
+      .modify(_.id)(_.description("Id of the corresponding box"))
       .modify(_.value)(_.description("Amount of nanoERGs containing in the box"))
       .modify(_.creationHeight)(_.description("Approximate height the box was created"))
       .modify(_.ergoTree)(_.description("Encoded script"))

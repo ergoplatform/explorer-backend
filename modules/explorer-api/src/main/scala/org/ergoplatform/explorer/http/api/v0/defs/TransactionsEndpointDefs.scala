@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.defs
 
 import org.ergoplatform.ErgoLikeTransaction
-import org.ergoplatform.explorer.TxId
+import org.ergoplatform.explorer.{Address, TxId}
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.commonDirectives._
@@ -20,8 +20,8 @@ object TransactionsEndpointDefs {
   private val PathPrefix = "transactions"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    getTxByIdDef :: getUnconfirmedTxsDef :: getUnconfirmedTxByIdDef ::
-    getTxsSinceDef :: sendTransactionDef :: Nil
+    getTxByIdDef :: getUnconfirmedTxByIdDef :: getUnconfirmedTxsByAddressDef ::
+    getUnconfirmedTxsDef :: getTxsSinceDef :: sendTransactionDef :: Nil
 
   def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionSummary, Nothing] =
     baseEndpointDef.get
@@ -38,6 +38,13 @@ object TransactionsEndpointDefs {
     baseEndpointDef.get
       .in(PathPrefix / "unconfirmed" / path[TxId])
       .out(jsonBody[UTransactionInfo])
+
+  def getUnconfirmedTxsByAddressDef
+    : Endpoint[(Paging, Address), ApiErr, Items[UTransactionInfo], Nothing] =
+    baseEndpointDef.get
+      .in(paging)
+      .in(PathPrefix / "unconfirmed" / "byAddress" / path[Address])
+      .out(jsonBody[Items[UTransactionInfo]])
 
   def getTxsSinceDef: Endpoint[(Paging, Int), ApiErr, List[TransactionInfo], Nothing] =
     baseEndpointDef.get
