@@ -56,19 +56,7 @@ object UInputQuerySet extends QuerySet {
 
   def getAllByTxIxs(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedUInput] = {
     val queryFr =
-      fr"""
-        |select
-        |  i.box_id,
-        |  i.tx_id,
-        |  i.proof_bytes,
-        |  i.extension,
-        |  o.value,
-        |  o.tx_id,
-        |  o.address
-        |from node_u_inputs i
-        |join node_outputs o on i.box_id = o.box_id
-        |where i.tx_id
-        |""".stripMargin
+      fr"select i.box_id, i.tx_id, i.proof_bytes, i.extension, o.value, o.tx_id, o.address from node_u_inputs i join node_outputs o on i.box_id = o.box_id where i.tx_id"
     in(queryFr, txIds).query[ExtendedUInput]
   }
 }
