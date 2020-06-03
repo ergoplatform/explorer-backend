@@ -19,16 +19,12 @@ final case class TransactionSummary(
   inputs: List[InputInfo],
   outputs: List[OutputInfo],
   size: Int,
-  totalCoins: Long,
-  totalFee: Long,
-  feePerByte: Double
+  ioSummary: TxStats
 )
 
 object TransactionSummary {
 
   final case class MiniBlockInfo(id: Id, height: Int)
-
-  final private case class TxStats(totalCoins: Long, totalFee: Long, feePerByte: Double)
 
   implicit val decoder: Decoder[TransactionSummary] = deriveDecoder
 
@@ -41,13 +37,9 @@ object TransactionSummary {
         "confirmationsCount" -> ts.confirmationsCount.asJson,
         "block"              -> ts.miniBlockInfo.asJson
       ),
-      "ioSummary" -> Json.obj(
-        "totalCoinsTransferred" -> ts.totalCoins.asJson,
-        "totalFee"              -> ts.totalFee.asJson,
-        "feePerByte"            -> ts.feePerByte.asJson
-      ),
-      "inputs"  -> ts.inputs.asJson,
-      "outputs" -> ts.outputs.asJson
+      "ioSummary" -> ts.ioSummary.asJson,
+      "inputs"    -> ts.inputs.asJson,
+      "outputs"   -> ts.outputs.asJson
     )
   }
 
@@ -68,9 +60,6 @@ object TransactionSummary {
       )
       .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
       .modify(_.size)(_.description("Size of transaction in bytes"))
-      .modify(_.totalCoins)(_.description("Total amount of nanoErgs in transaction"))
-      .modify(_.totalFee)(_.description("Total amount of fee in transaction in nanoErgs"))
-      .modify(_.feePerByte)(_.description("Amount of nanoErgs paid for each byte of transaction"))
 
   def apply(
     tx: Transaction,
@@ -90,8 +79,8 @@ object TransactionSummary {
     inputs: List[InputInfo],
     outputs: List[OutputInfo]
   ): TransactionSummary = {
-    val TxStats(totalCoins, totalFee, feePerByte) = txStats(tx, inputs, outputs)
-    val blockInfo                                 = MiniBlockInfo(tx.headerId, tx.inclusionHeight)
+    val stats     = TxStats(tx, inputs, outputs)
+    val blockInfo = MiniBlockInfo(tx.headerId, tx.inclusionHeight)
     apply(
       tx.id,
       blockInfo,
@@ -100,23 +89,7 @@ object TransactionSummary {
       inputs,
       outputs,
       tx.size,
-      totalCoins,
-      totalFee,
-      feePerByte
+      stats
     )
-  }
-
-  private def txStats(
-    tx: Transaction,
-    inputs: List[InputInfo],
-    outputs: List[OutputInfo]
-  ): TxStats = {
-    val totalCoins = inputs.map(_.value.getOrElse(0L)).sum
-    val totalFee = outputs
-      .filter(_.ergoTree.unwrapped == constants.FeePropositionScriptHex)
-      .map(_.value)
-      .sum
-    val feePerByte = if (tx.size == 0) 0d else totalFee.toDouble / tx.size
-    TxStats(totalCoins, totalFee, feePerByte)
   }
 }
