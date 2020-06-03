@@ -66,7 +66,7 @@ object UInputQuerySet extends QuerySet {
          |  o.address
          |from node_u_inputs i
          |join node_outputs o on i.box_id = o.box_id
-         |where tx_id
+         |where i.tx_id
          |""".stripMargin
     in(query, txIds).query[ExtendedUInput]
   }
