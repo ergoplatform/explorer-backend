@@ -13,6 +13,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UInput
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.doobieInstances._
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedUInput
 
 /** [[UInput]] data access operations.
   */
@@ -28,15 +29,15 @@ trait UInputRepo[D[_], S[_[_], _]] {
 
   /** Get all inputs containing in unconfirmed transactions.
     */
-  def getAll(offset: Int, limit: Int): S[D, UInput]
+  def getAll(offset: Int, limit: Int): S[D, ExtendedUInput]
 
   /** Get all inputs related to transaction with a given `txId`.
     */
-  def getAllByTxId(txId: TxId): D[List[UInput]]
+  def getAllByTxId(txId: TxId): D[List[ExtendedUInput]]
 
   /** Get all inputs related to transaction with a given list of `txId`.
     */
-  def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UInput]]
+  def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedUInput]]
 }
 
 object UInputRepo {
@@ -57,13 +58,13 @@ object UInputRepo {
     def insetMany(inputs: List[UInput]): D[Unit] =
       QS.insertMany(inputs).void.liftConnectionIO
 
-    def getAll(offset: Int, limit: Int): Stream[D, UInput] =
+    def getAll(offset: Int, limit: Int): Stream[D, ExtendedUInput] =
       QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
-    def getAllByTxId(txId: TxId): D[List[UInput]] =
+    def getAllByTxId(txId: TxId): D[List[ExtendedUInput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO
 
-    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UInput]] =
+    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedUInput]] =
       QS.getAllByTxIxs(txIds).to[List].liftConnectionIO
   }
 }
