@@ -37,7 +37,7 @@ object UInputQuerySet extends QuerySet {
          |from node_u_inputs i
          |join node_outputs o on i.box_id = o.box_id
          |offset $offset limit $limit
-         |""".query[ExtendedUInput]
+         |""".stripMargin.query[ExtendedUInput]
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedUInput] =
     sql"""
@@ -52,11 +52,23 @@ object UInputQuerySet extends QuerySet {
          |from node_u_inputs i
          |join node_outputs o on i.box_id = o.box_id
          |where i.tx_id = $txId
-         |""".query[ExtendedUInput]
+         |""".stripMargin.query[ExtendedUInput]
 
   def getAllByTxIxs(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedUInput] = {
     val queryFr =
-      fr"select i.box_id, i.tx_id, i.proof_bytes, i.extension, o.value, o.tx_id, o.address from node_u_inputs i join node_outputs o on i.box_id = o.box_id where i.tx_id"
+      fr"""
+          |select
+          |  i.box_id,
+          |  i.tx_id,
+          |  i.proof_bytes,
+          |  i.extension,
+          |  o.value,
+          |  o.tx_id,
+          |  o.address
+          |from node_u_inputs i
+          |join node_outputs o on i.box_id = o.box_id
+          |where i.tx_id
+          |""".stripMargin
     in(queryFr, txIds).query[ExtendedUInput]
   }
 }
