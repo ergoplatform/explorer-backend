@@ -2,8 +2,9 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, HexString}
-import org.ergoplatform.explorer.db.models.{UAsset, UOutput}
+import org.ergoplatform.explorer.db.models.{Asset, UAsset, UOutput}
 import sttp.tapir.{Schema, SchemaType}
 import sttp.tapir.generic.Derived
 
@@ -48,4 +49,11 @@ object UOutputInfo {
       assets.map(AssetInfo.apply),
       out.additionalRegisters
     )
+
+  def batch(outputs: List[UOutput], assets: List[UAsset]): List[UOutputInfo] = {
+    val groupedAssets = assets.groupBy(_.boxId)
+    outputs
+      .sortBy(_.index)
+      .map(out => apply(out, groupedAssets.get(out.boxId).toList.flatten))
+  }
 }
