@@ -5,12 +5,7 @@ import org.ergoplatform.explorer.{Address, TxId}
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.commonDirectives._
-import org.ergoplatform.explorer.http.api.v0.models.{
-  TransactionInfo,
-  TransactionSummary,
-  TxIdResponse,
-  UTransactionInfo
-}
+import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, TransactionSummary, TxIdResponse, UTransactionInfo, UTransactionSummary}
 import org.ergoplatform.explorer.protocol.ergoInstances._
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -34,10 +29,10 @@ object TransactionsEndpointDefs {
       .in(paging)
       .out(jsonBody[Items[UTransactionInfo]])
 
-  def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionInfo, Nothing] =
+  def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionSummary, Nothing] =
     baseEndpointDef.get
       .in(PathPrefix / "unconfirmed" / path[TxId])
-      .out(jsonBody[UTransactionInfo])
+      .out(jsonBody[UTransactionSummary])
 
   def getUnconfirmedTxsByAddressDef
     : Endpoint[(Paging, Address), ApiErr, Items[UTransactionInfo], Nothing] =

@@ -21,14 +21,9 @@ import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.repositories.{
-  UAssetRepo,
-  UInputRepo,
-  UOutputRepo,
-  UTransactionRepo
-}
+import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
@@ -43,7 +38,7 @@ trait OffChainService[F[_]] {
 
   /** Get unconfirmed transaction with a given `id`.
     */
-  def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionInfo]]
+  def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionSummary]]
 
   /** Get all unconfirmed transactions related to the given `address`.
     */
@@ -97,14 +92,14 @@ object OffChainService {
           .map(Items(_, total))
       } ||> trans.xa
 
-    def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionInfo]] =
+    def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionSummary]] =
       (for {
         txOpt <- txRepo.get(id)
         ins   <- txOpt.toList.flatTraverse(tx => inRepo.getAllByTxId(tx.id))
         outs  <- txOpt.toList.flatTraverse(tx => outRepo.getAllByTxId(tx.id))
         boxIdsNel = outs.map(_.boxId).toNel
         assets <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
-        txInfo = txOpt.map(UTransactionInfo(_, ins, outs, assets))
+        txInfo = txOpt.map(UTransactionSummary(_, ins, outs, assets))
       } yield txInfo) ||> trans.xa
 
     def getUnconfirmedTxsByAddress(

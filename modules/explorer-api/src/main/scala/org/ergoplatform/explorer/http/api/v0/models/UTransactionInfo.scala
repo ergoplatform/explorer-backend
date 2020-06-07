@@ -7,6 +7,7 @@ import cats.syntax.option._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.TxId
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedUInput
 import org.ergoplatform.explorer.db.models.{UAsset, UInput, UOutput, UTransaction}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
@@ -35,7 +36,7 @@ object UTransactionInfo {
 
   def apply(
     tx: UTransaction,
-    ins: List[UInput],
+    ins: List[ExtendedUInput],
     outs: List[UOutput],
     assets: List[UAsset]
   ): UTransactionInfo = {
@@ -46,12 +47,12 @@ object UTransactionInfo {
 
   def batch(
     txs: List[UTransaction],
-    ins: List[UInput],
+    ins: List[ExtendedUInput],
     outs: List[UOutput],
     assets: List[UAsset]
   ): List[UTransactionInfo] = {
     val assetsByBox = assets.groupBy(_.boxId)
-    val inputsByTx  = ins.groupBy(_.txId)
+    val inputsByTx  = ins.groupBy(_.input.txId)
     val outsByTx    = outs.groupBy(_.txId)
     txs
       .traverse { tx =>
