@@ -32,7 +32,7 @@ object UTransactionQuerySet extends QuerySet {
     limit: Int
   )(implicit lh: LogHandler): Query0[UTransaction] =
     sql"""
-         |select t.id, t.creation_timestamp, t.size from node_u_transactions t
+         |select distinct t.id, t.creation_timestamp, t.size from node_u_transactions t
          |left join node_u_inputs ui on ui.tx_id = t.id
          |left join node_u_outputs uo on uo.tx_id = t.id
          |left join node_outputs o on o.box_id = ui.box_id
@@ -51,7 +51,7 @@ object UTransactionQuerySet extends QuerySet {
 
   def countByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[Int] =
     sql"""
-         |select count(*) from node_u_transactions t
+         |select count(distinct t.id) from node_u_transactions t
          |left join node_u_inputs ui on ui.tx_id = t.id
          |left join node_u_outputs uo on uo.tx_id = t.id
          |left join node_outputs o on o.box_id = ui.box_id
