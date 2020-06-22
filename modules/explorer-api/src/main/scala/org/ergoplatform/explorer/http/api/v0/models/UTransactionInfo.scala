@@ -41,7 +41,7 @@ object UTransactionInfo {
     assets: List[UAsset]
   ): UTransactionInfo = {
     val inputsInfo  = ins.map(UInputInfo.apply)
-    val outputsInfo = outs.sortBy(_.index).map(UOutputInfo(_, assets))
+    val outputsInfo = UOutputInfo.batch(outs, assets)
     new UTransactionInfo(tx.id, inputsInfo, outputsInfo, tx.creationTimestamp, tx.size)
   }
 
