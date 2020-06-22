@@ -48,7 +48,7 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |where o.box_id = $boxId
-         |limit 1
+         |order by o.main_chain desc limit 1
          |""".stripMargin.query[ExtendedOutput]
 
   def getMainByErgoTree(
