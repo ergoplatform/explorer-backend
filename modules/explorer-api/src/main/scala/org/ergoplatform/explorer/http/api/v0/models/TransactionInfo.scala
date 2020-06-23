@@ -46,7 +46,8 @@ object TransactionInfo {
           .filter(_.output.txId == tx.id)
           .sortBy(_.output.index)
           .map { out =>
-            OutputInfo(out, groupedAssets.get(out.output.boxId).toList.flatten)
+            val relAssets = groupedAssets.get(out.output.boxId).toList.flatten
+            OutputInfo(out, relAssets)
           }
         apply(tx.id, tx.headerId, tx.timestamp, numConfirmations, relatedInputs, relatedOutputs)
     }
