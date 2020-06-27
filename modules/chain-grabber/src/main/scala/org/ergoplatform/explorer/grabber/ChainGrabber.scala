@@ -36,7 +36,7 @@ final class ChainGrabber[
 ](
   lastBlockCache: Ref[F, Option[BlockInfo]],
   settings: GrabberAppSettings,
-  network: ErgoNetworkClient[F, Stream],
+  network: ErgoNetworkClient[F],
   headerRepo: HeaderRepo[D],
   blockInfoRepo: BlockInfoRepo[D],
   blockExtensionRepo: BlockExtensionRepo[D],
@@ -170,7 +170,7 @@ object ChainGrabber {
     D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
   ](
     settings: GrabberAppSettings,
-    network: ErgoNetworkClient[F, Stream]
+    network: ErgoNetworkClient[F]
   )(xa: D ~> F): F[ChainGrabber[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).flatMap { cache =>

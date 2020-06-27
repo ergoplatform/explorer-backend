@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 
 final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
-  extends ErgoNetworkClient[F, fs2.Stream] {
+  extends ErgoNetworkClient[F] {
 
   def getBestHeight: F[Int] =
     source.blocksStorage.maxBy(_._1)._1.pure[F]
@@ -19,7 +19,7 @@ final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
   def getFullBlockById(id: explorer.Id): F[Option[ApiFullBlock]] =
     source.blocksStorage.values.flatten.find(_.header.id == id).pure[F]
 
-  def getUnconfirmedTransactions: fs2.Stream[F, ApiTransaction] = ???
+  def getUnconfirmedTransactions: F[List[ApiTransaction]] = ???
 
   def submitTransaction(tx: ErgoLikeTransaction): F[Unit] = ???
 }
