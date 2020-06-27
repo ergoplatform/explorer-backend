@@ -61,7 +61,7 @@ final class UtxWatcher[
       newTxs   = txs.filterNot(tx => knownIds.contains(tx.id))
       dropIds  = knownIds.diff(txs.map(_.id).toSet).toList.toNel
       flatTxs  <- newTxs.traverse(FlatUTransaction.fromApi[F](_)).asStream
-      _        <- ((writeFlatBatch(flatTxs) >> dropIds.fold(().pure[D])(txRepo.dropMany(_).void)) ||> xa).asStream
+      _        <- (dropIds.fold(().pure[D])(txRepo.dropMany(_).void) >> writeFlatBatch(flatTxs) ||> xa).asStream
       _        <- Logger[F].debug(s"Written transactions: $flatTxs").asStream
       _        <- Logger[F].info(s"${newTxs.size} new transactions written, ${dropIds.size} removed").asStream
     } yield ()
