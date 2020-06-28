@@ -4,7 +4,6 @@ import cats.effect.concurrent.Ref
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import cats.syntax.applicative._
 import cats.syntax.applicativeError._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.Stream
@@ -19,7 +18,7 @@ import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
   */
 final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
   settings: UtxBroadcasterSettings,
-  network: ErgoNetworkClient[F, Stream],
+  network: ErgoNetworkClient[F],
   repo: ErgoLikeTransactionRepo[F, Stream]
 ) {
 
@@ -58,7 +57,7 @@ object UtxBroadcaster {
 
   def apply[F[_]: Timer: Concurrent](
     settings: UtxBroadcasterSettings,
-    network: ErgoNetworkClient[F, Stream],
+    network: ErgoNetworkClient[F],
     redis: RedisCommands[F, String, String]
   ): F[UtxBroadcaster[F]] =
     Slf4jLogger.create.flatMap { implicit logger =>
