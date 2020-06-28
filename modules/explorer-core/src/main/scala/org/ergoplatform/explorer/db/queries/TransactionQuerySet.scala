@@ -46,6 +46,14 @@ object TransactionQuerySet extends QuerySet {
          |order by t.index asc
          |""".stripMargin.query[Transaction]
 
+  def getRecentIds(implicit lh: LogHandler): Query0[TxId] =
+    sql"""
+         |select t.id from node_transactions
+         |inner join (
+         |  select h.id from node_headers h where main_chain = true order by height desc limit 1
+         |) as nh on nh.id = t.header_id
+         |""".stripMargin.query[TxId]
+
   def getAllRelatedToAddress(
     address: Address,
     offset: Int,

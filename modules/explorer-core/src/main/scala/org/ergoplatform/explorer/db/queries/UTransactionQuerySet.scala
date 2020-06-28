@@ -41,7 +41,7 @@ object UTransactionQuerySet extends QuerySet {
          |""".stripMargin.query[UTransaction]
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[UTransaction] =
-    sql"select * from node_u_transactions offset $offset limit $limit".query[UTransaction]
+    sql"select * from node_u_transactions order by creation_timestamp desc offset $offset limit $limit".query[UTransaction]
 
   def getAllIds(implicit lh: LogHandler): Query0[TxId] =
     sql"select id from node_u_transactions".query[TxId]

@@ -38,7 +38,7 @@ object HeaderQuerySet extends QuerySet {
     sql"select * from node_headers where id = $id".query[Header]
 
   def getLast(implicit lh: LogHandler): Query0[Header] =
-    sql"select * from node_headers order by height desc limit 1".query[Header]
+    sql"select * from node_headers where main_chain = true order by height desc limit 1".query[Header]
 
   def getByParentId(parentId: Id)(implicit lh: LogHandler): Query0[Header] =
     sql"select * from node_headers where parent_id = $parentId".query[Header]
