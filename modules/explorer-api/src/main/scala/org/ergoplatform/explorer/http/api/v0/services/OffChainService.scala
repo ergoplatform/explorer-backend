@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
 import cats.Monad
-import cats.data.OptionT
+import cats.data.{Chain, OptionT}
 import cats.effect.Concurrent
 import cats.instances.list._
 import cats.syntax.apply._
@@ -21,9 +21,19 @@ import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UInputRepo, UOutputRepo, UTransactionRepo}
+import org.ergoplatform.explorer.db.repositories.{
+  TransactionRepo,
+  UAssetRepo,
+  UInputRepo,
+  UOutputRepo,
+  UTransactionRepo
+}
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
+import org.ergoplatform.explorer.http.api.v0.models.{
+  TxIdResponse,
+  UTransactionInfo,
+  UTransactionSummary
+}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
@@ -66,8 +76,13 @@ object OffChainService {
   )(implicit e: ErgoAddressEncoder): F[OffChainService[F]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       ErgoLikeTransactionRepo[F](utxCacheSettings, redis).flatMap { etxRepo =>
-        (UTransactionRepo[F, D], UInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
-          .mapN(new Live(_, _, _, _, etxRepo)(trans))
+        (
+          TransactionRepo[F, D],
+          UTransactionRepo[F, D],
+          UInputRepo[F, D],
+          UOutputRepo[F, D],
+          UAssetRepo[F, D]
+        ).mapN(new Live(_, _, _, _, _, etxRepo)(trans))
       }
     }
 
@@ -75,7 +90,8 @@ object OffChainService {
     F[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad: Logger,
     D[_]: Monad
   ](
-    txRepo: UTransactionRepo[D, Stream],
+    txRepo: TransactionRepo[D, Stream],
+    uTxRepo: UTransactionRepo[D, Stream],
     inRepo: UInputRepo[D, Stream],
     outRepo: UOutputRepo[D, Stream],
     assetRepo: UAssetRepo[D],
@@ -84,17 +100,19 @@ object OffChainService {
     extends OffChainService[F] {
 
     def getUnconfirmedTxs(paging: Paging): F[Items[UTransactionInfo]] =
-      txRepo.countAll.flatMap { total =>
-        txRepo
-          .getAll(paging.offset, paging.limit)
-          .map(_.grouped(100))
-          .flatMap(_.toList.flatTraverse(assembleUInfo))
-          .map(Items(_, total))
+      uTxRepo.countAll.flatMap { total =>
+        txRepo.getRecentIds.flatMap { recentlyConfirmed =>
+          uTxRepo
+            .getAll(paging.offset, paging.limit)
+            .map(_.grouped(100))
+            .flatMap(_.toList.flatTraverse(assembleUInfo))
+            .map(confirmedDiff(_, total)(recentlyConfirmed))
+        }
       } ||> trans.xa
 
     def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionSummary]] =
       (for {
-        txOpt <- txRepo.get(id)
+        txOpt <- uTxRepo.get(id)
         ins   <- txOpt.toList.flatTraverse(tx => inRepo.getAllByTxId(tx.id))
         outs  <- txOpt.toList.flatTraverse(tx => outRepo.getAllByTxId(tx.id))
         boxIdsNel = outs.map(_.boxId).toNel
@@ -114,12 +132,14 @@ object OffChainService {
       ergoTree: HexString,
       paging: Paging
     ): F[Items[UTransactionInfo]] =
-      txRepo.countByErgoTree(ergoTree).flatMap { total =>
-        txRepo
-          .getAllRelatedToErgoTree(ergoTree, paging.offset, paging.limit)
-          .map(_.grouped(100))
-          .flatMap(_.toList.flatTraverse(assembleUInfo))
-          .map(Items(_, total))
+      uTxRepo.countByErgoTree(ergoTree).flatMap { total =>
+        txRepo.getRecentIds.flatMap { recentlyConfirmed =>
+          uTxRepo
+            .getAllRelatedToErgoTree(ergoTree, paging.offset, paging.limit)
+            .map(_.grouped(100))
+            .flatMap(_.toList.flatTraverse(assembleUInfo))
+            .map(confirmedDiff(_, total)(recentlyConfirmed))
+        }
       } ||> trans.xa
 
     def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse] =
@@ -136,5 +156,19 @@ object OffChainService {
           assets    <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
           txInfo = UTransactionInfo.batch(txChunk, ins, outs, assets)
         } yield txInfo).value.map(_.toList.flatten)
+
+    private def confirmedDiff(
+      txs: List[UTransactionInfo],
+      total: Int
+    )(confirmedIds: List[TxId]): Items[UTransactionInfo] = {
+      val filter = confirmedIds.toSet
+      val (unconfirmed, filteredQty) =
+        txs.foldLeft(Chain.empty[UTransactionInfo] -> 0) {
+          case ((acc, c), tx) =>
+            if (filter.contains(tx.id)) acc -> (c + 1)
+            else (acc :+ tx)                -> c
+        }
+      Items(unconfirmed.toList, total - filteredQty)
+    }
   }
 }

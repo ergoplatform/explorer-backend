@@ -35,6 +35,10 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     */
   def getAllByBlockId(id: Id): S[D, Transaction]
 
+  /** Get transaction ids from latest block from main-chain.
+    */
+  def getRecentIds: D[List[TxId]]
+
   /** Get transactions related to a given `address`.
     */
   def getRelatedToAddress(
@@ -96,6 +100,9 @@ object TransactionRepo {
 
     def getAllByBlockId(id: Id): Stream[D, Transaction] =
       QS.getAllByBlockId(id).stream.translate(liftK)
+
+    def getRecentIds: D[List[TxId]] =
+      QS.getRecentIds.to[List].liftConnectionIO
 
     def getRelatedToAddress(
       address: Address,
