@@ -97,7 +97,7 @@ final class ChainGrabber[
                      }
       exStatuses  = existingHeaderIds.map(id => id -> ids.headOption.contains(id))
       updateForks = exStatuses.traverse_ { case (id, status) => updateChainStatus(id, status) }
-      blocks      <- apiBlocks.sortBy(_.header.mainChain).traverse(processBlock).map(_.sequence)
+      blocks <- apiBlocks.sortBy(_.header.mainChain).traverse(processBlock).map(_.sequence)
     } yield updateForks >> blocks
 
   private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
