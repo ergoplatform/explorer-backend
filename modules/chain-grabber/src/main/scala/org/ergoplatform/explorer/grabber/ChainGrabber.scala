@@ -10,6 +10,7 @@ import cats.syntax.functor._
 import cats.syntax.parallel._
 import cats.syntax.apply._
 import cats.syntax.traverse._
+import cats.syntax.foldable._
 import cats.{~>, Monad, MonadError, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
@@ -22,7 +23,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.protocol.constants
+import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.GrabberAppSettings
 import org.ergoplatform.explorer.{CRaise, Id}
@@ -67,15 +68,15 @@ final class ChainGrabber[
       _             <- Logger[F].info(s"Current explorer height: $localHeight")
       range         <- getScanRange(localHeight, networkHeight).pure[F]
       _ <- range.traverse { height =>
-            grabBlocksFromHeight(height)
-              .flatMap(_ ||> xa)
-              .flatTap { blocks =>
-                if (blocks.nonEmpty)
-                  lastBlockCache.update(_ => blocks.headOption) >>
-                  Logger[F].info(s"${blocks.size} block grabbed from height $height")
-                else ProcessingErr.NoBlocksWritten(height = height).raiseError[F, Unit]
-              }
-          }
+             grabBlocksFromHeight(height)
+               .flatMap(_ ||> xa)
+               .flatTap { blocks =>
+                 if (blocks.nonEmpty)
+                   lastBlockCache.update(_ => blocks.headOption) >>
+                   Logger[F].info(s"${blocks.size} block grabbed from height $height")
+                 else ProcessingErr.NoBlocksWritten(height = height).raiseError[F, Unit]
+               }
+           }
     } yield ()
 
   private def grabBlocksFromHeight(
@@ -85,36 +86,27 @@ final class ChainGrabber[
     for {
       ids <- network.getBlockIdsAtHeight(height)
       apiBlocks <- ids
-                    .filterNot(existingHeaderIds.contains)
-                    .parTraverse(network.getFullBlockById)
-                    .map {
-                      _.flatten.map { block =>
-                        block
-                          .lens(_.header.mainChain)
-                          .modify(_ => ids.headOption.contains(block.header.id))
-                      }
-                    }
-      exStatuses = existingHeaderIds.map(id => id -> ids.headOption.contains(id))
-      updatedForks <- exStatuses
-                       .foldLeft(().pure[D]) {
-                         case (acc, (id, status)) =>
-                           acc >> updateChainStatus(id, status)
+                     .filterNot(existingHeaderIds.contains)
+                     .parTraverse(network.getFullBlockById)
+                     .map {
+                       _.flatten.map { block =>
+                         block
+                           .lens(_.header.mainChain)
+                           .modify(_ => ids.headOption.contains(block.header.id))
                        }
-                       .pure[F]
-      blocks <- apiBlocks.parTraverse(processBlock).map(_.sequence)
-    } yield updatedForks >> blocks
+                     }
+      exStatuses  = existingHeaderIds.map(id => id -> ids.headOption.contains(id))
+      updateForks = exStatuses.traverse_ { case (id, status) => updateChainStatus(id, status) }
+      blocks      <- apiBlocks.sortBy(_.header.mainChain).traverse(processBlock).map(_.sequence)
+    } yield updateForks >> blocks
 
   private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
     lastBlockCache.get.flatMap { cachedBlockOpt =>
-      cachedBlockOpt
-        .exists(_.headerId == block.header.id)
-        .pure[F]
-        .ifM(
-          cachedBlockOpt.pure[F],
-          getParentBlockInfo(block.header.parentId)
-        )
+      val isCached   = cachedBlockOpt.exists(_.headerId == block.header.id)
+      val parentOptF = if (isCached) cachedBlockOpt.pure[F] else getParentBlockInfo(block.header.parentId)
+      parentOptF
         .flatMap {
-          case None if block.header.height != constants.GenesisHeight => // fork
+          case None if block.header.height != GenesisHeight && block.header.mainChain => // fork
             val forkHeight = block.header.height - 1
             Logger[F].info(s"Processing fork at height $forkHeight") >>
             getHeaderIdsAtHeight(forkHeight).flatMap { existingHeaders =>
