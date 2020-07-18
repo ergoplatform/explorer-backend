@@ -4,13 +4,16 @@ import cats.effect._
 import doobie.free.connection.ConnectionIO
 import monocle.macros.syntax.lens._
 import org.ergoplatform.explorer.MainNetConfiguration
-import org.ergoplatform.explorer.db.RealDbTest
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.db.repositories.HeaderRepo
+import org.ergoplatform.explorer.db.{RealDbTest, repositories}
 import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.GrabberAppSettings
+import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalacheck.ScalacheckShapeless._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.PropSpec
+import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.concurrent.duration._
@@ -19,9 +22,9 @@ class ChainGrabberSpec
   extends PropSpec
   with ScalaCheckDrivenPropertyChecks
   with RealDbTest
-  with MainNetConfiguration {
+  with MainNetConfiguration
+  with Matchers {
 
-  import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.testConstants._
 
   private lazy val settings =
@@ -30,13 +33,21 @@ class ChainGrabberSpec
   property("Network scanning") {
     forAll(consistentChainGen(12)) { apiBlocks =>
       whenever(apiBlocks.map(_.transactions.transactions).forall(_.nonEmpty)) {
-        val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
-        ChainGrabber[IO, ConnectionIO](settings, networkService)(xa.trans)
-          .flatMap(_.run.take(1L).compile.drain)
-          .unsafeRunSync()
+        withLiveRepo[ConnectionIO] { repo =>
+          val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
+          ChainGrabber[IO, ConnectionIO](settings, networkService)(xa.trans)
+            .flatMap(_.run.take(1L).compile.drain)
+            .unsafeRunSync()
+          repo.getBestHeight.runWithIO() shouldBe 11
+        }
       }
     }
   }
+
+  private def withLiveRepo[D[_]: LiftConnectionIO: Sync](
+    body: HeaderRepo[D] => Any
+  ): Any =
+    body(repositories.HeaderRepo[IO, D].unsafeRunSync())
 
   private def consistentChainGen(length: Int): Gen[List[ApiFullBlock]] =
     Gen
