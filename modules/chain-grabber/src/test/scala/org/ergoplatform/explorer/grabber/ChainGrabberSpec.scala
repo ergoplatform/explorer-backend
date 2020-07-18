@@ -31,7 +31,7 @@ class ChainGrabberSpec
   private lazy val settings =
     GrabberAppSettings(1.second, mainnetNodes, dbSettings, protocolSettings)
 
-  property("Network scanning") {
+  ignore("Network scanning") {
     forAll(consistentChainGen(12)) { apiBlocks =>
       whenever(apiBlocks.map(_.transactions.transactions).forall(_.nonEmpty)) {
         withLiveRepo[ConnectionIO] { repo =>
