@@ -74,12 +74,14 @@ object GrabberService {
   )(xa: D ~> F)
     extends GrabberService[F] {
 
+    private val log = Logger[F]
+
     def syncAll: Stream[F, Unit] =
       for {
         networkHeight <- Stream.eval(network.getBestHeight)
         localHeight   <- Stream.eval(getLastGrabbedBlockHeight)
-        _             <- Stream.eval(Logger[F].info(s"Current network height : $networkHeight"))
-        _             <- Stream.eval(Logger[F].info(s"Current explorer height: $localHeight"))
+        _             <- Stream.eval(log.info(s"Current network height : $networkHeight"))
+        _             <- Stream.eval(log.info(s"Current explorer height: $localHeight"))
         range = Stream.range(localHeight + 1, networkHeight + 1)
         _ <- range.evalMap { height =>
                grabBlocksFromHeight(height)
@@ -87,7 +89,7 @@ object GrabberService {
                  .flatTap { blocks =>
                    if (blocks.nonEmpty)
                      lastBlockCache.update(_ => blocks.headOption) >>
-                     Logger[F].info(s"${blocks.size} block(s) grabbed from height $height")
+                     log.info(s"${blocks.size} block(s) grabbed from height [$height]")
                    else ProcessingErr.NoBlocksWritten(height = height).raise[F, Unit]
                  }
              }
@@ -99,6 +101,8 @@ object GrabberService {
     ): F[D[List[BlockInfo]]] =
       for {
         ids <- network.getBlockIdsAtHeight(height)
+        _   <- log.debug(s"Grabbing blocks height $height: [${ids.mkString(",")}]")
+        _   <- log.debug(s"Known blocks: [${existingHeaderIds.mkString(",")}]")
         apiBlocks <- ids
                        .filterNot(existingHeaderIds.contains)
                        .parTraverse(network.getFullBlockById)
@@ -109,12 +113,17 @@ object GrabberService {
                              .modify(_ => ids.headOption.contains(block.header.id))
                          }
                        }
+                       .flatTap { bs =>
+                         log.debug(s"Got [${bs.size}] full blocks: [${bs.map(_.header.id).mkString(",")}]")
+                       }
         exStatuses  = existingHeaderIds.map(id => id -> ids.headOption.contains(id))
         updateForks = exStatuses.traverse_ { case (id, status) => updateChainStatus(id, status) }
+        _ <- log.debug(s"Updated statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]")
         blocks <- apiBlocks.sortBy(_.header.mainChain).traverse(processBlock).map(_.sequence)
       } yield updateForks >> blocks
 
     private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
+      log.info(s"Processing full block ${block.header.id}") >>
       lastBlockCache.get.flatMap { cachedBlockOpt =>
         val isCached   = cachedBlockOpt.exists(_.headerId == block.header.id)
         val parentOptF = if (isCached) cachedBlockOpt.pure[F] else getParentBlockInfo(block.header.parentId)
@@ -122,12 +131,13 @@ object GrabberService {
           .flatMap {
             case None if block.header.height != GenesisHeight && block.header.mainChain => // fork
               val forkHeight = block.header.height - 1
-              Logger[F].info(s"Processing fork at height $forkHeight") >>
+              log.info(s"Processing fork at height $forkHeight") >>
               getHeaderIdsAtHeight(forkHeight).flatMap { existingHeaders =>
                 grabBlocksFromHeight(forkHeight, existingHeaders)
                   .map(_.map(_.headOption))
               }
             case parentOpt =>
+              log.debug(s"Parent is ${parentOpt.map(_.headerId).getOrElse("<not found>")}") >>
               parentOpt.pure[D].pure[F]
           }
           .map { blockInfoOptDb =>
