@@ -89,7 +89,7 @@ object GrabberService {
                  .flatTap { blocks =>
                    if (blocks.nonEmpty)
                      lastBlockCache.update(_ => blocks.headOption) >>
-                     log.info(s"${blocks.size} block(s) grabbed from height [$height]")
+                     log.info(s"${blocks.size} block(s) grabbed from height $height")
                    else ProcessingErr.NoBlocksWritten(height = height).raise[F, Unit]
                  }
              }
@@ -125,8 +125,10 @@ object GrabberService {
     private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
       log.info(s"Processing full block ${block.header.id}") >>
       lastBlockCache.get.flatMap { cachedBlockOpt =>
-        val isCached   = cachedBlockOpt.exists(_.headerId == block.header.parentId)
-        val parentOptF = if (isCached) cachedBlockOpt.pure[F] else getParentBlockInfo(block.header.parentId)
+        val parentId   = block.header.parentId
+        val isCached   = cachedBlockOpt.exists(_.headerId == parentId)
+        val parentOptF = if (isCached) cachedBlockOpt.pure[F] else getParentBlockInfo(parentId)
+        log.debug(s"Cached block: ${cachedBlockOpt.map(_.headerId).getOrElse("<none>")}") >>
         parentOptF
           .flatMap {
             case None if block.header.height != GenesisHeight && block.header.mainChain => // fork
