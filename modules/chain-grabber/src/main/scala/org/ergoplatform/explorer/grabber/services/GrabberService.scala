@@ -125,7 +125,7 @@ object GrabberService {
     private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
       log.info(s"Processing full block ${block.header.id}") >>
       lastBlockCache.get.flatMap { cachedBlockOpt =>
-        val isCached   = cachedBlockOpt.exists(_.headerId == block.header.id)
+        val isCached   = cachedBlockOpt.exists(_.headerId == block.header.parentId)
         val parentOptF = if (isCached) cachedBlockOpt.pure[F] else getParentBlockInfo(block.header.parentId)
         parentOptF
           .flatMap {
