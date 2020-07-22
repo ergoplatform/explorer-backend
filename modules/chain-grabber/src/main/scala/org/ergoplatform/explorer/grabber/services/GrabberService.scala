@@ -101,7 +101,7 @@ object GrabberService {
     ): F[D[List[BlockInfo]]] =
       for {
         ids <- network.getBlockIdsAtHeight(height)
-        _   <- log.debug(s"Grabbing blocks height $height: [${ids.mkString(",")}]")
+        _   <- log.debug(s"Grabbing blocks at height $height: [${ids.mkString(",")}]")
         _   <- log.debug(s"Known blocks: [${existingHeaderIds.mkString(",")}]")
         apiBlocks <- ids
                        .filterNot(existingHeaderIds.contains)
@@ -118,38 +118,48 @@ object GrabberService {
                        }
         exStatuses  = existingHeaderIds.map(id => id -> ids.headOption.contains(id))
         updateForks = exStatuses.traverse_ { case (id, status) => updateChainStatus(id, status) }
-        _ <- log.debug(s"Updated statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]")
+        _ <-
+          log.debug(
+            s"Updated statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]"
+          )
         blocks <- apiBlocks.sortBy(_.header.mainChain).traverse(processBlock).map(_.sequence)
       } yield updateForks >> blocks
 
-    private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] =
-      log.info(s"Processing full block ${block.header.id}") >>
-      lastBlockCache.get.flatMap { cachedBlockOpt =>
-        val parentId   = block.header.parentId
-        val isCached   = cachedBlockOpt.exists(_.headerId == parentId)
-        val parentOptF = if (isCached) cachedBlockOpt.pure[F] else getParentBlockInfo(parentId)
-        log.debug(s"Cached block: ${cachedBlockOpt.map(_.headerId).getOrElse("<none>")}") >>
-        parentOptF
-          .flatMap {
-            case None if block.header.height != GenesisHeight && block.header.mainChain => // fork
-              val forkHeight = block.header.height - 1
-              log.info(s"Processing fork at height $forkHeight") >>
-              getHeaderIdsAtHeight(forkHeight).flatMap { existingHeaders =>
-                grabBlocksFromHeight(forkHeight, existingHeaders)
-                  .map(_.map(_.headOption))
-              }
-            case parentOpt =>
-              log.debug(s"Parent is ${parentOpt.map(_.headerId).getOrElse("<not found>")}") >>
-              parentOpt.pure[D].pure[F]
-          }
-          .map { blockInfoOptDb =>
-            blockInfoOptDb.flatMap { parentBlockInfoOpt =>
-              FlatBlock
-                .fromApi[D](block, parentBlockInfoOpt)(settings)
-                .flatMap(flatBlock => insertBlock(flatBlock) as flatBlock.info)
+    private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] = {
+      val blockId  = block.header.id
+      val parentId = block.header.parentId
+      val processF =
+        lastBlockCache.get.flatMap { cachedBlockOpt =>
+          val isCached   = cachedBlockOpt.exists(_.headerId == parentId)
+          val parentOptF = if (isCached) cachedBlockOpt.pure[F] else getBlockInfo(parentId)
+          log.debug(s"Cached block: ${cachedBlockOpt.map(_.headerId).getOrElse("<none>")}") >>
+          parentOptF
+            .flatMap {
+              case None if block.header.height != GenesisHeight && block.header.mainChain => // fork
+                val forkHeight = block.header.height - 1
+                log.info(s"Processing fork at height $forkHeight") >>
+                getHeaderIdsAtHeight(forkHeight).flatMap { existingHeaders =>
+                  grabBlocksFromHeight(forkHeight, existingHeaders)
+                    .map(_.map(_.headOption))
+                }
+              case parentOpt =>
+                log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<not found>")}") >>
+                parentOpt.pure[D].pure[F]
             }
-          }
+            .map { blockInfoOptDb =>
+              blockInfoOptDb.flatMap { parentBlockInfoOpt =>
+                FlatBlock
+                  .fromApi[D](block, parentBlockInfoOpt)(settings)
+                  .flatMap(flatBlock => insertBlock(flatBlock) as flatBlock.info)
+              }
+            }
+        }
+      log.info(s"Processing full block $blockId") >>
+      getBlockInfo(block.header.id).flatMap {
+        case None        => processF
+        case Some(block) => log.warn(s"Block [$blockId] already written") as block.pure[D]
       }
+    }
 
     private def getLastGrabbedBlockHeight: F[Int] =
       headerRepo.getBestHeight ||> xa
@@ -157,7 +167,7 @@ object GrabberService {
     private def getHeaderIdsAtHeight(height: Int): F[List[Id]] =
       (headerRepo.getAllByHeight(height) ||> xa).map(_.map(_.id))
 
-    private def getParentBlockInfo(headerId: Id): F[Option[BlockInfo]] =
+    private def getBlockInfo(headerId: Id): F[Option[BlockInfo]] =
       blockInfoRepo.get(headerId) ||> xa
 
     private def updateChainStatus(headerId: Id, newChainStatus: Boolean): D[Unit] =
