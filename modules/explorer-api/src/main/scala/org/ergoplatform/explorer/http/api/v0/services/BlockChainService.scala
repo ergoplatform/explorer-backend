@@ -144,7 +144,7 @@ object BlockChainService {
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream
       } yield (blockSizeOpt, extensionOpt)
         .mapN { (size, ext) =>
-          val numConfirmations = bestHeight - header.height
+          val numConfirmations = bestHeight - header.height + 1
           FullBlockInfo(
             header,
             txs,

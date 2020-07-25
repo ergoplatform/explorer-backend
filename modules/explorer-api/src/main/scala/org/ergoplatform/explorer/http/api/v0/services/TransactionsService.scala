@@ -78,7 +78,7 @@ object TransactionsService {
         assets     <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
         bestHeight <- headerRepo.getBestHeight
         txInfo = txOpt.map(tx =>
-          TransactionSummary(tx, bestHeight - tx.inclusionHeight, ins, outs, assets)
+          TransactionSummary(tx, tx.numConfirmations(bestHeight), ins, outs, assets)
         )
       } yield txInfo) ||> trans.xa
 
@@ -112,7 +112,7 @@ object TransactionsService {
           boxIdsNel  <- OptionT.fromOption[D](outs.map(_.output.boxId).toNel)
           assets     <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
           bestHeight <- OptionT.liftF(headerRepo.getBestHeight)
-          txsWithHeights = txChunk.map(tx => tx -> (bestHeight - tx.inclusionHeight))
+          txsWithHeights = txChunk.map(tx => tx -> tx.numConfirmations(bestHeight))
           txInfo         = TransactionInfo.batch(txsWithHeights, ins, outs, assets)
         } yield txInfo).value.map(_.toList.flatten)
   }

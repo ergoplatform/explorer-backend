@@ -229,7 +229,7 @@ object OutputQuerySet extends QuerySet {
   }
 
   def getAllLike(substring: String)(implicit lh: LogHandler): Query0[Address] =
-    sql"select address from node_outputs where address like ${"%" + substring + "%"}"
+    sql"select distinct address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
 
   def sumOfAllUnspentOutputsSince(ts: Long)(implicit lh: LogHandler): Query0[BigDecimal] =
