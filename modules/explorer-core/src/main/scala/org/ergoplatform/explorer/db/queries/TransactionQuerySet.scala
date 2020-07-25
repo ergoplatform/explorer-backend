@@ -104,7 +104,7 @@ object TransactionQuerySet extends QuerySet {
          |""".stripMargin.query[Transaction]
 
   def getIdsLike(q: String)(implicit lh: LogHandler): Query0[TxId] =
-    sql"select id from node_transactions where id like ${s"%$q%"}".query[TxId]
+    sql"select distinct id from node_transactions where id like ${s"%$q%"}".query[TxId]
 
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
