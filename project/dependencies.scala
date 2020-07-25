@@ -72,14 +72,13 @@ object dependencies {
   val Db: List[ModuleID] = List(
     "org.tpolecat" %% "doobie-core"      % DoobieVersion,
     "org.tpolecat" %% "doobie-postgres"  % DoobieVersion,
-    "org.tpolecat" %% "doobie-scalatest" % DoobieVersion,
     "org.tpolecat" %% "doobie-hikari"    % DoobieVersion,
     "org.tpolecat" %% "doobie-refined"   % DoobieVersion,
     "org.flywaydb" % "flyway-core"       % FlywayVersion
   )
 
   val Testing: List[ModuleID] = List(
-    "org.tpolecat"               %% "doobie-scalatest"          % DoobieVersion                 % Test,
+    //"org.tpolecat"               %% "doobie-scalatest"          % DoobieVersion                 % Test,
     "org.scalatest"              %% "scalatest"                 % ScalaTestVersion              % Test,
     "org.scalacheck"             %% "scalacheck"                % ScalaCheckVersion             % Test,
     "org.testcontainers"         % "postgresql"                 % TestContainersPostgresVersion % Test,
