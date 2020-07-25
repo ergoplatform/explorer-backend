@@ -14,7 +14,7 @@ object versions {
   val CatsTaglessVersion     = "0.10"
   val MouseVersion           = "0.23"
   val Fs2Version             = "2.2.2"
-  val DoobieVersion          = "0.8.8"
+  val DoobieVersion          = "0.9.0"
   val FlywayVersion          = "5.1.1"
   val MonixVersion           = "3.1.0"
   val MonocleVersion         = "2.0.0"

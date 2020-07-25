@@ -8,11 +8,7 @@ import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class TransactionRepoSpec
-  extends PropSpec
-  with Matchers
-  with RealDbTest
-  with ScalaCheckDrivenPropertyChecks {
+class TransactionRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCheckDrivenPropertyChecks {
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.db.models.generators._
@@ -72,6 +68,23 @@ class TransactionRepoSpec
             .compile
             .toList
             .runWithIO() should contain theSameElementsAs txs
+      }
+    }
+  }
+
+  property("updateChainStatusByHeaderId") {
+    withLiveRepos[ConnectionIO] { (headerRepo, txRepo) =>
+      forSingleInstance(headerWithTxsGen(mainChain = false)) {
+        case (header, txs) =>
+          headerRepo.insert(header).runWithIO()
+          txs.foreach { tx =>
+            txRepo.insert(tx).runWithIO()
+          }
+          txRepo
+            .updateChainStatusByHeaderId(header.id, newChainStatus = true)
+            .runWithIO()
+          txRepo.getAllByBlockId(header.id).compile.toList.runWithIO() should contain theSameElementsAs txs
+            .map(_.copy(mainChain = true))
       }
     }
   }
