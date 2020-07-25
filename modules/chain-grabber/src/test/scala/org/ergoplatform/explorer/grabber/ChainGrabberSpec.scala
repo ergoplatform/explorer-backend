@@ -5,8 +5,8 @@ import doobie.free.connection.ConnectionIO
 import monocle.macros.syntax.lens._
 import org.ergoplatform.explorer.MainNetConfiguration
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.{repositories, RealDbTest}
-import org.ergoplatform.explorer.db.repositories.{HeaderRepo, TransactionRepo}
+import org.ergoplatform.explorer.db.repositories.HeaderRepo
+import org.ergoplatform.explorer.db.{RealDbTest, repositories}
 import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 import org.ergoplatform.explorer.settings.GrabberAppSettings
