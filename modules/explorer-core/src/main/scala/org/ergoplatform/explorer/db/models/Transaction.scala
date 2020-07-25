@@ -13,4 +13,7 @@ final case class Transaction(
   size: Int, // transaction size in bytes
   index: Int, // index of transaction inside a block
   mainChain: Boolean
-)
+) {
+
+  def numConfirmations(bestHeight: Int): Int = bestHeight - inclusionHeight + 1
+}
