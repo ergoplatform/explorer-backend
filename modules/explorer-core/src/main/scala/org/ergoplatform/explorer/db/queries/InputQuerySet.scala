@@ -43,7 +43,6 @@ object InputQuerySet extends QuerySet {
          |from node_inputs i
          |join node_outputs o on i.box_id = o.box_id
          |where i.tx_id = $txId
-         |order by i.index
          |""".stripMargin.query[ExtendedInput]
 
   def getAllByTxIds(txsId: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedInput] = {
