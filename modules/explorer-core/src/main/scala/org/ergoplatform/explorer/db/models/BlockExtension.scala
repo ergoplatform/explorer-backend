@@ -7,7 +7,7 @@ import org.ergoplatform.explorer.{HexString, Id}
 import sttp.tapir.generic.Derived
 import sttp.tapir.{Schema, SchemaType}
 
-/** Entity representing `node_extensions` table.
+/** Represents `node_extensions` table.
  */
 final case class BlockExtension(
   headerId: Id,

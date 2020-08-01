@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.db.models
 
 import org.ergoplatform.explorer.{Id, TxId}
 
-/** Entity representing `node_transactions` table.
+/** Represents `node_transactions` table.
   */
 final case class Transaction(
   id: TxId,

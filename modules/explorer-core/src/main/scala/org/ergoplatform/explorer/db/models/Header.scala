@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.db.models
 import org.ergoplatform.explorer.protocol.models.ApiHeader
 import org.ergoplatform.explorer.{HexString, Id}
 
-/** Entity representing `node_headers` table.
+/** Represents `node_headers` table.
   */
 final case class Header(
   id: Id,
