@@ -90,16 +90,17 @@ object FlatBlock {
     mainChain: Boolean
   ): List[Input] =
     apiTxs.transactions.flatMap { apiTx =>
-      apiTx.inputs.map(i =>
+      apiTx.inputs.zipWithIndex.map { case (i, index) =>
         Input(
           i.boxId,
           apiTx.id,
           apiTxs.headerId,
           i.spendingProof.proofBytes,
           i.spendingProof.extension,
+          index,
           mainChain
         )
-      )
+      }
     }
 
   private def extractOutputs(

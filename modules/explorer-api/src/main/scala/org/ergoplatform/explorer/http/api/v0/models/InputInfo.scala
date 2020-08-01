@@ -40,4 +40,7 @@ object InputInfo {
       i.outputTxId,
       i.address
     )
+
+  def batch(ins: List[ExtendedInput]): List[InputInfo] =
+    ins.sortBy(_.input.index).map(apply)
 }

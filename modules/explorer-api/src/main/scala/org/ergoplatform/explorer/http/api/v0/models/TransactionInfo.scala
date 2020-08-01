@@ -41,6 +41,7 @@ object TransactionInfo {
       case (tx, numConfirmations) =>
         val relatedInputs = inputs
           .filter(_.input.txId == tx.id)
+          .sortBy(_.input.index)
           .map(InputInfo.apply)
         val relatedOutputs = outputs
           .filter(_.output.txId == tx.id)
