@@ -68,7 +68,7 @@ object TransactionSummary {
     outputs: List[ExtendedOutput],
     assets: List[Asset]
   ): TransactionSummary = {
-    val ins  = inputs.map(InputInfo.apply)
+    val ins  = InputInfo.batch(inputs)
     val outs = OutputInfo.batch(outputs, assets)
     apply(tx, numConfirmations, ins, outs)
   }

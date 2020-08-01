@@ -1,13 +1,13 @@
 package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
-import doobie.{Fragments, LogHandler, Update0}
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.util.update.Update0
-import org.ergoplatform.explorer.{Id, TxId}
+import doobie.{Fragments, LogHandler}
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
+import org.ergoplatform.explorer.{Id, TxId}
 
 /** A set of queries for doobie implementation of [InputRepo].
   */
@@ -23,6 +23,7 @@ object InputQuerySet extends QuerySet {
     "header_id",
     "proof_bytes",
     "extension",
+    "index",
     "main_chain"
   )
 
@@ -34,6 +35,7 @@ object InputQuerySet extends QuerySet {
          |  i.header_id,
          |  i.proof_bytes,
          |  i.extension,
+         |  i.index,
          |  i.main_chain,
          |  o.value,
          |  o.tx_id,
@@ -52,6 +54,7 @@ object InputQuerySet extends QuerySet {
            |  i.header_id,
            |  i.proof_bytes,
            |  i.extension,
+           |  i.index,
            |  i.main_chain,
            |  o.value,
            |  o.tx_id,

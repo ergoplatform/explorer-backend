@@ -84,29 +84,29 @@ object generators {
       coinbase <- Gen.oneOf(true, false)
       ts       <- Gen.posNum[Long]
       size     <- Gen.posNum[Int]
-      index     <- Gen.posNum[Int]
+      index    <- Gen.posNum[Int]
     } yield Transaction(id, headerId, height, coinbase, ts, size, index, mainChain)
 
   def headerWithTxsGen(mainChain: Boolean): Gen[(Header, List[Transaction])] =
     for {
       header <- headerGen.map(_.copy(mainChain = mainChain))
       txs <- Gen
-              .nonEmptyListOf(transactionGen(mainChain = mainChain))
-              .map(_.map(_.copy(headerId = header.id)))
+               .nonEmptyListOf(transactionGen(mainChain = mainChain))
+               .map(_.map(_.copy(headerId = header.id)))
     } yield (header, txs)
 
   def outputGen(mainChain: Boolean, ergoTreeGen: Gen[HexString]): Gen[Output] =
     for {
-      boxId   <- boxIdGen
-      txId    <- txIdGen
+      boxId    <- boxIdGen
+      txId     <- txIdGen
       headerId <- idGen
-      value   <- Gen.posNum[Long]
-      height  <- Gen.posNum[Int]
-      idx     <- Gen.posNum[Int]
-      tree    <- ergoTreeGen
-      address <- addressGen
-      regs    <- jsonFieldsGen
-      ts      <- Gen.posNum[Long]
+      value    <- Gen.posNum[Long]
+      height   <- Gen.posNum[Int]
+      idx      <- Gen.posNum[Int]
+      tree     <- ergoTreeGen
+      address  <- addressGen
+      regs     <- jsonFieldsGen
+      ts       <- Gen.posNum[Long]
     } yield Output(
       boxId,
       txId,
@@ -135,12 +135,13 @@ object generators {
 
   def inputGen(mainChain: Boolean = true): Gen[Input] =
     for {
-      boxId <- boxIdGen
-      txId  <- txIdGen
+      boxId    <- boxIdGen
+      txId     <- txIdGen
       headerId <- idGen
-      proof <- hexStringRGen
-      ext   <- jsonFieldsGen
-    } yield Input(boxId, txId, headerId, proof.some, ext, mainChain)
+      index    <- Gen.posNum[Int]
+      proof    <- hexStringRGen
+      ext      <- jsonFieldsGen
+    } yield Input(boxId, txId, headerId, proof.some, ext, index, mainChain)
 
   def extInputWithOutputGen(mainChain: Boolean = true): Gen[(Output, ExtendedInput)] =
     outputGen(mainChain).flatMap { out =>
@@ -187,17 +188,17 @@ object generators {
     for {
       h <- headerGen.map(_.copy(mainChain = mainChain))
       (txsIn, inputs) <- Gen.listOfN(2, transactionWithInputsGen(mainChain)).map {
-                          _.foldLeft((List.empty[Transaction], List.empty[Input])) {
-                            case ((txsAcc, insAcc), (tx, ins)) =>
-                              (tx.copy(headerId = h.id) :: txsAcc) -> (insAcc ++ ins)
+                           _.foldLeft((List.empty[Transaction], List.empty[Input])) {
+                             case ((txsAcc, insAcc), (tx, ins)) =>
+                               (tx.copy(headerId = h.id) :: txsAcc) -> (insAcc ++ ins)
+                           }
+                         }
+      (txsOut, outs) <- Gen.listOfN(2, transactionWithOutputsGen(mainChain)).map {
+                          _.foldLeft((List.empty[Transaction], List.empty[Output])) {
+                            case ((txsAcc, outsAcc), (tx, out)) =>
+                              (tx.copy(headerId = h.id) :: txsAcc) -> (outsAcc ++ out)
                           }
                         }
-      (txsOut, outs) <- Gen.listOfN(2, transactionWithOutputsGen(mainChain)).map {
-                         _.foldLeft((List.empty[Transaction], List.empty[Output])) {
-                           case ((txsAcc, outsAcc), (tx, out)) =>
-                             (tx.copy(headerId = h.id) :: txsAcc) -> (outsAcc ++ out)
-                         }
-                       }
     } yield (h, txsIn ++ txsOut, inputs, outs)
 
   def issueTokenGen: Gen[(Input, Output, Asset)] =
@@ -205,8 +206,8 @@ object generators {
       out   <- outputGen(true)
       token <- assetGen.map(_.copy(boxId = out.boxId))
       input <- inputGen(true).map(
-                _.copy(txId = out.txId, boxId = token.tokenId.toString.coerce[BoxId])
-              )
+                 _.copy(txId = out.txId, boxId = token.tokenId.toString.coerce[BoxId])
+               )
     } yield (input, out, token)
 
   def issueTokensGen(num: Int): Gen[List[(Input, Output, Asset)]] =
