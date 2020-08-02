@@ -55,15 +55,17 @@ object TransactionsService {
         HeaderRepo[F, D],
         TransactionRepo[F, D],
         InputRepo[F, D],
+        DataInputRepo[F, D],
         OutputRepo[F, D],
         AssetRepo[F, D]
-      ).mapN(new Live(_, _, _, _, _)(trans))
+      ).mapN(new Live(_, _, _, _, _, _)(trans))
     }
 
   final private class Live[F[_]: Logger: FlatMap, D[_]: Monad](
     headerRepo: HeaderRepo[D],
     transactionRepo: TransactionRepo[D, Stream],
     inputRepo: InputRepo[D],
+    dataInputRepo: DataInputRepo[D],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
@@ -71,15 +73,14 @@ object TransactionsService {
 
     def getTxInfo(id: TxId): F[Option[TransactionSummary]] =
       (for {
-        txOpt <- transactionRepo.getMain(id)
-        ins   <- txOpt.toList.flatTraverse(tx => inputRepo.getAllByTxId(tx.id))
-        outs  <- txOpt.toList.flatTraverse(tx => outputRepo.getAllByTxId(tx.id))
+        txOpt   <- transactionRepo.getMain(id)
+        ins     <- txOpt.toList.flatTraverse(tx => inputRepo.getAllByTxId(tx.id))
+        dataIns <- txOpt.toList.flatTraverse(tx => dataInputRepo.getAllByTxId(tx.id))
+        outs    <- txOpt.toList.flatTraverse(tx => outputRepo.getAllByTxId(tx.id))
         boxIdsNel = outs.map(_.output.boxId).toNel
         assets     <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
         bestHeight <- headerRepo.getBestHeight
-        txInfo = txOpt.map(tx =>
-          TransactionSummary(tx, tx.numConfirmations(bestHeight), ins, outs, assets)
-        )
+        txInfo = txOpt.map(tx => TransactionSummary(tx, tx.numConfirmations(bestHeight), ins, dataIns, outs, assets))
       } yield txInfo) ||> trans.xa
 
     def getTxsInfoByAddress(
@@ -108,12 +109,13 @@ object TransactionsService {
         (for {
           txIdsNel   <- OptionT.fromOption[D](txChunk.map(_.id).toNel)
           ins        <- OptionT.liftF(inputRepo.getAllByTxIds(txIdsNel))
+          dataIns    <- OptionT.liftF(dataInputRepo.getAllByTxIds(txIdsNel))
           outs       <- OptionT.liftF(outputRepo.getAllByTxIds(txIdsNel))
           boxIdsNel  <- OptionT.fromOption[D](outs.map(_.output.boxId).toNel)
           assets     <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
           bestHeight <- OptionT.liftF(headerRepo.getBestHeight)
           txsWithHeights = txChunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-          txInfo         = TransactionInfo.batch(txsWithHeights, ins, outs, assets)
+          txInfo         = TransactionInfo.batch(txsWithHeights, ins, dataIns, outs, assets)
         } yield txInfo).value.map(_.toList.flatten)
   }
 }

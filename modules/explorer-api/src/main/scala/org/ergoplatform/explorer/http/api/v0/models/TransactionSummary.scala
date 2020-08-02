@@ -4,7 +4,7 @@ import io.circe.{Codec, Decoder, Encoder, Json}
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder}
 import io.circe.syntax._
 import org.ergoplatform.explorer.{Id, TxId}
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.db.models.{Asset, Transaction}
 import org.ergoplatform.explorer.http.api.v0.models.TransactionSummary.MiniBlockInfo
 import org.ergoplatform.explorer.protocol.constants
@@ -17,6 +17,7 @@ final case class TransactionSummary(
   timestamp: Long,
   confirmationsCount: Int,
   inputs: List[InputInfo],
+  dataInputs: List[DataInputInfo],
   outputs: List[OutputInfo],
   size: Int,
   ioSummary: TxStats
@@ -37,9 +38,10 @@ object TransactionSummary {
         "confirmationsCount" -> ts.confirmationsCount.asJson,
         "block"              -> ts.miniBlockInfo.asJson
       ),
-      "ioSummary" -> ts.ioSummary.asJson,
-      "inputs"    -> ts.inputs.asJson,
-      "outputs"   -> ts.outputs.asJson
+      "ioSummary"  -> ts.ioSummary.asJson,
+      "inputs"     -> ts.inputs.asJson,
+      "dataInputs" -> ts.dataInputs.asJson,
+      "outputs"    -> ts.outputs.asJson
     )
   }
 
@@ -65,18 +67,21 @@ object TransactionSummary {
     tx: Transaction,
     numConfirmations: Int,
     inputs: List[ExtendedInput],
+    dataInputs: List[ExtendedDataInput],
     outputs: List[ExtendedOutput],
     assets: List[Asset]
   ): TransactionSummary = {
-    val ins  = InputInfo.batch(inputs)
-    val outs = OutputInfo.batch(outputs, assets)
-    apply(tx, numConfirmations, ins, outs)
+    val ins     = InputInfo.batch(inputs)
+    val dataIns = DataInputInfo.batch(dataInputs)
+    val outs    = OutputInfo.batch(outputs, assets)
+    apply(tx, numConfirmations, ins, dataIns, outs)
   }
 
   private def apply(
     tx: Transaction,
     numConfirmations: Int,
     inputs: List[InputInfo],
+    dataInputs: List[DataInputInfo],
     outputs: List[OutputInfo]
   ): TransactionSummary = {
     val stats     = TxStats(tx, inputs, outputs)
@@ -87,6 +92,7 @@ object TransactionSummary {
       tx.timestamp,
       numConfirmations,
       inputs,
+      dataInputs,
       outputs,
       tx.size,
       stats

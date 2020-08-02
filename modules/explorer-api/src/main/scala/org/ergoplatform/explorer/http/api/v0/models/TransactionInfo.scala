@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.db.models.{Asset, Transaction}
 import org.ergoplatform.explorer.{Id, TxId}
 import sttp.tapir.Schema
@@ -14,6 +14,7 @@ final case class TransactionInfo(
   timestamp: Long,
   confirmationsCount: Int,
   inputs: List[InputInfo],
+  dataInputs: List[DataInputInfo],
   outputs: List[OutputInfo]
 )
 
@@ -33,6 +34,7 @@ object TransactionInfo {
   def batch(
     txs: List[(Transaction, Int)],
     inputs: List[ExtendedInput],
+    dataInputs: List[ExtendedDataInput],
     outputs: List[ExtendedOutput],
     assets: List[Asset]
   ): List[TransactionInfo] = {
@@ -43,6 +45,10 @@ object TransactionInfo {
           .filter(_.input.txId == tx.id)
           .sortBy(_.input.index)
           .map(InputInfo.apply)
+        val relatedDataInputs = dataInputs
+          .filter(_.input.txId == tx.id)
+          .sortBy(_.input.index)
+          .map(DataInputInfo.apply)
         val relatedOutputs = outputs
           .filter(_.output.txId == tx.id)
           .sortBy(_.output.index)
@@ -50,7 +56,15 @@ object TransactionInfo {
             val relAssets = groupedAssets.get(out.output.boxId).toList.flatten
             OutputInfo(out, relAssets)
           }
-        apply(tx.id, tx.headerId, tx.timestamp, numConfirmations, relatedInputs, relatedOutputs)
+        apply(
+          tx.id,
+          tx.headerId,
+          tx.timestamp,
+          numConfirmations,
+          relatedInputs,
+          relatedDataInputs,
+          relatedOutputs
+        )
     }
   }
 }

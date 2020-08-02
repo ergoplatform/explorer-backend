@@ -20,12 +20,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
-import org.ergoplatform.explorer.http.api.v0.models.{
-  BlockInfo,
-  BlockReferencesInfo,
-  BlockSummary,
-  FullBlockInfo
-}
+import org.ergoplatform.explorer.http.api.v0.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{CRaise, Id}
 import tofu.syntax.raise._
@@ -71,9 +66,10 @@ object BlockChainService {
           BlockExtensionRepo[F, D],
           AdProofRepo[F, D],
           InputRepo[F, D],
+          DataInputRepo[F, D],
           OutputRepo[F, D],
           AssetRepo[F, D]
-        ).mapN(new Live(_, _, _, _, _, _, _, _)(xa))
+        ).mapN(new Live(_, _, _, _, _, _, _, _, _)(xa))
       }
 
   final private class Live[
@@ -86,6 +82,7 @@ object BlockChainService {
     blockExtensionRepo: BlockExtensionRepo[D],
     adProofRepo: AdProofRepo[D],
     inputRepo: InputRepo[D],
+    dataInputRepo: DataInputRepo[D],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
   )(trans: D Trans F)
@@ -100,8 +97,8 @@ object BlockChainService {
         for {
           blockInfoOpt <- getFullBlockInfo(id)
           parentOpt <- blockInfoOpt
-                        .flatTraverse(h => headerRepo.getByParentId(h.header.id))
-                        .asStream
+                         .flatTraverse(h => headerRepo.getByParentId(h.header.id))
+                         .asStream
         } yield blockInfoOpt.map { blockInfo =>
           val refs =
             BlockReferencesInfo(blockInfo.header.parentId, parentOpt.map(_.id))
@@ -131,12 +128,13 @@ object BlockChainService {
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {
-        header <- headerRepo.get(id).asStream.unNone
-        txs <- transactionRepo.getAllByBlockId(id).fold(Array.empty[Transaction])(_ :+ _).map(_.toList)
+        header       <- headerRepo.get(id).asStream.unNone
+        txs          <- transactionRepo.getAllByBlockId(id).fold(Array.empty[Transaction])(_ :+ _).map(_.toList)
         blockSizeOpt <- blockInfoRepo.getBlockSize(id).asStream
         bestHeight   <- headerRepo.getBestHeight.asStream
         txIdsNel     <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream
         inputs       <- inputRepo.getAllByTxIds(txIdsNel).asStream
+        dataInputs   <- dataInputRepo.getAllByTxIds(txIdsNel).asStream
         outputs      <- outputRepo.getAllByTxIds(txIdsNel).asStream
         boxIdsNel    <- outputs.map(_.output.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs")).asStream
         assets       <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
@@ -150,6 +148,7 @@ object BlockChainService {
             txs,
             numConfirmations,
             inputs,
+            dataInputs,
             outputs,
             assets,
             ext,
