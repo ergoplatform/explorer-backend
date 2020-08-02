@@ -8,6 +8,7 @@ import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 final case class UInput(
   boxId: BoxId,
   txId: TxId,
+  index: Int, // index of the input in the transaction
   proofBytes: Option[HexString], // serialized and hex-encoded cryptographic proof
   extension: Json                // arbitrary key-value dictionary
 )

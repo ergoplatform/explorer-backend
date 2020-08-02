@@ -38,4 +38,7 @@ object UInputInfo {
       in.outputTxId,
       in.address
     )
+
+  def batch(ins: List[ExtendedUInput]): List[UInputInfo] =
+    ins.sortBy(_.input.index).map(apply)
 }

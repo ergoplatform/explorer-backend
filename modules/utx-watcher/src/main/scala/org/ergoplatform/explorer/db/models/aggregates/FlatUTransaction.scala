@@ -29,15 +29,20 @@ object FlatUTransaction {
   )(implicit enc: ErgoAddressEncoder): F[FlatUTransaction] =
     Clock[F].realTime(TimeUnit.MILLISECONDS).map { ts =>
       val tx = UTransaction(apiTx.id, ts, apiTx.size)
-      val ins = apiTx.inputs.map { apiIn =>
-        UInput(
-          apiIn.boxId,
-          apiTx.id,
-          apiIn.spendingProof.proofBytes,
-          apiIn.spendingProof.extension
-        )
+      val ins = apiTx.inputs.zipWithIndex.map {
+        case (apiIn, i) =>
+          UInput(
+            apiIn.boxId,
+            apiTx.id,
+            i,
+            apiIn.spendingProof.proofBytes,
+            apiIn.spendingProof.extension
+          )
       }
-      val dataIns = apiTx.dataInputs.map(apiIn => UDataInput(apiIn.boxId, apiTx.id))
+      val dataIns = apiTx.dataInputs.zipWithIndex.map {
+        case (apiIn, i) =>
+          UDataInput(apiIn.boxId, apiTx.id, i)
+      }
       val outs = apiTx.outputs.zipWithIndex.map {
         case (apiOut, idx) =>
           val addressOpt = utils

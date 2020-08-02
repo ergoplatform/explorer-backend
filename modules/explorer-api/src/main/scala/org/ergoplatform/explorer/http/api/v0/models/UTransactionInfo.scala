@@ -42,8 +42,8 @@ object UTransactionInfo {
     outs: List[UOutput],
     assets: List[UAsset]
   ): UTransactionInfo = {
-    val inputsInfo     = ins.map(UInputInfo.apply)
-    val dataInputsInfo = dataIns.map(UDataInputInfo.apply)
+    val inputsInfo     = UInputInfo.batch(ins)
+    val dataInputsInfo = UDataInputInfo.batch(dataIns)
     val outputsInfo    = UOutputInfo.batch(outs, assets)
     new UTransactionInfo(tx.id, inputsInfo, dataInputsInfo, outputsInfo, tx.creationTimestamp, tx.size)
   }

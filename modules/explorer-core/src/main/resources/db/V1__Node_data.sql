@@ -168,6 +168,7 @@ CREATE TABLE node_u_inputs
 (
     box_id      VARCHAR(64) NOT NULL,
     tx_id       VARCHAR(64) NOT NULL REFERENCES node_u_transactions (id) ON DELETE CASCADE,
+    index       INTEGER     NOT NULL,
     proof_bytes VARCHAR,
     extension   JSON        NOT NULL,
     PRIMARY KEY (box_id, tx_id)
@@ -182,6 +183,7 @@ CREATE TABLE node_u_data_inputs
 (
     box_id      VARCHAR(64) NOT NULL,
     tx_id       VARCHAR(64) NOT NULL REFERENCES node_u_transactions (id) ON DELETE CASCADE,
+    index       INTEGER     NOT NULL,
     PRIMARY KEY (box_id, tx_id)
 );
 

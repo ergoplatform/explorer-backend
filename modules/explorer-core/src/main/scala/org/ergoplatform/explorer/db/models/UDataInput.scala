@@ -6,5 +6,6 @@ import org.ergoplatform.explorer.{BoxId, TxId}
   */
 final case class UDataInput(
   boxId: BoxId,
-  txId: TxId
+  txId: TxId,
+  index: Int // index of the input in the transaction
 )

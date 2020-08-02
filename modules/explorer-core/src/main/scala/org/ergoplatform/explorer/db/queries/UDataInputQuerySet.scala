@@ -15,7 +15,8 @@ object UDataInputQuerySet extends QuerySet {
 
   val fields: List[String] = List(
     "box_id",
-    "tx_id"
+    "tx_id",
+    "index"
   )
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedUDataInput] =
@@ -23,6 +24,7 @@ object UDataInputQuerySet extends QuerySet {
          |select
          |  i.box_id,
          |  i.tx_id,
+         |  i.index,
          |  o.value,
          |  o.tx_id,
          |  o.address
@@ -36,6 +38,7 @@ object UDataInputQuerySet extends QuerySet {
          |select
          |  i.box_id,
          |  i.tx_id,
+         |  i.index,
          |  o.value,
          |  o.tx_id,
          |  o.address
@@ -49,7 +52,8 @@ object UDataInputQuerySet extends QuerySet {
       fr"""
           |select
           |  i.box_id,
-          |  i.tx_id
+          |  i.tx_id,
+          |  i.index,
           |  o.value,
           |  o.tx_id,
           |  o.address
