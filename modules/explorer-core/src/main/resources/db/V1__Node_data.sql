@@ -176,6 +176,18 @@ CREATE TABLE node_u_inputs
 CREATE INDEX "node_u_inputs__tx_id" ON node_u_inputs (tx_id);
 CREATE INDEX "node_u_inputs__box_id" ON node_u_inputs (box_id);
 
+/* Data inputs containing in unconfirmed transactions.
+ */
+CREATE TABLE node_u_data_inputs
+(
+    box_id      VARCHAR(64) NOT NULL,
+    tx_id       VARCHAR(64) NOT NULL REFERENCES node_u_transactions (id) ON DELETE CASCADE,
+    PRIMARY KEY (box_id, tx_id)
+);
+
+CREATE INDEX "node_u_data_inputs__tx_id" ON node_u_data_inputs (tx_id);
+CREATE INDEX "node_u_data_inputs__box_id" ON node_u_data_inputs (box_id);
+
 /* Outputs containing in unconfirmed transactions.
  */
 CREATE TABLE node_u_outputs
