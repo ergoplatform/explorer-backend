@@ -24,16 +24,13 @@ import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories.{
   TransactionRepo,
   UAssetRepo,
+  UDataInputRepo,
   UInputRepo,
   UOutputRepo,
   UTransactionRepo
 }
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v0.models.{
-  TxIdResponse,
-  UTransactionInfo,
-  UTransactionSummary
-}
+import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
@@ -80,9 +77,10 @@ object OffChainService {
           TransactionRepo[F, D],
           UTransactionRepo[F, D],
           UInputRepo[F, D],
+          UDataInputRepo[F, D],
           UOutputRepo[F, D],
           UAssetRepo[F, D]
-        ).mapN(new Live(_, _, _, _, _, etxRepo)(trans))
+        ).mapN(new Live(_, _, _, _, _, _, etxRepo)(trans))
       }
     }
 
@@ -93,6 +91,7 @@ object OffChainService {
     txRepo: TransactionRepo[D, Stream],
     uTxRepo: UTransactionRepo[D, Stream],
     inRepo: UInputRepo[D, Stream],
+    dataInRepo: UDataInputRepo[D, Stream],
     outRepo: UOutputRepo[D, Stream],
     assetRepo: UAssetRepo[D],
     ergoLikeTxRepo: ErgoLikeTransactionRepo[F, Stream]
@@ -113,11 +112,13 @@ object OffChainService {
     def getUnconfirmedTxInfo(id: TxId): F[Option[UTransactionSummary]] =
       (for {
         txOpt <- uTxRepo.get(id)
-        ins   <- txOpt.toList.flatTraverse(tx => inRepo.getAllByTxId(tx.id))
-        outs  <- txOpt.toList.flatTraverse(tx => outRepo.getAllByTxId(tx.id))
+        txs = txOpt.toList
+        ins     <- txs.flatTraverse(tx => inRepo.getAllByTxId(tx.id))
+        dataIns <- txs.flatTraverse(tx => dataInRepo.getAllByTxId(tx.id))
+        outs    <- txs.flatTraverse(tx => outRepo.getAllByTxId(tx.id))
         boxIdsNel = outs.map(_.boxId).toNel
         assets <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
-        txInfo = txOpt.map(UTransactionSummary(_, ins, outs, assets))
+        txInfo = txOpt.map(UTransactionSummary(_, ins, dataIns, outs, assets))
       } yield txInfo) ||> trans.xa
 
     def getUnconfirmedTxsByAddress(
@@ -151,10 +152,11 @@ object OffChainService {
         (for {
           txIdsNel  <- OptionT.fromOption[D](txChunk.map(_.id).toNel)
           ins       <- OptionT.liftF(inRepo.getAllByTxIds(txIdsNel))
+          dataIns   <- OptionT.liftF(dataInRepo.getAllByTxIds(txIdsNel))
           outs      <- OptionT.liftF(outRepo.getAllByTxIds(txIdsNel))
           boxIdsNel <- OptionT.fromOption[D](outs.map(_.boxId).toNel)
           assets    <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
-          txInfo = UTransactionInfo.batch(txChunk, ins, outs, assets)
+          txInfo = UTransactionInfo.batch(txChunk, ins, dataIns, outs, assets)
         } yield txInfo).value.map(_.toList.flatten)
 
     private def confirmedDiff(
