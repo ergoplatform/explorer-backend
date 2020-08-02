@@ -9,7 +9,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{~>, Monad}
+import cats.{Monad, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -18,12 +18,7 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.FlatUTransaction
-import org.ergoplatform.explorer.db.repositories.{
-  UAssetRepo,
-  UInputRepo,
-  UOutputRepo,
-  UTransactionRepo
-}
+import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UDataInputRepo, UInputRepo, UOutputRepo, UTransactionRepo}
 import org.ergoplatform.explorer.settings.UtxWatcherSettings
 import tofu.MonadThrow
 
@@ -37,6 +32,7 @@ final class UtxWatcher[
   network: ErgoNetworkClient[F],
   txRepo: UTransactionRepo[D, Stream],
   inRepo: UInputRepo[D, Stream],
+  dataInRepo: UDataInputRepo[D, Stream],
   outRepo: UOutputRepo[D, Stream],
   assetRep: UAssetRepo[D]
 )(xa: D ~> F) {
@@ -68,6 +64,7 @@ final class UtxWatcher[
   private def writeFlatBatch(txs: List[FlatUTransaction]): D[Unit] =
     txRepo.insertMany(txs.map(_.tx)) >>
     inRepo.insetMany(txs.flatMap(_.inputs)) >>
+    dataInRepo.insetMany(txs.flatMap(_.dataInputs)) >>
     outRepo.insertMany(txs.flatMap(_.outputs)) >>
     assetRep.insertMany(txs.flatMap(_.assets))
 }
@@ -79,7 +76,7 @@ object UtxWatcher {
     network: ErgoNetworkClient[F]
   )(xa: D ~> F): F[UtxWatcher[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
-      (UTransactionRepo[F, D], UInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
-        .mapN(new UtxWatcher(settings, network, _, _, _, _)(xa))
+      (UTransactionRepo[F, D], UInputRepo[F, D], UDataInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
+        .mapN(new UtxWatcher(settings, network, _, _, _, _, _)(xa))
     }
 }

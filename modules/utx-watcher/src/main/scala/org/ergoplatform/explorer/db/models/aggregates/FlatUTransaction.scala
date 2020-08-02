@@ -8,7 +8,7 @@ import cats.instances.try_._
 import cats.syntax.functor._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
-import org.ergoplatform.explorer.db.models.{UAsset, UInput, UOutput, UTransaction}
+import org.ergoplatform.explorer.db.models.{UAsset, UDataInput, UInput, UOutput, UTransaction}
 import org.ergoplatform.explorer.protocol.models.ApiTransaction
 import org.ergoplatform.explorer.protocol.utils
 
@@ -17,6 +17,7 @@ import scala.util.Try
 case class FlatUTransaction(
   tx: UTransaction,
   inputs: List[UInput],
+  dataInputs: List[UDataInput],
   outputs: List[UOutput],
   assets: List[UAsset]
 )
@@ -36,6 +37,7 @@ object FlatUTransaction {
           apiIn.spendingProof.extension
         )
       }
+      val dataIns = apiTx.dataInputs.map(apiIn => UDataInput(apiIn.boxId, apiTx.id))
       val outs = apiTx.outputs.zipWithIndex.map {
         case (apiOut, idx) =>
           val addressOpt = utils
@@ -58,6 +60,6 @@ object FlatUTransaction {
         case (boxId, apiAsset) =>
           UAsset(apiAsset.tokenId, boxId, apiAsset.amount)
       }
-      FlatUTransaction(tx, ins, outs, assets)
+      FlatUTransaction(tx, ins, dataIns, outs, assets)
     }
 }

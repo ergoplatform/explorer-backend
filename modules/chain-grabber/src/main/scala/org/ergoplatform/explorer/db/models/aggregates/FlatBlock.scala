@@ -23,6 +23,7 @@ final case class FlatBlock(
   adProofOpt: Option[AdProof],
   txs: List[Transaction],
   inputs: List[Input],
+  dataInputs: List[DataInput],
   outputs: List[Output],
   assets: List[Asset]
 )
@@ -51,8 +52,9 @@ object FlatBlock {
           blockInfo.height,
           mainChain
         )
-        val inputs = extractInputs(apiBlock.transactions, mainChain)
-        val assets = extractAssets(apiBlock.transactions)
+        val inputs     = extractInputs(apiBlock.transactions, mainChain)
+        val dataInputs = extractDataInputs(apiBlock.transactions, mainChain)
+        val assets     = extractAssets(apiBlock.transactions)
         FlatBlock(
           Header.fromApi(apiBlock.header),
           blockInfo,
@@ -60,6 +62,7 @@ object FlatBlock {
           apiBlock.adProofs.map(AdProof.fromApi),
           txs,
           inputs,
+          dataInputs,
           outs,
           assets
         )
@@ -90,16 +93,34 @@ object FlatBlock {
     mainChain: Boolean
   ): List[Input] =
     apiTxs.transactions.flatMap { apiTx =>
-      apiTx.inputs.zipWithIndex.map { case (i, index) =>
-        Input(
-          i.boxId,
-          apiTx.id,
-          apiTxs.headerId,
-          i.spendingProof.proofBytes,
-          i.spendingProof.extension,
-          index,
-          mainChain
-        )
+      apiTx.inputs.zipWithIndex.map {
+        case (i, index) =>
+          Input(
+            i.boxId,
+            apiTx.id,
+            apiTxs.headerId,
+            i.spendingProof.proofBytes,
+            i.spendingProof.extension,
+            index,
+            mainChain
+          )
+      }
+    }
+
+  private def extractDataInputs(
+    apiTxs: ApiBlockTransactions,
+    mainChain: Boolean
+  ): List[DataInput] =
+    apiTxs.transactions.flatMap { apiTx =>
+      apiTx.dataInputs.zipWithIndex.map {
+        case (i, index) =>
+          DataInput(
+            i.boxId,
+            apiTx.id,
+            apiTxs.headerId,
+            index,
+            mainChain
+          )
       }
     }
 

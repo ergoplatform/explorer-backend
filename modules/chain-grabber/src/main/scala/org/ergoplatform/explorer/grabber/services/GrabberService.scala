@@ -51,9 +51,10 @@ object GrabberService {
           AdProofRepo[F, D],
           TransactionRepo[F, D],
           InputRepo[F, D],
+          DataInputRepo[F, D],
           OutputRepo[F, D],
           AssetRepo[F, D]
-        ).mapN(new Live[F, D](cache, settings, network, _, _, _, _, _, _, _, _)(xa))
+        ).mapN(new Live[F, D](cache, settings, network, _, _, _, _, _, _, _, _, _)(xa))
       }
     }
 
@@ -70,6 +71,7 @@ object GrabberService {
     adProofRepo: AdProofRepo[D],
     txRepo: TransactionRepo[D, Stream],
     inputRepo: InputRepo[D],
+    dataInputRepo: DataInputRepo[D],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
   )(xa: D ~> F)
@@ -181,6 +183,7 @@ object GrabberService {
       block.adProofOpt.map(adProofRepo.insert).getOrElse(().pure[D]) >>
       txRepo.insertMany(block.txs) >>
       inputRepo.insetMany(block.inputs) >>
+      dataInputRepo.insetMany(block.dataInputs) >>
       outputRepo.insertMany(block.outputs) >>
       assetRepo.insertMany(block.assets)
   }
