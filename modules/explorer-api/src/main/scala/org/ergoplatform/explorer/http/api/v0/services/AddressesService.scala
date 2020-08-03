@@ -25,19 +25,19 @@ import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.{Address, CRaise, TokenId}
 
 /** A service providing an access to the addresses data.
-  */
+ */
 trait AddressesService[F[_], S[_[_], _]] {
 
   /** Get summary info for the given `address`.
-    */
+   */
   def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo]
 
   /** Get all addresses holding an asset with a given `assetId`.
-    */
+   */
   def getAssetHoldersAddresses(tokenId: TokenId, paging: Paging): S[F, Address]
 
   /** Get all addresses matching the given `query`.
-    */
+   */
   def getAllLike(query: String): F[List[Address]]
 }
 
@@ -47,33 +47,34 @@ object AddressesService {
     F[_]: Sync,
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
   ](trans: D Trans F)(implicit e: ErgoAddressEncoder): F[AddressesService[F, Stream]] =
-    (HeaderRepo[F, D], OutputRepo[F, D], UOutputRepo[F, D], AssetRepo[F, D], UAssetRepo[F, D])
-      .mapN(new Live(_, _, _, _, _)(trans))
+    (HeaderRepo[F, D], TransactionRepo[F, D], OutputRepo[F, D], UOutputRepo[F, D], AssetRepo[F, D], UAssetRepo[F, D])
+      .mapN(new Live(_, _, _, _, _, _)(trans))
 
   final private class Live[
     F[_],
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad
   ](
-    headerRepo: HeaderRepo[D],
-    outputRepo: OutputRepo[D, Stream],
-    uOutputRepo: UOutputRepo[D, Stream],
-    assetRepo: AssetRepo[D, Stream],
-    uAssetRepo: UAssetRepo[D]
-  )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
+     headerRepo: HeaderRepo[D],
+     txRepo: TransactionRepo[D, Stream],
+     outputRepo: OutputRepo[D, Stream],
+     uOutputRepo: UOutputRepo[D, Stream],
+     assetRepo: AssetRepo[D, Stream],
+     uAssetRepo: UAssetRepo[D]
+   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends AddressesService[F, Stream] {
 
     def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo] =
       (for {
-        ergoTree            <- utils.addressToErgoTreeHex(address)
-        height              <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
-        maxHeight            = height - minConfirmations
+        ergoTree <- utils.addressToErgoTreeHex(address)
+        height   <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
+        maxHeight = height - minConfirmations
         outs                <- outputRepo.getAllMainByErgoTree(ergoTree, maxHeight)
         balance             <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree, maxHeight)
         assets              <- assetRepo.getAllMainUnspentByErgoTree(ergoTree)
         unspentOffChainOuts <- uOutputRepo.getAllUnspentByErgoTree(ergoTree)
         offChainAssets      <- uAssetRepo.getAllUnspentByErgoTree(ergoTree)
+        txsQty              <- txRepo.countRelatedToAddress(address)
       } yield {
-        val txsQty          = outs.map(_.output.txId).distinct.size
         val offChainBalance = unspentOffChainOuts.map(_.value).sum
         val totalBalance    = balance + offChainBalance
         val totalReceived   = outs.map(o => BigDecimal(o.output.value)).sum
