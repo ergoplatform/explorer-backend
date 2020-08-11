@@ -116,10 +116,8 @@ object GrabberService {
                        }
         exStatuses  = existingIds.map(id => id -> ids.headOption.contains(id))
         updateForks = exStatuses.traverse_ { case (id, status) => updateChainStatus(id, status) }
-        _ <-
-          log.debug(
-            s"Updated statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]"
-          )
+        _ <- log.debug(
+          s"Updated statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]")
         blocks <- apiBlocks.sortBy(_.header.mainChain).traverse(processBlock).map(_.sequence)
       } yield updateForks >> blocks
 
