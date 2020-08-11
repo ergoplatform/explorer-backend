@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.grabber.services.GrabberService
 import org.ergoplatform.explorer.settings.GrabberAppSettings
+import tofu.MonadThrow
 
 /** Fetches new blocks from the network divide them into
   * separate entities and finally puts them into db.
@@ -38,7 +39,7 @@ object ChainGrabber {
 
   def apply[
     F[_]: Sync: Parallel: Timer,
-    D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
+    D[_]: LiftConnectionIO: MonadThrow
   ](
     settings: GrabberAppSettings,
     network: ErgoNetworkClient[F]

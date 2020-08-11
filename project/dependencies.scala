@@ -99,7 +99,7 @@ object dependencies {
   )
 
   val Redis = List(
-    "dev.profunktor" %% "redis4cats-effects" % CatsRedisV
+    "dev.profunktor" %% "redis4cats-effects" % CatsRedisVersion
   )
 
   val Config: List[ModuleID] = List(

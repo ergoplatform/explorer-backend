@@ -31,7 +31,7 @@ class ChainGrabberSpec
   private lazy val settings =
     GrabberAppSettings(1.second, mainnetNodes, dbSettings, protocolSettings)
 
-  property("Network scanning") {
+  ignore("Network scanning") {
     forSingleInstance(consistentChainGen(12)) { apiBlocks =>
       withLiveRepo[ConnectionIO] { repo =>
         val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
