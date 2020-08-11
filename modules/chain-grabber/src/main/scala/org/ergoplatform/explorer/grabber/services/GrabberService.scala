@@ -6,7 +6,7 @@ import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, Monad, MonadError, Parallel}
+import cats.{Monad, MonadError, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -22,6 +22,7 @@ import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{CRaise, Id}
+import tofu.{MonadThrow, Raise}
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
 
@@ -36,7 +37,7 @@ object GrabberService {
 
   def apply[
     F[_]: Sync: Parallel: Timer,
-    D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
+    D[_]: LiftConnectionIO: MonadThrow
   ](
     settings: ProtocolSettings,
     network: ErgoNetworkClient[F]
@@ -58,7 +59,7 @@ object GrabberService {
 
   final class Live[
     F[_]: Sync: Parallel: Logger: Timer,
-    D[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
+    D[_]: Raise[*[_], ProcessingErr]: Raise[*[_], RefinementFailed]: Monad
   ](
     lastBlockCache: Ref[F, Option[BlockInfo]],
     settings: ProtocolSettings,
