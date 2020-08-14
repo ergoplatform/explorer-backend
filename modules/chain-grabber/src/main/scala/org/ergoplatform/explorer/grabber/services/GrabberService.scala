@@ -174,7 +174,8 @@ object GrabberService {
       headerRepo.updateChainStatusById(headerId, newChainStatus) >>
       txRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
       outputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
-      inputRepo.updateChainStatusByHeaderId(headerId, newChainStatus)
+      inputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
+      dataInputRepo.updateChainStatusByHeaderId(headerId, newChainStatus)
 
     private def insertBlock(block: FlatBlock): D[Unit] =
       headerRepo.insert(block.header) >>
