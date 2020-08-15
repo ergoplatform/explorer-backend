@@ -18,7 +18,7 @@ import tofu.syntax.raise._
 
 import scala.util.Try
 
-/** Entity representing `blocks_info` table.
+/** Represents `blocks_info` table.
   * Containing main fields from protocol header and full-block stats.
   */
 final case class BlockInfo(

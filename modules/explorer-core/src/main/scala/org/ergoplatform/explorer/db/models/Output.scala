@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.db.models
 import io.circe.Json
 import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TxId}
 
-/** Entity representing `node_outputs` table.
+/** Represents `node_outputs` table.
   */
 final case class Output(
   boxId: BoxId,

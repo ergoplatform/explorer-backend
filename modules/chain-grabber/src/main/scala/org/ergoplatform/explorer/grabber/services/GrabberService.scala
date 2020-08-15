@@ -6,13 +6,14 @@ import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, Monad, MonadError, Parallel}
+import cats.{~>, Monad, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
+import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
@@ -21,9 +22,9 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
-import org.ergoplatform.explorer.{CRaise, Id}
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
+import tofu.{Raise, Throws}
 
 trait GrabberService[F[_]] {
 
@@ -36,7 +37,7 @@ object GrabberService {
 
   def apply[
     F[_]: Sync: Parallel: Timer,
-    D[_]: LiftConnectionIO: MonadError[*[_], Throwable]
+    D[_]: LiftConnectionIO: Throws: Monad
   ](
     settings: ProtocolSettings,
     network: ErgoNetworkClient[F]
@@ -50,15 +51,16 @@ object GrabberService {
           AdProofRepo[F, D],
           TransactionRepo[F, D],
           InputRepo[F, D],
+          DataInputRepo[F, D],
           OutputRepo[F, D],
           AssetRepo[F, D]
-        ).mapN(new Live[F, D](cache, settings, network, _, _, _, _, _, _, _, _)(xa))
+        ).mapN(new Live[F, D](cache, settings, network, _, _, _, _, _, _, _, _, _)(xa))
       }
     }
 
   final class Live[
-    F[_]: Sync: Parallel: Logger: Timer,
-    D[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
+    F[_]: Monad: Parallel: Logger: Timer: Raise[*[_], ProcessingErr],
+    D[_]: Raise[*[_], ProcessingErr]: Raise[*[_], RefinementFailed]: Monad
   ](
     lastBlockCache: Ref[F, Option[BlockInfo]],
     settings: ProtocolSettings,
@@ -69,6 +71,7 @@ object GrabberService {
     adProofRepo: AdProofRepo[D],
     txRepo: TransactionRepo[D, Stream],
     inputRepo: InputRepo[D],
+    dataInputRepo: DataInputRepo[D],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream]
   )(xa: D ~> F)
@@ -171,7 +174,8 @@ object GrabberService {
       headerRepo.updateChainStatusById(headerId, newChainStatus) >>
       txRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
       outputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
-      inputRepo.updateChainStatusByHeaderId(headerId, newChainStatus)
+      inputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
+      dataInputRepo.updateChainStatusByHeaderId(headerId, newChainStatus)
 
     private def insertBlock(block: FlatBlock): D[Unit] =
       headerRepo.insert(block.header) >>
@@ -180,6 +184,7 @@ object GrabberService {
       block.adProofOpt.map(adProofRepo.insert).getOrElse(().pure[D]) >>
       txRepo.insertMany(block.txs) >>
       inputRepo.insetMany(block.inputs) >>
+      dataInputRepo.insetMany(block.dataInputs) >>
       outputRepo.insertMany(block.outputs) >>
       assetRepo.insertMany(block.assets)
   }

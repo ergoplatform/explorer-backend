@@ -8,7 +8,7 @@ import cats.instances.try_._
 import cats.syntax.functor._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
-import org.ergoplatform.explorer.db.models.{UAsset, UInput, UOutput, UTransaction}
+import org.ergoplatform.explorer.db.models.{UAsset, UDataInput, UInput, UOutput, UTransaction}
 import org.ergoplatform.explorer.protocol.models.ApiTransaction
 import org.ergoplatform.explorer.protocol.utils
 
@@ -17,6 +17,7 @@ import scala.util.Try
 case class FlatUTransaction(
   tx: UTransaction,
   inputs: List[UInput],
+  dataInputs: List[UDataInput],
   outputs: List[UOutput],
   assets: List[UAsset]
 )
@@ -28,13 +29,19 @@ object FlatUTransaction {
   )(implicit enc: ErgoAddressEncoder): F[FlatUTransaction] =
     Clock[F].realTime(TimeUnit.MILLISECONDS).map { ts =>
       val tx = UTransaction(apiTx.id, ts, apiTx.size)
-      val ins = apiTx.inputs.map { apiIn =>
-        UInput(
-          apiIn.boxId,
-          apiTx.id,
-          apiIn.spendingProof.proofBytes,
-          apiIn.spendingProof.extension
-        )
+      val ins = apiTx.inputs.zipWithIndex.map {
+        case (apiIn, i) =>
+          UInput(
+            apiIn.boxId,
+            apiTx.id,
+            i,
+            apiIn.spendingProof.proofBytes,
+            apiIn.spendingProof.extension
+          )
+      }
+      val dataIns = apiTx.dataInputs.zipWithIndex.map {
+        case (apiIn, i) =>
+          UDataInput(apiIn.boxId, apiTx.id, i)
       }
       val outs = apiTx.outputs.zipWithIndex.map {
         case (apiOut, idx) =>
@@ -58,6 +65,6 @@ object FlatUTransaction {
         case (boxId, apiAsset) =>
           UAsset(apiAsset.tokenId, boxId, apiAsset.amount)
       }
-      FlatUTransaction(tx, ins, outs, assets)
+      FlatUTransaction(tx, ins, dataIns, outs, assets)
     }
 }
