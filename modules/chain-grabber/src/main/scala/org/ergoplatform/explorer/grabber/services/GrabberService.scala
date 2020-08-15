@@ -22,7 +22,6 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
-import org.ergoplatform.explorer.{CRaise, Id}
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
 import tofu.{Raise, Throws}
