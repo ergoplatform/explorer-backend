@@ -6,7 +6,7 @@ import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, Monad, Parallel}
+import cats.{Monad, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -22,6 +22,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
+import org.ergoplatform.explorer.{CRaise, Id}
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
 import tofu.{Raise, Throws}
@@ -98,16 +99,14 @@ object GrabberService {
              }
       } yield ()
 
-    private def grabBlocksFromHeight(
-      height: Int,
-      existingHeaderIds: List[Id] = List.empty
-    ): F[D[List[BlockInfo]]] =
+    private def grabBlocksFromHeight(height: Int): F[D[List[BlockInfo]]] =
       for {
-        ids <- network.getBlockIdsAtHeight(height)
-        _   <- log.debug(s"Grabbing blocks at height $height: [${ids.mkString(",")}]")
-        _   <- log.debug(s"Known blocks: [${existingHeaderIds.mkString(",")}]")
+        ids         <- network.getBlockIdsAtHeight(height)
+        existingIds <- getHeaderIdsAtHeight(height)
+        _           <- log.debug(s"Grabbing blocks at height $height: [${ids.mkString(",")}]")
+        _           <- log.debug(s"Known blocks: [${existingIds.mkString(",")}]")
         apiBlocks <- ids
-                       .filterNot(existingHeaderIds.contains)
+                       .filterNot(existingIds.contains)
                        .parTraverse(network.getFullBlockById)
                        .map {
                          _.flatten.map { block =>
@@ -119,9 +118,10 @@ object GrabberService {
                        .flatTap { bs =>
                          log.debug(s"Got [${bs.size}] full blocks: [${bs.map(_.header.id).mkString(",")}]")
                        }
-        exStatuses  = existingHeaderIds.map(id => id -> ids.headOption.contains(id))
+        exStatuses  = existingIds.map(id => id -> ids.headOption.contains(id))
         updateForks = exStatuses.traverse_ { case (id, status) => updateChainStatus(id, status) }
-        _ <- log.debug(s"Updating statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]")
+        _ <- log.debug(
+          s"Updating statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]")
         blocks <- apiBlocks.sortBy(_.header.mainChain).traverse(processBlock).map(_.sequence)
       } yield updateForks >> blocks
 
@@ -138,10 +138,7 @@ object GrabberService {
               case None if block.header.height != GenesisHeight && block.header.mainChain => // fork
                 val forkHeight = block.header.height - 1
                 log.info(s"Processing fork at height $forkHeight") >>
-                getHeaderIdsAtHeight(forkHeight).flatMap { existingHeaders =>
-                  grabBlocksFromHeight(forkHeight, existingHeaders)
-                    .map(_.map(_.headOption))
-                }
+                grabBlocksFromHeight(forkHeight).map(_.map(_.headOption))
               case parentOpt =>
                 log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<not found>")}") >>
                 parentOpt.pure[D].pure[F]
