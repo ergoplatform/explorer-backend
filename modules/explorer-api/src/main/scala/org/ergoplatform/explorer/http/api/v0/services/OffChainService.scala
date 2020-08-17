@@ -104,7 +104,7 @@ object OffChainService {
           uTxRepo
             .getAll(paging.offset, paging.limit)
             .map(_.grouped(100))
-            .flatMap(_.toList.flatTraverse(assembleUInfo))
+            .flatMap(_.toList.filter(_.nonEmpty).flatTraverse(assembleUInfo))
             .map(confirmedDiff(_, total)(recentlyConfirmed))
         }
       } ||> trans.xa
@@ -138,7 +138,7 @@ object OffChainService {
           uTxRepo
             .getAllRelatedToErgoTree(ergoTree, paging.offset, paging.limit)
             .map(_.grouped(100))
-            .flatMap(_.toList.flatTraverse(assembleUInfo))
+            .flatMap(_.toList.filter(_.nonEmpty).flatTraverse(assembleUInfo))
             .map(confirmedDiff(_, total)(recentlyConfirmed))
         }
       } ||> trans.xa
