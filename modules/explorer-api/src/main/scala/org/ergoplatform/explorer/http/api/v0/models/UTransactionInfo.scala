@@ -62,14 +62,13 @@ object UTransactionInfo {
     txs
       .traverse { tx =>
         for {
-          inputs     <- inputsByTx.get(tx.id)
-          dataInputs <- dataInputsByTx.get(tx.id)
-          outputs    <- outsByTx.get(tx.id).map(_.sortBy(_.index))
-          assets <- outputs
-                      .foldLeft(List.empty[UAsset]) { (acc, o) =>
-                        assetsByBox.get(o.boxId).toList.flatten ++ acc
-                      }
-                      .some
+          inputs <- inputsByTx.get(tx.id)
+          dataInputs = dataInputsByTx.get(tx.id).toList.flatten
+          outputs <- outsByTx.get(tx.id).map(_.sortBy(_.index))
+          assets = outputs
+                     .foldLeft(List.empty[UAsset]) { (acc, o) =>
+                       assetsByBox.get(o.boxId).toList.flatten ++ acc
+                     }
         } yield apply(tx, inputs, dataInputs, outputs, assets)
       }
       .toList
