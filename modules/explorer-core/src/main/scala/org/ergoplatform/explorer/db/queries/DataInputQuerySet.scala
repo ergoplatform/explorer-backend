@@ -44,7 +44,7 @@ object DataInputQuerySet extends QuerySet {
   def getAllByTxIds(txsId: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedDataInput] = {
     val q =
       sql"""
-           |select distinct on (i.box_id)
+           |select distinct on (i.box_id, i.tx_id)
            |  i.box_id,
            |  i.tx_id,
            |  i.header_id,

@@ -111,7 +111,7 @@ CREATE TABLE node_data_inputs
     header_id   VARCHAR(64) NOT NULL,
     index       INTEGER     NOT NULL,
     main_chain  BOOLEAN     NOT NULL,
-    PRIMARY KEY (box_id, header_id)
+    PRIMARY KEY (box_id, tx_id, header_id)
 );
 
 CREATE INDEX "node_data_inputs__tx_id" ON node_data_inputs (tx_id);
