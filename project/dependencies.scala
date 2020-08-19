@@ -27,7 +27,7 @@ object dependencies {
       "io.circe" %% "circe-generic",
       "io.circe" %% "circe-parser",
       "io.circe" %% "circe-refined"
-    ).map(_      % CirceVersion) ++ List(
+    ).map(_       % CirceVersion) ++ List(
       "io.circe" %% "circe-derivation" % CirceDerivationVersion
     )
 
@@ -55,7 +55,9 @@ object dependencies {
   )
 
   val Tofu: List[ModuleID] = List(
-    "ru.tinkoff" %% "tofu-core" % TofuVersion
+    "ru.tinkoff"  %% "tofu-core"       % TofuVersion,
+    "ru.tinkoff"  %% "tofu-derivation" % TofuVersion,
+    "org.manatki" %% "derevo-circe"    % DerevoVersion
   )
 
   val Ergo: List[ModuleID] = List(
@@ -64,24 +66,24 @@ object dependencies {
   )
 
   val Logging: List[ModuleID] = List(
-    "ch.qos.logback"    % "logback-classic" % Logback,
-    "org.slf4j"         % "slf4j-api"       % Slf4j,
-    "io.chrisdavenport" %% "log4cats-slf4j" % Log4Cats
+    "ch.qos.logback"     % "logback-classic" % Logback,
+    "org.slf4j"          % "slf4j-api"       % Slf4j,
+    "io.chrisdavenport" %% "log4cats-slf4j"  % Log4Cats
   )
 
   val Db: List[ModuleID] = List(
-    "org.tpolecat" %% "doobie-core"      % DoobieVersion,
-    "org.tpolecat" %% "doobie-postgres"  % DoobieVersion,
-    "org.tpolecat" %% "doobie-hikari"    % DoobieVersion,
-    "org.tpolecat" %% "doobie-refined"   % DoobieVersion,
-    "org.flywaydb" % "flyway-core"       % FlywayVersion
+    "org.tpolecat" %% "doobie-core"     % DoobieVersion,
+    "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
+    "org.tpolecat" %% "doobie-hikari"   % DoobieVersion,
+    "org.tpolecat" %% "doobie-refined"  % DoobieVersion,
+    "org.flywaydb"  % "flyway-core"     % FlywayVersion
   )
 
   val Testing: List[ModuleID] = List(
     //"org.tpolecat"               %% "doobie-scalatest"          % DoobieVersion                 % Test,
     "org.scalatest"              %% "scalatest"                 % ScalaTestVersion              % Test,
     "org.scalacheck"             %% "scalacheck"                % ScalaCheckVersion             % Test,
-    "org.testcontainers"         % "postgresql"                 % TestContainersPostgresVersion % Test,
+    "org.testcontainers"          % "postgresql"                % TestContainersPostgresVersion % Test,
     "com.dimafeng"               %% "testcontainers-scala"      % TestContainersScalaVersion    % Test,
     "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % ScalaCheckShapelessVersion    % Test
   )

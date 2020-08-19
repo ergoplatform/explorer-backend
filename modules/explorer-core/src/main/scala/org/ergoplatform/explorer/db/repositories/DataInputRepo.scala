@@ -6,61 +6,60 @@ import cats.syntax.functor._
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.{Id, TxId}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
-import org.ergoplatform.explorer.db.models.Input
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
 import org.ergoplatform.explorer.db.doobieInstances._
+import org.ergoplatform.explorer.db.models.DataInput
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedDataInput
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.{Id, TxId}
 
-/** [[Input]] and [[ExtendedInput]] data access operations.
+/** [[DataInput]] and [[ExtendedDataInput]] data access operations.
   */
-trait InputRepo[D[_]] {
+trait DataInputRepo[D[_]] {
 
   /** Put a given `input` to persistence.
     */
-  def insert(input: Input): D[Unit]
+  def insert(input: DataInput): D[Unit]
 
   /** Put a given list of inputs to persistence.
     */
-  def insetMany(inputs: List[Input]): D[Unit]
+  def insetMany(inputs: List[DataInput]): D[Unit]
 
   /** Get all inputs related to a given `txId`.
     */
-  def getAllByTxId(txId: TxId): D[List[ExtendedInput]]
+  def getAllByTxId(txId: TxId): D[List[ExtendedDataInput]]
 
   /** Get all inputs related to a given list of `txId`.
     */
-  def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedInput]]
+  def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedDataInput]]
 
   /** Update main_chain status for all inputs related to given `headerId`.
     */
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 }
 
-object InputRepo {
+object DataInputRepo {
 
-  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[InputRepo[D]] =
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[DataInputRepo[D]] =
     DoobieLogHandler.create[F].map { implicit lh =>
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends InputRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends DataInputRepo[D] {
 
-    import org.ergoplatform.explorer.db.queries.{InputQuerySet => QS}
+    import org.ergoplatform.explorer.db.queries.{DataInputQuerySet => QS}
 
-    def insert(input: Input): D[Unit] =
+    def insert(input: DataInput): D[Unit] =
       QS.insert(input).void.liftConnectionIO
 
-    def insetMany(inputs: List[Input]): D[Unit] =
+    def insetMany(inputs: List[DataInput]): D[Unit] =
       QS.insertMany(inputs).void.liftConnectionIO
 
-    def getAllByTxId(txId: TxId): D[List[ExtendedInput]] =
+    def getAllByTxId(txId: TxId): D[List[ExtendedDataInput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO
 
-    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedInput]] =
+    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedDataInput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
 
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =

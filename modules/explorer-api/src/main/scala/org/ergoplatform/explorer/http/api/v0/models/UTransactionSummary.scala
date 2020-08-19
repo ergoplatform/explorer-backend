@@ -4,13 +4,14 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.{UAsset, UOutput, UTransaction}
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedUInput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUDataInput, ExtendedUInput}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
 final case class UTransactionSummary(
   id: TxId,
   inputs: List[UInputInfo],
+  dataInputs: List[UDataInputInfo],
   outputs: List[UOutputInfo],
   creationTimestamp: Long,
   size: Int,
@@ -34,12 +35,14 @@ object UTransactionSummary {
   def apply(
     tx: UTransaction,
     ins: List[ExtendedUInput],
+    dataIns: List[ExtendedUDataInput],
     outs: List[UOutput],
     assets: List[UAsset]
   ): UTransactionSummary = {
-    val inputsInfo  = ins.map(UInputInfo.apply)
-    val outputsInfo = UOutputInfo.batch(outs, assets)
-    val stats       = TxStats(tx, inputsInfo, outputsInfo)
-    new UTransactionSummary(tx.id, inputsInfo, outputsInfo, tx.creationTimestamp, tx.size, stats)
+    val inputsInfo     = ins.map(UInputInfo.apply)
+    val dataInputsInfo = dataIns.map(UDataInputInfo.apply)
+    val outputsInfo    = UOutputInfo.batch(outs, assets)
+    val stats          = TxStats(tx, inputsInfo, outputsInfo)
+    new UTransactionSummary(tx.id, inputsInfo, dataInputsInfo, outputsInfo, tx.creationTimestamp, tx.size, stats)
   }
 }

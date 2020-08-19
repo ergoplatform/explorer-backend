@@ -1,13 +1,14 @@
 package org.ergoplatform.explorer.protocol.models
 
-import io.circe._
-import io.circe.generic.semiauto._
+import derevo.circe.decoder
+import derevo.derive
 import io.circe.refined._
 import org.ergoplatform.explorer.{HexString, Id}
 
 /** A model mirroring NodeInfo entity from Ergo node REST API.
   * See `NodeInfo` in https://github.com/ergoplatform/ergo/blob/master/src/main/resources/api/openapi.yaml
   */
+@derive(decoder)
 final case class ApiNodeInfo(
   currentTime: Long,
   name: String,
@@ -26,8 +27,3 @@ final case class ApiNodeInfo(
   launchTime: Long,
   isMining: Boolean
 )
-
-object ApiNodeInfo {
-
-  implicit val decoder: Decoder[ApiNodeInfo] = deriveDecoder
-}

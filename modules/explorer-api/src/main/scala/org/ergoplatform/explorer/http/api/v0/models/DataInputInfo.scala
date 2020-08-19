@@ -2,45 +2,42 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedDataInput
+import org.ergoplatform.explorer.{Address, BoxId, TxId}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
-final case class InputInfo(
+final case class DataInputInfo(
   id: BoxId,
-  spendingProof: Option[HexString],
   value: Option[Long],
   transactionId: TxId,
   outputTransactionId: Option[TxId],
   address: Option[Address]
 )
 
-object InputInfo {
+object DataInputInfo {
 
-  implicit val codec: Codec[InputInfo] = deriveCodec
+  implicit val codec: Codec[DataInputInfo] = deriveCodec
 
-  implicit val schema: Schema[InputInfo] =
-    implicitly[Derived[Schema[InputInfo]]].value
+  implicit val schema: Schema[DataInputInfo] =
+    implicitly[Derived[Schema[DataInputInfo]]].value
       .modify(_.id)(_.description("ID of the corresponding box"))
-      .modify(_.spendingProof)(_.description("Hex-encoded serialized sigma proof"))
       .modify(_.value)(_.description("Number of nanoErgs in the corresponding box"))
-      .modify(_.transactionId)(_.description("ID of the transaction this input was used in"))
+      .modify(_.transactionId)(_.description("ID of the transaction this data input was used in"))
       .modify(_.outputTransactionId)(
         _.description("ID of the transaction outputting corresponding box")
       )
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
 
-  def apply(i: ExtendedInput): InputInfo =
-    InputInfo(
+  def apply(i: ExtendedDataInput): DataInputInfo =
+    DataInputInfo(
       i.input.boxId,
-      i.input.proofBytes,
       i.value,
       i.input.txId,
       i.outputTxId,
       i.address
     )
 
-  def batch(ins: List[ExtendedInput]): List[InputInfo] =
+  def batch(ins: List[ExtendedDataInput]): List[DataInputInfo] =
     ins.sortBy(_.input.index).map(apply)
 }

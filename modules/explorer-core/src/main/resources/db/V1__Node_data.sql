@@ -96,12 +96,26 @@ CREATE TABLE node_inputs
     header_id   VARCHAR(64) NOT NULL,
     proof_bytes VARCHAR,
     extension   JSON        NOT NULL,
+    index       INTEGER     NOT NULL,
     main_chain  BOOLEAN     NOT NULL,
     PRIMARY KEY (box_id, header_id)
 );
 
 CREATE INDEX "node_inputs__tx_id" ON node_inputs (tx_id);
 CREATE INDEX "node_inputs__box_id" ON node_inputs (box_id);
+
+CREATE TABLE node_data_inputs
+(
+    box_id      VARCHAR(64) NOT NULL,
+    tx_id       VARCHAR(64) NOT NULL,
+    header_id   VARCHAR(64) NOT NULL,
+    index       INTEGER     NOT NULL,
+    main_chain  BOOLEAN     NOT NULL,
+    PRIMARY KEY (box_id, tx_id, header_id)
+);
+
+CREATE INDEX "node_data_inputs__tx_id" ON node_data_inputs (tx_id);
+CREATE INDEX "node_data_inputs__box_id" ON node_data_inputs (box_id);
 
 /* Table that represents outputs in ergo transactions.
  * Has tx_id field pointing to the tx which created this output.
@@ -153,7 +167,8 @@ CREATE TABLE node_u_transactions
 CREATE TABLE node_u_inputs
 (
     box_id      VARCHAR(64) NOT NULL,
-    tx_id       VARCHAR(64) NOT NULL REFERENCES node_u_transactions(id) ON DELETE CASCADE,
+    tx_id       VARCHAR(64) NOT NULL REFERENCES node_u_transactions (id) ON DELETE CASCADE,
+    index       INTEGER     NOT NULL,
     proof_bytes VARCHAR,
     extension   JSON        NOT NULL,
     PRIMARY KEY (box_id, tx_id)
@@ -162,12 +177,25 @@ CREATE TABLE node_u_inputs
 CREATE INDEX "node_u_inputs__tx_id" ON node_u_inputs (tx_id);
 CREATE INDEX "node_u_inputs__box_id" ON node_u_inputs (box_id);
 
+/* Data inputs containing in unconfirmed transactions.
+ */
+CREATE TABLE node_u_data_inputs
+(
+    box_id      VARCHAR(64) NOT NULL,
+    tx_id       VARCHAR(64) NOT NULL REFERENCES node_u_transactions (id) ON DELETE CASCADE,
+    index       INTEGER     NOT NULL,
+    PRIMARY KEY (box_id, tx_id)
+);
+
+CREATE INDEX "node_u_data_inputs__tx_id" ON node_u_data_inputs (tx_id);
+CREATE INDEX "node_u_data_inputs__box_id" ON node_u_data_inputs (box_id);
+
 /* Outputs containing in unconfirmed transactions.
  */
 CREATE TABLE node_u_outputs
 (
     box_id               VARCHAR(64) PRIMARY KEY,
-    tx_id                VARCHAR(64) NOT NULL REFERENCES node_u_transactions(id) ON DELETE CASCADE,
+    tx_id                VARCHAR(64) NOT NULL REFERENCES node_u_transactions (id) ON DELETE CASCADE,
     value                BIGINT      NOT NULL,
     creation_height      INTEGER     NOT NULL,
     index                INTEGER     NOT NULL,
@@ -185,7 +213,7 @@ CREATE INDEX "node_u_outputs__address" ON node_u_outputs (address);
 CREATE TABLE node_u_assets
 (
     token_id VARCHAR(64) NOT NULL,
-    box_id   VARCHAR(64) NOT NULL REFERENCES node_u_outputs(box_id) ON DELETE CASCADE,
+    box_id   VARCHAR(64) NOT NULL REFERENCES node_u_outputs (box_id) ON DELETE CASCADE,
     value    BIGINT      NOT NULL,
     PRIMARY KEY (token_id, box_id)
 );

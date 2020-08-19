@@ -20,6 +20,7 @@ object UInputQuerySet extends QuerySet {
   val fields: List[String] = List(
     "box_id",
     "tx_id",
+    "index",
     "proof_bytes",
     "extension"
   )
@@ -29,6 +30,7 @@ object UInputQuerySet extends QuerySet {
          |select
          |  i.box_id,
          |  i.tx_id,
+         |  i.index,
          |  i.proof_bytes,
          |  i.extension,
          |  o.value,
@@ -44,6 +46,7 @@ object UInputQuerySet extends QuerySet {
          |select
          |  i.box_id,
          |  i.tx_id,
+         |  i.index,
          |  i.proof_bytes,
          |  i.extension,
          |  o.value,
@@ -60,6 +63,7 @@ object UInputQuerySet extends QuerySet {
           |select
           |  i.box_id,
           |  i.tx_id,
+          |  i.index,
           |  i.proof_bytes,
           |  i.extension,
           |  o.value,
