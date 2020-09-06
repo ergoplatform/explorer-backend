@@ -47,6 +47,14 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, minConfirmations: Int): D[Long]
 
+  /** Get balances of all addresses in the network.
+    */
+  def balanceStatsMain(offset: Int, limit: Int): D[List[(Address, Long)]]
+
+  /** Get total number of addresses in the network.
+    */
+  def totalAddressesMain: D[Int]
+
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
   def getMainUnspentByErgoTree(
@@ -111,8 +119,7 @@ object OutputRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends OutputRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends OutputRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{OutputQuerySet => QS}
 
@@ -147,6 +154,12 @@ object OutputRepo {
     def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
       QS.sumOfAllMainUnspentByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
 
+    def balanceStatsMain(offset: Int, limit: Int): D[List[(Address, Long)]] =
+      QS.balanceStatsMain(offset, limit).to[List].liftConnectionIO
+
+    def totalAddressesMain: D[Int] =
+      QS.totalAddressesMain.unique.liftConnectionIO
+
     def getMainUnspentByErgoTree(
       ergoTree: HexString,
       offset: Int,
@@ -176,12 +189,11 @@ object OutputRepo {
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentSellOrderByTokenId(
-          tokenId,
-          ergoTreeTemplate,
-          offset,
-          limit
-        )
-        .stream
+        tokenId,
+        ergoTreeTemplate,
+        offset,
+        limit
+      ).stream
         .translate(liftK)
 
     def getAllMainUnspentBuyOrderByTokenId(
@@ -191,12 +203,11 @@ object OutputRepo {
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentBuyOrderByTokenId(
-          tokenId,
-          ergoTreeTemplate,
-          offset,
-          limit
-        )
-        .stream
+        tokenId,
+        ergoTreeTemplate,
+        offset,
+        limit
+      ).stream
         .translate(liftK)
 
     def getAllLike(query: String): D[List[Address]] =

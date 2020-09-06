@@ -128,6 +128,27 @@ object OutputQuerySet extends QuerySet {
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
 
+  def balanceStatsMain(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[(Address, Long)] =
+    sql"""
+         |select o.address, coalesce(cast(sum(o.value) as bigint), 0) as balance from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_transactions tx on tx.id = o.tx_id
+         |where o.main_chain = true and (i.box_id is null or i.main_chain = false)
+         |group by o.address
+         |order by balance desc
+         |offset $offset limit $limit
+         |""".stripMargin.query[(Address, Long)]
+
+  def totalAddressesMain(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(*) from (
+         |  select distinct o.address from node_outputs o
+         |  left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |  left join node_transactions tx on tx.id = o.tx_id
+         |  where o.main_chain = true and (i.box_id is null or i.main_chain = false)
+         |) as _
+         |""".stripMargin.query[Int]
+
   def getMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
