@@ -5,6 +5,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.query.Query0
+import doobie.util.update.Update0
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.BlockInfo
@@ -34,7 +35,8 @@ object BlockInfoQuerySet extends QuerySet {
     "total_mining_time",
     "total_fees",
     "total_miners_reward",
-    "total_coins_in_txs"
+    "total_coins_in_txs",
+    "main_chain"
   )
 
   def getBlockInfo(headerId: Id)(implicit lh: LogHandler): Query0[BlockInfo] =
@@ -74,11 +76,11 @@ object BlockInfoQuerySet extends QuerySet {
          |  bi.total_fees,
          |  bi.total_miners_reward,
          |  bi.total_coins_in_txs,
+         |  bi.main_chain,
          |  mi.miner_name
          |from blocks_info bi
-         |left join node_headers h on h.id = bi.header_id
          |left join known_miners mi on bi.miner_address = mi.miner_address
-         |where h.main_chain = true
+         |where bi.main_chain = true
          |""".stripMargin
     (q ++ ord ++ lim).query[ExtendedBlockInfo]
   }
@@ -110,6 +112,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  bi.total_fees,
          |  bi.total_miners_reward,
          |  bi.total_coins_in_txs,
+         |  bi.main_chain,
          |  mi.miner_name
          |from blocks_info bi
          |left join known_miners mi on bi.miner_address = mi.miner_address
@@ -234,4 +237,10 @@ object BlockInfoQuerySet extends QuerySet {
          |group by bi.miner_address, m.miner_name
          |order by count desc
          |""".stripMargin.query[MinerStats]
+
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+    sql"""
+         |update blocks_info set main_chain = $newChainStatus
+         |where header_id = $headerId
+         |""".stripMargin.update
 }
