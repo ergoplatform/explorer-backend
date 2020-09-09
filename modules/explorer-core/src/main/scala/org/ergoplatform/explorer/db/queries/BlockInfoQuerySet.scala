@@ -40,8 +40,7 @@ object BlockInfoQuerySet extends QuerySet {
   )
 
   def getBlockInfo(headerId: Id)(implicit lh: LogHandler): Query0[BlockInfo] =
-    sql"select * from blocks_info where header_id = $headerId"
-      .query[BlockInfo]
+    sql"select * from blocks_info where header_id = $headerId".query[BlockInfo]
 
   def getManyExtendedMain(
     offset: Int,
@@ -86,8 +85,7 @@ object BlockInfoQuerySet extends QuerySet {
   }
 
   def getManySince(ts: Long)(implicit lh: LogHandler): Query0[BlockInfo] =
-    sql"select * from blocks_info where timestamp >= $ts"
-      .query[BlockInfo]
+    sql"select * from blocks_info where timestamp >= $ts".query[BlockInfo]
 
   def getManyExtendedByIdLike(q: String)(implicit lh: LogHandler): Query0[ExtendedBlockInfo] =
     sql"""
@@ -120,8 +118,7 @@ object BlockInfoQuerySet extends QuerySet {
          |""".stripMargin.query[ExtendedBlockInfo]
 
   def getBlockSize(id: Id)(implicit lh: LogHandler): Query0[Int] =
-    sql"select block_size from blocks_info where header_id = $id"
-      .query[Int]
+    sql"select block_size from blocks_info where header_id = $id".query[Int]
 
   def totalDifficultySince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
     sql"""
