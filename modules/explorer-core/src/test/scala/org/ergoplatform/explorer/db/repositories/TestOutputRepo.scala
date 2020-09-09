@@ -76,6 +76,10 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
   ): fs2.Stream[F, ExtendedOutput] = fs2.Stream.emits(source.buyOrders)
 
   override def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): F[Unit] = ???
+
+  override def balanceStatsMain(offset: Int, limit: Int): F[List[(Address, Long)]] = ???
+
+  override def totalAddressesMain: F[Int] = ???
 }
 
 object TestOutputRepo {

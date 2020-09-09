@@ -24,11 +24,12 @@ final class AddressesRoutes[
   import org.ergoplatform.explorer.http.api.v0.defs.AddressesEndpointDefs._
 
   val routes: HttpRoutes[F] =
-    getAddressR <+> getTxsByAddressR <+> getAssetHoldersR
+    getAddressR <+> getTxsByAddressR <+> getAssetHoldersR <+> getBalancesR
 
   def getAddressR: HttpRoutes[F] =
-    getAddressDef.toRoutes { case (address, minConfirmations) =>
-      addressesService.getAddressInfo(address, minConfirmations).adaptThrowable.value
+    getAddressDef.toRoutes {
+      case (address, minConfirmations) =>
+        addressesService.getAddressInfo(address, minConfirmations).adaptThrowable.value
     }
 
   def getTxsByAddressR: HttpRoutes[F] =
@@ -49,6 +50,11 @@ final class AddressesRoutes[
           .toList
           .adaptThrowable
           .value
+    }
+
+  def getBalancesR: HttpRoutes[F] =
+    getBalancesDef.toRoutes { paging =>
+      addressesService.balances(paging).adaptThrowable.value
     }
 }
 

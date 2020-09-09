@@ -19,26 +19,30 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{Asset, UAsset}
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.Paging
-import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetInfo}
+import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetInfo, BalanceInfo}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.{Address, CRaise, TokenId}
 
 /** A service providing an access to the addresses data.
- */
+  */
 trait AddressesService[F[_], S[_[_], _]] {
 
   /** Get summary info for the given `address`.
-   */
+    */
   def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo]
 
   /** Get all addresses holding an asset with a given `assetId`.
-   */
+    */
   def getAssetHoldersAddresses(tokenId: TokenId, paging: Paging): S[F, Address]
 
   /** Get all addresses matching the given `query`.
-   */
+    */
   def getAllLike(query: String): F[List[Address]]
+
+  /** Get balances by all addresses in the network.
+    */
+  def balances(paging: Paging): F[Items[BalanceInfo]]
 }
 
 object AddressesService {
@@ -54,13 +58,13 @@ object AddressesService {
     F[_],
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad
   ](
-     headerRepo: HeaderRepo[D],
-     txRepo: TransactionRepo[D, Stream],
-     outputRepo: OutputRepo[D, Stream],
-     uOutputRepo: UOutputRepo[D, Stream],
-     assetRepo: AssetRepo[D, Stream],
-     uAssetRepo: UAssetRepo[D]
-   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
+    headerRepo: HeaderRepo[D],
+    txRepo: TransactionRepo[D, Stream],
+    outputRepo: OutputRepo[D, Stream],
+    uOutputRepo: UOutputRepo[D, Stream],
+    assetRepo: AssetRepo[D, Stream],
+    uAssetRepo: UAssetRepo[D]
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends AddressesService[F, Stream] {
 
     def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo] =
@@ -106,5 +110,13 @@ object AddressesService {
 
     def getAllLike(query: String): F[List[Address]] =
       outputRepo.getAllLike(query) ||> trans.xa
+
+    def balances(paging: Paging): F[Items[BalanceInfo]] =
+      (outputRepo.totalAddressesMain >>= { total =>
+        outputRepo
+          .balanceStatsMain(paging.offset, paging.limit)
+          .map(_.map { case (address, balance) => BalanceInfo(address, balance) })
+          .map(Items(_, total))
+      }) ||> trans.xa
   }
 }
