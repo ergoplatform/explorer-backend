@@ -16,7 +16,7 @@ CREATE TABLE node_headers
     n                 VARCHAR     NOT NULL,
     d                 VARCHAR     NOT NULL,
     votes             VARCHAR     NOT NULL,
-    main_chain        BOOLEAN     NOT NULL
+    main_chain        BOOLEAN     NOT NULL,
 );
 
 CREATE INDEX "node_headers__parent_id" ON node_headers (parent_id);
