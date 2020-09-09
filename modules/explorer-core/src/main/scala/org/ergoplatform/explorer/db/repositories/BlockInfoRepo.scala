@@ -66,6 +66,10 @@ trait BlockInfoRepo[D[_]] {
   def totalMinerRevenueSince(ts: Long): D[List[TimePoint[Long]]]
 
   def minerStatsSince(ts: Long): D[List[MinerStats]]
+
+  /** Update main_chain status for all inputs related to given `headerId`.
+    */
+  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 }
 
 object BlockInfoRepo {
@@ -75,8 +79,7 @@ object BlockInfoRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends BlockInfoRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends BlockInfoRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{BlockInfoQuerySet => QS}
 
@@ -135,5 +138,8 @@ object BlockInfoRepo {
 
     def minerStatsSince(ts: Long): D[List[MinerStats]] =
       QS.minerStatsSince(ts).to[List].liftConnectionIO
+
+    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+      QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }

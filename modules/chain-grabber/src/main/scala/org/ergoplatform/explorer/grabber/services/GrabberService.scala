@@ -6,7 +6,7 @@ import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Monad, Parallel, ~>}
+import cats.{~>, Monad, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -91,7 +91,7 @@ object GrabberService {
                  .flatMap(_ ||> xa)
                  .flatTap { blocks =>
                    if (blocks.nonEmpty)
-                     lastBlockCache.update(_ => blocks.headOption) >>
+                     lastBlockCache.update(_ => blocks.find(_.mainChain)) >>
                      log.info(s"${blocks.size} block(s) grabbed from height $height")
                    else ProcessingErr.NoBlocksWritten(height = height).raise[F, Unit]
                  }
@@ -119,14 +119,17 @@ object GrabberService {
                        }
         exStatuses  = existingIds.map(id => id -> ids.headOption.contains(id))
         updateForks = exStatuses.traverse_ { case (id, status) => updateChainStatus(id, status) }
-        _ <- log.debug(
-          s"Updating statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]")
-        blocks <- apiBlocks.sortBy(_.header.mainChain).traverse(processBlock).map(_.sequence)
+        _ <-
+          log.debug(
+            s"Updating statuses at height $height: [${exStatuses.map(x => s"[${x._1}](main=${x._2})").mkString(",")}]"
+          )
+        blocks <- apiBlocks.sortBy(x => !x.header.mainChain).traverse(processBlock).map(_.sequence)
       } yield updateForks >> blocks
 
     private def processBlock(block: ApiFullBlock): F[D[BlockInfo]] = {
-      val blockId  = block.header.id
-      val parentId = block.header.parentId
+      val blockId    = block.header.id
+      val parentId   = block.header.parentId
+      val prevHeight = block.header.height - 1
       val processF =
         lastBlockCache.get.flatMap { cachedBlockOpt =>
           val isCached   = cachedBlockOpt.exists(_.headerId == parentId)
@@ -134,10 +137,12 @@ object GrabberService {
           log.debug(s"Cached block: ${cachedBlockOpt.map(_.headerId).getOrElse("<none>")}") >>
           parentOptF
             .flatMap {
-              case None if block.header.height != GenesisHeight && block.header.mainChain => // fork
-                val forkHeight = block.header.height - 1
-                log.info(s"Processing fork at height $forkHeight") >>
-                grabBlocksFromHeight(forkHeight).map(_.map(_.headOption))
+              case None if block.header.height != GenesisHeight =>
+                log.info(s"Processing unknown fork at height $prevHeight") >>
+                grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
+              case Some(parent) if block.header.mainChain && !parent.mainChain =>
+                log.info(s"Processing fork at height $prevHeight") >>
+                grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
               case parentOpt =>
                 log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<not found>")}") >>
                 parentOpt.pure[D].pure[F]
@@ -168,6 +173,7 @@ object GrabberService {
 
     private def updateChainStatus(headerId: Id, newChainStatus: Boolean): D[Unit] =
       headerRepo.updateChainStatusById(headerId, newChainStatus) >>
+      blockInfoRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
       txRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
       outputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
       inputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
