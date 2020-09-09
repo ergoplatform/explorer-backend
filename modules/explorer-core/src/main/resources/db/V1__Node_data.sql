@@ -62,7 +62,8 @@ CREATE TABLE blocks_info
     total_mining_time      BIGINT  NOT NULL,
     total_fees             BIGINT  NOT NULL,
     total_miners_reward    BIGINT  NOT NULL,
-    total_coins_in_txs     BIGINT  NOT NULL
+    total_coins_in_txs     BIGINT  NOT NULL,
+    main_chain             BOOLEAN NOT NULL
 );
 
 /* Stats table indexes. By height and ts.

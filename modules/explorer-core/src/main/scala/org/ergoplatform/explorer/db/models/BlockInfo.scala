@@ -26,30 +26,29 @@ final case class BlockInfo(
   timestamp: Long,
   height: Int,
   difficulty: Long,
-  blockSize: Int,            // block size (bytes)
-  blockCoins: Long,          // total amount of nERGs in the block
-  blockMiningTime: Long,     // block mining time
-  txsCount: Int,             // number of txs in the block
-  txsSize: Int,              // total size of all transactions in this block (bytes)
+  blockSize: Int, // block size (bytes)
+  blockCoins: Long, // total amount of nERGs in the block
+  blockMiningTime: Long, // block mining time
+  txsCount: Int, // number of txs in the block
+  txsSize: Int, // total size of all transactions in this block (bytes)
   minerAddress: Address,
-  minerReward: Long,         // total amount of nERGs miner received from coinbase
-  minerRevenue: Long,        // total amount of nERGs miner received as a reward (coinbase + fee)
-  blockFee: Long,            // total amount of transaction fee in the block (nERG)
+  minerReward: Long, // total amount of nERGs miner received from coinbase
+  minerRevenue: Long, // total amount of nERGs miner received as a reward (coinbase + fee)
+  blockFee: Long, // total amount of transaction fee in the block (nERG)
   blockChainTotalSize: Long, // cumulative blockchain size including this block
-  totalTxsCount: Long,       // total number of txs in all blocks in the chain
-  totalCoinsIssued: Long,    // amount of nERGs issued in the block
-  totalMiningTime: Long,     // mining time of all the blocks in the chain
-  totalFees: Long,           // total amount of nERGs all miners received as a fee
-  totalMinersReward: Long,   // total amount of nERGs all miners received as a reward for all time
-  totalCoinsInTxs: Long      // total amount of nERGs in all blocks
+  totalTxsCount: Long, // total number of txs in all blocks in the chain
+  totalCoinsIssued: Long, // amount of nERGs issued in the block
+  totalMiningTime: Long, // mining time of all the blocks in the chain
+  totalFees: Long, // total amount of nERGs all miners received as a fee
+  totalMinersReward: Long, // total amount of nERGs all miners received as a reward for all time
+  totalCoinsInTxs: Long, // total amount of nERGs in all blocks
+  mainChain: Boolean
 )
 
 object BlockInfo {
 
   def fromApi[
-    F[_]: CRaise[*[_], ProcessingErr]
-        : CRaise[*[_], RefinementFailed]
-        : Monad
+    F[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
   ](
     apiBlock: ApiFullBlock,
     parentBlockOpt: Option[BlockInfo]
@@ -58,12 +57,12 @@ object BlockInfo {
       val (reward, fee) = minerRewardAndFee(apiBlock)(protocolSettings)
       val coinBaseValue = reward + fee
       val blockCoins = apiBlock.transactions.transactions
-        .flatMap(_.outputs)
-        .map(_.value)
-        .sum - coinBaseValue
+          .flatMap(_.outputs)
+          .map(_.value)
+          .sum - coinBaseValue
       val miningTime = apiBlock.header.timestamp - parentBlockOpt
-        .map(_.timestamp)
-        .getOrElse(0L)
+          .map(_.timestamp)
+          .getOrElse(0L)
 
       BlockInfo(
         headerId   = apiBlock.header.id,
@@ -73,8 +72,8 @@ object BlockInfo {
         blockSize  = apiBlock.size,
         blockCoins = blockCoins,
         blockMiningTime = apiBlock.header.timestamp - parentBlockOpt
-          .map(_.timestamp)
-          .getOrElse(0L),
+            .map(_.timestamp)
+            .getOrElse(0L),
         txsCount     = apiBlock.transactions.transactions.length,
         txsSize      = apiBlock.transactions.transactions.map(_.size).sum,
         minerAddress = minerAddress,
@@ -82,28 +81,26 @@ object BlockInfo {
         minerRevenue = reward + fee,
         blockFee     = fee,
         blockChainTotalSize = parentBlockOpt
-          .map(_.blockChainTotalSize)
-          .getOrElse(0L) + apiBlock.size,
+            .map(_.blockChainTotalSize)
+            .getOrElse(0L) + apiBlock.size,
         totalTxsCount = apiBlock.transactions.transactions.length.toLong + parentBlockOpt
-          .map(_.totalTxsCount)
-          .getOrElse(0L),
-        totalCoinsIssued =
-          protocolSettings.emission.issuedCoinsAfterHeight(apiBlock.header.height.toLong),
+            .map(_.totalTxsCount)
+            .getOrElse(0L),
+        totalCoinsIssued = protocolSettings.emission.issuedCoinsAfterHeight(apiBlock.header.height.toLong),
         totalMiningTime = parentBlockOpt
-          .map(_.totalMiningTime)
-          .getOrElse(0L) + miningTime,
+            .map(_.totalMiningTime)
+            .getOrElse(0L) + miningTime,
         totalFees = parentBlockOpt.map(_.totalFees).getOrElse(0L) + fee,
         totalMinersReward = parentBlockOpt
-          .map(_.totalMinersReward)
-          .getOrElse(0L) + reward,
-        totalCoinsInTxs = parentBlockOpt.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins
+            .map(_.totalMinersReward)
+            .getOrElse(0L) + reward,
+        totalCoinsInTxs = parentBlockOpt.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins,
+        mainChain = apiBlock.header.mainChain
       )
     }
 
   private def minerRewardAddress[
-    F[_]: CRaise[*[_], ProcessingErr]
-        : CRaise[*[_], RefinementFailed]
-        : Monad
+    F[_]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
   ](
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): F[Address] =
