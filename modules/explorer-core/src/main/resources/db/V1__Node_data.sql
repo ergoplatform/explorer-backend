@@ -16,7 +16,7 @@ CREATE TABLE node_headers
     n                 VARCHAR     NOT NULL,
     d                 VARCHAR     NOT NULL,
     votes             VARCHAR     NOT NULL,
-    main_chain        BOOLEAN     NOT NULL,
+    main_chain        BOOLEAN     NOT NULL
 );
 
 CREATE INDEX "node_headers__parent_id" ON node_headers (parent_id);
@@ -63,7 +63,7 @@ CREATE TABLE blocks_info
     total_fees             BIGINT  NOT NULL,
     total_miners_reward    BIGINT  NOT NULL,
     total_coins_in_txs     BIGINT  NOT NULL,
-    main_chain             BOOLEAN NOT NULL,
+    main_chain             BOOLEAN NOT NULL
 );
 
 /* Stats table indexes. By height and ts.
