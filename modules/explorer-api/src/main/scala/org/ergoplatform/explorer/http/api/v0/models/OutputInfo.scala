@@ -10,7 +10,9 @@ import sttp.tapir.generic.Derived
 
 final case class OutputInfo(
   id: BoxId,
+  txId: TxId,
   value: Long,
+  index: Int,
   creationHeight: Int,
   ergoTree: HexString,
   address: Option[Address],
@@ -26,6 +28,13 @@ object OutputInfo {
 
   implicit val schema: Schema[OutputInfo] =
     implicitly[Derived[Schema[OutputInfo]]].value
+      .modify(_.id)(_.description("Id of the box"))
+      .modify(_.txId)(_.description("Id of the transaction that created the box"))
+      .modify(_.value)(_.description("Value of the box in nanoERG"))
+      .modify(_.index)(_.description("Index of the output in a transaction"))
+      .modify(_.creationHeight)(_.description("Height at which the box was created"))
+      .modify(_.ergoTree)(_.description("Serialized ergo tree"))
+      .modify(_.address)(_.description("An address derived from ergo tree"))
 
   implicit private def registersSchema: Schema[Json] =
     Schema(
@@ -41,7 +50,9 @@ object OutputInfo {
   ): OutputInfo =
     OutputInfo(
       o.output.boxId,
+      o.output.txId,
       o.output.value,
+      o.output.index,
       o.output.creationHeight,
       o.output.ergoTree,
       o.output.addressOpt,
