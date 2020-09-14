@@ -33,11 +33,12 @@ object UInputQuerySet extends QuerySet {
          |  i.index,
          |  i.proof_bytes,
          |  i.extension,
-         |  o.value,
-         |  o.tx_id,
-         |  o.address
+         |  case o.value   when null then ou.value   else o.value end,
+         |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+         |  case o.address when null then ou.address else o.address end
          |from node_u_inputs i
-         |join node_outputs o on i.box_id = o.box_id
+         |left join node_outputs o on i.box_id = o.box_id
+         |left join node_u_outputs ou on i.box_id = ou.box_id
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedUInput]
 
@@ -49,11 +50,12 @@ object UInputQuerySet extends QuerySet {
          |  i.index,
          |  i.proof_bytes,
          |  i.extension,
-         |  o.value,
-         |  o.tx_id,
-         |  o.address
+         |  case o.value   when null then ou.value   else o.value end,
+         |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+         |  case o.address when null then ou.address else o.address end
          |from node_u_inputs i
-         |join node_outputs o on i.box_id = o.box_id
+         |left join node_outputs o on i.box_id = o.box_id
+         |left join node_u_outputs ou on i.box_id = ou.box_id
          |where i.tx_id = $txId
          |""".stripMargin.query[ExtendedUInput]
 
@@ -66,11 +68,12 @@ object UInputQuerySet extends QuerySet {
           |  i.index,
           |  i.proof_bytes,
           |  i.extension,
-          |  o.value,
-          |  o.tx_id,
-          |  o.address
+          |  case o.value   when null then ou.value   else o.value end,
+          |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+          |  case o.address when null then ou.address else o.address end
           |from node_u_inputs i
-          |join node_outputs o on i.box_id = o.box_id
+          |left join node_outputs o on i.box_id = o.box_id
+          |left join node_u_outputs ou on i.box_id = ou.box_id
           |where i.tx_id
           |""".stripMargin
     in(queryFr, txIds).query[ExtendedUInput]
