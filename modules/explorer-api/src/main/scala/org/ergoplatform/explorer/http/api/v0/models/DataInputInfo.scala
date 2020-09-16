@@ -10,8 +10,10 @@ import sttp.tapir.generic.Derived
 final case class DataInputInfo(
   id: BoxId,
   value: Option[Long],
+  index: Int,
   transactionId: TxId,
   outputTransactionId: Option[TxId],
+  outputIndex: Option[Int],
   address: Option[Address]
 )
 
@@ -33,8 +35,10 @@ object DataInputInfo {
     DataInputInfo(
       i.input.boxId,
       i.value,
+      i.input.index,
       i.input.txId,
       i.outputTxId,
+      i.outputIndex,
       i.address
     )
 

@@ -148,7 +148,7 @@ object generators {
       inputGen(mainChain).map { in =>
         val inModified = in.copy(boxId = out.boxId)
         val extIn =
-          ExtendedInput(inModified, out.value.some, out.txId.some, out.addressOpt)
+          ExtendedInput(inModified, out.value.some, out.txId.some, out.index.some, out.addressOpt)
         out -> extIn
       }
     }
