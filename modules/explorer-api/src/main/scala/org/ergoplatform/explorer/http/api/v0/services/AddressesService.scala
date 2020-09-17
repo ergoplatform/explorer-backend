@@ -112,11 +112,9 @@ object AddressesService {
       outputRepo.getAllLike(query) ||> trans.xa
 
     def balances(paging: Paging): F[Items[BalanceInfo]] =
-      (outputRepo.totalAddressesMain >>= { total =>
-        outputRepo
-          .balanceStatsMain(paging.offset, paging.limit)
-          .map(_.map { case (address, balance) => BalanceInfo(address, balance) })
-          .map(Items(_, total))
-      }) ||> trans.xa
+      outputRepo
+        .balanceStatsMain(0, 100) // limit balances list to first 100
+        .map(_.map { case (address, balance) => BalanceInfo(address, balance) })
+        .map(xs => Items(xs.slice(paging.offset, paging.offset + paging.limit), xs.size)) ||> trans.xa
   }
 }
