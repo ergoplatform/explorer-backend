@@ -6,7 +6,7 @@ import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.util.update.Update0
 import doobie.{Fragments, LogHandler}
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, ExtendedInput}
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedDataInput
 import org.ergoplatform.explorer.{Id, TxId}
 
 /** A set of queries for doobie implementation of [InputRepo].
@@ -35,6 +35,7 @@ object DataInputQuerySet extends QuerySet {
          |  i.main_chain,
          |  o.value,
          |  o.tx_id,
+         |  o.index,
          |  o.address
          |from node_data_inputs i
          |join node_outputs o on i.box_id = o.box_id
@@ -52,6 +53,7 @@ object DataInputQuerySet extends QuerySet {
            |  i.main_chain,
            |  o.value,
            |  o.tx_id,
+           |  o.index,
            |  o.address
            |from node_data_inputs i
            |join node_outputs o on i.box_id = o.box_id

@@ -9,5 +9,6 @@ final case class ExtendedDataInput(
   input: DataInput,
   value: Option[Long],
   outputTxId: Option[TxId],
+  outputIndex: Option[Int],
   address: Option[Address]
 )

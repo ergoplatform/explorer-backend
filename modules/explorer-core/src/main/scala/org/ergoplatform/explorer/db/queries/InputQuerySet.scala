@@ -39,6 +39,7 @@ object InputQuerySet extends QuerySet {
          |  i.main_chain,
          |  o.value,
          |  o.tx_id,
+         |  o.index,
          |  o.address
          |from node_inputs i
          |join node_outputs o on i.box_id = o.box_id
@@ -58,6 +59,7 @@ object InputQuerySet extends QuerySet {
            |  i.main_chain,
            |  o.value,
            |  o.tx_id,
+           |  o.index,
            |  o.address
            |from node_inputs i
            |join node_outputs o on i.box_id = o.box_id

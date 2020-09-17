@@ -9,10 +9,12 @@ import sttp.tapir.generic.Derived
 
 final case class InputInfo(
   id: BoxId,
-  spendingProof: Option[HexString],
   value: Option[Long],
+  index: Int,
+  spendingProof: Option[HexString],
   transactionId: TxId,
   outputTransactionId: Option[TxId],
+  outputIndex: Option[Int],
   address: Option[Address]
 )
 
@@ -26,18 +28,22 @@ object InputInfo {
       .modify(_.spendingProof)(_.description("Hex-encoded serialized sigma proof"))
       .modify(_.value)(_.description("Number of nanoErgs in the corresponding box"))
       .modify(_.transactionId)(_.description("ID of the transaction this input was used in"))
+      .modify(_.index)(_.description("Index of the input in a transaction"))
       .modify(_.outputTransactionId)(
         _.description("ID of the transaction outputting corresponding box")
       )
+      .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
 
   def apply(i: ExtendedInput): InputInfo =
     InputInfo(
       i.input.boxId,
-      i.input.proofBytes,
       i.value,
+      i.input.index,
+      i.input.proofBytes,
       i.input.txId,
       i.outputTxId,
+      i.outputIndex,
       i.address
     )
 
