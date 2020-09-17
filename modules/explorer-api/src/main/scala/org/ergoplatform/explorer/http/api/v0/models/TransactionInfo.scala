@@ -2,8 +2,9 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
+import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, ExtendedInput, ExtendedOutput}
-import org.ergoplatform.explorer.db.models.{Asset, Transaction}
+import org.ergoplatform.explorer.db.models.{Asset, Header, Transaction}
 import org.ergoplatform.explorer.{Id, TxId}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
@@ -11,6 +12,7 @@ import sttp.tapir.generic.Derived
 final case class TransactionInfo(
   id: TxId,
   headerId: Id,
+  inclusionHeight: Height,
   timestamp: Long,
   confirmationsCount: Int,
   inputs: List[InputInfo],
@@ -26,6 +28,7 @@ object TransactionInfo {
     implicitly[Derived[Schema[TransactionInfo]]].value
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.headerId)(_.description("ID of the corresponding header"))
+      .modify(_.inclusionHeight)(_.description("Height of the block the transaction was included in"))
       .modify(_.timestamp)(
         _.description("Timestamp the transaction got into the network")
       )
@@ -59,6 +62,7 @@ object TransactionInfo {
         apply(
           tx.id,
           tx.headerId,
+          tx.inclusionHeight,
           tx.timestamp,
           numConfirmations,
           relatedInputs,
