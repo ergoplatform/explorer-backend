@@ -14,6 +14,7 @@ final case class TransactionInfo(
   headerId: Id,
   inclusionHeight: Height,
   timestamp: Long,
+  index: Int,
   confirmationsCount: Int,
   inputs: List[InputInfo],
   dataInputs: List[DataInputInfo],
@@ -29,9 +30,8 @@ object TransactionInfo {
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.headerId)(_.description("ID of the corresponding header"))
       .modify(_.inclusionHeight)(_.description("Height of the block the transaction was included in"))
-      .modify(_.timestamp)(
-        _.description("Timestamp the transaction got into the network")
-      )
+      .modify(_.timestamp)(_.description("Timestamp the transaction got into the network"))
+      .modify(_.index)(_.description("Index of a transaction inside a block"))
       .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
 
   def batch(
@@ -64,6 +64,7 @@ object TransactionInfo {
           tx.headerId,
           tx.inclusionHeight,
           tx.timestamp,
+          tx.index,
           numConfirmations,
           relatedInputs,
           relatedDataInputs,

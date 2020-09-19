@@ -15,6 +15,7 @@ final case class TransactionSummary(
   id: TxId,
   miniBlockInfo: MiniBlockInfo,
   timestamp: Long,
+  index: Int,
   confirmationsCount: Int,
   inputs: List[InputInfo],
   dataInputs: List[DataInputInfo],
@@ -34,6 +35,7 @@ object TransactionSummary {
       "summary" -> Json.obj(
         "id"                 -> ts.id.asJson,
         "timestamp"          -> ts.timestamp.asJson,
+        "index"              -> ts.index.asJson,
         "size"               -> ts.size.asJson,
         "confirmationsCount" -> ts.confirmationsCount.asJson,
         "block"              -> ts.miniBlockInfo.asJson
@@ -57,9 +59,8 @@ object TransactionSummary {
   implicit val schema: Schema[TransactionSummary] =
     implicitly[Derived[Schema[TransactionSummary]]].value
       .modify(_.id)(_.description("Transaction ID"))
-      .modify(_.timestamp)(
-        _.description("Timestamp the transaction got into the network")
-      )
+      .modify(_.timestamp)(_.description("Timestamp the transaction got into the network"))
+      .modify(_.index)(_.description("Index of a transaction inside a block"))
       .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
       .modify(_.size)(_.description("Size of transaction in bytes"))
 
@@ -90,6 +91,7 @@ object TransactionSummary {
       tx.id,
       blockInfo,
       tx.timestamp,
+      tx.index,
       numConfirmations,
       inputs,
       dataInputs,
