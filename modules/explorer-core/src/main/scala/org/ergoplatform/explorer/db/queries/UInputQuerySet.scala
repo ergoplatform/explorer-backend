@@ -35,6 +35,7 @@ object UInputQuerySet extends QuerySet {
          |  i.extension,
          |  case o.value   when null then ou.value   else o.value end,
          |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+         |  case o.index   when null then ou.index   else o.index end,
          |  case o.address when null then ou.address else o.address end
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
@@ -52,6 +53,7 @@ object UInputQuerySet extends QuerySet {
          |  i.extension,
          |  case o.value   when null then ou.value   else o.value end,
          |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+         |  case o.index   when null then ou.index   else o.index end,
          |  case o.address when null then ou.address else o.address end
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
@@ -70,6 +72,7 @@ object UInputQuerySet extends QuerySet {
           |  i.extension,
           |  case o.value   when null then ou.value   else o.value end,
           |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+          |  case o.index   when null then ou.index   else o.index end,
           |  case o.address when null then ou.address else o.address end
           |from node_u_inputs i
           |left join node_outputs o on i.box_id = o.box_id

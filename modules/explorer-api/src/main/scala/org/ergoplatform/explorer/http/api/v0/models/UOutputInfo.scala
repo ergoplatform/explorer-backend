@@ -3,14 +3,16 @@ package org.ergoplatform.explorer.http.api.v0.models
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, HexString}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import org.ergoplatform.explorer.db.models.{Asset, UAsset, UOutput}
 import sttp.tapir.{Schema, SchemaType}
 import sttp.tapir.generic.Derived
 
 final case class UOutputInfo(
   id: BoxId,
+  txId: TxId,
   value: Long,
+  index: Int,
   creationHeight: Int,
   ergoTree: HexString,
   address: Option[Address],
@@ -25,6 +27,7 @@ object UOutputInfo {
   implicit val schema: Schema[UOutputInfo] =
     implicitly[Derived[Schema[UOutputInfo]]].value
       .modify(_.id)(_.description("Id of the corresponding box"))
+      .modify(_.txId)(_.description("Id of the transaction that created the box"))
       .modify(_.value)(_.description("Amount of nanoERGs containing in the box"))
       .modify(_.creationHeight)(_.description("Approximate height the box was created"))
       .modify(_.ergoTree)(_.description("Encoded script"))
@@ -42,7 +45,9 @@ object UOutputInfo {
   def apply(out: UOutput, assets: List[UAsset]): UOutputInfo =
     UOutputInfo(
       out.boxId,
+      out.txId,
       out.value,
+      out.index,
       out.creationHeight,
       out.ergoTree,
       out.addressOpt,

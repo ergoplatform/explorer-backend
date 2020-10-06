@@ -7,7 +7,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.TxId
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUDataInput, ExtendedUInput}
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedUDataInput
 
 object UDataInputQuerySet extends QuerySet {
 
@@ -25,11 +25,13 @@ object UDataInputQuerySet extends QuerySet {
          |  i.box_id,
          |  i.tx_id,
          |  i.index,
-         |  o.value,
-         |  o.tx_id,
-         |  o.address
+         |  case o.value   when null then ou.value   else o.value end,
+         |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+         |  case o.index   when null then ou.index   else o.index end,
+         |  case o.address when null then ou.address else o.address end
          |from node_u_data_inputs i
-         |join node_outputs o on i.box_id = o.box_id
+         |left join node_outputs o on i.box_id = o.box_id
+         |left join node_u_outputs ou on i.box_id = ou.box_id
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedUDataInput]
 
@@ -39,11 +41,13 @@ object UDataInputQuerySet extends QuerySet {
          |  i.box_id,
          |  i.tx_id,
          |  i.index,
-         |  o.value,
-         |  o.tx_id,
-         |  o.address
+         |  case o.value   when null then ou.value   else o.value end,
+         |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+         |  case o.index   when null then ou.index   else o.index end,
+         |  case o.address when null then ou.address else o.address end
          |from node_u_data_inputs i
-         |join node_outputs o on i.box_id = o.box_id
+         |left join node_outputs o on i.box_id = o.box_id
+         |left join node_u_outputs ou on i.box_id = ou.box_id
          |where i.tx_id = $txId
          |""".stripMargin.query[ExtendedUDataInput]
 
@@ -54,11 +58,13 @@ object UDataInputQuerySet extends QuerySet {
           |  i.box_id,
           |  i.tx_id,
           |  i.index,
-          |  o.value,
-          |  o.tx_id,
-          |  o.address
+          |  case o.value   when null then ou.value   else o.value end,
+          |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
+          |  case o.index   when null then ou.index   else o.index end,
+          |  case o.address when null then ou.address else o.address end
           |from node_u_data_inputs i
-          |join node_outputs o on i.box_id = o.box_id
+          |left join node_outputs o on i.box_id = o.box_id
+          |left join node_u_outputs ou on i.box_id = ou.box_id
           |where i.tx_id
           |""".stripMargin
     in(queryFr, txIds).query[ExtendedUDataInput]

@@ -11,7 +11,9 @@ final case class UDataInputInfo(
   id: BoxId,
   transactionId: TxId,
   value: Option[Long],
+  index: Int,
   outputTransactionId: Option[TxId],
+  outputIndex: Option[Int],
   address: Option[Address]
 )
 
@@ -24,7 +26,9 @@ object UDataInputInfo {
       .modify(_.id)(_.description("Id of the corresponding box"))
       .modify(_.transactionId)(_.description("ID of the transaction this data input was used in"))
       .modify(_.value)(_.description("Amount of nanoERGs in the corresponding box"))
+      .modify(_.index)(_.description("Index of the input in a transaction"))
       .modify(_.outputTransactionId)(_.description("ID of the output transaction"))
+      .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Address"))
 
   def apply(in: ExtendedUDataInput): UDataInputInfo =
@@ -32,7 +36,9 @@ object UDataInputInfo {
       in.input.boxId,
       in.input.txId,
       in.value,
+      in.input.index,
       in.outputTxId,
+      in.outputIndex,
       in.address
     )
 

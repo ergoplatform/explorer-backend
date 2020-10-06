@@ -13,7 +13,9 @@ final case class UInputInfo(
   transactionId: TxId,
   spendingProof: SpendingProofInfo,
   value: Option[Long],
+  index: Int,
   outputTransactionId: Option[TxId],
+  outputIndex: Option[Int],
   address: Option[Address]
 )
 
@@ -26,7 +28,9 @@ object UInputInfo {
       .modify(_.id)(_.description("Id of the corresponding box"))
       .modify(_.transactionId)(_.description("Id of the transaction spending this input"))
       .modify(_.value)(_.description("Amount of nanoERGs in the corresponding box"))
+      .modify(_.index)(_.description("Index of the input in a transaction"))
       .modify(_.outputTransactionId)(_.description("ID of the output transaction"))
+      .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Address"))
 
   def apply(in: ExtendedUInput): UInputInfo =
@@ -35,7 +39,9 @@ object UInputInfo {
       in.input.txId,
       SpendingProofInfo(in.input.proofBytes, in.input.extension),
       in.value,
+      in.input.index,
       in.outputTxId,
+      in.outputIndex,
       in.address
     )
 
