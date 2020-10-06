@@ -3,12 +3,11 @@ package org.ergoplatform.explorer.http.api.v0.models
 import cats.instances.list._
 import cats.instances.option._
 import cats.syntax.traverse._
-import cats.syntax.option._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUDataInput, ExtendedUInput}
-import org.ergoplatform.explorer.db.models.{UAsset, UInput, UOutput, UTransaction}
+import org.ergoplatform.explorer.db.models.{UAsset, UOutput, UTransaction}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Derived
 
