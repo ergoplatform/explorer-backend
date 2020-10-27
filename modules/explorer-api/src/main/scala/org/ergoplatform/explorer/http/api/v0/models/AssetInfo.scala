@@ -18,5 +18,6 @@ object AssetInfo {
   implicit val schema: Schema[AssetInfo] =
     implicitly[Derived[Schema[AssetInfo]]].value
       .modify(_.tokenId)(_.description("Token ID"))
+      .modify(_.index)(_.description("Index of the asset in an output"))
       .modify(_.amount)(_.description("Amount of tokens"))
 }
