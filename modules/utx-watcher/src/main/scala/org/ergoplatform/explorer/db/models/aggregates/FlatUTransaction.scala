@@ -61,10 +61,15 @@ object FlatUTransaction {
             apiOut.additionalRegisters
           )
       }
-      val assets = apiTx.outputs.flatMap(o => o.assets.map(o.boxId -> _)).map {
-        case (boxId, apiAsset) =>
-          UAsset(apiAsset.tokenId, boxId, apiAsset.amount)
-      }
+      val assets =
+        apiTx.outputs
+          .flatMap { o =>
+            o.assets.zipWithIndex.map { case (asset, i) => (o.boxId, asset, i) }
+          }
+          .map {
+            case (boxId, apiAsset, index) =>
+              UAsset(apiAsset.tokenId, boxId, index, apiAsset.amount)
+          }
       FlatUTransaction(tx, ins, dataIns, outs, assets)
     }
 }

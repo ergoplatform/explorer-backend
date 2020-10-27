@@ -51,7 +51,7 @@ object UOutputInfo {
       out.creationHeight,
       out.ergoTree,
       out.addressOpt,
-      assets.map(AssetInfo.apply),
+      assets.sortBy(_.index).map(AssetInfo.apply),
       out.additionalRegisters
     )
 

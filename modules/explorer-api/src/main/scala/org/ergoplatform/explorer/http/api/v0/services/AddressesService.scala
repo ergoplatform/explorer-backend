@@ -83,12 +83,12 @@ object AddressesService {
         val totalBalance    = balance + offChainBalance
         val totalReceived   = outs.map(o => BigDecimal(o.output.value)).sum
         val tokensBalance = assets.foldLeft(Map.empty[TokenId, Long]) {
-          case (acc, Asset(assetId, _, _, assetAmt)) =>
+          case (acc, Asset(assetId, _, _, _, assetAmt)) =>
             acc.updated(assetId, acc.getOrElse(assetId, 0L) + assetAmt)
         }
         val tokensBalanceInfo = tokensBalance.map { case (id, amt) => AssetInfo(id, amt) }.toList
         val totalTokensBalance = offChainAssets.foldLeft(tokensBalance) {
-          case (acc, UAsset(assetId, _, assetAmt)) =>
+          case (acc, UAsset(assetId, _, _, assetAmt)) =>
             acc.updated(assetId, acc.getOrElse(assetId, 0L) + assetAmt)
         }
         val totalTokensBalanceInfo = totalTokensBalance.map {

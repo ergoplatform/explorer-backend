@@ -156,8 +156,8 @@ object FlatBlock {
 
   private def extractAssets(apiTxs: ApiBlockTransactions): List[Asset] =
     for {
-      tx     <- apiTxs.transactions
-      out    <- tx.outputs
-      assets <- out.assets
-    } yield Asset(assets.tokenId, out.boxId, apiTxs.headerId, assets.amount)
+      tx             <- apiTxs.transactions
+      out            <- tx.outputs
+      (asset, index) <- out.assets.zipWithIndex
+    } yield Asset(asset.tokenId, out.boxId, apiTxs.headerId, index, asset.amount)
 }

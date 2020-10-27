@@ -21,23 +21,24 @@ object AssetQuerySet extends QuerySet {
     "token_id",
     "box_id",
     "header_id",
+    "index",
     "value"
   )
 
   def getAllByBoxId(boxId: BoxId)(implicit lh: LogHandler): Query0[Asset] =
     sql"""
-         |select distinct on (token_id, box_id) token_id, box_id, header_id, value from node_assets
+         |select distinct on (token_id, box_id) token_id, box_id, header_id, index, value from node_assets
          |where box_id = $boxId
          |""".stripMargin.query[Asset]
 
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[Asset] =
-    (sql"select distinct on (token_id, box_id) token_id, box_id, header_id, value from node_assets "
+    (sql"select distinct on (token_id, box_id) token_id, box_id, header_id, index, value from node_assets "
     ++ Fragments.in(fr"where box_id", boxIds))
       .query[Asset]
 
   def getAllMainUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[Asset] =
     sql"""
-         |select a.token_id, a.box_id, a.token_id, a.value from node_assets a
+         |select a.token_id, a.box_id, a.token_id, a.index, a.value from node_assets a
          |inner join (
          |  select o.box_id from node_outputs o
          |  left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id

@@ -14,6 +14,7 @@ object UAssetQuerySet extends QuerySet {
   val fields: List[String] = List(
     "token_id",
     "box_id",
+    "index",
     "value"
   )
 
@@ -26,7 +27,7 @@ object UAssetQuerySet extends QuerySet {
 
   def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UAsset] =
     sql"""
-         |select a.token_id, a.box_id, a.value from node_u_assets a
+         |select a.token_id, a.box_id, a.index, a.value from node_u_assets a
          |inner join (
          |  select o.box_id from node_u_outputs o
          |  left join node_u_inputs i on i.box_id = o.box_id

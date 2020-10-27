@@ -157,6 +157,7 @@ CREATE TABLE node_assets
     token_id  VARCHAR(64) NOT NULL,
     box_id    VARCHAR(64) NOT NULL,
     header_id VARCHAR(64) NOT NULL,
+    index     INTEGER     NOT NULL,
     value     BIGINT      NOT NULL,
     PRIMARY KEY (token_id, box_id, header_id)
 );
@@ -226,6 +227,7 @@ CREATE TABLE node_u_assets
 (
     token_id VARCHAR(64) NOT NULL,
     box_id   VARCHAR(64) NOT NULL REFERENCES node_u_outputs (box_id) ON DELETE CASCADE,
+    index    INTEGER     NOT NULL,
     value    BIGINT      NOT NULL,
     PRIMARY KEY (token_id, box_id)
 );

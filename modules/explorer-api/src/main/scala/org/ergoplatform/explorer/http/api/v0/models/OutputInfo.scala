@@ -16,7 +16,7 @@ final case class OutputInfo(
   creationHeight: Int,
   ergoTree: HexString,
   address: Option[Address],
-  assets: Seq[AssetInfo],
+  assets: List[AssetInfo],
   additionalRegisters: Json,
   spentTransactionId: Option[TxId],
   mainChain: Boolean
@@ -56,7 +56,7 @@ object OutputInfo {
       o.output.creationHeight,
       o.output.ergoTree,
       o.output.addressOpt,
-      assets.map(x => AssetInfo(x.tokenId, x.amount)),
+      assets.sortBy(_.index).map(x => AssetInfo(x.tokenId, x.index, x.amount)),
       o.output.additionalRegisters,
       o.spentByOpt,
       o.output.mainChain
