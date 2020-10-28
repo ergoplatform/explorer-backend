@@ -20,7 +20,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{Asset, UAsset}
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetInfo, BalanceInfo}
+import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetSummary, BalanceInfo}
 import org.ergoplatform.explorer.protocol.utils
 import org.ergoplatform.explorer.{Address, CRaise, TokenId}
 
@@ -82,18 +82,18 @@ object AddressesService {
         val offChainBalance = unspentOffChainOuts.map(_.value).sum
         val totalBalance    = balance + offChainBalance
         val totalReceived   = outs.map(o => BigDecimal(o.output.value)).sum
-        val tokensBalance = assets.foldLeft(Map.empty[TokenId, Long]) {
-          case (acc, Asset(assetId, _, _, _, assetAmt)) =>
-            acc.updated(assetId, acc.getOrElse(assetId, 0L) + assetAmt)
-        }
-        val tokensBalanceInfo = tokensBalance.map { case (id, amt) => AssetInfo(id, amt) }.toList
-        val totalTokensBalance = offChainAssets.foldLeft(tokensBalance) {
-          case (acc, UAsset(assetId, _, _, assetAmt)) =>
-            acc.updated(assetId, acc.getOrElse(assetId, 0L) + assetAmt)
-        }
-        val totalTokensBalanceInfo = totalTokensBalance.map {
-          case (id, amt) => AssetInfo(id, amt)
-        }.toList
+        val tokensBalance =
+          assets.foldLeft(Map.empty[TokenId, Long]) {
+            case (acc, Asset(assetId, _, _, _, assetAmt)) =>
+              acc.updated(assetId, acc.getOrElse(assetId, 0L) + assetAmt)
+          }
+        val tokensBalanceInfo = tokensBalance.map { case (id, amt) => AssetSummary(id, amt) }.toList
+        val totalTokensBalance =
+          offChainAssets.foldLeft(tokensBalance) {
+            case (acc, UAsset(assetId, _, _, assetAmt)) =>
+              acc.updated(assetId, acc.getOrElse(assetId, 0L) + assetAmt)
+          }
+        val totalTokensBalanceInfo = totalTokensBalance.map { case (id, amt) => AssetSummary(id, amt) }.toList
         AddressInfo(
           address,
           txsQty,
