@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.clients.ergo
 
 import cats.Parallel
-import cats.data.{Chain, NonEmptyChain, NonEmptyList}
+import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.instances.list._
