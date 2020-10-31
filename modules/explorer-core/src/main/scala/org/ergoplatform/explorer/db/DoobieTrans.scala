@@ -15,13 +15,13 @@ object DoobieTrans {
       cp      <- ExecutionContexts.fixedThreadPool(size = settings.cpSize)
       blocker <- Blocker[F]
       xa <- HikariTransactor.newHikariTransactor[F](
-             driverClassName = "org.postgresql.Driver",
-             settings.url,
-             settings.user,
-             settings.pass,
-             cp,
-             blocker
-           )
+              driverClassName = "org.postgresql.Driver",
+              settings.url,
+              settings.user,
+              settings.pass,
+              cp,
+              blocker
+            )
       _ <- Resource.liftF(configure(xa)(poolName, settings.cpSize))
     } yield xa
 
