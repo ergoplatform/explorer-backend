@@ -22,8 +22,8 @@ object AddressInfo {
     totalReceived: BigDecimal,
     confirmedBalance: Long,
     totalBalance: Long,
-    confirmedTokensBalance: List[AssetInfo],
-    totalTokensBalance: List[AssetInfo]
+    confirmedTokensBalance: List[AssetSummary],
+    totalTokensBalance: List[AssetSummary]
   )
 
   def apply(
@@ -32,8 +32,8 @@ object AddressInfo {
     totalReceived: BigDecimal,
     confirmedBalance: Long,
     totalBalance: Long,
-    confirmedTokensBalance: List[AssetInfo],
-    totalTokensBalance: List[AssetInfo]
+    confirmedTokensBalance: List[AssetSummary],
+    totalTokensBalance: List[AssetSummary]
   ): AddressInfo =
     new AddressInfo(
       Summary(address),
@@ -54,6 +54,7 @@ object AddressInfo {
   implicit private lazy val summarySchema: Schema[Summary] =
     implicitly[Derived[Schema[Summary]]].value
       .modify(_.id)(_.description("Address identifier"))
+
   implicit private lazy val txsSchema: Schema[Transactions] =
     implicitly[Derived[Schema[Transactions]]].value
       .modify(_.confirmed)(_.description("Number of confirmed txs"))
@@ -70,6 +71,7 @@ object AddressInfo {
       .modify(_.totalTokensBalance)(
         _.description("Total (confirmed + unconfirmed) tokens balance of address")
       )
+
   implicit val schema: Schema[AddressInfo] =
     implicitly[Derived[Schema[AddressInfo]]].value
 }

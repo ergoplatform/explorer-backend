@@ -2,11 +2,10 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.{UAsset, UOutput}
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
-import org.ergoplatform.explorer.db.models.{Asset, UAsset, UOutput}
-import sttp.tapir.{Schema, SchemaType}
 import sttp.tapir.generic.Derived
+import sttp.tapir.{Schema, SchemaType}
 
 final case class UOutputInfo(
   id: BoxId,
@@ -51,7 +50,7 @@ object UOutputInfo {
       out.creationHeight,
       out.ergoTree,
       out.addressOpt,
-      assets.map(AssetInfo.apply),
+      assets.sortBy(_.index).map(AssetInfo.apply),
       out.additionalRegisters
     )
 

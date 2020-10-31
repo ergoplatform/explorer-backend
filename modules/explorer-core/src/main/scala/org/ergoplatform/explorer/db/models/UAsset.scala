@@ -7,5 +7,6 @@ import org.ergoplatform.explorer.{BoxId, TokenId}
 final case class UAsset(
   tokenId: TokenId,
   boxId: BoxId,
+  index: Int,
   amount: Long
 )

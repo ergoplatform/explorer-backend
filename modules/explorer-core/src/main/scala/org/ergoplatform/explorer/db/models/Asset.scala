@@ -8,5 +8,6 @@ final case class Asset(
   tokenId: TokenId,
   boxId: BoxId,
   headerId: Id,
+  index: Int,
   amount: Long
 )
