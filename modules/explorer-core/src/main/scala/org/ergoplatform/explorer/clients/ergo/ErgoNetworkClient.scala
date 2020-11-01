@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.clients.ergo
 import cats.Parallel
 import cats.data.NonEmptyList
 import cats.effect.Sync
+import cats.effect.concurrent.Ref
 import cats.instances.list._
 import cats.syntax.applicative._
 import cats.syntax.applicativeError._
@@ -59,17 +60,21 @@ object ErgoNetworkClient {
     client: Client[F],
     masterNodesAddresses: NonEmptyList[UrlString]
   ): F[ErgoNetworkClient[F]] =
-    Slf4jLogger
-      .create[F]
-      .map { implicit logger =>
-        new Live[F](client, masterNodesAddresses)
+    Ref
+      .of(masterNodesAddresses.toList)
+      .flatMap { nodesPool =>
+        Slf4jLogger
+          .create[F]
+          .map { implicit logger =>
+            new Live[F](client, nodesPool)
+          }
       }
 
   final private class Live[
     F[_]: Sync: Parallel: Logger: CRaise[*[_], TransactionDecodingFailed]: CRaise[*[_], NetworkErr]
   ](
     client: Client[F],
-    masterNodesAddresses: NonEmptyList[UrlString]
+    nodesPool: Ref[F, List[UrlString]]
   ) extends ErgoNetworkClient[F] {
 
     def getBestHeight: F[Int] =
@@ -101,8 +106,8 @@ object ErgoNetworkClient {
       }
 
     def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
-      masterNodesAddresses.toList
-        .parTraverse { url =>
+      nodesPool.get.flatMap {
+        _.parTraverse { url =>
           client
             .status(
               Request[F](
@@ -111,27 +116,30 @@ object ErgoNetworkClient {
               ).withEntity(tx)
             )
         }
-        .flatMap { res =>
-          if (res.exists(_.responseClass == Status.ClientError))
-            InvalidTransaction(tx.id).raise[F, Unit]
-          else if (!res.exists(_.isSuccess))
-            TransactionSubmissionFailed(tx.id).raise[F, Unit]
-          else ().pure[F]
-        }
+          .flatMap { res =>
+            if (res.exists(_.responseClass == Status.ClientError))
+              InvalidTransaction(tx.id).raise[F, Unit]
+            else if (!res.exists(_.isSuccess))
+              TransactionSubmissionFailed(tx.id).raise[F, Unit]
+            else ().pure[F]
+          }
+      }
 
-    private def retrying[A](f: UrlString => F[A]): F[A] = {
-      def attempt(urls: List[UrlString])(i: Int): F[A] =
-        urls match {
-          case hd :: tl =>
-            f(hd).handleErrorWith { e =>
-              Logger[F].error(s"Failed to execute request to '$hd'. ${e.getMessage}") >>
-              attempt(tl)(i + 1)
-            }
-          case Nil =>
-            RequestFailed(masterNodesAddresses.toList).raise[F, A]
-        }
-      attempt(masterNodesAddresses.toList)(0)
-    }
+    private def retrying[A](f: UrlString => F[A]): F[A] =
+      nodesPool.get.flatMap { pool =>
+        def attempt(urls: List[UrlString])(i: Int): F[A] =
+          urls match {
+            case hd :: tl =>
+              f(hd).handleErrorWith { e =>
+                Logger[F].error(s"Failed to execute request to '$hd'. ${e.getMessage}") >>
+                nodesPool.set(tl :+ hd) >>
+                attempt(tl)(i + 1)
+              }
+            case Nil =>
+              RequestFailed(pool).raise[F, A]
+          }
+        attempt(pool)(0)
+      }
 
     private def makeGetRequest(uri: String) =
       Request[F](Method.GET, Uri.unsafeFromString(uri))
