@@ -19,10 +19,11 @@ object UAssetQuerySet extends QuerySet {
   )
 
   def getAllByBoxId(boxId: BoxId)(implicit lh: LogHandler): Query0[UAsset] =
-    sql"select * from node_u_assets where box_id = $boxId".query[UAsset]
+    sql"select a.token_id, a.box_id, a.index, a.value from node_u_assets a where box_id = $boxId".query[UAsset]
 
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[UAsset] =
-    (sql"select distinct * from node_u_assets " ++ Fragments.in(fr"where box_id", boxIds))
+    (sql"select distinct a.token_id, a.box_id, a.index, a.value from node_u_assets a " ++
+    Fragments.in(fr"where a.box_id", boxIds))
       .query[UAsset]
 
   def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UAsset] =
