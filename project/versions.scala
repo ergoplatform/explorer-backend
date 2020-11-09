@@ -34,8 +34,8 @@ object versions {
   val RefinedVersion  = "0.9.10"
   val DerivingVersion = "1.0.0"
 
-  val EnumeratumVersion      = "1.5.15"
-  val EnumeratumCirceVersion = "1.5.23"
+  val EnumeratumVersion      = "1.6.1"
+  val EnumeratumCirceVersion = "1.6.1"
 
   val KindProjector = "0.11.0"
   val MacroParadise = "2.1.1"

@@ -166,6 +166,21 @@ CREATE INDEX "node_assets__box_id" ON node_assets (box_id);
 CREATE INDEX "node_assets__token_id" ON node_assets (token_id);
 CREATE INDEX "node_assets__header_id" ON node_assets (header_id);
 
+CREATE TABLE box_registers
+(
+    id        SMALLINT NOT NULL,
+    box_id    VARCHAR(64) NOT NULL,
+    header_id VARCHAR(64) NOT NULL,
+    type      VARCHAR(128) NOT NULL,
+    raw       VARCHAR(4096) NOT NULL,
+    decoded   VARCHAR(4096) NOT NULL,
+    PRIMARY KEY (id, box_id, header_id)
+);
+
+CREATE INDEX "box_registers__box_id" ON box_registers (box_id);
+CREATE INDEX "box_registers__token_id" ON box_registers (token_id);
+CREATE INDEX "box_registers__header_id" ON box_registers (header_id);
+
 /* Unconfirmed transactions.
  */
 CREATE TABLE node_u_transactions

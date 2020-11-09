@@ -146,6 +146,14 @@ package object explorer {
       HexString.fromString(s).map(TokenId.apply)
   }
 
+  @newtype final case class RegisterId(value: Byte)
+
+  object RegisterId {
+    // circe instances
+    implicit def encoder: Encoder[RegisterId] = deriving
+    implicit def decoder: Decoder[RegisterId] = deriving
+  }
+
   // Ergo Address
   @newtype case class Address(value: AddressType) {
     final def unwrapped: String = value.value
