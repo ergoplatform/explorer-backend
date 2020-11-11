@@ -2,7 +2,6 @@ package org.ergoplatform.explorer.protocol.models
 
 import derevo.circe.decoder
 import derevo.derive
-import io.circe.Json
 import io.circe.refined._
 import org.ergoplatform.explorer.{BoxId, HexString}
 
@@ -16,5 +15,5 @@ final case class ApiOutput(
   creationHeight: Int,
   ergoTree: HexString,
   assets: List[ApiAsset],
-  additionalRegisters: Json
+  additionalRegisters: Map[RegisterSignature, HexString]
 )

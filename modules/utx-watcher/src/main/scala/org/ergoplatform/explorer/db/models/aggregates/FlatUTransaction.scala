@@ -58,7 +58,7 @@ object FlatUTransaction {
             idx,
             apiOut.ergoTree,
             addressOpt,
-            apiOut.additionalRegisters
+            ???
           )
       }
       val assets =

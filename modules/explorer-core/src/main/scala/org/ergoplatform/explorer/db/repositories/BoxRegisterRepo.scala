@@ -1,11 +1,14 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.Sync
+import doobie.free.implicits._
+import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BoxRegister
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.doobieInstances._
 import tofu.syntax.monadic._
 
 trait BoxRegisterRepo[D[_]] {
@@ -16,7 +19,7 @@ trait BoxRegisterRepo[D[_]] {
 
   /** Persist a given list of `registers`.
     */
-  def insetMany(registers: List[BoxRegister]): D[Unit]
+  def insertMany(registers: List[BoxRegister]): D[Unit]
 }
 
 object BoxRegisterRepo {
@@ -33,7 +36,7 @@ object BoxRegisterRepo {
     def insert(register: BoxRegister): D[Unit] =
       QS.insert(register).void.liftConnectionIO
 
-    def insetMany(registers: List[BoxRegister]): D[Unit] =
+    def insertMany(registers: List[BoxRegister]): D[Unit] =
       QS.insertMany(registers).void.liftConnectionIO
   }
 }

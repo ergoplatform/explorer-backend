@@ -6,7 +6,7 @@ final case class BoxRegister(
   id: RegisterId,
   boxId: BoxId,
   headerId: Id,
-  typeSignature: String,
+  valueType: String,
   rawValue: HexString,
   decodedValue: String
 )

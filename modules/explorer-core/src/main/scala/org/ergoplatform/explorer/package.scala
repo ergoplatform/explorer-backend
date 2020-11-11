@@ -12,10 +12,12 @@ import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
+import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
+import scorex.util.encode.Base16
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 import tofu.Raise.ContravariantRaise
@@ -149,9 +151,25 @@ package object explorer {
   @newtype final case class RegisterId(value: Byte)
 
   object RegisterId {
+
+    val R0: RegisterId = RegisterId(0: Byte)
+    val R1: RegisterId = RegisterId(1: Byte)
+    val R2: RegisterId = RegisterId(1: Byte)
+    val R3: RegisterId = RegisterId(3: Byte)
+    val R4: RegisterId = RegisterId(4: Byte)
+    val R5: RegisterId = RegisterId(5: Byte)
+    val R6: RegisterId = RegisterId(6: Byte)
+    val R7: RegisterId = RegisterId(7: Byte)
+    val R8: RegisterId = RegisterId(8: Byte)
+    val R9: RegisterId = RegisterId(9: Byte)
+
     // circe instances
     implicit def encoder: Encoder[RegisterId] = deriving
     implicit def decoder: Decoder[RegisterId] = deriving
+
+    // doobie instances
+    implicit def get: Get[RegisterId] = deriving
+    implicit def put: Put[RegisterId] = deriving
   }
 
   // Ergo Address
@@ -199,7 +217,8 @@ package object explorer {
   }
 
   @newtype case class HexString(value: HexStringType) {
-    final def unwrapped: String = value.value
+    final def unwrapped: String  = value.value
+    final def bytes: Array[Byte] = Base16.decode(unwrapped).get
   }
 
   object HexString {

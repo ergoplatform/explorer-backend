@@ -171,7 +171,7 @@ CREATE TABLE box_registers
     id              SMALLINT NOT NULL,
     box_id          VARCHAR(64) NOT NULL,
     header_id       VARCHAR(64) NOT NULL,
-    type_signature  VARCHAR(128) NOT NULL,
+    value_type      VARCHAR(128) NOT NULL,
     raw_value       VARCHAR(4096) NOT NULL,
     decoded_value   VARCHAR(4096) NOT NULL,
     PRIMARY KEY (id, box_id, header_id)

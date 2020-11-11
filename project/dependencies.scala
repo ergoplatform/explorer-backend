@@ -138,7 +138,8 @@ object dependencies {
     Typing ++
     Simulacrum ++
     Monocle ++
-    Redis
+    Redis ++
+    Enums
 
   lazy val api: List[ModuleID] = Monix
 
