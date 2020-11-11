@@ -2,17 +2,18 @@ package org.ergoplatform
 
 import cats.Applicative
 import cats.instances.either._
+import cats.instances.string._
 import cats.syntax.either._
 import cats.syntax.functor._
 import doobie.refined.implicits._
 import doobie.util.{Get, Put}
+import enumeratum.{CirceEnum, Enum, EnumEntry}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, KeyDecoder}
 import io.estatico.newtype.macros.newtype
-import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
@@ -148,28 +149,30 @@ package object explorer {
       HexString.fromString(s).map(TokenId.apply)
   }
 
-  @newtype final case class RegisterId(value: Byte)
+  sealed abstract class RegisterId extends EnumEntry
 
-  object RegisterId {
+  object RegisterId extends Enum[RegisterId] with CirceEnum[RegisterId] {
 
-    val R0: RegisterId = RegisterId(0: Byte)
-    val R1: RegisterId = RegisterId(1: Byte)
-    val R2: RegisterId = RegisterId(1: Byte)
-    val R3: RegisterId = RegisterId(3: Byte)
-    val R4: RegisterId = RegisterId(4: Byte)
-    val R5: RegisterId = RegisterId(5: Byte)
-    val R6: RegisterId = RegisterId(6: Byte)
-    val R7: RegisterId = RegisterId(7: Byte)
-    val R8: RegisterId = RegisterId(8: Byte)
-    val R9: RegisterId = RegisterId(9: Byte)
+    case object R0 extends RegisterId
+    case object R1 extends RegisterId
+    case object R2 extends RegisterId
+    case object R3 extends RegisterId
+    case object R4 extends RegisterId
+    case object R5 extends RegisterId
+    case object R6 extends RegisterId
+    case object R7 extends RegisterId
+    case object R8 extends RegisterId
+    case object R9 extends RegisterId
 
-    // circe instances
-    implicit def encoder: Encoder[RegisterId] = deriving
-    implicit def decoder: Decoder[RegisterId] = deriving
+    val values = findValues
 
-    // doobie instances
-    implicit def get: Get[RegisterId] = deriving
-    implicit def put: Put[RegisterId] = deriving
+    implicit val decoder: KeyDecoder[RegisterId] = withNameOption
+
+    implicit val get: Get[RegisterId] =
+      Get[String].temap(s => withNameEither(s).leftMap(_ => s"No such RegisterId [$s]"))
+
+    implicit val put: Put[RegisterId] =
+      Put[String].contramap[RegisterId](_.entryName)
   }
 
   // Ergo Address

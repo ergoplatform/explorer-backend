@@ -175,7 +175,7 @@ object FlatBlock {
     for {
       tx                            <- apiTxs.transactions
       out                           <- tx.outputs
-      (idSig, rawValue)             <- out.additionalRegisters.toList
+      (id, rawValue)                <- out.additionalRegisters.toList
       RegisterValue(typeSig, value) <- RegistersParser[Try].parse(rawValue).toOption
-    } yield BoxRegister(idSig.id, out.boxId, apiTxs.headerId, typeSig, rawValue, value)
+    } yield BoxRegister(id, out.boxId, apiTxs.headerId, typeSig, rawValue, value)
 }

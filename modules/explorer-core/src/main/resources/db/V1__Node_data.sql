@@ -168,7 +168,7 @@ CREATE INDEX "node_assets__header_id" ON node_assets (header_id);
 
 CREATE TABLE box_registers
 (
-    id              SMALLINT NOT NULL,
+    id              VARCHAR(2) NOT NULL,
     box_id          VARCHAR(64) NOT NULL,
     header_id       VARCHAR(64) NOT NULL,
     value_type      VARCHAR(128) NOT NULL,
