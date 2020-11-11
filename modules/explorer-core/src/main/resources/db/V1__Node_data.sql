@@ -177,8 +177,8 @@ CREATE TABLE box_registers
     PRIMARY KEY (id, box_id, header_id)
 );
 
+CREATE INDEX "box_registers__id" ON box_registers (id);
 CREATE INDEX "box_registers__box_id" ON box_registers (box_id);
-CREATE INDEX "box_registers__token_id" ON box_registers (token_id);
 CREATE INDEX "box_registers__header_id" ON box_registers (header_id);
 
 /* Unconfirmed transactions.

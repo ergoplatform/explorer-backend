@@ -8,7 +8,7 @@ object BoxRegisterQuerySet extends QuerySet {
     "id",
     "box_id",
     "header_id",
-    "type_signature",
+    "value_type",
     "raw_value",
     "decoded_value"
   )
