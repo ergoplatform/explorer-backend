@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.http.api.v0
+package org.ergoplatform.explorer.http.api
 
 import cats.Monad
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
@@ -20,7 +20,7 @@ import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
 import sttp.tapir.server.http4s.Http4sServerOptions
 
-object HttpApiV0 {
+object HttpApi {
 
   /** Create an API v0 http server.
     */
