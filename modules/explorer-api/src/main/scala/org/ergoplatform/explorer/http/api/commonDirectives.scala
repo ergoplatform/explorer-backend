@@ -6,8 +6,8 @@ import cats.data.NonEmptyMap
 import cats.syntax.option._
 import cats.syntax.flatMap._
 import cats.instances.option._
-import org.ergoplatform.explorer.http.api.models.{Paging, Sorting}
-import sttp.tapir.{query, EndpointInput, Validator}
+import org.ergoplatform.explorer.http.api.models.{Epochs, Paging, Sorting}
+import sttp.tapir.{query, EndpointInput, ValidationError, Validator}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -45,6 +45,22 @@ object commonDirectives {
         case Sorting(sortBy, order) =>
           allowedFields.toNel.find(_._2 == sortBy).map(_._1) -> order.some
       }
+
+  def epochSlicing(maxEpochs: Int): EndpointInput[Epochs] =
+    (query[Int]("minHeight").validate(Validator.min(0)) and
+    query[Int]("maxHeight").validate(Validator.min(1)))
+      .validate(Validator.custom[(Int, Int)](validateBounds(_, maxEpochs)))
+      .map(in => Epochs(in._1, in._2))(epochs => epochs.minHeight -> epochs.maxHeight)
+
+  private def validateBounds(bounds: (Int, Int), max: Int): List[ValidationError[_]] =
+    bounds match {
+      case (minH, maxH) if maxH - minH > max =>
+        ValidationError.Custom(
+          bounds,
+          s"To many epochs requested. Max allowed number is $max"
+        ) :: Nil
+      case _ => Nil
+    }
 
   private val TimespanRegex = "^([0-9]+)(days|day|years|year)$".r
 

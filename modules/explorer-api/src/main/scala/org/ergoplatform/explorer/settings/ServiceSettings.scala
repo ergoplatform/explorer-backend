@@ -1,3 +1,3 @@
 package org.ergoplatform.explorer.settings
 
-final case class ServiceSettings(maxEpochsPerRequest: Int)
+final case class ServiceSettings(maxEpochsPerRequest: Int, chunkSize: Int)
