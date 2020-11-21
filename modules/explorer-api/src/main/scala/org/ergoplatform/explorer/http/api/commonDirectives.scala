@@ -13,12 +13,15 @@ import scala.concurrent.duration.FiniteDuration
 
 object commonDirectives {
 
-  val paging: EndpointInput[Paging] =
+  def paging: EndpointInput[Paging] = paging(Int.MaxValue)
+
+  def paging(maxLimit: Int): EndpointInput[Paging] =
     (query[Option[Int]]("offset").validate(Validator.min(0).asOptionElement) and
     query[Option[Int]]("limit").validate(Validator.min(1).asOptionElement))
       .map { input =>
         Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }
+      .validate(Validator.custom(validatePaging(_, maxLimit)))
 
   val confirmations: EndpointInput[Int] =
     query[Option[Int]]("minConfirmations").map(_.getOrElse(0))(_.some)
@@ -49,7 +52,7 @@ object commonDirectives {
   def epochSlicing(maxEpochs: Int): EndpointInput[Epochs] =
     (query[Int]("minHeight").validate(Validator.min(0)) and
     query[Int]("maxHeight").validate(Validator.min(1)))
-      .validate(Validator.custom[(Int, Int)](validateBounds(_, maxEpochs)))
+      .validate(Validator.custom(validateBounds(_, maxEpochs)))
       .map(in => Epochs(in._1, in._2))(epochs => epochs.minHeight -> epochs.maxHeight)
 
   private def validateBounds(bounds: (Int, Int), max: Int): List[ValidationError[_]] =
@@ -57,10 +60,18 @@ object commonDirectives {
       case (minH, maxH) if maxH - minH > max =>
         ValidationError.Custom(
           bounds,
-          s"To many epochs requested. Max allowed number is $max"
+          s"To many epochs requested. Max allowed number is '$max'"
         ) :: Nil
       case _ => Nil
     }
+
+  private def validatePaging(paging: Paging, maxLimit: Int): List[ValidationError[_]] =
+    if (paging.limit > maxLimit)
+      ValidationError.Custom(
+        paging,
+        s"Max limit for this method is '$maxLimit'"
+      ) :: Nil
+    else Nil
 
   private val TimespanRegex = "^([0-9]+)(days|day|years|year)$".r
 

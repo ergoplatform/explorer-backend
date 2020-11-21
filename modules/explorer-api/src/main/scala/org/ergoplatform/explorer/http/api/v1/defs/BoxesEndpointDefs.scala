@@ -36,13 +36,13 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
   def outputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "byTokenId" / path[TokenId])
-      .in(paging)
+      .in(paging(settings.heavyRequestsLimit))
       .out(jsonBody[Items[OutputInfo]])
 
   def unspentOutputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "byTokenId" / path[TokenId] / "unspent")
-      .in(paging)
+      .in(paging(settings.heavyRequestsLimit))
       .out(jsonBody[Items[OutputInfo]])
 
   private def validateEpochs(numEpochs: Int, max: Int): List[ValidationError[_]] =
