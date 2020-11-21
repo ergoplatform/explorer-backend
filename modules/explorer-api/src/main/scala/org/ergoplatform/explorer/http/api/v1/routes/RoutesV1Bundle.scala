@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v1.routes
 
 import cats.Monad
 import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.ErgoAddressEncoder
@@ -33,6 +34,7 @@ object RoutesV1Bundle {
       implicit0(log: Logger[F]) <- Slf4jLogger.create
       boxesService              <- BoxesService(trans)
       boxesRoutes = BoxesRoutes(serviceSettings, boxesService)
-      routes      = boxesRoutes
+      docs        = DocsRoutes(serviceSettings)
+      routes      = boxesRoutes <+> docs
     } yield RoutesV1Bundle(routes)
 }

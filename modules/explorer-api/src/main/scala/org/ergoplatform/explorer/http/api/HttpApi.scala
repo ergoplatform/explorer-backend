@@ -11,8 +11,7 @@ import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.http.api.v0.routes._
-import org.ergoplatform.explorer.http.api.v0.services._
+import org.ergoplatform.explorer.http.api.v0.routes.RoutesV0Bundle
 import org.ergoplatform.explorer.http.api.v1.routes.RoutesV1Bundle
 import org.ergoplatform.explorer.settings.{HttpSettings, ProtocolSettings, ServiceSettings, UtxCacheSettings}
 import org.http4s.server.blaze.BlazeServerBuilder
