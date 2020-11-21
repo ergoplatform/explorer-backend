@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{ContextShift, Sync}
+import cats.effect.{Concurrent, ContextShift, Sync, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
@@ -13,7 +13,7 @@ import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
 final class BoxesRoutes[
-  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: BoxesService[F, fs2.Stream])(implicit opts: Http4sServerOptions[F]) {
 
   import BoxesEndpointDefs._
@@ -54,7 +54,7 @@ final class BoxesRoutes[
 
 object BoxesRoutes {
 
-  def apply[F[_]: Sync: ContextShift: Logger](
+  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     service: BoxesService[F, fs2.Stream]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new BoxesRoutes[F](service).routes

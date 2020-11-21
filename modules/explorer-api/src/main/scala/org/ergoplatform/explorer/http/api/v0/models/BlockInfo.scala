@@ -4,8 +4,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
-import sttp.tapir.Schema
-import sttp.tapir.generic.Derived
+import sttp.tapir.{Schema, Validator}
 
 final case class BlockInfo(
   id: Id,
@@ -23,7 +22,8 @@ object BlockInfo {
   implicit val codec: Codec[BlockInfo] = deriveCodec
 
   implicit val schema: Schema[BlockInfo] =
-    implicitly[Derived[Schema[BlockInfo]]].value
+    Schema
+      .derive[BlockInfo]
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
       .modify(_.timestamp)(_.description("Timestamp the block was created (UNIX timestamp in millis)"))
@@ -35,6 +35,8 @@ object BlockInfo {
       .modify(_.minerReward)(
         _.description("The amount of nanoErgs miner received as a reward for block")
       )
+
+  implicit val validator: Validator[BlockInfo] = Validator.derive
 
   def apply(extBlockInfo: ExtendedBlockInfo): BlockInfo = {
     val minerName = extBlockInfo.minerNameOpt.getOrElse(

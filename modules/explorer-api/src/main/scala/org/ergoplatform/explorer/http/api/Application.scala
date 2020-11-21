@@ -13,7 +13,11 @@ import org.ergoplatform.explorer.settings.ApiAppSettings
 import org.ergoplatform.explorer.http.api.decodingFailureHandler._
 import pureconfig.generic.auto._
 
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+
 object Application extends TaskApp {
+
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   def run(args: List[String]): Task[ExitCode] =
     resources(args.headOption).use {

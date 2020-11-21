@@ -20,6 +20,8 @@ import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
 import sttp.tapir.server.http4s.Http4sServerOptions
 
+import scala.concurrent.ExecutionContext
+
 object HttpApi {
 
   /** Create an API v0 http server.
@@ -32,8 +34,8 @@ object HttpApi {
     protocolSettings: ProtocolSettings,
     utxCacheSettings: UtxCacheSettings,
     redis: RedisCommands[F, String, String]
-  )(trans: D Trans F)(
-    implicit
+  )(trans: D Trans F)(implicit
+    ec: ExecutionContext,
     encoder: ErgoAddressEncoder,
     opts: Http4sServerOptions[F]
   ): Resource[F, Server[F]] =
@@ -60,11 +62,11 @@ object HttpApi {
       boxesRoutes   = BoxesRoutes(boxesService)
 
       routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
-      addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes <+> chartsRoutes
+               addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes <+> chartsRoutes
       corsRoutes = CORS(routes)
-      http <- BlazeServerBuilder[F]
-               .bindHttp(settings.port, settings.host)
-               .withHttpApp(Router("/" -> corsRoutes).orNotFound)
-               .resource
+      http <- BlazeServerBuilder[F](ec)
+                .bindHttp(settings.port, settings.host)
+                .withHttpApp(Router("/" -> corsRoutes).orNotFound)
+                .resource
     } yield http
 }

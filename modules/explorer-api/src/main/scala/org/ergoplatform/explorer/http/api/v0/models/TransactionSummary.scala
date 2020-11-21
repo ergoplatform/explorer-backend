@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, Extend
 import org.ergoplatform.explorer.db.models.{Asset, Transaction}
 import org.ergoplatform.explorer.http.api.v0.models.TransactionSummary.MiniBlockInfo
 import org.ergoplatform.explorer.protocol.constants
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 final case class TransactionSummary(
@@ -52,17 +52,23 @@ object TransactionSummary {
   implicit val codecBlockInfo: Codec[MiniBlockInfo] = deriveCodec
 
   implicit val schemaBlockInfo: Schema[MiniBlockInfo] =
-    implicitly[Derived[Schema[MiniBlockInfo]]].value
+    Schema
+      .derive[MiniBlockInfo]
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
 
+  implicit val validatorBlockInfo: Validator[MiniBlockInfo] = Validator.derive
+
   implicit val schema: Schema[TransactionSummary] =
-    implicitly[Derived[Schema[TransactionSummary]]].value
+    Schema
+      .derive[TransactionSummary]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.timestamp)(_.description("Timestamp the transaction got into the network"))
       .modify(_.index)(_.description("Index of a transaction inside a block"))
       .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
       .modify(_.size)(_.description("Size of transaction in bytes"))
+
+  implicit val validator: Validator[TransactionSummary] = Validator.derive
 
   def apply(
     tx: Transaction,

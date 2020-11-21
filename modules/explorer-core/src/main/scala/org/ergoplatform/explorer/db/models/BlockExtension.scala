@@ -20,7 +20,7 @@ object BlockExtension {
   implicit val codec: Codec[BlockExtension] = deriveCodec
 
   implicit def schema: Schema[BlockExtension] =
-    implicitly[Derived[Schema[BlockExtension]]].value
+    Schema.derive
 
   implicit private def fieldsSchema: Schema[Json] =
     Schema(

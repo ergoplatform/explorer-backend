@@ -9,6 +9,6 @@ object DocsEndpointDefs {
 
   def endpoints: List[Endpoint[_, _, _, _]] = apiSpecDef :: Nil
 
-  def apiSpecDef: Endpoint[Unit, ApiErr, String, Nothing] =
+  def apiSpecDef: Endpoint[Unit, ApiErr, String, Any] =
     baseEndpointDef.in(PathPrefix / "openapi").out(plainBody[String])
 }

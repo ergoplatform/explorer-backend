@@ -340,7 +340,7 @@ object OutputQuerySet extends QuerySet {
          |where header_id = $headerId
          """.stripMargin.update
 
-  def getAllMainUnspent(minHeight: Int)(implicit lh: LogHandler): Query0[Output] =
+  def getAllMainUnspent(minHeight: Int, maxHeight: Int)(implicit lh: LogHandler): Query0[Output] =
     sql"""
          |select
          |  o.box_id,
@@ -359,5 +359,6 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.creation_height >= $minHeight
+         |  and o.creation_height <= $maxHeight
          |""".stripMargin.query[Output]
 }

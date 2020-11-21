@@ -13,7 +13,7 @@ object Sorting {
 
   object SortOrder {
 
-    implicit val codec: Codec.PlainCodec[SortOrder] = Codec.stringPlainCodecUtf8
+    implicit val codec: Codec.PlainCodec[SortOrder] = Codec.string
       .mapDecode(fromString)(_.toString)
 
     private def fromString(s: String): DecodeResult[SortOrder] =

@@ -4,7 +4,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUDataInput
 import org.ergoplatform.explorer.{Address, BoxId, TxId}
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 final case class UDataInputInfo(
@@ -22,7 +22,8 @@ object UDataInputInfo {
   implicit val codec: Codec[UDataInputInfo] = deriveCodec
 
   implicit val schema: Schema[UDataInputInfo] =
-    implicitly[Derived[Schema[UDataInputInfo]]].value
+    Schema
+      .derive[UDataInputInfo]
       .modify(_.id)(_.description("Id of the corresponding box"))
       .modify(_.transactionId)(_.description("ID of the transaction this data input was used in"))
       .modify(_.value)(_.description("Amount of nanoERGs in the corresponding box"))
@@ -30,6 +31,8 @@ object UDataInputInfo {
       .modify(_.outputTransactionId)(_.description("ID of the output transaction"))
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Address"))
+
+  implicit val validator: Validator[UDataInputInfo] = Validator.derive
 
   def apply(in: ExtendedUDataInput): UDataInputInfo =
     new UDataInputInfo(

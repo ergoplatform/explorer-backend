@@ -4,8 +4,8 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.{UAsset, UOutput}
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
-import sttp.tapir.generic.Derived
-import sttp.tapir.{Schema, SchemaType}
+import sttp.tapir.{Schema, SchemaType, Validator}
+import sttp.tapir.json.circe.validatorForCirceJson
 
 final case class UOutputInfo(
   id: BoxId,
@@ -24,7 +24,8 @@ object UOutputInfo {
   implicit val codec: Codec[UOutputInfo] = deriveCodec
 
   implicit val schema: Schema[UOutputInfo] =
-    implicitly[Derived[Schema[UOutputInfo]]].value
+    Schema
+      .derive[UOutputInfo]
       .modify(_.id)(_.description("Id of the corresponding box"))
       .modify(_.txId)(_.description("Id of the transaction that created the box"))
       .modify(_.value)(_.description("Amount of nanoERGs containing in the box"))
@@ -32,6 +33,8 @@ object UOutputInfo {
       .modify(_.ergoTree)(_.description("Encoded script"))
       .modify(_.address)(_.description("Address derived from ErgoTree"))
       .modify(_.additionalRegisters)(_.description("Arbitrary key->value dictionary"))
+
+  implicit val validator: Validator[UOutputInfo] = Validator.derive
 
   implicit private def registersSchema: Schema[Json] =
     Schema(

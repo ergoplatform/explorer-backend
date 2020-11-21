@@ -6,7 +6,7 @@ import sttp.tapir.json.circe._
 
 object defs {
 
-  def baseEndpointDef(basePrefix: EndpointInput[Unit]): Endpoint[Unit, ApiErr, Unit, Nothing] =
+  def baseEndpointDef(basePrefix: EndpointInput[Unit]): Endpoint[Unit, ApiErr, Unit, Any] =
     endpoint
       .in(basePrefix)
       .errorOut(
@@ -22,5 +22,5 @@ object defs {
           statusDefaultMapping(jsonBody[ApiErr.UnknownErr].description("Unknown error"))
         )
       )
-      .asInstanceOf[Endpoint[Unit, ApiErr, Unit, Nothing]]
+      .asInstanceOf[Endpoint[Unit, ApiErr, Unit, Any]]
 }

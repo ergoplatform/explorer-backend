@@ -15,13 +15,13 @@ object AssetsEndpointDefs {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getAllIssuingBoxesDef :: getIssuingBoxDef :: Nil
 
-  def getAllIssuingBoxesDef: Endpoint[Paging, ApiErr, Items[OutputInfo], Nothing] =
+  def getAllIssuingBoxesDef: Endpoint[Paging, ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef
       .in(paging)
       .in(PathPrefix / "issuingBoxes")
       .out(jsonBody[Items[OutputInfo]])
 
-  def getIssuingBoxDef: Endpoint[TokenId, ApiErr, List[OutputInfo], Nothing] =
+  def getIssuingBoxDef: Endpoint[TokenId, ApiErr, List[OutputInfo], Any] =
     baseEndpointDef
       .in(PathPrefix / path[TokenId] / "issuingBox")
       .out(jsonBody[List[OutputInfo]])

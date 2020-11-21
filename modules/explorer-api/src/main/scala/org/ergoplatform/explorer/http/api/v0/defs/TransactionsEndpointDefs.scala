@@ -18,36 +18,36 @@ object TransactionsEndpointDefs {
     getTxByIdDef :: getUnconfirmedTxByIdDef :: getUnconfirmedTxsByAddressDef ::
     getUnconfirmedTxsDef :: getTxsSinceDef :: sendTransactionDef :: Nil
 
-  def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionSummary, Nothing] =
+  def getTxByIdDef: Endpoint[TxId, ApiErr, TransactionSummary, Any] =
     baseEndpointDef.get
       .in(PathPrefix / path[TxId])
       .out(jsonBody[TransactionSummary])
 
-  def getUnconfirmedTxsDef: Endpoint[Paging, ApiErr, Items[UTransactionInfo], Nothing] =
+  def getUnconfirmedTxsDef: Endpoint[Paging, ApiErr, Items[UTransactionInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "unconfirmed")
       .in(paging)
       .out(jsonBody[Items[UTransactionInfo]])
 
-  def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionSummary, Nothing] =
+  def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionSummary, Any] =
     baseEndpointDef.get
       .in(PathPrefix / "unconfirmed" / path[TxId])
       .out(jsonBody[UTransactionSummary])
 
   def getUnconfirmedTxsByAddressDef
-    : Endpoint[(Paging, Address), ApiErr, Items[UTransactionInfo], Nothing] =
+    : Endpoint[(Paging, Address), ApiErr, Items[UTransactionInfo], Any] =
     baseEndpointDef.get
       .in(paging)
       .in(PathPrefix / "unconfirmed" / "byAddress" / path[Address])
       .out(jsonBody[Items[UTransactionInfo]])
 
-  def getTxsSinceDef: Endpoint[(Paging, Int), ApiErr, List[TransactionInfo], Nothing] =
+  def getTxsSinceDef: Endpoint[(Paging, Int), ApiErr, List[TransactionInfo], Any] =
     baseEndpointDef.get
       .in(paging)
       .in(PathPrefix / "since" / path[Int])
       .out(jsonBody[List[TransactionInfo]])
 
-  def sendTransactionDef: Endpoint[ErgoLikeTransaction, ApiErr, TxIdResponse, Nothing] =
+  def sendTransactionDef: Endpoint[ErgoLikeTransaction, ApiErr, TxIdResponse, Any] =
     baseEndpointDef.post
       .in(PathPrefix / "send")
       .in(jsonBody[ErgoLikeTransaction])

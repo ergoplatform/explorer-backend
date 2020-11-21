@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{ContextShift, Sync}
+import cats.effect.{Concurrent, ContextShift, Sync, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
@@ -11,7 +11,7 @@ import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
 final class DexRoutes[
-  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: DexService[F, fs2.Stream])(
   implicit opts: Http4sServerOptions[F]
 ) {
@@ -46,7 +46,7 @@ final class DexRoutes[
 
 object DexRoutes {
 
-  def apply[F[_]: Sync: ContextShift: Logger](
+  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     service: DexService[F, fs2.Stream]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new DexRoutes(service).routes

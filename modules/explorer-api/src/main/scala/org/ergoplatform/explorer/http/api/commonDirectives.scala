@@ -16,9 +16,8 @@ object commonDirectives {
   val paging: EndpointInput[Paging] =
     (query[Option[Int]]("offset").validate(Validator.min(0).asOptionElement) and
     query[Option[Int]]("limit").validate(Validator.min(1).asOptionElement))
-      .map {
-        case (offsetOpt, limitOpt) =>
-          Paging(offsetOpt.getOrElse(0), limitOpt.getOrElse(20))
+      .map { input =>
+        Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }
 
   val confirmations: EndpointInput[Int] =
@@ -27,7 +26,7 @@ object commonDirectives {
   val timespan: EndpointInput[FiniteDuration] =
     query[Option[String]]("timespan").map {
       _.flatMap(parseTimespan).getOrElse(FiniteDuration(365, TimeUnit.DAYS))
-    } { _.toString.some }
+    }(_.toString.some)
 
   def sorting(
     allowedFields: NonEmptyMap[String, String],
@@ -36,12 +35,12 @@ object commonDirectives {
     (query[Option[String]]("sortBy").validate(
       Validator.`enum`(none :: allowedFields.keys.toNonEmptyList.toList.map(_.some))
     ) and query[Option[Sorting.SortOrder]]("sortDirection"))
-      .map {
-        case (fieldOpt, orderOpt) =>
-          val specFieldOpt = fieldOpt >>= (allowedFields(_))
-          val field        = specFieldOpt getOrElse (defaultFieldOpt getOrElse allowedFields.head._2)
-          val ord          = orderOpt getOrElse Sorting.Desc
-          Sorting(field, ord)
+      .map { input =>
+        val (fieldOpt, orderOpt) = input
+        val specFieldOpt         = fieldOpt >>= (allowedFields(_))
+        val field                = specFieldOpt getOrElse (defaultFieldOpt getOrElse allowedFields.head._2)
+        val ord                  = orderOpt getOrElse Sorting.Desc
+        Sorting(field, ord)
       } {
         case Sorting(sortBy, order) =>
           allowedFields.toNel.find(_._2 == sortBy).map(_._1) -> order.some

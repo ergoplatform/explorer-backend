@@ -12,6 +12,6 @@ object StatsEndpointDefs {
 
   def endpoints: List[Endpoint[_, _, _, _]] = getCurrentStatsDef :: Nil
 
-  def getCurrentStatsDef: Endpoint[Unit, ApiErr, StatsSummary, Nothing] =
+  def getCurrentStatsDef: Endpoint[Unit, ApiErr, StatsSummary, Any] =
     baseEndpointDef.get.in(PathPrefix).out(jsonBody[StatsSummary])
 }

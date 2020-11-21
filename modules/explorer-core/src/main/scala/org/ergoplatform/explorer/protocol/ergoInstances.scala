@@ -18,7 +18,7 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll
-import sttp.tapir.{Schema, SchemaType}
+import sttp.tapir.{Schema, SchemaType, Validator}
 
 import scala.util.Try
 
@@ -27,8 +27,13 @@ object ergoInstances {
   implicit def eltCodec: io.circe.Codec[ErgoLikeTransaction] =
     io.circe.Codec.from(ergoLikeTransactionDecoder, ergoLikeTransactionEncoder)
 
-  implicit def schemaBlockInfo: Schema[ErgoLikeTransaction] =
-    Schema(SchemaType.SProduct(SchemaType.SObjectInfo("ErgoLikeTransaction"), Iterable.empty)) // todo: derive schema for the whole ErgoLikeTransaction.
+  implicit def schemaErgoLikeTx: Schema[ErgoLikeTransaction] =
+    Schema(
+      SchemaType.SProduct(SchemaType.SObjectInfo("ErgoLikeTransaction"), Iterable.empty)
+    ) // todo: derive schema for the whole ErgoLikeTransaction.
+
+  implicit def validatorErgoLikeTx: Validator[ErgoLikeTransaction] =
+    Validator.min(1).contramap[ErgoLikeTransaction](_.inputs.size)
 
   def fromTry[T](tryResult: Try[T])(implicit cursor: ACursor): Either[DecodingFailure, T] =
     tryResult.fold(e => Left(DecodingFailure(e.toString, cursor.history)), Right.apply)
@@ -241,8 +246,7 @@ object ergoInstances {
   implicit val ergoTreeDecoder: Decoder[ErgoTree] =
     decodeErgoTree(_.asInstanceOf[ErgoTree])
 
-  implicit def registersEncoder[T <: EvaluatedValue[_ <: SType]]
-    : Encoder[Map[NonMandatoryRegisterId, T]] =
+  implicit def registersEncoder[T <: EvaluatedValue[_ <: SType]]: Encoder[Map[NonMandatoryRegisterId, T]] =
     Encoder.instance { m =>
       Json.obj(
         m.toSeq
@@ -273,8 +277,8 @@ object ergoInstances {
         additionalTokens <- cursor.downField("assets").as(Decoder.decodeSeq(assetDecoder))
         creationHeight   <- cursor.downField("creationHeight").as[Int]
         additionalRegisters <- cursor
-                                .downField("additionalRegisters")
-                                .as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
+                                 .downField("additionalRegisters")
+                                 .as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
         transactionId <- cursor.downField("transactionId").as[ModifierId]
         index         <- cursor.downField("index").as[Short]
       } yield new ErgoBox(
@@ -306,11 +310,13 @@ object ergoInstances {
         creationHeight <- cursor.downField("creationHeight").as[Int]
         ergoTree       <- cursor.downField("ergoTree").as[ErgoTree]
         assets <- cursor
-                   .downField("assets")
-                   .as[Seq[(ErgoBox.TokenId, Long)]] // TODO optimize: encode directly into Coll avoiding allocation of Tuple2 for each element
+                    .downField("assets")
+                    .as[Seq[
+                      (ErgoBox.TokenId, Long)
+                    ]] // TODO optimize: encode directly into Coll avoiding allocation of Tuple2 for each element
         registers <- cursor
-                      .downField("additionalRegisters")
-                      .as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
+                       .downField("additionalRegisters")
+                       .as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
       } yield (
         new ErgoBoxCandidate(value, ergoTree, creationHeight, assets.toColl, registers),
         maybeId
@@ -323,8 +329,8 @@ object ergoInstances {
         inputs     <- cursor.downField("inputs").as[IndexedSeq[Input]]
         dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
         outputsWithIndex <- cursor
-                             .downField("outputs")
-                             .as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
+                              .downField("outputs")
+                              .as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
       } yield new ErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
     }
 
@@ -334,13 +340,12 @@ object ergoInstances {
         inputs     <- cursor.downField("inputs").as[IndexedSeq[UnsignedInput]]
         dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
         outputsWithIndex <- cursor
-                             .downField("outputs")
-                             .as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
+                              .downField("outputs")
+                              .as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
       } yield new UnsignedErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
     }
 
-  implicit val ergoLikeTransactionTemplateDecoder
-    : Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = {
+  implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = {
     ergoLikeTransactionDecoder
       .asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]] or
     unsignedErgoLikeTransactionDecoder

@@ -18,19 +18,19 @@ object BlocksEndpointDefs {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getBlocksDef :: getBlockSummaryByIdDef :: getBlockIdsAtHeightDef :: Nil
 
-  def getBlocksDef: Endpoint[(Paging, Sorting), ApiErr, Items[BlockInfo], Nothing] =
+  def getBlocksDef: Endpoint[(Paging, Sorting), ApiErr, Items[BlockInfo], Any] =
     baseEndpointDef.get
       .in(paging)
       .in(sorting(allowedSortingFields, defaultFieldOpt = "height".some))
       .in(PathPrefix)
       .out(jsonBody[Items[BlockInfo]])
 
-  def getBlockSummaryByIdDef: Endpoint[Id, ApiErr, BlockSummary, Nothing] =
+  def getBlockSummaryByIdDef: Endpoint[Id, ApiErr, BlockSummary, Any] =
     baseEndpointDef.get
       .in(PathPrefix / path[Id])
       .out(jsonBody[BlockSummary])
 
-  def getBlockIdsAtHeightDef: Endpoint[Int, ApiErr, List[Id], Nothing] =
+  def getBlockIdsAtHeightDef: Endpoint[Int, ApiErr, List[Id], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "at" / path[Int])
       .out(jsonBody[List[Id]])

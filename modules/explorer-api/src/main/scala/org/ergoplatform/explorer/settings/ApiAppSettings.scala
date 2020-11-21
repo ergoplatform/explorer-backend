@@ -11,7 +11,8 @@ final case class ApiAppSettings(
   db: DbSettings,
   protocol: ProtocolSettings,
   utxCache: UtxCacheSettings,
-  redis: RedisSettings
+  redis: RedisSettings,
+  service: ServiceSettings
 )
 
 object ApiAppSettings {

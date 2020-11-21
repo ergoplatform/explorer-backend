@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{ContextShift, Sync}
+import cats.effect.{Concurrent, ContextShift, Sync, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
@@ -12,7 +12,7 @@ import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
 final class TransactionsRoutes[
-  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](txsService: TransactionsService[F], offChainService: OffChainService[F])(
   implicit opts: Http4sServerOptions[F]
 ) {
@@ -75,7 +75,7 @@ final class TransactionsRoutes[
 
 object TransactionsRoutes {
 
-  def apply[F[_]: Sync: ContextShift: Logger](
+  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     txsService: TransactionsService[F],
     offChainService: OffChainService[F]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =

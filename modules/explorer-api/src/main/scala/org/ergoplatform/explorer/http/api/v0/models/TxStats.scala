@@ -4,7 +4,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.db.models.{Transaction, UTransaction}
 import org.ergoplatform.explorer.protocol.constants
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 final case class TxStats(totalCoinsTransferred: Long, totalFee: Long, feePerByte: Double)
@@ -14,7 +14,8 @@ object TxStats {
   implicit val codec: Codec[TxStats] = deriveCodec
 
   implicit val schema: Schema[TxStats] =
-    implicitly[Derived[Schema[TxStats]]].value
+    Schema
+      .derive[TxStats]
       .modify(_.totalCoinsTransferred)(
         _.description("Total amount of coins transferred by transaction")
       )
@@ -24,6 +25,8 @@ object TxStats {
       .modify(_.feePerByte)(
         _.description("Amount of nanoERGs ber byte in transaction")
       )
+
+  implicit val validator: Validator[TxStats] = Validator.derive
 
   def apply(
     tx: Transaction,

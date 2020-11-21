@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.db.models.{Asset, Header, Transaction}
 import org.ergoplatform.explorer.{Id, TxId}
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 final case class TransactionInfo(
@@ -25,8 +25,11 @@ object TransactionInfo {
 
   implicit val codec: Codec[TransactionInfo] = deriveCodec
 
+  implicit val validator: Validator[TransactionInfo] = Validator.derive
+
   implicit val schema: Schema[TransactionInfo] =
-    implicitly[Derived[Schema[TransactionInfo]]].value
+    Schema
+      .derive[TransactionInfo]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.headerId)(_.description("ID of the corresponding header"))
       .modify(_.inclusionHeight)(_.description("Height of the block the transaction was included in"))

@@ -17,44 +17,44 @@ object ChartsEndpointDefs {
     getTotalTxsNumDef :: getAvgDifficultyDef :: getMinersRevenueDef :: getHashRateDef ::
     getHashRateDistributionDef :: Nil
 
-  def getTotalCoinsAmtDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getTotalCoinsAmtDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Any] =
     baseEndpointDef.get.in(PathPrefix / "total").in(timespan).out(jsonBody[List[ChartPoint]])
 
-  def getAvgBlockSizeDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getAvgBlockSizeDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Any] =
     baseEndpointDef.get.in(PathPrefix / "block-size").in(timespan).out(jsonBody[List[ChartPoint]])
 
-  def getBlockChainSizeDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getBlockChainSizeDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "blockchain-size")
       .in(timespan)
       .out(jsonBody[List[ChartPoint]])
 
-  def getAvgTxsNumPerBlockDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getAvgTxsNumPerBlockDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "transactions-per-block")
       .in(timespan)
       .out(jsonBody[List[ChartPoint]])
 
-  def getTotalTxsNumDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getTotalTxsNumDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "transactions-number")
       .in(timespan)
       .out(jsonBody[List[ChartPoint]])
 
-  def getAvgDifficultyDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getAvgDifficultyDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Any] =
     baseEndpointDef.get.in(PathPrefix / "difficulty").in(timespan).out(jsonBody[List[ChartPoint]])
 
-  def getMinersRevenueDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getMinersRevenueDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "miners-revenue")
       .in(timespan)
       .out(jsonBody[List[ChartPoint]])
 
-  def getHashRateDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Nothing] =
+  def getHashRateDef: Endpoint[FiniteDuration, ApiErr, List[ChartPoint], Any] =
     baseEndpointDef.get.in(PathPrefix / "hash-rate").in(timespan).out(jsonBody[List[ChartPoint]])
 
   def getHashRateDistributionDef
-    : Endpoint[Unit, ApiErr, List[HashRateDistributionSegment], Nothing] =
+    : Endpoint[Unit, ApiErr, List[HashRateDistributionSegment], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "hash-rate-distribution")
       .out(jsonBody[List[HashRateDistributionSegment]])

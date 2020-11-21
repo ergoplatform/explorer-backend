@@ -8,6 +8,6 @@ package object defs {
 
   private val V0Prefix: EndpointInput[Unit] = "api" / "v0"
 
-  val baseEndpointDef: Endpoint[Unit, ApiErr, Unit, Nothing] =
+  val baseEndpointDef: Endpoint[Unit, ApiErr, Unit, Any] =
     http.api.defs.baseEndpointDef(V0Prefix)
 }
