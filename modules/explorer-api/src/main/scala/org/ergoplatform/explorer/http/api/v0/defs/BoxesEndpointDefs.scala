@@ -14,25 +14,25 @@ object BoxesEndpointDefs {
     getOutputByIdDef :: getOutputsByErgoTreeDef :: getUnspentOutputsByErgoTreeDef ::
     getOutputsByAddressDef :: getUnspentOutputsByAddressDef :: Nil
 
-  def getOutputByIdDef: Endpoint[BoxId, ApiErr, OutputInfo, Nothing] =
+  def getOutputByIdDef: Endpoint[BoxId, ApiErr, OutputInfo, Any] =
     baseEndpointDef.get.in(PathPrefix / path[BoxId]).out(jsonBody[OutputInfo])
 
-  def getOutputsByErgoTreeDef: Endpoint[HexString, ApiErr, List[OutputInfo], Nothing] =
+  def getOutputsByErgoTreeDef: Endpoint[HexString, ApiErr, List[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTree" / path[HexString])
       .out(jsonBody[List[OutputInfo]])
 
-  def getUnspentOutputsByErgoTreeDef: Endpoint[HexString, ApiErr, List[OutputInfo], Nothing] =
+  def getUnspentOutputsByErgoTreeDef: Endpoint[HexString, ApiErr, List[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTree" / "unspent" / path[HexString])
       .out(jsonBody[List[OutputInfo]])
 
-  def getOutputsByAddressDef: Endpoint[Address, ApiErr, List[OutputInfo], Nothing] =
+  def getOutputsByAddressDef: Endpoint[Address, ApiErr, List[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byAddress" / path[Address])
       .out(jsonBody[List[OutputInfo]])
 
-  def getUnspentOutputsByAddressDef: Endpoint[Address, ApiErr, List[OutputInfo], Nothing] =
+  def getUnspentOutputsByAddressDef: Endpoint[Address, ApiErr, List[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byAddress" / "unspent" / path[Address])
       .out(jsonBody[List[OutputInfo]])

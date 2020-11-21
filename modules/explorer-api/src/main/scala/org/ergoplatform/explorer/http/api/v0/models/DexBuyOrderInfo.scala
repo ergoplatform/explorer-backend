@@ -5,7 +5,7 @@ import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 final case class DexBuyOrderInfo(
@@ -18,8 +18,9 @@ object DexBuyOrderInfo {
 
   implicit val codec: Codec[DexBuyOrderInfo] = deriveCodec
 
-  implicit val schema: Schema[DexBuyOrderInfo] =
-    implicitly[Derived[Schema[DexBuyOrderInfo]]].value
+  implicit val schema: Schema[DexBuyOrderInfo] = Schema.derive
+
+  implicit val validator: Validator[DexBuyOrderInfo] = Validator.derive
 
   def apply(
     output: ExtendedOutput,

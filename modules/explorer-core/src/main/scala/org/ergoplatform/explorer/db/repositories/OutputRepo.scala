@@ -110,6 +110,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
   /** Update main_chain status for all outputs related to given `headerId`.
     */
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
+
+  /** Get all unspent outputs appeared in the main chain after `minHeight`.
+    */
+  def getAllMainUnspent(minHeight: Int, maxHeight: Int): S[D, Output]
 }
 
 object OutputRepo {
@@ -221,5 +225,8 @@ object OutputRepo {
 
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
+
+    def getAllMainUnspent(minHeight: Int, maxHeight: Int): Stream[D, Output] =
+      QS.getAllMainUnspent(minHeight, maxHeight).stream.translate(liftK)
   }
 }

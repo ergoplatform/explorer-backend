@@ -11,7 +11,7 @@ object SearchEndpointDefs {
 
   def endpoints: List[Endpoint[_, _, _, _]] = Nil
 
-  def searchDef: Endpoint[String, ApiErr, SearchResult, Nothing] =
+  def searchDef: Endpoint[String, ApiErr, SearchResult, Any] =
     baseEndpointDef.get.in(PathPrefix).in(queryInput).out(jsonBody[SearchResult])
 
   private def queryInput: EndpointInput.Query[String] =

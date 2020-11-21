@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{ContextShift, Sync}
+import cats.effect.{Concurrent, ContextShift, Sync, Timer}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import io.chrisdavenport.log4cats.Logger
@@ -13,7 +13,7 @@ import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
 final class SearchRoutes[
-  F[_]: Sync: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](
   blocksService: BlockChainService[F],
   txsService: TransactionsService[F],
@@ -36,7 +36,7 @@ final class SearchRoutes[
 
 object SearchRoutes {
 
-  def apply[F[_]: Sync: ContextShift: Logger](
+  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     blocksService: BlockChainService[F],
     txsService: TransactionsService[F],
     addressesService: AddressesService[F, fs2.Stream]

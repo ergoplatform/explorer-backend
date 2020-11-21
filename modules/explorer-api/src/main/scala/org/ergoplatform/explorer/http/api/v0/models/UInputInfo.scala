@@ -2,11 +2,9 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.{Address, BoxId, TxId}
-import org.ergoplatform.explorer.db.models.UInput
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUInput
-import sttp.tapir.Schema
-import sttp.tapir.generic.Derived
+import org.ergoplatform.explorer.{Address, BoxId, TxId}
+import sttp.tapir.{Schema, Validator}
 
 final case class UInputInfo(
   id: BoxId,
@@ -24,7 +22,8 @@ object UInputInfo {
   implicit val codec: Codec[UInputInfo] = deriveCodec
 
   implicit val schema: Schema[UInputInfo] =
-    implicitly[Derived[Schema[UInputInfo]]].value
+    Schema
+      .derive[UInputInfo]
       .modify(_.id)(_.description("Id of the corresponding box"))
       .modify(_.transactionId)(_.description("Id of the transaction spending this input"))
       .modify(_.value)(_.description("Amount of nanoERGs in the corresponding box"))
@@ -32,6 +31,8 @@ object UInputInfo {
       .modify(_.outputTransactionId)(_.description("ID of the output transaction"))
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Address"))
+
+  implicit val validator: Validator[UInputInfo] = Validator.derive
 
   def apply(in: ExtendedUInput): UInputInfo =
     new UInputInfo(

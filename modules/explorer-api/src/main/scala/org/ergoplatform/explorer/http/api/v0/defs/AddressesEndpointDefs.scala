@@ -15,25 +15,25 @@ object AddressesEndpointDefs {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getAddressDef :: getTxsByAddressDef :: getAssetHoldersDef :: getBalancesDef :: Nil
 
-  def getAddressDef: Endpoint[(Address, Int), ApiErr, AddressInfo, Nothing] =
+  def getAddressDef: Endpoint[(Address, Int), ApiErr, AddressInfo, Any] =
     baseEndpointDef
       .in(PathPrefix / path[Address])
       .in(confirmations)
       .out(jsonBody[AddressInfo])
 
-  def getTxsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[TransactionInfo], Nothing] =
+  def getTxsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[TransactionInfo], Any] =
     baseEndpointDef
       .in(PathPrefix / path[Address] / "transactions")
       .in(paging)
       .out(jsonBody[Items[TransactionInfo]])
 
-  def getAssetHoldersDef: Endpoint[(TokenId, Paging), ApiErr, List[Address], Nothing] =
+  def getAssetHoldersDef: Endpoint[(TokenId, Paging), ApiErr, List[Address], Any] =
     baseEndpointDef
       .in(PathPrefix / "assetHolders" / path[TokenId])
       .in(paging)
       .out(jsonBody[List[Address]])
 
-  def getBalancesDef: Endpoint[Paging, ApiErr, Items[BalanceInfo], Nothing] =
+  def getBalancesDef: Endpoint[Paging, ApiErr, Items[BalanceInfo], Any] =
     baseEndpointDef
       .in(PathPrefix / "balances")
       .in(paging)

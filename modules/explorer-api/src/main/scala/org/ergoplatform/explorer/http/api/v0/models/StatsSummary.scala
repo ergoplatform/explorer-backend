@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 import io.circe.{Codec, Decoder, Encoder, Json}
 import io.circe.generic.semiauto._
 import io.circe.syntax._
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 import scala.math.BigDecimal
@@ -57,7 +57,8 @@ object StatsSummary {
   implicit val codec: Codec[StatsSummary] = Codec.from(decoder, encoder)
 
   implicit val schema: Schema[StatsSummary] =
-    implicitly[Derived[Schema[StatsSummary]]].value
+    Schema
+      .derive[StatsSummary]
       .modify(_.blocksCount)(_.description("Number of block within defined period"))
       .modify(_.blocksAvgTime)(_.description("Avg. block time within defined period"))
       .modify(_.totalCoins)(
@@ -81,4 +82,6 @@ object StatsSummary {
       .modify(_.costPerTx)(_.description("Avg. transaction fee within defined period"))
       .modify(_.lastDifficulty)(_.description("Latest network difficulty"))
       .modify(_.totalHashrate)(_.description("Total network hashrate within defined period"))
+
+  implicit val validator: Validator[StatsSummary] = Validator.derive
 }

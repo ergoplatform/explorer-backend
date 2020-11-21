@@ -80,6 +80,8 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source)
   override def balanceStatsMain(offset: Int, limit: Int): F[List[(Address, Long)]] = ???
 
   override def totalAddressesMain: F[Int] = ???
+
+  override def getAllMainUnspent(minHeight: Int, maxHeight: Int): fs2.Stream[F, Output] = ???
 }
 
 object TestOutputRepo {

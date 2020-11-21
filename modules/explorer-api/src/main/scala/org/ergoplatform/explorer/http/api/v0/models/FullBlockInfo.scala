@@ -5,8 +5,7 @@ import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.HexString
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.db.models.{AdProof, Asset, BlockExtension, Header, Transaction}
-import sttp.tapir.Schema
-import sttp.tapir.generic.Derived
+import sttp.tapir.{Schema, Validator}
 
 final case class FullBlockInfo(
   header: HeaderInfo,
@@ -20,8 +19,10 @@ object FullBlockInfo {
   implicit val codec: Codec[FullBlockInfo] = deriveCodec
 
   implicit val schema: Schema[FullBlockInfo] =
-    implicitly[Derived[Schema[FullBlockInfo]]].value
+    Schema.derive[FullBlockInfo]
       .modify(_.adProofs)(_.description("Serialized hex-encoded AD Proofs"))
+
+  implicit val validator: Validator[FullBlockInfo] = Validator.derive
 
   def apply(
     h: Header,

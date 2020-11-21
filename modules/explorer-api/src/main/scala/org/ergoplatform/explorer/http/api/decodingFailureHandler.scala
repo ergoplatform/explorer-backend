@@ -14,10 +14,10 @@ object decodingFailureHandler {
       decodeFailureHandler = decodingFailureHandler
     )
 
-  private def decodingFailureResponse(statusCode: StatusCode, message: String): DecodeFailureHandling =
+  private def decodingFailureResponse(code: StatusCode, message: String): DecodeFailureHandling =
     DecodeFailureHandling.response(
-      EndpointOutput.StatusCode().description(statusCode, message).and(jsonBody[ApiErr.BadRequest])
-    )((statusCode, ApiErr.badRequest(message)))
+      statusCode(code).and(jsonBody[ApiErr.BadRequest])
+    )(ApiErr.badRequest(message))
 
   private def decodingFailureHandler: DefaultDecodeFailureHandler =
     ServerDefaults.decodeFailureHandler.copy(

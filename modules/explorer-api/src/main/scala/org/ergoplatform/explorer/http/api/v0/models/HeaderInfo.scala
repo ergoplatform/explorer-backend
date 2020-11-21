@@ -5,7 +5,7 @@ import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.{HexString, Id}
 import scorex.util.encode.Base16
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 final case class HeaderInfo(
@@ -29,8 +29,11 @@ object HeaderInfo {
 
   implicit val codec: Codec[HeaderInfo] = deriveCodec
 
+  implicit def schemaVotes: Schema[(Byte, Byte, Byte)] = Schema.derive
+
   implicit val schema: Schema[HeaderInfo] =
-    implicitly[Derived[Schema[HeaderInfo]]].value
+    Schema
+      .derive[HeaderInfo]
       .modify(_.id)(_.description("Block/header ID"))
       .modify(_.parentId)(_.description("ID of the parental block/header"))
       .modify(_.version)(_.description("Version of the header"))
@@ -44,6 +47,10 @@ object HeaderInfo {
       .modify(_.size)(_.description("Size of the header in bytes"))
       .modify(_.extensionHash)(_.description("Hex-encoded hash of the corresponding extension"))
       .modify(_.votes)(_.description("Block votes (3 bytes)"))
+
+  implicit def validatorVotes: Validator[(Byte, Byte, Byte)] = Validator.derive
+
+  implicit val validator: Validator[HeaderInfo] = Validator.derive
 
   def apply(h: Header, size: Int): HeaderInfo = {
     val powSolutions = PowSolutionInfo(h.minerPk, h.w, h.n, h.d)
@@ -67,7 +74,7 @@ object HeaderInfo {
 
   private def expandVotes(votesHex: String) = {
     val defaultVotes = (0: Byte, 0: Byte, 0: Byte)
-    val paramsQty = 3
+    val paramsQty    = 3
     Base16
       .decode(votesHex)
       .map {

@@ -7,6 +7,7 @@ import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.db.models.Output
 
 /** A set of queries for doobie implementation of [OutputRepo].
   */
@@ -338,4 +339,26 @@ object OutputQuerySet extends QuerySet {
          |update node_outputs set main_chain = $newChainStatus
          |where header_id = $headerId
          """.stripMargin.update
+
+  def getAllMainUnspent(minHeight: Int, maxHeight: Int)(implicit lh: LogHandler): Query0[Output] =
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain
+         |from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.creation_height >= $minHeight
+         |  and o.creation_height <= $maxHeight
+         |""".stripMargin.query[Output]
 }
