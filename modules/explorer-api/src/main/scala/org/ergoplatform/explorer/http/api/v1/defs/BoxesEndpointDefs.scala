@@ -15,14 +15,14 @@ final class BoxesEndpointDefs[F[_]](settings: ServiceSettings) {
   def endpoints: List[Endpoint[_, _, _, _]] = streamUnspentOutputsByEpochsDef :: streamUnspentOutputsDef :: Nil
 
   def streamUnspentOutputsDef: Endpoint[Epochs, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
-    baseEndpointDef
+    baseEndpointDef.get
       .in(PathPrefix / "unspent")
       .in(epochSlicing(settings.maxEpochsPerRequest))
       .out(streamBody(Fs2Streams[F], schemaFor[UnspentOutputInfo], CodecFormat.Json(), None))
 
   def streamUnspentOutputsByEpochsDef: Endpoint[Int, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
-    baseEndpointDef
-      .in(PathPrefix / "unspent")
+    baseEndpointDef.get
+      .in(PathPrefix / "unspent" / "byLastEpochs")
       .in(query[Int]("lastEpochs").validate(Validator.custom(validateEpochs(_, settings.maxEpochsPerRequest))))
       .out(streamBody(Fs2Streams[F], schemaFor[UnspentOutputInfo], CodecFormat.Json(), None))
 
