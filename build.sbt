@@ -9,6 +9,7 @@ lazy val commonSettings = Seq(
   assemblyMergeStrategy in assembly := {
     case "logback.xml"                                => MergeStrategy.first
     case "module-info.class"                          => MergeStrategy.discard
+    case "nowarn.class"                               => MergeStrategy.first
     case other if other.contains("io.netty.versions") => MergeStrategy.first
     case other                                        => (assemblyMergeStrategy in assembly).value(other)
   }
