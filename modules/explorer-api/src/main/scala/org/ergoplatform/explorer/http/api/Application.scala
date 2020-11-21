@@ -24,7 +24,7 @@ object Application extends TaskApp {
       case (logger, conf, xa, redis) =>
         implicit val e: ErgoAddressEncoder = conf.protocol.addressEncoder
         logger.info("Starting ExplorerApi service ..") >>
-        HttpApi[Task, ConnectionIO](conf.http, conf.protocol, conf.utxCache, redis)(
+        HttpApi[Task, ConnectionIO](conf.http, conf.protocol, conf.utxCache, conf.service, redis)(
           Trans.fromDoobie(xa)
         ).use(_ => Task.never)
           .as(ExitCode.Success)

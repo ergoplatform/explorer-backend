@@ -1,12 +1,11 @@
 package org.ergoplatform.explorer.http.api.v1.defs
 
 import org.ergoplatform.explorer.http.api.ApiErr
+import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.Epochs
 import org.ergoplatform.explorer.http.api.v1.models.UnspentOutputInfo
-import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.settings.ServiceSettings
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.model.HeaderNames
 import sttp.tapir._
 
 final class BoxesEndpointDefs[F[_]](settings: ServiceSettings) {
