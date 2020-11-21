@@ -9,7 +9,7 @@ import monix.eval.{Task, TaskApp}
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.cache.Redis
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
-import org.ergoplatform.explorer.settings.ApiAppSettings
+import org.ergoplatform.explorer.settings.ApiSettings
 import org.ergoplatform.explorer.http.api.decodingFailureHandler._
 import pureconfig.generic.auto._
 
@@ -24,7 +24,7 @@ object Application extends TaskApp {
       case (logger, conf, xa, redis) =>
         implicit val e: ErgoAddressEncoder = conf.protocol.addressEncoder
         logger.info("Starting ExplorerApi service ..") >>
-        HttpApi[Task, ConnectionIO](conf.http, conf.protocol, conf.utxCache, conf.service, redis)(
+        HttpApi[Task, ConnectionIO](conf, redis)(
           Trans.fromDoobie(xa)
         ).use(_ => Task.never)
           .as(ExitCode.Success)
@@ -34,7 +34,7 @@ object Application extends TaskApp {
   private def resources(configPathOpt: Option[String]) =
     for {
       logger   <- Resource.liftF(Slf4jLogger.create)
-      settings <- Resource.liftF(ApiAppSettings.load(configPathOpt))
+      settings <- Resource.liftF(ApiSettings.load(configPathOpt))
       tr       <- DoobieTrans[Task]("ApiPool", settings.db)
       redis    <- Redis[Task](settings.redis)
     } yield (logger, settings, tr, redis)

@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.http.api.v0.models
+package org.ergoplatform.explorer.http.api.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec

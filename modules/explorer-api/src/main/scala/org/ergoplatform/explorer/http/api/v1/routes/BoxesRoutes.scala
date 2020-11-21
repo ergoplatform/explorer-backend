@@ -7,17 +7,22 @@ import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableE
 import org.ergoplatform.explorer.http.api.v1.defs.BoxesEndpointDefs
 import org.ergoplatform.explorer.http.api.v1.services.BoxesService
 import org.ergoplatform.explorer.http.api.{streaming, ApiErr}
-import org.ergoplatform.explorer.settings.ServiceSettings
+import org.ergoplatform.explorer.settings.RequestsSettings
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
+import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 
 final class BoxesRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](settings: ServiceSettings, service: BoxesService[F])(implicit opts: Http4sServerOptions[F]) {
+](settings: RequestsSettings, service: BoxesService[F])(implicit opts: Http4sServerOptions[F]) {
 
   val defs = new BoxesEndpointDefs[F](settings)
 
-  val routes: HttpRoutes[F] = streamUnspentOutputsByEpochsR <+> streamUnspentOutputsR
+  val routes: HttpRoutes[F] =
+    streamUnspentOutputsByEpochsR <+>
+    streamUnspentOutputsR <+>
+    unspentOutputsByTokenIdR <+>
+    outputsByTokenIdR
 
   private def streamUnspentOutputsR: HttpRoutes[F] =
     defs.streamUnspentOutputsDef.toRoutes { epochs =>
@@ -28,12 +33,24 @@ final class BoxesRoutes[
     defs.streamUnspentOutputsByEpochsDef.toRoutes { lastEpochs =>
       streaming.bytesStream(service.getUnspentOutputs(lastEpochs))
     }
+
+  private def outputsByTokenIdR: HttpRoutes[F] =
+    defs.outputsByTokenIdDef.toRoutes {
+      case (tokenId, paging) =>
+        service.getOutputsByTokenId(tokenId, paging).adaptThrowable.value
+    }
+
+  private def unspentOutputsByTokenIdR: HttpRoutes[F] =
+    defs.unspentOutputsByTokenIdDef.toRoutes {
+      case (tokenId, paging) =>
+        service.getUnspentOutputsByTokenId(tokenId, paging).adaptThrowable.value
+    }
 }
 
 object BoxesRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
-    settings: ServiceSettings,
+    settings: RequestsSettings,
     service: BoxesService[F]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new BoxesRoutes[F](settings, service).routes
