@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v1.defs
 
-import org.ergoplatform.explorer.TokenId
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
@@ -19,6 +19,11 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     streamUnspentOutputsDef ::
     unspentOutputsByTokenIdDef ::
     outputsByTokenIdDef ::
+    getOutputByIdDef ::
+    getOutputsByErgoTreeDef ::
+    getUnspentOutputsByErgoTreeDef ::
+    getOutputsByAddressDef ::
+    getUnspentOutputsByAddressDef ::
     Nil
 
   def streamUnspentOutputsDef: Endpoint[Epochs, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
@@ -43,6 +48,35 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     baseEndpointDef.get
       .in(PathPrefix / "byTokenId" / path[TokenId] / "unspent")
       .in(paging(settings.heavyRequestsLimit))
+      .out(jsonBody[Items[OutputInfo]])
+
+  def getOutputByIdDef: Endpoint[BoxId, ApiErr, OutputInfo, Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / path[BoxId])
+      .out(jsonBody[OutputInfo])
+
+  def getOutputsByErgoTreeDef: Endpoint[(HexString, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "byErgoTree" / path[HexString])
+      .in(paging)
+      .out(jsonBody[Items[OutputInfo]])
+
+  def getUnspentOutputsByErgoTreeDef: Endpoint[(HexString, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "byErgoTree" / "unspent" / path[HexString])
+      .in(paging)
+      .out(jsonBody[Items[OutputInfo]])
+
+  def getOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "byAddress" / path[Address])
+      .in(paging)
+      .out(jsonBody[Items[OutputInfo]])
+
+  def getUnspentOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "byAddress" / "unspent" / path[Address])
+      .in(paging)
       .out(jsonBody[Items[OutputInfo]])
 
   private def validateEpochs(numEpochs: Int, max: Int): List[ValidationError[_]] =

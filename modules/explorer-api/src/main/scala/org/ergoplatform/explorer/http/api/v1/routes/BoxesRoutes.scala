@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.settings.RequestsSettings
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
+import org.ergoplatform.explorer.http.api.syntax.routes._
 
 final class BoxesRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
@@ -22,16 +23,21 @@ final class BoxesRoutes[
     streamUnspentOutputsByEpochsR <+>
     streamUnspentOutputsR <+>
     unspentOutputsByTokenIdR <+>
-    outputsByTokenIdR
+    outputsByTokenIdR <+>
+    getOutputByIdR <+>
+    getOutputsByErgoTreeR <+>
+    getUnspentOutputsByErgoTreeR <+>
+    getOutputsByAddressR <+>
+    getUnspentOutputsByAddressR
 
   private def streamUnspentOutputsR: HttpRoutes[F] =
     defs.streamUnspentOutputsDef.toRoutes { epochs =>
-      streaming.bytesStream(service.getUnspentOutputs(epochs))
+      streaming.bytesStream(service.streamUnspentOutputs(epochs))
     }
 
   private def streamUnspentOutputsByEpochsR: HttpRoutes[F] =
     defs.streamUnspentOutputsByEpochsDef.toRoutes { lastEpochs =>
-      streaming.bytesStream(service.getUnspentOutputs(lastEpochs))
+      streaming.bytesStream(service.streamUnspentOutputs(lastEpochs))
     }
 
   private def outputsByTokenIdR: HttpRoutes[F] =
@@ -44,6 +50,39 @@ final class BoxesRoutes[
     defs.unspentOutputsByTokenIdDef.toRoutes {
       case (tokenId, paging) =>
         service.getUnspentOutputsByTokenId(tokenId, paging).adaptThrowable.value
+    }
+
+  private def getOutputByIdR: HttpRoutes[F] =
+    defs.getOutputByIdDef.toRoutes { id =>
+      service
+        .getOutputById(id)
+        .adaptThrowable
+        .orNotFound(s"Output with id: $id")
+        .value
+    }
+
+  private def getOutputsByErgoTreeR: HttpRoutes[F] =
+    defs.getOutputsByErgoTreeDef.toRoutes {
+      case (tree, paging) =>
+        service.getOutputsByErgoTree(tree, paging).adaptThrowable.value
+    }
+
+  private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
+    defs.getUnspentOutputsByErgoTreeDef.toRoutes {
+      case (tree, paging) =>
+        service.getUnspentOutputsByErgoTree(tree, paging).adaptThrowable.value
+    }
+
+  private def getOutputsByAddressR: HttpRoutes[F] =
+    defs.getOutputsByAddressDef.toRoutes {
+      case (address, paging) =>
+        service.getOutputsByAddress(address, paging).adaptThrowable.value
+    }
+
+  private def getUnspentOutputsByAddressR: HttpRoutes[F] =
+    defs.getUnspentOutputsByAddressDef.toRoutes {
+      case (address, paging) =>
+        service.getUnspentOutputsByAddress(address, paging).adaptThrowable.value
     }
 }
 

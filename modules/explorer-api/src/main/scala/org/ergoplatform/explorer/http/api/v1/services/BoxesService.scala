@@ -1,12 +1,13 @@
 package org.ergoplatform.explorer.http.api.v1.services
 
+import cats.data.OptionT
 import cats.{Functor, Monad}
 import cats.effect.Sync
 import cats.syntax.list._
 import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.{CRaise, TokenId}
+import org.ergoplatform.explorer.{Address, BoxId, CRaise, HexString, TokenId}
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -16,22 +17,42 @@ import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputR
 import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.OutputInfo
+import org.ergoplatform.explorer.protocol.utils._
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
-import tofu.streams.Compile
 import tofu.syntax.streams.compile._
 import tofu.syntax.monadic._
 import tofu.fs2Instances._
 
 trait BoxesService[F[_]] {
 
+  /** Get output by `boxId`.
+    */
+  def getOutputById(id: BoxId): F[Option[OutputInfo]]
+
+  /** Get all outputs with the given `address` in proposition.
+    */
+  def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]]
+
+  /** Get unspent outputs with the given `address` in proposition.
+    */
+  def getUnspentOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]]
+
+  /** Get all outputs with the given `ergoTree` in proposition.
+    */
+  def getOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]]
+
+  /** Get unspent outputs with the given `ergoTree` in proposition.
+    */
+  def getUnspentOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]]
+
   /** Get all unspent outputs appeared in the blockchain after `minHeight`.
     */
-  def getUnspentOutputs(epochs: Epochs): Stream[F, OutputInfo]
+  def streamUnspentOutputs(epochs: Epochs): Stream[F, OutputInfo]
 
   /** Get all unspent outputs appeared in the blockchain within a given `lastEpochs`.
     */
-  def getUnspentOutputs(lastEpochs: Int): Stream[F, OutputInfo]
+  def streamUnspentOutputs(lastEpochs: Int): Stream[F, OutputInfo]
 
   /** Get all outputs containing a given `tokenId`.
     */
@@ -55,31 +76,71 @@ object BoxesService {
     D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad
   ](
     serviceSettings: ServiceSettings,
-    headerRepo: HeaderRepo[D],
-    outRepo: OutputRepo[D, Stream],
-    assetRepo: AssetRepo[D, Stream]
+    headers: HeaderRepo[D],
+    outputs: OutputRepo[D, Stream],
+    assets: AssetRepo[D, Stream]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends BoxesService[F] {
 
-    def getUnspentOutputs(epochs: Epochs): Stream[F, OutputInfo] =
-      outRepo
+    def getOutputById(id: BoxId): F[Option[OutputInfo]] =
+      (for {
+        box    <- OptionT(outputs.getByBoxId(id))
+        assets <- OptionT.liftF(assets.getAllByBoxId(box.output.boxId))
+      } yield OutputInfo(box, assets)).value.thrushK(trans.xa)
+
+    def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] =
+      (addressToErgoTreeHex(address).asStream >>= (outputs.getMainByErgoTree(_, paging.offset, paging.limit)))
+        .chunkN(serviceSettings.chunkSize)
+        .through(toOutputInfo)
+        .thrushK(trans.xas)
+        .to[List]
+        .map(items => Items(items, items.size))
+
+    def getUnspentOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] =
+      (addressToErgoTreeHex(address).asStream >>= (outputs.getMainUnspentByErgoTree(_, paging.offset, paging.limit)))
+        .chunkN(serviceSettings.chunkSize)
+        .through(toOutputInfo)
+        .thrushK(trans.xas)
+        .to[List]
+        .map(items => Items(items, items.size))
+
+    def getOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]] =
+      outputs
+        .getMainByErgoTree(ergoTree, paging.offset, paging.limit)
+        .chunkN(serviceSettings.chunkSize)
+        .through(toOutputInfo)
+        .thrushK(trans.xas)
+        .to[List]
+        .map(items => Items(items, items.size))
+
+    def getUnspentOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]] =
+      outputs
+        .getMainUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
+        .chunkN(serviceSettings.chunkSize)
+        .through(toOutputInfo)
+        .thrushK(trans.xas)
+        .to[List]
+        .map(items => Items(items, items.size))
+
+    def streamUnspentOutputs(epochs: Epochs): Stream[F, OutputInfo] =
+      outputs
         .getAllMainUnspent(epochs.minHeight, epochs.maxHeight)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)
 
-    def getUnspentOutputs(lastEpochs: Int): Stream[F, OutputInfo] =
+    def streamUnspentOutputs(lastEpochs: Int): Stream[F, OutputInfo] =
       Stream
-        .eval(headerRepo.getBestHeight)
+        .eval(headers.getBestHeight)
         .flatMap { bestHeight =>
-          outRepo.getAllMainUnspent(bestHeight - lastEpochs, bestHeight)
+          outputs.getAllMainUnspent(bestHeight - lastEpochs, bestHeight)
         }
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)
 
     def getOutputsByTokenId(tokenId: TokenId, paging: Paging): F[Items[OutputInfo]] =
-      outRepo
+      outputs
         .getAllByTokenId(tokenId, paging.offset, paging.limit)
         .chunkN(serviceSettings.chunkSize)
         .through(toOutputInfo)
@@ -88,7 +149,7 @@ object BoxesService {
         .map(items => Items(items, items.size))
 
     def getUnspentOutputsByTokenId(tokenId: TokenId, paging: Paging): F[Items[OutputInfo]] =
-      outRepo
+      outputs
         .getUnspentByTokenId(tokenId, paging.offset, paging.limit)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
@@ -100,7 +161,7 @@ object BoxesService {
       for {
         outs   <- _
         outIds <- Stream.emit(outs.toList.map(_.output.boxId).toNel).unNone
-        assets <- assetRepo.getAllByBoxIds(outIds).map(_.groupBy(_.boxId)).asStream
+        assets <- assets.getAllByBoxIds(outIds).map(_.groupBy(_.boxId)).asStream
         outsInfo = outs.map(out => OutputInfo(out, assets.getOrElse(out.output.boxId, Nil)))
         flattened <- Stream.emits(outsInfo.toList)
       } yield flattened
@@ -109,7 +170,7 @@ object BoxesService {
       for {
         outs   <- _
         outIds <- Stream.emit(outs.toList.map(_.boxId).toNel).unNone
-        assets <- assetRepo.getAllByBoxIds(outIds).map(_.groupBy(_.boxId)).asStream
+        assets <- assets.getAllByBoxIds(outIds).map(_.groupBy(_.boxId)).asStream
         outsInfo = outs.map(out => OutputInfo.unspent(out, assets.getOrElse(out.boxId, Nil)))
         flattened <- Stream.emits(outsInfo.toList)
       } yield flattened
