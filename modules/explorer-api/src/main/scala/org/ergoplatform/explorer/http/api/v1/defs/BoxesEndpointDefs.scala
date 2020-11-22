@@ -35,19 +35,19 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
   def streamUnspentOutputsByEpochsDef: Endpoint[Int, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byLastEpochs")
-      .in(query[Int]("lastEpochs").validate(Validator.custom(validateEpochs(_, settings.maxEpochsPerRequest))))
+      .in(lastEpochs(settings.maxEpochsPerRequest))
       .out(streamBody(Fs2Streams[F], schemaFor[OutputInfo], CodecFormat.Json(), None))
 
-  def outputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Fs2Streams[F]] =
+  def outputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byTokenId" / path[TokenId])
-      .in(paging(settings.heavyRequestsLimit))
+      .in(paging(settings.maxEntitiesPerHeavyRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def unspentOutputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Fs2Streams[F]] =
+  def unspentOutputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byTokenId" / path[TokenId] / "unspent")
-      .in(paging(settings.heavyRequestsLimit))
+      .in(paging(settings.maxEntitiesPerHeavyRequest))
       .out(jsonBody[Items[OutputInfo]])
 
   def getOutputByIdDef: Endpoint[BoxId, ApiErr, OutputInfo, Any] =
@@ -58,32 +58,24 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
   def getOutputsByErgoTreeDef: Endpoint[(HexString, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTree" / path[HexString])
-      .in(paging)
+      .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
   def getUnspentOutputsByErgoTreeDef: Endpoint[(HexString, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTree" / "unspent" / path[HexString])
-      .in(paging)
+      .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
   def getOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byAddress" / path[Address])
-      .in(paging)
+      .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
   def getUnspentOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byAddress" / "unspent" / path[Address])
-      .in(paging)
+      .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
-
-  private def validateEpochs(numEpochs: Int, max: Int): List[ValidationError[_]] =
-    if (numEpochs > max)
-      ValidationError.Custom(
-        numEpochs,
-        s"To many epochs requested. Max allowed number is $max"
-      ) :: Nil
-    else Nil
 }

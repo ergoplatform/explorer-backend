@@ -55,6 +55,17 @@ object commonDirectives {
       .validate(Validator.custom(validateBounds(_, maxEpochs)))
       .map(in => Epochs(in._1, in._2))(epochs => epochs.minHeight -> epochs.maxHeight)
 
+  def lastEpochs(maxEpochs: Int): EndpointInput.Query[Int] =
+    query[Int]("lastEpochs").validate(Validator.custom(validateEpochs(_, maxEpochs)))
+
+  private def validateEpochs(numEpochs: Int, max: Int): List[ValidationError[_]] =
+    if (numEpochs > max)
+      ValidationError.Custom(
+        numEpochs,
+        s"To many epochs requested. Max allowed number is '$max'"
+      ) :: Nil
+    else Nil
+
   private def validateBounds(bounds: (Int, Int), max: Int): List[ValidationError[_]] =
     bounds match {
       case (minH, maxH) if maxH - minH > max =>

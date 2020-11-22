@@ -1,3 +1,7 @@
 package org.ergoplatform.explorer.settings
 
-final case class RequestsSettings(maxEpochsPerRequest: Int, heavyRequestsLimit: Int)
+final case class RequestsSettings(
+  maxEntitiesPerRequest: Int,
+  maxEntitiesPerHeavyRequest: Int,
+  maxEpochsPerRequest: Int
+)
