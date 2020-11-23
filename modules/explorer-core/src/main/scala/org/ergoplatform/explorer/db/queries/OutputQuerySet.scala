@@ -364,7 +364,7 @@ object OutputQuerySet extends QuerySet {
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
-         |select distinct on (o.index, o.box_id)
+         |select distinct (o.box_id, o.header_id, o.creation_height)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -381,13 +381,13 @@ object OutputQuerySet extends QuerySet {
          |left join node_inputs i on o.box_id = i.box_id
          |left join node_assets a on o.box_id = a.box_id
          |where a.token_id = $tokenId
-         |order by o.index asc
+         |order by o.creation_height asc
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
   def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Output] =
     sql"""
-         |select distinct on (o.index, o.box_id)
+         |select distinct on (o.box_id, o.header_id, o.creation_height)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -400,9 +400,12 @@ object OutputQuerySet extends QuerySet {
          |  o.timestamp,
          |  o.main_chain
          |from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |left join node_assets a on o.box_id = a.box_id
-         |where a.token_id = $tokenId
-         |order by o.index asc
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and a.token_id = $tokenId
+         |order by o.creation_height asc
          |offset $offset limit $limit
          |""".stripMargin.query[Output]
 }
