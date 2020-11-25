@@ -3,9 +3,9 @@ package org.ergoplatform.explorer.http.api
 import java.util.concurrent.TimeUnit
 
 import cats.data.NonEmptyMap
-import cats.syntax.option._
-import cats.syntax.flatMap._
 import cats.instances.option._
+import cats.syntax.flatMap._
+import cats.syntax.option._
 import org.ergoplatform.explorer.http.api.models.{Epochs, Paging, Sorting}
 import sttp.tapir.{query, EndpointInput, ValidationError, Validator}
 
@@ -17,11 +17,12 @@ object commonDirectives {
 
   def paging(maxLimit: Int): EndpointInput[Paging] =
     (query[Option[Int]]("offset").validate(Validator.min(0).asOptionElement) and
-    query[Option[Int]]("limit").validate(Validator.min(1).asOptionElement))
+    query[Option[Int]]("limit")
+      .validate(Validator.min(1).asOptionElement)
+      .validate(Validator.max(maxLimit).asOptionElement))
       .map { input =>
         Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }
-      .validate(Validator.custom(validatePaging(_, maxLimit)))
 
   val confirmations: EndpointInput[Int] =
     query[Option[Int]]("minConfirmations").map(_.getOrElse(0))(_.some)
@@ -56,15 +57,7 @@ object commonDirectives {
       .map(in => Epochs(in._1, in._2))(epochs => epochs.minHeight -> epochs.maxHeight)
 
   def lastEpochs(maxEpochs: Int): EndpointInput.Query[Int] =
-    query[Int]("lastEpochs").validate(Validator.custom(validateEpochs(_, maxEpochs)))
-
-  private def validateEpochs(numEpochs: Int, max: Int): List[ValidationError[_]] =
-    if (numEpochs > max)
-      ValidationError.Custom(
-        numEpochs,
-        s"To many epochs requested. Max allowed number is '$max'"
-      ) :: Nil
-    else Nil
+    query[Int]("lastEpochs").validate(Validator.max(maxEpochs))
 
   private def validateBounds(bounds: (Int, Int), max: Int): List[ValidationError[_]] =
     bounds match {
@@ -75,14 +68,6 @@ object commonDirectives {
         ) :: Nil
       case _ => Nil
     }
-
-  private def validatePaging(paging: Paging, maxLimit: Int): List[ValidationError[_]] =
-    if (paging.limit > maxLimit)
-      ValidationError.Custom(
-        paging,
-        s"Max limit for this method is '$maxLimit'"
-      ) :: Nil
-    else Nil
 
   private val TimespanRegex = "^([0-9]+)(days|day|years|year)$".r
 

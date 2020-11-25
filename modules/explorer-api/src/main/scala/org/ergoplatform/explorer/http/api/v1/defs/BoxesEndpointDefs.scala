@@ -1,11 +1,11 @@
 package org.ergoplatform.explorer.http.api.v1.defs
 
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.OutputInfo
 import org.ergoplatform.explorer.settings.RequestsSettings
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -46,7 +46,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
 
   def unspentOutputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "byTokenId" / path[TokenId] / "unspent")
+      .in(PathPrefix / "unspent" / "byTokenId" / path[TokenId])
       .in(paging(settings.maxEntitiesPerHeavyRequest))
       .out(jsonBody[Items[OutputInfo]])
 
@@ -63,7 +63,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
 
   def getUnspentOutputsByErgoTreeDef: Endpoint[(HexString, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "byErgoTree" / "unspent" / path[HexString])
+      .in(PathPrefix / "unspent" / "byErgoTree" / path[HexString])
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
@@ -75,7 +75,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
 
   def getUnspentOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "byAddress" / "unspent" / path[Address])
+      .in(PathPrefix / "unspent" / "byAddress" / path[Address])
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 }
