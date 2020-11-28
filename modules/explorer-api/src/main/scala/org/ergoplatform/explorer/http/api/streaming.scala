@@ -16,9 +16,4 @@ object streaming {
     fa.flatMap(entity => Stream.chunk(Chunk.array(entity.asJson.noSpaces.getBytes)))
       .pure
       .map(_.asRight[ApiErr])
-
-  def bytesStreamItems[F[_]: Applicative, A: Encoder](fa: Stream[F, A]): F[Either[ApiErr, Stream[F, Byte]]] =
-    fa.flatMap(entity => Stream.chunk(Chunk.array(entity.asJson.noSpaces.getBytes)))
-      .pure
-      .map(_.asRight[ApiErr])
 }
