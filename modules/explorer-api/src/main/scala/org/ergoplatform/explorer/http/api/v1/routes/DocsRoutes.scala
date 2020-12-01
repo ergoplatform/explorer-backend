@@ -6,18 +6,18 @@ import cats.syntax.either._
 import cats.syntax.option._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.v1.defs._
-import org.ergoplatform.explorer.settings.ServiceSettings
+import org.ergoplatform.explorer.settings.RequestsSettings
 import org.http4s.HttpRoutes
 import sttp.tapir.apispec.Tag
 import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.server.http4s._
 
-final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: ServiceSettings)(implicit
+final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: RequestsSettings)(implicit
   opts: Http4sServerOptions[F]
 ) {
 
-  import org.ergoplatform.explorer.http.api.v0.defs.DocsEndpointDefs._
+  import org.ergoplatform.explorer.http.api.v1.defs.DocsEndpointDefs._
 
   val routes: HttpRoutes[F] = openApiSpecR
 
@@ -42,7 +42,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: ServiceS
 object DocsRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer](
-    settings: ServiceSettings
+    settings: RequestsSettings
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new DocsRoutes[F](settings).routes
 }

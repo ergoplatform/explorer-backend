@@ -114,6 +114,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
   /** Get all unspent outputs appeared in the main chain after `minHeight`.
     */
   def getAllMainUnspent(minHeight: Int, maxHeight: Int): S[D, Output]
+
+  def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, ExtendedOutput]
+
+  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, Output]
 }
 
 object OutputRepo {
@@ -228,5 +232,11 @@ object OutputRepo {
 
     def getAllMainUnspent(minHeight: Int, maxHeight: Int): Stream[D, Output] =
       QS.getAllMainUnspent(minHeight, maxHeight).stream.translate(liftK)
+
+    def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, ExtendedOutput] =
+      QS.getAllByTokenId(tokenId, offset, limit).stream.translate(liftK)
+
+    def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, Output] =
+      QS.getUnspentByTokenId(tokenId, offset, limit).stream.translate(liftK)
   }
 }

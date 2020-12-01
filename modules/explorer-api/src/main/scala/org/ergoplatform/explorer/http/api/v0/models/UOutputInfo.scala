@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.{UAsset, UOutput}
+import org.ergoplatform.explorer.http.api.models.AssetInfo
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.{Schema, SchemaType, Validator}
 import sttp.tapir.json.circe.validatorForCirceJson

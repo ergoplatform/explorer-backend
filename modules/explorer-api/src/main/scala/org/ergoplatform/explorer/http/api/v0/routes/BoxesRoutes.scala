@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{Concurrent, ContextShift, Sync, Timer}
+import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr

@@ -3,9 +3,9 @@ package org.ergoplatform.explorer.http.api
 import java.util.concurrent.TimeUnit
 
 import cats.data.NonEmptyMap
-import cats.syntax.option._
-import cats.syntax.flatMap._
 import cats.instances.option._
+import cats.syntax.flatMap._
+import cats.syntax.option._
 import org.ergoplatform.explorer.http.api.models.{Epochs, Paging, Sorting}
 import sttp.tapir.{query, EndpointInput, ValidationError, Validator}
 
@@ -13,9 +13,13 @@ import scala.concurrent.duration.FiniteDuration
 
 object commonDirectives {
 
-  val paging: EndpointInput[Paging] =
+  def paging: EndpointInput[Paging] = paging(Int.MaxValue)
+
+  def paging(maxLimit: Int): EndpointInput[Paging] =
     (query[Option[Int]]("offset").validate(Validator.min(0).asOptionElement) and
-    query[Option[Int]]("limit").validate(Validator.min(1).asOptionElement))
+    query[Option[Int]]("limit")
+      .validate(Validator.min(1).asOptionElement)
+      .validate(Validator.max(maxLimit).asOptionElement))
       .map { input =>
         Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }
@@ -49,15 +53,18 @@ object commonDirectives {
   def epochSlicing(maxEpochs: Int): EndpointInput[Epochs] =
     (query[Int]("minHeight").validate(Validator.min(0)) and
     query[Int]("maxHeight").validate(Validator.min(1)))
-      .validate(Validator.custom[(Int, Int)](validateBounds(_, maxEpochs)))
+      .validate(Validator.custom(validateBounds(_, maxEpochs)))
       .map(in => Epochs(in._1, in._2))(epochs => epochs.minHeight -> epochs.maxHeight)
+
+  def lastEpochs(maxEpochs: Int): EndpointInput.Query[Int] =
+    query[Int]("lastEpochs").validate(Validator.max(maxEpochs))
 
   private def validateBounds(bounds: (Int, Int), max: Int): List[ValidationError[_]] =
     bounds match {
       case (minH, maxH) if maxH - minH > max =>
         ValidationError.Custom(
           bounds,
-          s"To many epochs requested. Max allowed number is $max"
+          s"To many epochs requested. Max allowed number is '$max'"
         ) :: Nil
       case _ => Nil
     }
