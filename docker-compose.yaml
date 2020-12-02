@@ -20,3 +20,8 @@ services:
     build:
       context: .
       dockerfile: modules/utx-broadcaster/Dockerfile
+  migrator:
+    image: oskin1/migrator:latest
+    build:
+      context: .
+      dockerfile: modules/migrator/Dockerfile
