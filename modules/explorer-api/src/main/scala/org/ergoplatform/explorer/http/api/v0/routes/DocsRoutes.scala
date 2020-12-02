@@ -1,18 +1,18 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{ContextShift, Sync}
+import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.applicative._
 import cats.syntax.either._
 import cats.syntax.option._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.v0.defs._
 import org.http4s.HttpRoutes
+import sttp.tapir.apispec.Tag
 import sttp.tapir.docs.openapi._
-import sttp.tapir.openapi.Tag
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.server.http4s._
 
-final class DocsRoutes[F[_]: Sync: ContextShift](implicit opts: Http4sServerOptions[F]) {
+final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DocsEndpointDefs._
 
@@ -56,6 +56,6 @@ final class DocsRoutes[F[_]: Sync: ContextShift](implicit opts: Http4sServerOpti
 
 object DocsRoutes {
 
-  def apply[F[_]: Sync: ContextShift](implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  def apply[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
     new DocsRoutes[F].routes
 }

@@ -8,7 +8,7 @@ import io.circe.Codec
 import io.circe.derivation.deriveCodec
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 
 import scala.util.control.NoStackTrace
 
@@ -25,7 +25,7 @@ object ApiErr {
 
   final case class UnknownErr(status: Int, reason: String) extends ApiErr
 
-  implicit val codec404: Codec[NotFound] = deriveCodec
+  implicit val codec404: Codec[NotFound]   = deriveCodec
   implicit val codec400: Codec[BadRequest] = deriveCodec
   implicit val codec500: Codec[UnknownErr] = deriveCodec
 
@@ -35,19 +35,23 @@ object ApiErr {
 
   def unknownErr(message: String): UnknownErr = UnknownErr(500, s"Unknown error: $message")
 
-  private val unknownErrorS = implicitly[Schema[UnknownErr]]
-  private val notFoundS     = implicitly[Schema[NotFound]]
-  private val badInputS     = implicitly[Schema[BadRequest]]
+  implicit val unknownErrorS: Schema[UnknownErr] = Schema.derive[UnknownErr]
+  implicit val notFoundS: Schema[NotFound]       = Schema.derive[NotFound]
+  implicit val badInputS: Schema[BadRequest]     = Schema.derive[BadRequest]
+
+  implicit val unknownErrorV: Validator[UnknownErr] = Validator.derive[UnknownErr]
+  implicit val notFoundV: Validator[NotFound]       = Validator.derive[NotFound]
+  implicit val badInputV: Validator[BadRequest]     = Validator.derive[BadRequest]
 
   implicit val schema: Schema[ApiErr] =
-    Schema.oneOf[ApiErr, String](_.getMessage, _.toString)(
+    Schema.oneOfUsingField[ApiErr, String](_.getMessage, _.toString)(
       "unknownError" -> unknownErrorS,
       "notFound"     -> notFoundS,
       "badInput"     -> badInputS
     )
 
-  implicit def adaptThrowable[F[_]: Logger](
-    implicit F: MonadError[F, Throwable]
+  implicit def adaptThrowable[F[_]: Logger](implicit
+    F: MonadError[F, Throwable]
   ): AdaptThrowableEitherT[F, ApiErr] =
     new AdaptThrowableEitherT[F, ApiErr] {
 

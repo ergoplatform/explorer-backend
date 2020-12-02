@@ -5,7 +5,7 @@ import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.{UAsset, UOutput, UTransaction}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUDataInput, ExtendedUInput}
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 final case class UTransactionSummary(
@@ -23,7 +23,8 @@ object UTransactionSummary {
   implicit val codec: Codec[UTransactionSummary] = deriveCodec
 
   implicit val schema: Schema[UTransactionSummary] =
-    implicitly[Derived[Schema[UTransactionSummary]]].value
+    Schema
+      .derive[UTransactionSummary]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.creationTimestamp)(
         _.description("Approximate time this transaction appeared in the network")
@@ -31,6 +32,8 @@ object UTransactionSummary {
       .modify(_.size)(
         _.description("Size of the transaction in bytes")
       )
+
+  implicit val validator: Validator[UTransactionSummary] = Validator.derive
 
   def apply(
     tx: UTransaction,

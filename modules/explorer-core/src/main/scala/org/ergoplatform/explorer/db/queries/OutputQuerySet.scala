@@ -7,6 +7,7 @@ import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.db.models.Output
 
 /** A set of queries for doobie implementation of [OutputRepo].
   */
@@ -338,4 +339,73 @@ object OutputQuerySet extends QuerySet {
          |update node_outputs set main_chain = $newChainStatus
          |where header_id = $headerId
          """.stripMargin.update
+
+  def getAllMainUnspent(minHeight: Int, maxHeight: Int)(implicit lh: LogHandler): Query0[Output] =
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain
+         |from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.creation_height >= $minHeight
+         |  and o.creation_height <= $maxHeight
+         |""".stripMargin.query[Output]
+
+  def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedOutput] =
+    sql"""
+         |select distinct (o.box_id, o.header_id, o.creation_height)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  case i.main_chain when false then null else i.tx_id end
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_assets a on o.box_id = a.box_id
+         |where a.token_id = $tokenId
+         |order by o.creation_height asc
+         |offset $offset limit $limit
+         |""".stripMargin.query[ExtendedOutput]
+
+  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Output] =
+    sql"""
+         |select distinct on (o.box_id, o.header_id, o.creation_height)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain
+         |from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_assets a on o.box_id = a.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and a.token_id = $tokenId
+         |order by o.creation_height asc
+         |offset $offset limit $limit
+         |""".stripMargin.query[Output]
 }

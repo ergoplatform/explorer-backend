@@ -20,7 +20,7 @@ import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
 import scorex.util.encode.Base16
 import sttp.tapir.json.circe._
-import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
+import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
 import tofu.Raise.ContravariantRaise
 import tofu.syntax.raise._
 
@@ -70,10 +70,13 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[Id] = deriving
 
     implicit def jsonCodec: Codec.JsonCodec[Id] =
-      HexString.jsonCodec.map(Id.apply)(_.value)
+      HexString.jsonCodec.map(Id(_))(_.value)
 
     implicit def schema: Schema[Id] =
-      jsonCodec.meta.schema.description("Modifier ID")
+      Schema.schemaForString.description("Modifier ID").asInstanceOf[Schema[Id]]
+
+    implicit def validator: Validator[Id] =
+      implicitly[Validator[HexString]].contramap[Id](_.value)
 
     def fromString[
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
@@ -96,10 +99,13 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[TxId] = deriving
 
     implicit def jsonCodec: Codec.JsonCodec[TxId] =
-      implicitly[Codec.JsonCodec[String]].map(TxId.apply)(_.value)
+      implicitly[Codec.JsonCodec[String]].map(TxId(_))(_.value)
 
     implicit def schema: Schema[TxId] =
-      jsonCodec.meta.schema.description("Transaction ID")
+      Schema.schemaForString.description("Transaction ID").asInstanceOf[Schema[TxId]]
+
+    implicit def validator: Validator[TxId] =
+      Validator.validatorForString.contramap[TxId](_.value)
   }
 
   @newtype case class BoxId(value: String)
@@ -117,10 +123,13 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[BoxId] = deriving
 
     implicit def jsonCodec: Codec.JsonCodec[BoxId] =
-      implicitly[Codec.JsonCodec[String]].map(BoxId.apply)(_.value)
+      implicitly[Codec.JsonCodec[String]].map(BoxId(_))(_.value)
 
     implicit def schema: Schema[BoxId] =
-      jsonCodec.meta.schema.description("Box ID")
+      Schema.schemaForString.description("Box ID").asInstanceOf[Schema[BoxId]]
+
+    implicit def validator: Validator[BoxId] =
+      Validator.validatorForString.contramap[BoxId](_.value)
   }
 
   @newtype case class TokenId(value: HexString)
@@ -138,10 +147,13 @@ package object explorer {
     implicit def plainCodec: Codec.PlainCodec[TokenId] = deriving
 
     implicit def jsonCodec: Codec.JsonCodec[TokenId] =
-      HexString.jsonCodec.map(TokenId.apply)(_.value)
+      HexString.jsonCodec.map(TokenId(_))(_.value)
 
     implicit def schema: Schema[TokenId] =
-      jsonCodec.meta.schema.description("Token ID")
+      Schema.schemaForString.description("Token ID").asInstanceOf[Schema[TokenId]]
+
+    implicit def validator: Validator[TokenId] =
+      implicitly[Validator[HexString]].contramap[TokenId](_.value)
 
     def fromString[
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
@@ -203,7 +215,10 @@ package object explorer {
       )
 
     implicit def schema: Schema[Address] =
-      jsonCodec.meta.schema.description("Ergo Address")
+      Schema.schemaForString.description("Ergo Address").asInstanceOf[Schema[Address]]
+
+    implicit def validator: Validator[Address] =
+      Validator.validatorForString.contramap[Address](_.unwrapped)
 
     implicit def configReader: ConfigReader[Address] =
       implicitly[ConfigReader[String]].emap { s =>
@@ -247,7 +262,10 @@ package object explorer {
       )
 
     implicit def schema: Schema[HexString] =
-      jsonCodec.meta.schema.description("Hex-encoded string")
+      Schema.schemaForString.description("Hex-encoded string").asInstanceOf[Schema[HexString]]
+
+    implicit def validator: Validator[HexString] =
+      Validator.validatorForString.contramap[HexString](_.unwrapped)
 
     def fromString[
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
@@ -294,16 +312,19 @@ package object explorer {
 
     implicit def jsonCodec: Codec.JsonCodec[ContractAttributes] =
       implicitly[Codec.JsonCodec[Map[String, String]]]
-        .map(ContractAttributes.apply)(_.value)
+        .map(ContractAttributes(_))(_.value)
 
     implicit def schema: Schema[ContractAttributes] =
-      jsonCodec.meta.schema.description("ContractAttributes")
+      implicitly[Schema[Map[String, String]]].asInstanceOf[Schema[ContractAttributes]]
+
+    implicit def validator: Validator[ContractAttributes] =
+      implicitly[Validator[Map[String, String]]].contramap[ContractAttributes](_.value)
   }
 
   private def deriveCodec[A, CF <: CodecFormat, T](
     at: A => Either[Throwable, T],
     ta: T => A
-  )(implicit c: Codec[A, CF, String]): Codec[T, CF, String] =
+  )(implicit c: Codec[String, A, CF]): Codec[String, T, CF] =
     c.mapDecode { x =>
       at(x).fold(DecodeResult.Error(x.toString, _), DecodeResult.Value(_))
     }(ta)

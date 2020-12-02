@@ -16,7 +16,7 @@ object DexEndpointsDefs {
     getUnspentSellOrdersDef :: getUnspentBuyOrdersDef :: Nil
 
   def getUnspentSellOrdersDef
-    : Endpoint[(TokenId, Paging), ApiErr, List[DexSellOrderInfo], Nothing] =
+    : Endpoint[(TokenId, Paging), ApiErr, List[DexSellOrderInfo], Any] =
     baseEndpointDef.get
       .description("DEX sell orders for a given token id")
       .in(PathPrefix / "tokens" / path[TokenId] / "unspentSellOrders")
@@ -24,7 +24,7 @@ object DexEndpointsDefs {
       .out(jsonBody[List[DexSellOrderInfo]].description("Sell order for DEX, where ask is in tokenPrice, DEX fee is in outputInfo.value and token is in outputInfo.assets(0)"))
 
   def getUnspentBuyOrdersDef
-    : Endpoint[(TokenId, Paging), ApiErr, List[DexBuyOrderInfo], Nothing] =
+    : Endpoint[(TokenId, Paging), ApiErr, List[DexBuyOrderInfo], Any] =
     baseEndpointDef.get
       .description("DEX buy orders for a given token id")
       .in(PathPrefix / "tokens" / path[TokenId] / "unspentBuyOrders")

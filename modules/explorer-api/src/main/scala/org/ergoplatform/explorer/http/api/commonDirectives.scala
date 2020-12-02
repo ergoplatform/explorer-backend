@@ -3,22 +3,25 @@ package org.ergoplatform.explorer.http.api
 import java.util.concurrent.TimeUnit
 
 import cats.data.NonEmptyMap
-import cats.syntax.option._
-import cats.syntax.flatMap._
 import cats.instances.option._
-import org.ergoplatform.explorer.http.api.models.{Paging, Sorting}
-import sttp.tapir.{query, EndpointInput, Validator}
+import cats.syntax.flatMap._
+import cats.syntax.option._
+import org.ergoplatform.explorer.http.api.models.{Epochs, Paging, Sorting}
+import sttp.tapir.{query, EndpointInput, ValidationError, Validator}
 
 import scala.concurrent.duration.FiniteDuration
 
 object commonDirectives {
 
-  val paging: EndpointInput[Paging] =
+  def paging: EndpointInput[Paging] = paging(Int.MaxValue)
+
+  def paging(maxLimit: Int): EndpointInput[Paging] =
     (query[Option[Int]]("offset").validate(Validator.min(0).asOptionElement) and
-    query[Option[Int]]("limit").validate(Validator.min(1).asOptionElement))
-      .map {
-        case (offsetOpt, limitOpt) =>
-          Paging(offsetOpt.getOrElse(0), limitOpt.getOrElse(20))
+    query[Option[Int]]("limit")
+      .validate(Validator.min(1).asOptionElement)
+      .validate(Validator.max(maxLimit).asOptionElement))
+      .map { input =>
+        Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }
 
   val confirmations: EndpointInput[Int] =
@@ -27,7 +30,7 @@ object commonDirectives {
   val timespan: EndpointInput[FiniteDuration] =
     query[Option[String]]("timespan").map {
       _.flatMap(parseTimespan).getOrElse(FiniteDuration(365, TimeUnit.DAYS))
-    } { _.toString.some }
+    }(_.toString.some)
 
   def sorting(
     allowedFields: NonEmptyMap[String, String],
@@ -36,16 +39,35 @@ object commonDirectives {
     (query[Option[String]]("sortBy").validate(
       Validator.`enum`(none :: allowedFields.keys.toNonEmptyList.toList.map(_.some))
     ) and query[Option[Sorting.SortOrder]]("sortDirection"))
-      .map {
-        case (fieldOpt, orderOpt) =>
-          val specFieldOpt = fieldOpt >>= (allowedFields(_))
-          val field        = specFieldOpt getOrElse (defaultFieldOpt getOrElse allowedFields.head._2)
-          val ord          = orderOpt getOrElse Sorting.Desc
-          Sorting(field, ord)
+      .map { input =>
+        val (fieldOpt, orderOpt) = input
+        val specFieldOpt         = fieldOpt >>= (allowedFields(_))
+        val field                = specFieldOpt getOrElse (defaultFieldOpt getOrElse allowedFields.head._2)
+        val ord                  = orderOpt getOrElse Sorting.Desc
+        Sorting(field, ord)
       } {
         case Sorting(sortBy, order) =>
           allowedFields.toNel.find(_._2 == sortBy).map(_._1) -> order.some
       }
+
+  def epochSlicing(maxEpochs: Int): EndpointInput[Epochs] =
+    (query[Int]("minHeight").validate(Validator.min(0)) and
+    query[Int]("maxHeight").validate(Validator.min(1)))
+      .validate(Validator.custom(validateBounds(_, maxEpochs)))
+      .map(in => Epochs(in._1, in._2))(epochs => epochs.minHeight -> epochs.maxHeight)
+
+  def lastEpochs(maxEpochs: Int): EndpointInput.Query[Int] =
+    query[Int]("lastEpochs").validate(Validator.max(maxEpochs))
+
+  private def validateBounds(bounds: (Int, Int), max: Int): List[ValidationError[_]] =
+    bounds match {
+      case (minH, maxH) if maxH - minH > max =>
+        ValidationError.Custom(
+          bounds,
+          s"To many epochs requested. Max allowed number is '$max'"
+        ) :: Nil
+      case _ => Nil
+    }
 
   private val TimespanRegex = "^([0-9]+)(days|day|years|year)$".r
 

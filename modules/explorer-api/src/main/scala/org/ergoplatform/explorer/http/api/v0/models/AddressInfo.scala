@@ -4,7 +4,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.http.api.v0.models.AddressInfo.{Summary, Transactions}
-import sttp.tapir.Schema
+import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
 final case class AddressInfo(
@@ -47,16 +47,20 @@ object AddressInfo {
       )
     )
 
-  implicit private lazy val summaryCodec: Codec[Summary] = deriveCodec
-  implicit private val txsCodec: Codec[Transactions]     = deriveCodec
-  implicit val codec: Codec[AddressInfo]                 = deriveCodec
+  implicit private def summaryCodec: Codec[Summary]  = deriveCodec
+  implicit private val txsCodec: Codec[Transactions] = deriveCodec
+  implicit val codec: Codec[AddressInfo]             = deriveCodec
 
-  implicit private lazy val summarySchema: Schema[Summary] =
-    implicitly[Derived[Schema[Summary]]].value
+  implicit private def summarySchema: Schema[Summary] =
+    Schema
+      .derive[Summary]
       .modify(_.id)(_.description("Address identifier"))
 
-  implicit private lazy val txsSchema: Schema[Transactions] =
-    implicitly[Derived[Schema[Transactions]]].value
+  implicit private val summaryValidator: Validator[Summary] = Validator.derive
+
+  implicit private def txsSchema: Schema[Transactions] =
+    Schema
+      .derive[Transactions]
       .modify(_.confirmed)(_.description("Number of confirmed txs"))
       .modify(_.totalReceived)(_.description("Total number of received nanoErgs"))
       .modify(_.confirmedBalance)(
@@ -72,6 +76,9 @@ object AddressInfo {
         _.description("Total (confirmed + unconfirmed) tokens balance of address")
       )
 
-  implicit val schema: Schema[AddressInfo] =
-    implicitly[Derived[Schema[AddressInfo]]].value
+  implicit private val txsValidator: Validator[Transactions] = Validator.derive
+
+  implicit val schema: Schema[AddressInfo] = Schema.derive
+
+  implicit val validator: Validator[AddressInfo] = Validator.derive
 }
