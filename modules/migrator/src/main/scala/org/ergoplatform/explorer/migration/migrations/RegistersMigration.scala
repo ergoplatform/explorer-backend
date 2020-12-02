@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.migration.v5
+package org.ergoplatform.explorer.migration.migrations
 
 import cats.effect.{IO, Timer}
 import cats.instances.list._
@@ -8,10 +8,12 @@ import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.syntax._
 import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.{BoxRegister, Output}
 import org.ergoplatform.explorer.db.repositories.BoxRegisterRepo
+import org.ergoplatform.explorer.migration.MigrationConfig
 import org.ergoplatform.explorer.protocol.RegistersParser
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
 import org.ergoplatform.explorer.{HexString, RegisterId}
@@ -81,4 +83,18 @@ final class RegistersMigration(
          |update node_outputs set additional_registers = ${output.additionalRegisters}
          |where box_id = ${output.boxId}
          """.stripMargin.update.run.void
+}
+
+object RegistersMigration {
+
+  def apply(
+    conf: MigrationConfig,
+    xa: Transactor[IO]
+  )(implicit timer: Timer[IO]): IO[Unit] =
+    for {
+      logger <- Slf4jLogger.create[IO]
+      repo   <- BoxRegisterRepo[IO, ConnectionIO]
+      migration = new RegistersMigration(conf, repo, xa, logger)
+      _ <- migration.run
+    } yield ()
 }

@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.migration.v5
+package org.ergoplatform.explorer.migration
 
 import scala.concurrent.duration.FiniteDuration
 

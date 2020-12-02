@@ -69,11 +69,11 @@ lazy val utxBroadcaster = utils
   )
   .dependsOn(core)
 
-lazy val v5migrator = utils
-  .mkModule("v5-migrator", "V5Migrator")
+lazy val migrator = utils
+  .mkModule("migrator", "Migrator")
   .settings(commonSettings)
   .settings(
-    mainClass in assembly := Some("org.ergoplatform.explorer.migration.v5.Application")
+    mainClass in assembly := Some("org.ergoplatform.explorer.migration.Application")
   )
   .dependsOn(grabber)
 
