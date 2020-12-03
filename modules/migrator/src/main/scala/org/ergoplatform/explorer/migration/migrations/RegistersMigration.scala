@@ -22,10 +22,10 @@ import tofu.syntax.monadic._
 import scala.util.Try
 
 final class RegistersMigration(
-                                conf: RegistersMigrationConfig,
-                                registers: BoxRegisterRepo[ConnectionIO],
-                                xa: Transactor[IO],
-                                log: Logger[IO]
+  conf: RegistersMigrationConfig,
+  registers: BoxRegisterRepo[ConnectionIO],
+  xa: Transactor[IO],
+  log: Logger[IO]
 )(implicit timer: Timer[IO]) {
 
   def run: IO[Unit] = migrateBatch(0, conf.batchSize)
@@ -88,8 +88,8 @@ final class RegistersMigration(
 object RegistersMigration {
 
   def apply(
-             conf: RegistersMigrationConfig,
-             xa: Transactor[IO]
+    conf: RegistersMigrationConfig,
+    xa: Transactor[IO]
   )(implicit timer: Timer[IO]): IO[Unit] =
     for {
       logger <- Slf4jLogger.create[IO]
