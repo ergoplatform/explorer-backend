@@ -13,7 +13,7 @@ import io.circe.syntax._
 import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.{BoxRegister, Output}
 import org.ergoplatform.explorer.db.repositories.BoxRegisterRepo
-import org.ergoplatform.explorer.migration.MigrationConfig
+import org.ergoplatform.explorer.migration.RegistersMigrationConfig
 import org.ergoplatform.explorer.protocol.RegistersParser
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
 import org.ergoplatform.explorer.{HexString, RegisterId}
@@ -22,10 +22,10 @@ import tofu.syntax.monadic._
 import scala.util.Try
 
 final class RegistersMigration(
-  conf: MigrationConfig,
-  registers: BoxRegisterRepo[ConnectionIO],
-  xa: Transactor[IO],
-  log: Logger[IO]
+                                conf: RegistersMigrationConfig,
+                                registers: BoxRegisterRepo[ConnectionIO],
+                                xa: Transactor[IO],
+                                log: Logger[IO]
 )(implicit timer: Timer[IO]) {
 
   def run: IO[Unit] = migrateBatch(0, conf.batchSize)
@@ -88,8 +88,8 @@ final class RegistersMigration(
 object RegistersMigration {
 
   def apply(
-    conf: MigrationConfig,
-    xa: Transactor[IO]
+             conf: RegistersMigrationConfig,
+             xa: Transactor[IO]
   )(implicit timer: Timer[IO]): IO[Unit] =
     for {
       logger <- Slf4jLogger.create[IO]
