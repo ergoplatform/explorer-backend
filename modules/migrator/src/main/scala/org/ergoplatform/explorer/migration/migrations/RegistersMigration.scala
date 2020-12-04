@@ -54,7 +54,7 @@ final class RegistersMigration(
   def expandRegisters(out: Output): IO[(Output, List[BoxRegister])] =
     out.additionalRegisters
       .as[Map[RegisterId, HexString]]
-      .fold(IO.raiseError, IO.pure)
+      .fold(e => IO.raiseError(new Exception(s"Cannot deserialize registers in: $out, $e")), IO.pure)
       .map { rawRegisters =>
         val registers = for {
           (id, rawValue)                  <- rawRegisters.toList
