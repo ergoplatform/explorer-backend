@@ -6,7 +6,7 @@ import pureconfig.ConfigSource
 import pureconfig.generic.auto._
 import pureconfig.module.catseffect._
 
-final case class MigrationConfig(db: DbSettings, migrationId: String)
+final case class MigrationConfig(db: DbSettings, migrationId: String, offset: Int)
 
 object MigrationConfig {
 

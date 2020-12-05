@@ -12,9 +12,9 @@ object Application extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
     resources(args.headOption).use {
-      case (xa, id) =>
-        val migrations = makeMigrations(xa)
-        migrations(id)
+      case (xa, conf) =>
+        val migrations = makeMigrations(conf.offset, xa)
+        migrations(conf.migrationId)
           .as(ExitCode.Success)
     }
 
@@ -22,8 +22,8 @@ object Application extends IOApp {
     for {
       settings <- Resource.liftF(MigrationConfig.load[IO](configPathOpt))
       xa       <- DoobieTrans[IO]("Migrator", settings.db)
-    } yield xa -> settings.migrationId
+    } yield xa -> settings
 
-  private def makeMigrations(xa: Transactor[IO]) =
-    Map("v4v5" -> RegistersMigration(RegistersMigrationConfig(batchSize = 1000, interval = 500.millis), xa))
+  private def makeMigrations(offset: Int, xa: Transactor[IO]) =
+    Map("v4v5" -> RegistersMigration(RegistersMigrationConfig(batchSize = 1000, interval = 500.millis, offset), xa))
 }
