@@ -35,13 +35,15 @@ final class RegistersMigration(
       .transact(xa)
       .flatMap {
         _.traverse { out =>
-          expandRegisters(out).flatMap {
-            case (_, Nil) =>
-              IO.unit
-            case (out, regs) =>
-              val txn = updateOutput(out) >> registers.insertMany(regs)
-              txn.transact(xa)
-          }
+          expandRegisters(out)
+            .flatMap {
+              case (_, Nil) =>
+                IO.unit
+              case (out, regs) =>
+                val txn = updateOutput(out) >> registers.insertMany(regs)
+                txn.transact(xa)
+            }
+            .handleErrorWith(e => log.error(e)("Error while migrating registers"))
         }.flatMap {
           case Nil => IO.unit
           case xs =>
