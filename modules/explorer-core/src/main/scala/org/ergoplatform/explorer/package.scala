@@ -12,7 +12,7 @@ import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
 import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
-import io.circe.{Decoder, Encoder, KeyDecoder}
+import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.estatico.newtype.macros.newtype
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.constraints._
@@ -178,7 +178,8 @@ package object explorer {
 
     val values = findValues
 
-    implicit val decoder: KeyDecoder[RegisterId] = withNameOption
+    implicit val keyDecoder: KeyDecoder[RegisterId] = withNameOption
+    implicit val keyEncoder: KeyEncoder[RegisterId] = _.entryName
 
     implicit val get: Get[RegisterId] =
       Get[String].temap(s => withNameEither(s).leftMap(_ => s"No such RegisterId [$s]"))

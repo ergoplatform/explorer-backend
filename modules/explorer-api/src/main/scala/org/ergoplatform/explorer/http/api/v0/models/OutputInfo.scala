@@ -2,10 +2,12 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.{Codec, Json}
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
+import io.circe.syntax._
+import org.ergoplatform.explorer.{Address, BoxId, HexString, RegisterId, TxId}
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.http.api.models.AssetInfo
+import org.ergoplatform.explorer.protocol.models.ExpandedRegister
 import sttp.tapir.{Schema, SchemaType, Validator}
 import sttp.tapir.json.circe.validatorForCirceJson
 
@@ -28,7 +30,8 @@ object OutputInfo {
   implicit val codec: Codec[OutputInfo] = deriveCodec
 
   implicit val schema: Schema[OutputInfo] =
-    Schema.derive[OutputInfo]
+    Schema
+      .derive[OutputInfo]
       .modify(_.id)(_.description("Id of the box"))
       .modify(_.txId)(_.description("Id of the transaction that created the box"))
       .modify(_.value)(_.description("Value of the box in nanoERG"))
@@ -36,7 +39,6 @@ object OutputInfo {
       .modify(_.creationHeight)(_.description("Height at which the box was created"))
       .modify(_.ergoTree)(_.description("Serialized ergo tree"))
       .modify(_.address)(_.description("An address derived from ergo tree"))
-
 
   implicit val validator: Validator[OutputInfo] = Validator.derive
 
@@ -61,10 +63,14 @@ object OutputInfo {
       o.output.ergoTree,
       o.output.addressOpt,
       assets.sortBy(_.index).map(x => AssetInfo(x.tokenId, x.index, x.amount)),
-      o.output.additionalRegisters,
+      convRegisters(o.output.additionalRegisters),
       o.spentByOpt,
       o.output.mainChain
     )
+
+  def convRegisters(expanded: Json): Json =
+    expanded.as[Map[RegisterId, ExpandedRegister]].map(_.mapValues(_.rawValue).asJson)
+      .fold(_ => Json.Null, identity)
 
   def batch(outputs: List[ExtendedOutput], assets: List[Asset]): List[OutputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)
