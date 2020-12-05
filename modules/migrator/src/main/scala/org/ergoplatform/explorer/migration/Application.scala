@@ -25,5 +25,5 @@ object Application extends IOApp {
     } yield xa -> settings.migrationId
 
   private def makeMigrations(xa: Transactor[IO]) =
-    Map("v4v5" -> RegistersMigration(RegistersMigrationConfig(batchSize = 100, interval = 1.second), xa))
+    Map("v4v5" -> RegistersMigration(RegistersMigrationConfig(batchSize = 1000, interval = 500.millis), xa))
 }
