@@ -75,8 +75,20 @@ final class RegistersMigration(
 
   def outputsBatch(offset: Int, limit: Int): ConnectionIO[List[Output]] =
     sql"""
-         |select * from node_outputs
-         |order by creation_height asc
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain
+         |from node_outputs o
+         |order by o.creation_height asc
          |offset $offset limit $limit
          """.stripMargin.query[Output].to[List]
 
