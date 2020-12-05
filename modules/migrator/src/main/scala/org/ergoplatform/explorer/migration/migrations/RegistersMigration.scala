@@ -28,7 +28,7 @@ final class RegistersMigration(
   log: Logger[IO]
 )(implicit timer: Timer[IO]) {
 
-  def run: IO[Unit] = migrateBatch(0, conf.batchSize)
+  def run: IO[Unit] = migrateBatch(conf.offset, conf.batchSize)
 
   def migrateBatch(offset: Int, limit: Int): IO[Unit] =
     log.info(s"Current offset [$offset]") *> outputsBatch(offset, limit)
