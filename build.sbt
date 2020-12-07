@@ -24,7 +24,7 @@ lazy val explorer = project
   .withId("explorer-backend")
   .settings(commonSettings)
   .settings(moduleName := "explorer-backend", name := "ExplorerBackend")
-  .aggregate(core, httpApi, grabber, utxWatcher, utxBroadcaster)
+  .aggregate(core, httpApi, grabber, utxTracker, utxBroadcaster)
 
 lazy val core = utils
   .mkModule("explorer-core", "ExplorerCore")
@@ -51,12 +51,12 @@ lazy val grabber = utils
   )
   .dependsOn(core % allConfigDependency)
 
-lazy val utxWatcher = utils
-  .mkModule("utx-watcher", "UtxWatcher")
+lazy val utxTracker = utils
+  .mkModule("utx-tracker", "UtxTracker")
   .settings(commonSettings)
   .settings(
-    mainClass in assembly := Some("org.ergoplatform.explorer.watcher.Application"),
-    libraryDependencies ++= dependencies.utxWatcher
+    mainClass in assembly := Some("org.ergoplatform.explorer.tracker.Application"),
+    libraryDependencies ++= dependencies.utxTracker
   )
   .dependsOn(core)
 

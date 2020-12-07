@@ -1,15 +1,14 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.{Codec, Json}
 import io.circe.generic.semiauto.deriveCodec
-import io.circe.syntax._
-import org.ergoplatform.explorer.{Address, BoxId, HexString, RegisterId, TxId}
+import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.http.api.models.AssetInfo
-import org.ergoplatform.explorer.protocol.models.ExpandedRegister
-import sttp.tapir.{Schema, SchemaType, Validator}
+import org.ergoplatform.explorer.protocol.registers
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.json.circe.validatorForCirceJson
+import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class OutputInfo(
   id: BoxId,
@@ -63,14 +62,10 @@ object OutputInfo {
       o.output.ergoTree,
       o.output.addressOpt,
       assets.sortBy(_.index).map(x => AssetInfo(x.tokenId, x.index, x.amount)),
-      convRegisters(o.output.additionalRegisters),
+      registers.convolveJson(o.output.additionalRegisters),
       o.spentByOpt,
       o.output.mainChain
     )
-
-  def convRegisters(expanded: Json): Json =
-    expanded.as[Map[RegisterId, ExpandedRegister]].map(_.mapValues(_.rawValue).asJson)
-      .fold(_ => Json.Null, identity)
 
   def batch(outputs: List[ExtendedOutput], assets: List[Asset]): List[OutputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)

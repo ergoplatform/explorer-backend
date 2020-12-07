@@ -6,10 +6,10 @@ RUN apt-get update && \
     apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends sbt
-COPY . /explorer-backend
+COPY ../utx-tracker /explorer-backend
 WORKDIR /explorer-backend
-RUN sbt utx-watcher/assembly
-RUN mv `find . -name UtxWatcher-assembly-*.jar` /utx-tracker.jar
+RUN sbt utx-tracker/assembly
+RUN mv `find . -name UtxTracker-assembly-*.jar` /utx-tracker.jar
 CMD ["/usr/bin/java", "-jar", "/utx-tracker.jar"]
 
 FROM openjdk:8-jre-slim

@@ -14,7 +14,7 @@ services:
     image: oskin1/utx-tracker:latest
     build:
       context: .
-      dockerfile: modules/utx-watcher/Dockerfile
+      dockerfile: modules/utx-tracker/Dockerfile
   utx-broadcaster:
     image: oskin1/utx-broadcaster:latest
     build:
