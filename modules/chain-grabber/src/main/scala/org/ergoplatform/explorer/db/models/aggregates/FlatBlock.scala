@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.protocol.models.{ApiBlockTransactions, ApiFullBlock, ExpandedRegister, RegisterValue}
-import org.ergoplatform.explorer.protocol.{utils, RegistersParser}
+import org.ergoplatform.explorer.protocol.{registers, utils, RegistersParser}
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, CRaise}
 
@@ -142,12 +142,7 @@ object FlatBlock {
               .map(_.toString)
               .flatMap(Address.fromString[Try])
               .toOption
-            val registers =
-              for {
-                (idSig, rawValue)               <- o.additionalRegisters.toList
-                RegisterValue(valueType, value) <- RegistersParser[Try].parse(rawValue).toOption
-              } yield idSig.entryName -> ExpandedRegister(rawValue, valueType, value)
-            val registersJson = registers.toMap.asJson
+            val registersJson = registers.expand(o.additionalRegisters).asJson
             Output(
               o.boxId,
               apiTx.id,

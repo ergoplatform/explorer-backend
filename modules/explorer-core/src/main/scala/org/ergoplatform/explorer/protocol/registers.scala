@@ -26,5 +26,5 @@ object registers {
     expanded
       .as[Map[RegisterId, ExpandedRegister]]
       .map(_.mapValues(_.rawValue).asJson)
-      .fold(_ => Json.Null, identity)
+      .fold(_ => Json.obj(Seq.empty: _*), identity)
 }
