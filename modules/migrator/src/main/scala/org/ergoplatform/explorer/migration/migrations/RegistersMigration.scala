@@ -31,7 +31,7 @@ final class RegistersMigration(
   def run: IO[Unit] = migrateBatch(conf.offset, conf.batchSize)
 
   def migrateBatch(offset: Int, limit: Int): IO[Unit] =
-    log.info(s"Current offset [$offset]") *> outputsBatch(offset, limit)
+    log.info(s"Current offset is [$offset]") *> outputsBatch(offset, limit)
       .transact(xa)
       .flatMap {
         _.traverse { out =>
