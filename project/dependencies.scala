@@ -32,13 +32,11 @@ object dependencies {
     )
 
   val Cats: List[ModuleID] = List(
-    "org.typelevel" %% "cats-core"           % CatsVersion,
-    "org.typelevel" %% "cats-effect"         % CatsEffectVersion,
-    "org.typelevel" %% "cats-mtl-core"       % CatsMtlVersion,
-    "com.olegpy"    %% "meow-mtl-core"       % CatsMeowMtl,
-    "org.typelevel" %% "cats-tagless-macros" % CatsTaglessVersion,
-    "org.typelevel" %% "cats-tagless-core"   % CatsTaglessVersion,
-    "org.typelevel" %% "mouse"               % MouseVersion
+    "org.typelevel" %% "cats-core"     % CatsVersion,
+    "org.typelevel" %% "cats-effect"   % CatsEffectVersion,
+    "org.typelevel" %% "cats-mtl-core" % CatsMtlVersion,
+    "com.olegpy"    %% "meow-mtl-core" % CatsMeowMtl,
+    "org.typelevel" %% "mouse"         % MouseVersion
   )
 
   val Monix: List[ModuleID] = List(
@@ -110,10 +108,6 @@ object dependencies {
     "com.github.pureconfig" %% "pureconfig-cats-effect" % PureConfigVersion
   )
 
-  val Simulacrum: List[ModuleID] = List(
-    "com.github.mpilquist" %% "simulacrum" % SimulacrumVersion
-  )
-
   val CompilerPlugins: List[ModuleID] =
     List(
       compilerPlugin(
@@ -137,7 +131,6 @@ object dependencies {
     Config ++
     Logging ++
     Typing ++
-    Simulacrum ++
     Monocle ++
     Redis ++
     Enums
