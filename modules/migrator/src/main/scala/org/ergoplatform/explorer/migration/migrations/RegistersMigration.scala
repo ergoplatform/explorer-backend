@@ -88,6 +88,8 @@ final class RegistersMigration(
          |  o.timestamp,
          |  o.main_chain
          |from node_outputs o
+         |left join box_registers r on o.box_id = r.box_id
+         |where r.id is null and o.additional_registers::text != '{}'
          |order by o.creation_height asc
          |offset $offset limit $limit
          """.stripMargin.query[Output].to[List]
