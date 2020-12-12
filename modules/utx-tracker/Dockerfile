@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends sbt
-COPY ../utx-tracker /explorer-backend
+COPY . /explorer-backend
 WORKDIR /explorer-backend
 RUN sbt utx-tracker/assembly
 RUN mv `find . -name UtxTracker-assembly-*.jar` /utx-tracker.jar
