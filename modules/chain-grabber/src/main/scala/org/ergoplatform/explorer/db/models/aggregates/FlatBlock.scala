@@ -3,13 +3,14 @@ package org.ergoplatform.explorer.db.models.aggregates
 import cats.Monad
 import cats.instances.try_._
 import cats.syntax.functor._
+import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.{Address, CRaise}
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.db.models._
-import org.ergoplatform.explorer.protocol.models.{ApiBlockTransactions, ApiFullBlock}
-import org.ergoplatform.explorer.protocol.utils
+import org.ergoplatform.explorer.protocol.models.{ApiBlockTransactions, ApiFullBlock, ExpandedRegister, RegisterValue}
+import org.ergoplatform.explorer.protocol.{registers, utils, RegistersParser}
 import org.ergoplatform.explorer.settings.ProtocolSettings
+import org.ergoplatform.explorer.{Address, CRaise}
 
 import scala.util.Try
 
@@ -25,7 +26,8 @@ final case class FlatBlock(
   inputs: List[Input],
   dataInputs: List[DataInput],
   outputs: List[Output],
-  assets: List[Asset]
+  assets: List[Asset],
+  registers: List[BoxRegister]
 )
 
 object FlatBlock {
@@ -55,6 +57,7 @@ object FlatBlock {
         val inputs     = extractInputs(apiBlock.transactions, mainChain)
         val dataInputs = extractDataInputs(apiBlock.transactions, mainChain)
         val assets     = extractAssets(apiBlock.transactions)
+        val registers  = extractRegisters(apiBlock.transactions)
         FlatBlock(
           Header.fromApi(apiBlock.header),
           blockInfo,
@@ -64,7 +67,8 @@ object FlatBlock {
           inputs,
           dataInputs,
           outs,
-          assets
+          assets,
+          registers
         )
       }
 
@@ -138,6 +142,7 @@ object FlatBlock {
               .map(_.toString)
               .flatMap(Address.fromString[Try])
               .toOption
+            val registersJson = registers.expand(o.additionalRegisters).asJson
             Output(
               o.boxId,
               apiTx.id,
@@ -147,7 +152,7 @@ object FlatBlock {
               index,
               o.ergoTree,
               addressOpt,
-              o.additionalRegisters,
+              registersJson,
               ts,
               mainChain
             )
@@ -160,4 +165,12 @@ object FlatBlock {
       out            <- tx.outputs
       (asset, index) <- out.assets.zipWithIndex
     } yield Asset(asset.tokenId, out.boxId, apiTxs.headerId, index, asset.amount)
+
+  private def extractRegisters(apiTxs: ApiBlockTransactions): List[BoxRegister] =
+    for {
+      tx                            <- apiTxs.transactions
+      out                           <- tx.outputs
+      (id, rawValue)                <- out.additionalRegisters.toList
+      RegisterValue(typeSig, value) <- RegistersParser[Try].parse(rawValue).toOption
+    } yield BoxRegister(id, out.boxId, apiTxs.headerId, typeSig, rawValue, value)
 }

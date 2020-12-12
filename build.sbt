@@ -2,9 +2,10 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   scalaVersion := "2.12.12",
   organization := "org.ergoplatform",
-  version := "4.2.0",
+  version := "5.0.0",
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
+  libraryDependencies ++= dependencies.Testing ++ dependencies.CompilerPlugins,
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
     case "logback.xml"                                             => MergeStrategy.first
@@ -23,13 +24,13 @@ lazy val explorer = project
   .withId("explorer-backend")
   .settings(commonSettings)
   .settings(moduleName := "explorer-backend", name := "ExplorerBackend")
-  .aggregate(core, httpApi, grabber, utxWatcher, utxBroadcaster)
+  .aggregate(core, httpApi, grabber, utxTracker, utxBroadcaster)
 
 lazy val core = utils
   .mkModule("explorer-core", "ExplorerCore")
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= dependencies.core ++ dependencies.Testing ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.core
   )
 
 lazy val httpApi = utils
@@ -37,7 +38,7 @@ lazy val httpApi = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.http.api.Application"),
-    libraryDependencies ++= dependencies.api ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.api
   )
   .dependsOn(core)
 
@@ -46,16 +47,16 @@ lazy val grabber = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.grabber.Application"),
-    libraryDependencies ++= dependencies.grabber ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.grabber
   )
   .dependsOn(core % allConfigDependency)
 
-lazy val utxWatcher = utils
-  .mkModule("utx-watcher", "UtxWatcher")
+lazy val utxTracker = utils
+  .mkModule("utx-tracker", "UtxTracker")
   .settings(commonSettings)
   .settings(
-    mainClass in assembly := Some("org.ergoplatform.explorer.watcher.Application"),
-    libraryDependencies ++= dependencies.utxWatcher ++ dependencies.CompilerPlugins
+    mainClass in assembly := Some("org.ergoplatform.explorer.tracker.Application"),
+    libraryDependencies ++= dependencies.utxTracker
   )
   .dependsOn(core)
 
@@ -64,9 +65,17 @@ lazy val utxBroadcaster = utils
   .settings(commonSettings)
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.broadcaster.Application"),
-    libraryDependencies ++= dependencies.utxBroadcaster ++ dependencies.CompilerPlugins
+    libraryDependencies ++= dependencies.utxBroadcaster
   )
   .dependsOn(core)
+
+lazy val migrator = utils
+  .mkModule("migrator", "Migrator")
+  .settings(commonSettings)
+  .settings(
+    mainClass in assembly := Some("org.ergoplatform.explorer.migration.Application")
+  )
+  .dependsOn(grabber)
 
 lazy val commonScalacOptions = List(
   "-deprecation",

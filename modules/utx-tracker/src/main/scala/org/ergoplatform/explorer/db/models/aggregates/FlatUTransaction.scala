@@ -6,11 +6,12 @@ import cats.Functor
 import cats.effect.Clock
 import cats.instances.try_._
 import cats.syntax.functor._
+import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.db.models.{UAsset, UDataInput, UInput, UOutput, UTransaction}
 import org.ergoplatform.explorer.protocol.models.ApiTransaction
-import org.ergoplatform.explorer.protocol.utils
+import org.ergoplatform.explorer.protocol.{registers, utils}
 
 import scala.util.Try
 
@@ -58,7 +59,7 @@ object FlatUTransaction {
             idx,
             apiOut.ergoTree,
             addressOpt,
-            apiOut.additionalRegisters
+            registers.expand(apiOut.additionalRegisters).asJson
           )
       }
       val assets =

@@ -53,8 +53,9 @@ object GrabberService {
           InputRepo[F, D],
           DataInputRepo[F, D],
           OutputRepo[F, D],
-          AssetRepo[F, D]
-        ).mapN(new Live[F, D](cache, settings, network, _, _, _, _, _, _, _, _, _)(xa))
+          AssetRepo[F, D],
+          BoxRegisterRepo[F, D]
+        ).mapN(new Live[F, D](cache, settings, network, _, _, _, _, _, _, _, _, _, _)(xa))
       }
     }
 
@@ -73,7 +74,8 @@ object GrabberService {
     inputRepo: InputRepo[D],
     dataInputRepo: DataInputRepo[D],
     outputRepo: OutputRepo[D, Stream],
-    assetRepo: AssetRepo[D, Stream]
+    assetRepo: AssetRepo[D, Stream],
+    registerRepo: BoxRegisterRepo[D]
   )(xa: D ~> F)
     extends GrabberService[F] {
 
@@ -188,6 +190,7 @@ object GrabberService {
       inputRepo.insetMany(block.inputs) >>
       dataInputRepo.insetMany(block.dataInputs) >>
       outputRepo.insertMany(block.outputs) >>
-      assetRepo.insertMany(block.assets)
+      assetRepo.insertMany(block.assets) >>
+      registerRepo.insertMany(block.registers)
   }
 }

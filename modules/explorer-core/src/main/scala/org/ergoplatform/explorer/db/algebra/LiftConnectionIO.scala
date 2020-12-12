@@ -6,7 +6,7 @@ import simulacrum.typeclass
 
 /** A type class allowing to lift [[ConnectionIO]] into some effect `F[_]`.
   */
-@typeclass trait LiftConnectionIO[F[_]] {
+trait LiftConnectionIO[F[_]] {
 
   def liftConnectionIO[A](ca: ConnectionIO[A]): F[A]
 
@@ -15,6 +15,8 @@ import simulacrum.typeclass
 }
 
 object LiftConnectionIO {
+
+  def apply[F[_]](implicit ev: LiftConnectionIO[F]): LiftConnectionIO[F] = ev
 
   implicit val CIOLiftConnectionIO: LiftConnectionIO[ConnectionIO] =
     new LiftConnectionIO[ConnectionIO] {

@@ -8,10 +8,10 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends sbt
 COPY . /explorer-backend
 WORKDIR /explorer-backend
-RUN sbt utx-watcher/assembly
-RUN mv `find . -name UtxWatcher-assembly-*.jar` /utx-tracker.jar
-CMD ["/usr/bin/java", "-jar", "/utx-tracker.jar"]
+RUN sbt migrator/assembly
+RUN mv `find . -name Migrator-assembly-*.jar` /migrator.jar
+CMD ["/usr/bin/java", "-jar", "/migrator.jar"]
 
 FROM openjdk:8-jre-slim
-COPY --from=builder /utx-tracker.jar /utx-tracker.jar
-ENTRYPOINT ["java", "-jar", "/utx-tracker.jar"]
+COPY --from=builder /migrator.jar /migrator.jar
+ENTRYPOINT ["java", "-jar", "/migrator.jar"]

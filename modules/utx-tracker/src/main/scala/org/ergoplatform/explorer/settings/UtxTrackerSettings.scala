@@ -10,18 +10,18 @@ import org.ergoplatform.explorer.settings.pureConfigInstances._
 
 import scala.concurrent.duration.FiniteDuration
 
-final case class UtxWatcherSettings(
+final case class UtxTrackerSettings(
   pollInterval: FiniteDuration,
   masterNodesAddresses: NonEmptyList[UrlString],
   db: DbSettings,
   protocol: ProtocolSettings
 )
 
-object UtxWatcherSettings {
+object UtxTrackerSettings {
 
-  def load[F[_]: Sync](pathOpt: Option[String]): F[UtxWatcherSettings] =
+  def load[F[_]: Sync](pathOpt: Option[String]): F[UtxTrackerSettings] =
     pathOpt
       .map(ConfigSource.file)
       .getOrElse(ConfigSource.default)
-      .loadF[F, UtxWatcherSettings]
+      .loadF[F, UtxTrackerSettings]
 }

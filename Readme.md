@@ -23,9 +23,9 @@ Dependencies:
 - Postgres (Schema `modules/explorer-core/src/main/resources/db/V1__Node_data.sql`)
 - Redis
 
-### 3. UTX Watcher
+### 3. UTX Tracker
 
-`modules/utx-watcher`
+`modules/utx-tracker`
 
 Dumps unconfirmed transactions from mempool to local database
 

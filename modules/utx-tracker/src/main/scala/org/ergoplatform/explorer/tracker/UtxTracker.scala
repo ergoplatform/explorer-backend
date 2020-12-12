@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.watcher
+package org.ergoplatform.explorer.tracker
 
 import cats.effect.{Sync, Timer}
 import cats.instances.list._
@@ -9,7 +9,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{Monad, ~>}
+import cats.{~>, Monad}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -18,17 +18,17 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.FlatUTransaction
-import org.ergoplatform.explorer.db.repositories.{UAssetRepo, UDataInputRepo, UInputRepo, UOutputRepo, UTransactionRepo}
-import org.ergoplatform.explorer.settings.UtxWatcherSettings
+import org.ergoplatform.explorer.db.repositories._
+import org.ergoplatform.explorer.settings.UtxTrackerSettings
 import tofu.MonadThrow
 
 /** Synchronises local memory pool representation with the network.
   */
-final class UtxWatcher[
+final class UtxTracker[
   F[_]: Timer: Logger: MonadThrow,
   D[_]: Monad
 ](
-  settings: UtxWatcherSettings,
+  settings: UtxTrackerSettings,
   network: ErgoNetworkClient[F],
   txRepo: UTransactionRepo[D, Stream],
   inRepo: UInputRepo[D, Stream],
@@ -56,9 +56,9 @@ final class UtxWatcher[
       txs      <- network.getUnconfirmedTransactions.map(_.toList)
       newTxs  = txs.filterNot(tx => knownIds.contains(tx.id))
       dropIds = knownIds.diff(txs.map(_.id).toSet).toList.toNel
-      flatTxs  <- newTxs.traverse(FlatUTransaction.fromApi[F](_))
-      _        <- dropIds.fold(().pure[D])(txRepo.dropMany(_).void) >> writeFlatBatch(flatTxs) ||> xa
-      _        <- Logger[F].info(s"${newTxs.size} new transactions written, ${dropIds.size} removed")
+      flatTxs <- newTxs.traverse(FlatUTransaction.fromApi[F](_))
+      _       <- dropIds.fold(().pure[D])(txRepo.dropMany(_).void) >> writeFlatBatch(flatTxs) ||> xa
+      _       <- Logger[F].info(s"${newTxs.size} new transactions written, ${dropIds.size} removed")
     } yield ()
 
   private def writeFlatBatch(txs: List[FlatUTransaction]): D[Unit] =
@@ -69,14 +69,14 @@ final class UtxWatcher[
     assetRep.insertMany(txs.flatMap(_.assets))
 }
 
-object UtxWatcher {
+object UtxTracker {
 
   def apply[F[_]: Timer: Sync, D[_]: Monad: LiftConnectionIO](
-    settings: UtxWatcherSettings,
+    settings: UtxTrackerSettings,
     network: ErgoNetworkClient[F]
-  )(xa: D ~> F): F[UtxWatcher[F, D]] =
+  )(xa: D ~> F): F[UtxTracker[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       (UTransactionRepo[F, D], UInputRepo[F, D], UDataInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
-        .mapN(new UtxWatcher(settings, network, _, _, _, _, _)(xa))
+        .mapN(new UtxTracker(settings, network, _, _, _, _, _)(xa))
     }
 }
