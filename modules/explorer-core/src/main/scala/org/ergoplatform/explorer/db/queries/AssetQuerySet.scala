@@ -127,4 +127,10 @@ object AssetQuerySet extends QuerySet {
          |  left join node_outputs o on o.box_id = a.box_id where o.main_chain = true
          |) as a
          """.stripMargin.query[Int]
+
+  def getAllLike(idSubstring: String)(implicit lh: LogHandler): Query0[Asset] =
+    sql"""
+         |select a.token_id, a.box_id, a.token_id, a.index, a.value from node_assets a
+         |where a.token_id like ${"%" + idSubstring + "%"}
+         """.stripMargin.query[Asset]
 }

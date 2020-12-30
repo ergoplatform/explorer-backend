@@ -56,6 +56,10 @@ trait AssetRepo[D[_], S[_[_], _]] {
   /** Get total number of issuing boxes (on the main chain).
     */
   def getIssuingBoxesQty: D[Int]
+
+  /** Get all assets matching a given `query`.
+    */
+  def getAllLike(idSubstring: String): D[List[Asset]]
 }
 
 object AssetRepo {
@@ -104,5 +108,8 @@ object AssetRepo {
 
     def getIssuingBoxesQty: D[Int] =
       QS.getIssuingBoxesQty.unique.liftConnectionIO
+
+    def getAllLike(idSubstring: String): D[List[Asset]] =
+      QS.getAllLike(idSubstring).to[List].liftConnectionIO
   }
 }
