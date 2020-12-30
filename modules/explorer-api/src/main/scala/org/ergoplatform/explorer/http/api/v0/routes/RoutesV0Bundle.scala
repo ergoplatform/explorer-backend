@@ -46,7 +46,7 @@ object RoutesV0Bundle {
       boxesService              <- BoxesService(trans)
       txsService                <- TransactionsService(trans)
       offchainService           <- OffChainService(utxCacheSettings, redis)(trans)
-      search        = Search(blockChainService, txsService, addressesService, assetsService)
+      search        = Search(blockChainService, txsService, addressesService)
       blockRoutes   = BlocksRoutes(blockChainService)
       assetRoutes   = AssetsRoutes(assetsService)
       dexRoutes     = DexRoutes(dexService)

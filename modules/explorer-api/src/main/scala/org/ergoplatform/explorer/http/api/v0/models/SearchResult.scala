@@ -9,8 +9,7 @@ import sttp.tapir.{Schema, Validator}
 final case class SearchResult(
   blocks: List[BlockInfo],
   transactions: List[TxId],
-  addresses: List[Address],
-  assets: List[AssetInfo]
+  addresses: List[Address]
 )
 
 object SearchResult {
@@ -23,7 +22,6 @@ object SearchResult {
       .modify(_.blocks)(_.description("Blocks matching search query"))
       .modify(_.transactions)(_.description("Ids of transactions matching search query"))
       .modify(_.addresses)(_.description("Addresses matching search query"))
-      .modify(_.assets)(_.description("Assets matching search query"))
 
   implicit val validator: Validator[SearchResult] = Validator.derive
 }
