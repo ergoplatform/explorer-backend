@@ -8,9 +8,9 @@ import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
 /** [[Asset]] data access operations.
@@ -57,9 +57,13 @@ trait AssetRepo[D[_], S[_[_], _]] {
     */
   def getIssuingBoxesQty: D[Int]
 
-  /** Get all assets matching a given `query`.
+  /** Get all assets matching a given `idSubstring`.
     */
-  def getAllLike(idSubstring: String): D[List[Asset]]
+  def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[Asset]]
+
+  /** Get the total number of assets matching a given `idSubstring`.
+    */
+  def countAllLike(idSubstring: String): D[Int]
 }
 
 object AssetRepo {
@@ -69,8 +73,7 @@ object AssetRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends AssetRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends AssetRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{AssetQuerySet => QS}
 
@@ -109,7 +112,10 @@ object AssetRepo {
     def getIssuingBoxesQty: D[Int] =
       QS.getIssuingBoxesQty.unique.liftConnectionIO
 
-    def getAllLike(idSubstring: String): D[List[Asset]] =
-      QS.getAllLike(idSubstring).to[List].liftConnectionIO
+    def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[Asset]] =
+      QS.getAllLike(idSubstring, offset, limit).to[List].liftConnectionIO
+
+    def countAllLike(idSubstring: String): D[Int] =
+      QS.countAllLike(idSubstring).unique.liftConnectionIO
   }
 }

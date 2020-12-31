@@ -2,12 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.modules
 
 import cats.Monad
 import org.ergoplatform.explorer.http.api.v0.models.SearchResult
-import org.ergoplatform.explorer.http.api.v0.services.{
-  AddressesService,
-  AssetsService,
-  BlockChainService,
-  TransactionsService
-}
+import org.ergoplatform.explorer.http.api.v0.services.{AddressesService, BlockChainService, TransactionsService}
 import tofu.Start
 import tofu.syntax.monadic._
 import tofu.syntax.start._

@@ -33,10 +33,6 @@ trait AssetsService[F[_], S[_[_], _]] {
     * according to EIP-4 https://github.com/ergoplatform/eips/blob/master/eip-0004.md
     */
   def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): S[F, OutputInfo]
-
-  /** Get all assets matching a given `query`.
-    */
-  def getAllLike(idSubstring: String): F[List[AssetInfo]]
 }
 
 object AssetsService {
@@ -78,8 +74,5 @@ object AssetsService {
                     .asStream
         outputInfo <- Stream.emits(OutputInfo.batch(extOuts, assets)).covary[D]
       } yield outputInfo).thrushK(trans.xas)
-
-    def getAllLike(idSubstring: String): F[List[AssetInfo]] =
-      assetRepo.getAllLike(idSubstring).map(_.map(AssetInfo(_))).thrushK(trans.xa)
   }
 }

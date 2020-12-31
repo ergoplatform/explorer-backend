@@ -22,10 +22,12 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
   val routes: HttpRoutes[F] = openApiSpecR
 
   private def allEndpoints =
-    new BoxesEndpointDefs(settings).endpoints
+    new BoxesEndpointDefs(settings).endpoints ++
+    new AssetsEndpointDefs(settings).endpoints
 
   private def tags =
     Tag("boxes", "Boxes info".some) ::
+    Tag("assets", "Assets info".some) ::
     Nil
 
   private def openApiSpecR: HttpRoutes[F] =
