@@ -24,7 +24,7 @@ lazy val explorer = project
   .withId("explorer-backend")
   .settings(commonSettings)
   .settings(moduleName := "explorer-backend", name := "ExplorerBackend")
-  .aggregate(core, httpApi, grabber, utxTracker, utxBroadcaster)
+  .aggregate(core, httpApi, grabber, utxTracker, utxBroadcaster, migrator)
 
 lazy val core = utils
   .mkModule("explorer-core", "ExplorerCore")
