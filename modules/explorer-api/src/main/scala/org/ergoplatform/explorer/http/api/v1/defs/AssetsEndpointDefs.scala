@@ -18,7 +18,8 @@ final class AssetsEndpointDefs[F[_]](settings: RequestsSettings) {
 
   def searchByTokenIdDef: Endpoint[(String, Paging), ApiErr, Items[ExtendedAssetInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "search" / "byTokenId" / path[String])
+      .in(PathPrefix / "search" / "byTokenId")
+      .in(query[String]("query").validate(Validator.minLength(5)))
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[ExtendedAssetInfo]])
 }
