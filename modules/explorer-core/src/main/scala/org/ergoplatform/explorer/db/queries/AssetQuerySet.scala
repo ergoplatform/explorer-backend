@@ -2,12 +2,12 @@ package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
 import doobie.implicits._
-import doobie.{Fragments, LogHandler}
 import doobie.refined.implicits._
 import doobie.util.query.Query0
+import doobie.{Fragments, LogHandler}
+import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
-import org.ergoplatform.explorer.db.models.Asset
 
 /** A set of queries for doobie implementation of  [AssetRepo].
   */
@@ -33,7 +33,7 @@ object AssetQuerySet extends QuerySet {
 
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[Asset] =
     (sql"select distinct on (token_id, box_id) token_id, box_id, header_id, index, value from node_assets "
-    ++ Fragments.in(fr"where box_id", boxIds))
+      ++ Fragments.in(fr"where box_id", boxIds))
       .query[Asset]
 
   def getAllMainUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[Asset] =
@@ -126,5 +126,18 @@ object AssetQuerySet extends QuerySet {
          |  select distinct on (a.token_id) * from node_assets a
          |  left join node_outputs o on o.box_id = a.box_id where o.main_chain = true
          |) as a
+         """.stripMargin.query[Int]
+
+  def getAllLike(idSubstring: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Asset] =
+    sql"""
+         |select a.token_id, a.box_id, a.token_id, a.index, a.value from node_assets a
+         |where a.token_id like ${idSubstring + "%"}
+         |offset $offset limit $limit
+         """.stripMargin.query[Asset]
+
+  def countAllLike(idSubstring: String)(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(*) from node_assets a
+         |where a.token_id like ${idSubstring + "%"}
          """.stripMargin.query[Int]
 }

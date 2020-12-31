@@ -1,14 +1,11 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.data.NonEmptyList
-import cats.effect.{Concurrent, ContextShift, Sync, Timer}
+import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
-import cats.syntax.flatMap._
-import cats.syntax.functor._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
-import org.ergoplatform.explorer.http.api.models.Items
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v0.services.AssetsService
 import org.http4s.HttpRoutes

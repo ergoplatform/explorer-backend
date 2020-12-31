@@ -2,7 +2,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   scalaVersion := "2.12.12",
   organization := "org.ergoplatform",
-  version := "5.0.0",
+  version := "5.1.0",
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= dependencies.Testing ++ dependencies.CompilerPlugins,
@@ -24,7 +24,7 @@ lazy val explorer = project
   .withId("explorer-backend")
   .settings(commonSettings)
   .settings(moduleName := "explorer-backend", name := "ExplorerBackend")
-  .aggregate(core, httpApi, grabber, utxTracker, utxBroadcaster)
+  .aggregate(core, httpApi, grabber, utxTracker, utxBroadcaster, migrator)
 
 lazy val core = utils
   .mkModule("explorer-core", "ExplorerCore")

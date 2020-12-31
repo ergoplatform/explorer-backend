@@ -1,20 +1,20 @@
 package org.ergoplatform.explorer.http.api.v0.services
 
-import cats.{Functor, Monad, Traverse}
+import cats.Monad
 import cats.data.NonEmptyList
 import cats.effect.Sync
-import cats.syntax.list._
+import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.instances.list._
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{AssetInfo, Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{CRaise, TokenId}
@@ -50,29 +50,29 @@ object AssetsService {
     extends AssetsService[F, Stream] {
 
     def getAllIssuingBoxes(paging: Paging): F[Items[OutputInfo]] =
-      assetRepo.getIssuingBoxesQty.flatMap { total =>
-        assetRepo
-          .getAllIssuingBoxes(paging.offset, paging.limit)
-          .flatMap {
-            _.traverse(extOut =>
-              assetRepo.getAllByBoxId(extOut.output.boxId).map(OutputInfo(extOut, _))
-            )
-          }
-          .map(Items(_, total))
-      } ||> trans.xa
+      assetRepo.getIssuingBoxesQty
+        .flatMap { total =>
+          assetRepo
+            .getAllIssuingBoxes(paging.offset, paging.limit)
+            .flatMap {
+              _.traverse(extOut => assetRepo.getAllByBoxId(extOut.output.boxId).map(OutputInfo(extOut, _)))
+            }
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
 
     def getIssuingBoxes(tokenIds: NonEmptyList[TokenId]): Stream[F, OutputInfo] =
       (for {
         extOuts <- assetRepo.getIssuingBoxesByTokenIds(tokenIds).asStream
         boxIdsNel <- extOuts
-                      .map(_.output.boxId)
-                      .toNel
-                      .orRaise[D](InconsistentDbData("Empty outputs"))
-                      .asStream
+                       .map(_.output.boxId)
+                       .toNel
+                       .orRaise[D](InconsistentDbData("Empty outputs"))
+                       .asStream
         assets <- assetRepo
-                   .getAllByBoxIds(boxIdsNel)
-                   .asStream
+                    .getAllByBoxIds(boxIdsNel)
+                    .asStream
         outputInfo <- Stream.emits(OutputInfo.batch(extOuts, assets)).covary[D]
-      } yield outputInfo) ||> trans.xas
+      } yield outputInfo).thrushK(trans.xas)
   }
 }

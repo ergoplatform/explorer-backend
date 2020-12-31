@@ -1,24 +1,17 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{Concurrent, ContextShift, Sync, Timer}
-import cats.syntax.flatMap._
-import cats.syntax.functor._
+import cats.effect.{Concurrent, ContextShift, Timer}
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
-import org.ergoplatform.explorer.http.api.v0.models.SearchResult
-import org.ergoplatform.explorer.http.api.v0.services.{AddressesService, BlockChainService, TransactionsService}
+import org.ergoplatform.explorer.http.api.v0.modules.Search
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
 final class SearchRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](
-  blocksService: BlockChainService[F],
-  txsService: TransactionsService[F],
-  addressesService: AddressesService[F, fs2.Stream]
-)(implicit opts: Http4sServerOptions[F]) {
+](search: Search[F])(implicit opts: Http4sServerOptions[F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.SearchEndpointDefs._
 
@@ -26,20 +19,14 @@ final class SearchRoutes[
 
   private def searchR: HttpRoutes[F] =
     searchDef.toRoutes { q =>
-      (for {
-        blocks    <- blocksService.getBlocksByIdLike(q)
-        txs       <- txsService.getIdsLike(q)
-        addresses <- addressesService.getAllLike(q)
-      } yield SearchResult(blocks, txs, addresses)).adaptThrowable.value
+      search.search(q).adaptThrowable.value
     }
 }
 
 object SearchRoutes {
 
-  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
-    blocksService: BlockChainService[F],
-    txsService: TransactionsService[F],
-    addressesService: AddressesService[F, fs2.Stream]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
-    new SearchRoutes(blocksService, txsService, addressesService).routes
+  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](search: Search[F])(implicit
+    opts: Http4sServerOptions[F]
+  ): HttpRoutes[F] =
+    new SearchRoutes(search).routes
 }

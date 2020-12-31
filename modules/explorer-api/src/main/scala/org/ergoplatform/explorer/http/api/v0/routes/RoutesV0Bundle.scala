@@ -11,8 +11,9 @@ import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.http.api.v0.modules.Search
 import org.ergoplatform.explorer.http.api.v0.services._
-import org.ergoplatform.explorer.settings.{HttpSettings, ProtocolSettings, UtxCacheSettings}
+import org.ergoplatform.explorer.settings.{ProtocolSettings, UtxCacheSettings}
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s.Http4sServerOptions
 import tofu.syntax.monadic._
@@ -45,6 +46,7 @@ object RoutesV0Bundle {
       boxesService              <- BoxesService(trans)
       txsService                <- TransactionsService(trans)
       offchainService           <- OffChainService(utxCacheSettings, redis)(trans)
+      search        = Search(blockChainService, txsService, addressesService)
       blockRoutes   = BlocksRoutes(blockChainService)
       assetRoutes   = AssetsRoutes(assetsService)
       dexRoutes     = DexRoutes(dexService)
@@ -54,9 +56,9 @@ object RoutesV0Bundle {
       statsRoutes   = StatsRoutes(statsService)
       chartsRoutes  = ChartsRoutes(statsService)
       docsRoutes    = DocsRoutes[F]
-      searchRoutes  = SearchRoutes(blockChainService, txsService, addressesService)
+      searchRoutes  = SearchRoutes(search)
       boxesRoutes   = BoxesRoutes(boxesService)
       routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
-               addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes <+> chartsRoutes
+                 addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes <+> chartsRoutes
     } yield RoutesV0Bundle(routes)
 }
