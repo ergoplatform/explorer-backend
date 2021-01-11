@@ -130,14 +130,16 @@ object AssetQuerySet extends QuerySet {
 
   def getAllLike(idSubstring: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Asset] =
     sql"""
-         |select a.token_id, a.box_id, a.token_id, a.index, a.value from node_assets a
-         |where a.token_id like ${idSubstring + "%"}
+         |select a.token_id, a.box_id, a.header_id, a.index, a.value from node_assets a
+         |left join node_outputs o on a.box_id = o.box_id
+         |where a.token_id like ${idSubstring + "%"} and o.main_chain = true
          |offset $offset limit $limit
          """.stripMargin.query[Asset]
 
   def countAllLike(idSubstring: String)(implicit lh: LogHandler): Query0[Int] =
     sql"""
          |select count(*) from node_assets a
-         |where a.token_id like ${idSubstring + "%"}
+         |left join node_outputs o on a.box_id = o.box_id
+         |where a.token_id like ${idSubstring + "%"} and o.main_chain = true
          """.stripMargin.query[Int]
 }

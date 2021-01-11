@@ -10,10 +10,11 @@ import doobie.util.{Get, Put}
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{refineV, W}
+import eu.timepit.refined.{W, refineV}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.estatico.newtype.macros.newtype
+import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
@@ -159,6 +160,21 @@ package object explorer {
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[TokenId] =
       HexString.fromString(s).map(TokenId.apply)
+  }
+
+  @newtype case class TokenType(value: String)
+
+  object TokenType {
+
+    val Eip004: TokenType = "EIP-004".coerce[TokenType]
+
+    // doobie instances
+    implicit def get: Get[TokenType] = deriving
+    implicit def put: Put[TokenType] = deriving
+
+    // circe instances
+    implicit def encoder: Encoder[TokenType] = deriving
+    implicit def decoder: Decoder[TokenType] = deriving
   }
 
   sealed abstract class RegisterId extends EnumEntry

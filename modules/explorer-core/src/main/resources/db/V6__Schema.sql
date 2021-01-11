@@ -256,3 +256,13 @@ CREATE TABLE known_miners
     miner_address VARCHAR PRIMARY KEY,
     miner_name    VARCHAR NOT NULL
 );
+
+CREATE TABLE tokens
+(
+    id              VARCHAR(64)   PRIMARY KEY,
+    name            VARCHAR(128)  NOT NULL,
+    description     VARCHAR(1024) NOT NULL,
+    type            VARCHAR(128)  NOT NULL,
+    decimals        INTEGER       NOT NULL,
+    emission_amount BIGINT        NOT NULL
+);
