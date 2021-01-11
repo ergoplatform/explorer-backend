@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.grabber.services
+package org.ergoplatform.explorer.grabber.processes
 
 import cats.effect.concurrent.Ref
 import cats.effect.{Sync, Timer}
@@ -6,34 +6,36 @@ import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, Monad, Parallel}
+import cats.{Monad, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
-import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
+import org.ergoplatform.explorer.Err.ProcessingErr
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
-import org.ergoplatform.explorer.db.models.aggregates.FlatBlock
 import org.ergoplatform.explorer.db.repositories._
+import org.ergoplatform.explorer.grabber.extractors._
+import org.ergoplatform.explorer.grabber.models.{FlatBlock, SlotData}
+import org.ergoplatform.explorer.grabber.modules.BuildFrom.syntax._
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
-import tofu.{Raise, Throws}
+import tofu.{Context, Raise, Throws, WithContext}
 
-trait GrabberService[F[_]] {
+trait NetworkViewSync[F[_]] {
 
-  /** Sync all known blocks in the network.
+  /** Sync local view with the network.
     */
-  def syncAll: Stream[F, Unit]
+  def run: Stream[F, Unit]
 }
 
-object GrabberService {
+object NetworkViewSync {
 
   def apply[
     F[_]: Sync: Parallel: Timer,
@@ -41,7 +43,7 @@ object GrabberService {
   ](
     settings: ProtocolSettings,
     network: ErgoNetworkClient[F]
-  )(xa: D ~> F): F[GrabberService[F]] =
+  )(xa: D ~> F): F[NetworkViewSync[F]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).flatMap { cache =>
         (
@@ -61,7 +63,7 @@ object GrabberService {
 
   final class Live[
     F[_]: Monad: Parallel: Logger: Timer: Raise[*[_], ProcessingErr],
-    D[_]: Raise[*[_], ProcessingErr]: Raise[*[_], RefinementFailed]: Monad
+    D[_]: Monad: Throws
   ](
     lastBlockCache: Ref[F, Option[BlockInfo]],
     settings: ProtocolSettings,
@@ -77,11 +79,11 @@ object GrabberService {
     assetRepo: AssetRepo[D, Stream],
     registerRepo: BoxRegisterRepo[D]
   )(xa: D ~> F)
-    extends GrabberService[F] {
+    extends NetworkViewSync[F] {
 
     private val log = Logger[F]
 
-    def syncAll: Stream[F, Unit] =
+    def run: Stream[F, Unit] =
       for {
         networkHeight <- Stream.eval(network.getBestHeight)
         localHeight   <- Stream.eval(getLastGrabbedBlockHeight)
@@ -141,18 +143,17 @@ object GrabberService {
             .flatMap {
               case None if block.header.height != GenesisHeight =>
                 log.info(s"Processing unknown fork at height $prevHeight") >>
-                grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
+                  grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
               case Some(parent) if block.header.mainChain && !parent.mainChain =>
                 log.info(s"Processing fork at height $prevHeight") >>
-                grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
+                  grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
               case parentOpt =>
                 log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<not found>")}") >>
-                parentOpt.pure[D].pure[F]
+                  parentOpt.pure[D].pure[F]
             }
             .map { blockInfoOptDb =>
               blockInfoOptDb.flatMap { parentBlockInfoOpt =>
-                FlatBlock
-                  .fromApi[D](block, parentBlockInfoOpt)(settings)
+                scan(block, parentBlockInfoOpt)
                   .flatMap(flatBlock => insertBlock(flatBlock) as flatBlock.info)
               }
             }
@@ -164,14 +165,19 @@ object GrabberService {
       }
     }
 
+    private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockInfo]): D[FlatBlock] = {
+      implicit val ctx: WithContext[D, ProtocolSettings] = Context.const(settings)
+      SlotData(apiFullBlock, prevBlockInfoOpt).build[D, FlatBlock]
+    }
+
     private def getLastGrabbedBlockHeight: F[Int] =
-      headerRepo.getBestHeight ||> xa
+      headerRepo.getBestHeight.thrushK(xa)
 
     private def getHeaderIdsAtHeight(height: Int): F[List[Id]] =
-      (headerRepo.getAllByHeight(height) ||> xa).map(_.map(_.id))
+      headerRepo.getAllByHeight(height).thrushK(xa).map(_.map(_.id))
 
     private def getBlockInfo(headerId: Id): F[Option[BlockInfo]] =
-      blockInfoRepo.get(headerId) ||> xa
+      blockInfoRepo.get(headerId).thrushK(xa)
 
     private def updateChainStatus(headerId: Id, newChainStatus: Boolean): D[Unit] =
       headerRepo.updateChainStatusById(headerId, newChainStatus) >>
