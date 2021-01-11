@@ -1,12 +1,11 @@
 package org.ergoplatform.explorer.grabber
 
-import cats.data.ReaderT
 import cats.{Applicative, FlatMap, Monad}
 import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.db.models._
-import org.ergoplatform.explorer.grabber.models.{FlatBlock, SlotData}
+import org.ergoplatform.explorer.grabber.models.SlotData
 import org.ergoplatform.explorer.grabber.modules.BuildFrom
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
 import org.ergoplatform.explorer.protocol.{RegistersParser, registers, utils}

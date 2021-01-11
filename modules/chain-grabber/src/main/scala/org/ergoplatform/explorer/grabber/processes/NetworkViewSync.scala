@@ -20,7 +20,6 @@ import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.grabber.extractors._
 import org.ergoplatform.explorer.grabber.models.{FlatBlock, SlotData}
-import org.ergoplatform.explorer.grabber.modules.BuildFrom
 import org.ergoplatform.explorer.grabber.modules.BuildFrom.syntax._
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
@@ -172,13 +171,13 @@ object NetworkViewSync {
     }
 
     private def getLastGrabbedBlockHeight: F[Int] =
-      headerRepo.getBestHeight ||> xa
+      headerRepo.getBestHeight.thrushK(xa)
 
     private def getHeaderIdsAtHeight(height: Int): F[List[Id]] =
-      (headerRepo.getAllByHeight(height) ||> xa).map(_.map(_.id))
+      headerRepo.getAllByHeight(height).thrushK(xa).map(_.map(_.id))
 
     private def getBlockInfo(headerId: Id): F[Option[BlockInfo]] =
-      blockInfoRepo.get(headerId) ||> xa
+      blockInfoRepo.get(headerId).thrushK(xa)
 
     private def updateChainStatus(headerId: Id, newChainStatus: Boolean): D[Unit] =
       headerRepo.updateChainStatusById(headerId, newChainStatus) >>
