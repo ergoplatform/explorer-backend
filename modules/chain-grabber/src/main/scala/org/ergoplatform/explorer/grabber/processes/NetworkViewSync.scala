@@ -6,7 +6,7 @@ import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Monad, Parallel, ~>}
+import cats.{~>, Monad, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -17,10 +17,10 @@ import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
-import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.grabber.extractors._
 import org.ergoplatform.explorer.grabber.models.{FlatBlock, SlotData}
 import org.ergoplatform.explorer.grabber.modules.BuildFrom.syntax._
+import org.ergoplatform.explorer.grabber.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
@@ -46,18 +46,7 @@ object NetworkViewSync {
   )(xa: D ~> F): F[NetworkViewSync[F]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).flatMap { cache =>
-        (
-          HeaderRepo[F, D],
-          BlockInfoRepo[F, D],
-          BlockExtensionRepo[F, D],
-          AdProofRepo[F, D],
-          TransactionRepo[F, D],
-          InputRepo[F, D],
-          DataInputRepo[F, D],
-          OutputRepo[F, D],
-          AssetRepo[F, D],
-          BoxRegisterRepo[F, D]
-        ).mapN(new Live[F, D](cache, settings, network, _, _, _, _, _, _, _, _, _, _)(xa))
+        RepoBundle[F, D].map(new Live[F, D](cache, settings, network, _)(xa))
       }
     }
 
@@ -68,16 +57,7 @@ object NetworkViewSync {
     lastBlockCache: Ref[F, Option[BlockInfo]],
     settings: ProtocolSettings,
     network: ErgoNetworkClient[F],
-    headerRepo: HeaderRepo[D],
-    blockInfoRepo: BlockInfoRepo[D],
-    blockExtensionRepo: BlockExtensionRepo[D],
-    adProofRepo: AdProofRepo[D],
-    txRepo: TransactionRepo[D, Stream],
-    inputRepo: InputRepo[D],
-    dataInputRepo: DataInputRepo[D],
-    outputRepo: OutputRepo[D, Stream],
-    assetRepo: AssetRepo[D, Stream],
-    registerRepo: BoxRegisterRepo[D]
+    repos: RepoBundle[D]
   )(xa: D ~> F)
     extends NetworkViewSync[F] {
 
@@ -171,32 +151,33 @@ object NetworkViewSync {
     }
 
     private def getLastGrabbedBlockHeight: F[Int] =
-      headerRepo.getBestHeight.thrushK(xa)
+      repos.headers.getBestHeight.thrushK(xa)
 
     private def getHeaderIdsAtHeight(height: Int): F[List[Id]] =
-      headerRepo.getAllByHeight(height).thrushK(xa).map(_.map(_.id))
+      repos.headers.getAllByHeight(height).thrushK(xa).map(_.map(_.id))
 
     private def getBlockInfo(headerId: Id): F[Option[BlockInfo]] =
-      blockInfoRepo.get(headerId).thrushK(xa)
+      repos.blocksInfo.get(headerId).thrushK(xa)
 
     private def updateChainStatus(headerId: Id, newChainStatus: Boolean): D[Unit] =
-      headerRepo.updateChainStatusById(headerId, newChainStatus) >>
-      blockInfoRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
-      txRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
-      outputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
-      inputRepo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
-      dataInputRepo.updateChainStatusByHeaderId(headerId, newChainStatus)
+      repos.headers.updateChainStatusById(headerId, newChainStatus) >>
+      repos.blocksInfo.updateChainStatusByHeaderId(headerId, newChainStatus) >>
+      repos.txs.updateChainStatusByHeaderId(headerId, newChainStatus) >>
+      repos.outputs.updateChainStatusByHeaderId(headerId, newChainStatus) >>
+      repos.inputs.updateChainStatusByHeaderId(headerId, newChainStatus) >>
+      repos.dataInputs.updateChainStatusByHeaderId(headerId, newChainStatus)
 
     private def insertBlock(block: FlatBlock): D[Unit] =
-      headerRepo.insert(block.header) >>
-      blockInfoRepo.insert(block.info) >>
-      blockExtensionRepo.insert(block.extension) >>
-      block.adProofOpt.map(adProofRepo.insert).getOrElse(().pure[D]) >>
-      txRepo.insertMany(block.txs) >>
-      inputRepo.insetMany(block.inputs) >>
-      dataInputRepo.insetMany(block.dataInputs) >>
-      outputRepo.insertMany(block.outputs) >>
-      assetRepo.insertMany(block.assets) >>
-      registerRepo.insertMany(block.registers)
+      repos.headers.insert(block.header) >>
+      repos.blocksInfo.insert(block.info) >>
+      repos.blockExtensions.insert(block.extension) >>
+      block.adProofOpt.map(repos.adProofs.insert).getOrElse(().pure[D]) >>
+      repos.txs.insertMany(block.txs) >>
+      repos.inputs.insetMany(block.inputs) >>
+      repos.dataInputs.insetMany(block.dataInputs) >>
+      repos.outputs.insertMany(block.outputs) >>
+      repos.assets.insertMany(block.assets) >>
+      repos.registers.insertMany(block.registers) >>
+      repos.tokens.insertMany(block.tokens)
   }
 }

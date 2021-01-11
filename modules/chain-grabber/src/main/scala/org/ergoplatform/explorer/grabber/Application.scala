@@ -7,6 +7,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.DoobieTrans
+import org.ergoplatform.explorer.grabber.processes.ChainGrabber
 import org.ergoplatform.explorer.settings.GrabberAppSettings
 import org.http4s.client.blaze.BlazeClientBuilder
 

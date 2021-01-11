@@ -32,7 +32,7 @@ final class BlockInfoBuildFrom[
         val (reward, fee) = minerRewardAndFee(apiBlock)(protocolSettings)
         val coinBaseValue = reward + fee
         val blockCoins = apiBlock.transactions.transactions
-          .flatMap(_.outputs)
+          .flatMap(_.outputs.toList)
           .map(_.value)
           .sum - coinBaseValue
         val miningTime = apiBlock.header.timestamp - prevBlockInfo
@@ -105,7 +105,7 @@ final class BlockInfoBuildFrom[
     val emission = protocolSettings.emission.emissionAtHeight(apiBlock.header.height.toLong)
     val reward   = math.min(constants.TeamTreasuryThreshold, emission)
     val fee = apiBlock.transactions.transactions
-      .flatMap(_.outputs)
+      .flatMap(_.outputs.toList)
       .filter(_.ergoTree.unwrapped == constants.FeePropositionScriptHex)
       .map(_.value)
       .sum

@@ -259,7 +259,8 @@ CREATE TABLE known_miners
 
 CREATE TABLE tokens
 (
-    id              VARCHAR(64)   PRIMARY KEY,
+    token_id        VARCHAR(64)   PRIMARY KEY,
+    box_id          VARCHAR(64)   NOT NULL,
     name            VARCHAR(128)  NOT NULL,
     description     VARCHAR(1024) NOT NULL,
     type            VARCHAR(128)  NOT NULL,

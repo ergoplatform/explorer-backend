@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.protocol.models
 
+import cats.data.NonEmptyList
 import derevo.circe.decoder
 import derevo.derive
 import org.ergoplatform.explorer.TxId
@@ -10,8 +11,8 @@ import org.ergoplatform.explorer.TxId
 @derive(decoder)
 final case class ApiTransaction(
   id: TxId,
-  inputs: List[ApiInput],
+  inputs: NonEmptyList[ApiInput],
   dataInputs: List[ApiDataInput],
-  outputs: List[ApiOutput],
+  outputs: NonEmptyList[ApiOutput],
   size: Int
 )

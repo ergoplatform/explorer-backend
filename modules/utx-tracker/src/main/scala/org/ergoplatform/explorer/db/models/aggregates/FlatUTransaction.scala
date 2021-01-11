@@ -9,7 +9,7 @@ import cats.syntax.functor._
 import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
-import org.ergoplatform.explorer.db.models.{UAsset, UDataInput, UInput, UOutput, UTransaction}
+import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.protocol.models.ApiTransaction
 import org.ergoplatform.explorer.protocol.{registers, utils}
 
@@ -30,46 +30,42 @@ object FlatUTransaction {
   )(implicit enc: ErgoAddressEncoder): F[FlatUTransaction] =
     Clock[F].realTime(TimeUnit.MILLISECONDS).map { ts =>
       val tx = UTransaction(apiTx.id, ts, apiTx.size)
-      val ins = apiTx.inputs.zipWithIndex.map {
-        case (apiIn, i) =>
-          UInput(
-            apiIn.boxId,
-            apiTx.id,
-            i,
-            apiIn.spendingProof.proofBytes,
-            apiIn.spendingProof.extension
-          )
+      val ins = apiTx.inputs.toList.zipWithIndex.map { case (apiIn, i) =>
+        UInput(
+          apiIn.boxId,
+          apiTx.id,
+          i,
+          apiIn.spendingProof.proofBytes,
+          apiIn.spendingProof.extension
+        )
       }
-      val dataIns = apiTx.dataInputs.zipWithIndex.map {
-        case (apiIn, i) =>
-          UDataInput(apiIn.boxId, apiTx.id, i)
+      val dataIns = apiTx.dataInputs.zipWithIndex.map { case (apiIn, i) =>
+        UDataInput(apiIn.boxId, apiTx.id, i)
       }
-      val outs = apiTx.outputs.zipWithIndex.map {
-        case (apiOut, idx) =>
-          val addressOpt = utils
-            .ergoTreeToAddress(apiOut.ergoTree)
-            .map(_.toString)
-            .flatMap(Address.fromString[Try])
-            .toOption
-          UOutput(
-            apiOut.boxId,
-            apiTx.id,
-            apiOut.value,
-            apiOut.creationHeight,
-            idx,
-            apiOut.ergoTree,
-            addressOpt,
-            registers.expand(apiOut.additionalRegisters).asJson
-          )
+      val outs = apiTx.outputs.toList.zipWithIndex.map { case (apiOut, idx) =>
+        val addressOpt = utils
+          .ergoTreeToAddress(apiOut.ergoTree)
+          .map(_.toString)
+          .flatMap(Address.fromString[Try])
+          .toOption
+        UOutput(
+          apiOut.boxId,
+          apiTx.id,
+          apiOut.value,
+          apiOut.creationHeight,
+          idx,
+          apiOut.ergoTree,
+          addressOpt,
+          registers.expand(apiOut.additionalRegisters).asJson
+        )
       }
       val assets =
-        apiTx.outputs
+        apiTx.outputs.toList
           .flatMap { o =>
             o.assets.zipWithIndex.map { case (asset, i) => (o.boxId, asset, i) }
           }
-          .map {
-            case (boxId, apiAsset, index) =>
-              UAsset(apiAsset.tokenId, boxId, index, apiAsset.amount)
+          .map { case (boxId, apiAsset, index) =>
+            UAsset(apiAsset.tokenId, boxId, index, apiAsset.amount)
           }
       FlatUTransaction(tx, ins, dataIns, outs, assets)
     }
