@@ -15,5 +15,6 @@ final case class FlatBlock(
   dataInputs: List[DataInput],
   outputs: List[Output],
   assets: List[Asset],
-  registers: List[BoxRegister]
+  registers: List[BoxRegister],
+  tokens: List[Token]
 )

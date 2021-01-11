@@ -10,7 +10,7 @@ import doobie.util.{Get, Put}
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{W, refineV}
+import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.estatico.newtype.macros.newtype
@@ -160,6 +160,8 @@ package object explorer {
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[TokenId] =
       HexString.fromString(s).map(TokenId.apply)
+
+    def fromStringUnsafe(s: String): TokenId = unsafeWrap(HexString.fromStringUnsafe(s))
   }
 
   @newtype case class TokenType(value: String)
@@ -291,6 +293,8 @@ package object explorer {
         .leftMap(RefinementFailed)
         .toRaise[F]
         .map(HexString.apply)
+
+    def fromStringUnsafe(s: String): HexString = unsafeWrap(refineV[HexStringSpec].unsafeFrom(s))
   }
 
   @newtype case class UrlString(value: UrlStringType) {

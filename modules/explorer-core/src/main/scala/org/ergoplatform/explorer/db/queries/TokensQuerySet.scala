@@ -5,7 +5,8 @@ object TokensQuerySet extends QuerySet {
   val tableName: String = "tokens"
 
   val fields: List[String] = List(
-    "id",
+    "token_id",
+    "box_id",
     "name",
     "description",
     "type",

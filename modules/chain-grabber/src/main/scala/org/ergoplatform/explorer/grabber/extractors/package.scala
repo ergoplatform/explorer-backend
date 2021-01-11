@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.grabber.models.SlotData
 import org.ergoplatform.explorer.grabber.modules.BuildFrom
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
-import org.ergoplatform.explorer.protocol.{RegistersParser, registers, utils}
+import org.ergoplatform.explorer.protocol.{registers, utils, RegistersParser}
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import tofu.syntax.context._
 import tofu.syntax.monadic._
@@ -18,7 +18,7 @@ import scala.util.Try
 
 package object extractors {
 
-  implicit def headerExtract[F[_]: Applicative]: BuildFrom[F, SlotData, Header] =
+  implicit def headerBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, Header] =
     BuildFrom.pure { case SlotData(ApiFullBlock(apiHeader, _, _, _, _), _) =>
       Header(
         apiHeader.id,
@@ -41,12 +41,12 @@ package object extractors {
       )
     }
 
-  implicit def blockInfoExtract[
+  implicit def blockInfoBuildFrom[
     F[_]: Monad: WithContext[*[_], ProtocolSettings]: Throws
   ]: BuildFrom[F, SlotData, BlockInfo] =
-    new BlockInfoBuildFrom[F]
+    new BlockInfoBuildFrom
 
-  implicit def blockExtensionExtract[F[_]: Applicative]: BuildFrom[F, SlotData, BlockExtension] =
+  implicit def blockExtensionBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, BlockExtension] =
     BuildFrom.pure { case SlotData(ApiFullBlock(_, _, apiExtension, _, _), _) =>
       BlockExtension(
         apiExtension.headerId,
@@ -55,7 +55,7 @@ package object extractors {
       )
     }
 
-  implicit def adProofExtract[F[_]: Applicative]: BuildFrom[F, SlotData, Option[AdProof]] =
+  implicit def adProofBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, Option[AdProof]] =
     BuildFrom.pure { case SlotData(ApiFullBlock(_, _, _, apiAdProofOpt, _), _) =>
       apiAdProofOpt.map { apiAdProof =>
         AdProof(
@@ -66,7 +66,7 @@ package object extractors {
       }
     }
 
-  implicit def txsExtract[F[_]: Applicative]: BuildFrom[F, SlotData, List[Transaction]] =
+  implicit def txsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Transaction]] =
     BuildFrom.pure { case SlotData(apiBlock, _) =>
       val headerId  = apiBlock.header.id
       val height    = apiBlock.header.height
@@ -84,10 +84,10 @@ package object extractors {
       restTxs ++ coinbaseTxOpt
     }
 
-  implicit def inputsExtract[F[_]: Applicative]: BuildFrom[F, SlotData, List[Input]] =
+  implicit def inputsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Input]] =
     BuildFrom.pure { case SlotData(ApiFullBlock(header, apiTxs, _, _, _), _) =>
       apiTxs.transactions.flatMap { apiTx =>
-        apiTx.inputs.zipWithIndex.map { case (i, index) =>
+        apiTx.inputs.toList.zipWithIndex.map { case (i, index) =>
           Input(
             i.boxId,
             apiTx.id,
@@ -101,7 +101,7 @@ package object extractors {
       }
     }
 
-  implicit def dataInputsExtract[F[_]: Applicative]: BuildFrom[F, SlotData, List[DataInput]] =
+  implicit def dataInputsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[DataInput]] =
     BuildFrom.pure { case SlotData(ApiFullBlock(header, apiTxs, _, _, _), _) =>
       apiTxs.transactions.flatMap { apiTx =>
         apiTx.dataInputs.zipWithIndex.map { case (i, index) =>
@@ -116,12 +116,13 @@ package object extractors {
       }
     }
 
-  implicit def outputsExtract[F[_]: FlatMap: WithContext[*[_], ProtocolSettings]]: BuildFrom[F, SlotData, List[Output]] =
+  implicit def outputsBuildFrom[F[_]: FlatMap: WithContext[*[_], ProtocolSettings]]
+    : BuildFrom[F, SlotData, List[Output]] =
     BuildFrom.instance { case SlotData(ApiFullBlock(header, apiTxs, _, _, _), _) =>
       context.map { protocolSettings =>
         implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
         apiTxs.transactions.flatMap { apiTx =>
-          apiTx.outputs.zipWithIndex
+          apiTx.outputs.toList.zipWithIndex
             .map { case (o, index) =>
               val addressOpt = utils
                 .ergoTreeToAddress(o.ergoTree)
@@ -147,22 +148,25 @@ package object extractors {
       }
     }
 
-  implicit def assetsExtract[F[_]: Applicative]: BuildFrom[F, SlotData, List[Asset]] =
+  implicit def assetsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Asset]] =
     BuildFrom.pure { case SlotData(ApiFullBlock(_, apiTxs, _, _, _), _) =>
       for {
         tx             <- apiTxs.transactions
-        out            <- tx.outputs
+        out            <- tx.outputs.toList
         (asset, index) <- out.assets.zipWithIndex
       } yield Asset(asset.tokenId, out.boxId, apiTxs.headerId, index, asset.amount)
     }
 
-  implicit def registersExtract[F[_]: Applicative]: BuildFrom[F, SlotData, List[BoxRegister]] =
+  implicit def registersBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[BoxRegister]] =
     BuildFrom.pure { case SlotData(ApiFullBlock(_, apiTxs, _, _, _), _) =>
       for {
         tx                            <- apiTxs.transactions
-        out                           <- tx.outputs
+        out                           <- tx.outputs.toList
         (id, rawValue)                <- out.additionalRegisters.toList
-        RegisterValue(typeSig, value) <- RegistersParser[Try].parse(rawValue).toOption
+        RegisterValue(typeSig, value) <- RegistersParser[Try].parseAny(rawValue).toOption
       } yield BoxRegister(id, out.boxId, apiTxs.headerId, typeSig, rawValue, value)
     }
+
+  implicit def tokensBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Token]] =
+    new TokensBuildFromEip4
 }
