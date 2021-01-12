@@ -59,3 +59,7 @@ Assembly JAR:
 
 Tests:
 `sbt test`
+
+## Ergo bootstrap
+
+This project is included in [ergo bootstrap](https://github.com/ergoplatform/ergo-bootstrap), which will help you to quickly deploy an Ergo blockchain cluster with a handful of useful tools you might need to start developing your dApps.
