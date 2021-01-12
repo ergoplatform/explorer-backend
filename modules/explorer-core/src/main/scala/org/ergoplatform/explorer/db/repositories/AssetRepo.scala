@@ -9,7 +9,7 @@ import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Asset
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
@@ -59,7 +59,7 @@ trait AssetRepo[D[_], S[_[_], _]] {
 
   /** Get all assets matching a given `idSubstring`.
     */
-  def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[Asset]]
+  def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[ExtendedAsset]]
 
   /** Get the total number of assets matching a given `idSubstring`.
     */
@@ -112,7 +112,7 @@ object AssetRepo {
     def getIssuingBoxesQty: D[Int] =
       QS.getIssuingBoxesQty.unique.liftConnectionIO
 
-    def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[Asset]] =
+    def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[ExtendedAsset]] =
       QS.getAllLike(idSubstring, offset, limit).to[List].liftConnectionIO
 
     def countAllLike(idSubstring: String): D[Int] =

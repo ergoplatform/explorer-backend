@@ -6,7 +6,7 @@ import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.{Fragments, LogHandler}
 import org.ergoplatform.explorer.db.models.Asset
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
 /** A set of queries for doobie implementation of  [AssetRepo].
@@ -128,13 +128,14 @@ object AssetQuerySet extends QuerySet {
          |) as a
          """.stripMargin.query[Int]
 
-  def getAllLike(idSubstring: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Asset] =
+  def getAllLike(idSubstring: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedAsset] =
     sql"""
-         |select a.token_id, a.box_id, a.header_id, a.index, a.value from node_assets a
+         |select a.token_id, a.box_id, a.header_id, a.index, a.value, t.name, t.decimals, t.type from node_assets a
+         |left join tokens t on a.token_id = t.token_id
          |left join node_outputs o on a.box_id = o.box_id
          |where a.token_id like ${idSubstring + "%"} and o.main_chain = true
          |offset $offset limit $limit
-         """.stripMargin.query[Asset]
+         """.stripMargin.query[ExtendedAsset]
 
   def countAllLike(idSubstring: String)(implicit lh: LogHandler): Query0[Int] =
     sql"""
