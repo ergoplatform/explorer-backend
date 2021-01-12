@@ -147,7 +147,7 @@ object NetworkViewSync {
 
     private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockInfo]): D[FlatBlock] = {
       implicit val ctx: WithContext[D, ProtocolSettings] = Context.const(settings)
-      SlotData(apiFullBlock, prevBlockInfoOpt).build[D, FlatBlock]
+      SlotData(apiFullBlock, prevBlockInfoOpt).intoF[D, FlatBlock]
     }
 
     private def getLastGrabbedBlockHeight: F[Int] =

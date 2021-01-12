@@ -75,7 +75,7 @@ lazy val migrator = utils
   .settings(
     mainClass in assembly := Some("org.ergoplatform.explorer.migration.Application")
   )
-  .dependsOn(grabber)
+  .dependsOn(grabber, httpApi)
 
 lazy val commonScalacOptions = List(
   "-deprecation",

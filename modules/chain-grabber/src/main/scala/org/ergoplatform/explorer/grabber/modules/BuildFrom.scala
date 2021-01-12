@@ -38,7 +38,7 @@ object BuildFrom {
   object syntax {
 
     implicit final class BuildFromOps[A](private val a: A) extends AnyVal {
-      def build[F[_], B](implicit ev: BuildFrom[F, A, B]): F[B] = ev(a)
+      def intoF[F[_], B](implicit ev: BuildFrom[F, A, B]): F[B] = ev(a)
     }
   }
 }

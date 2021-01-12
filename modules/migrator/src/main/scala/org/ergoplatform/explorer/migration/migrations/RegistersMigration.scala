@@ -13,7 +13,7 @@ import io.circe.syntax._
 import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.{BoxRegister, Output}
 import org.ergoplatform.explorer.db.repositories.BoxRegisterRepo
-import org.ergoplatform.explorer.migration.RegistersMigrationConfig
+import org.ergoplatform.explorer.migration.configs.RegistersMigrationConfig
 import org.ergoplatform.explorer.protocol.RegistersParser
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
 import org.ergoplatform.explorer.{HexString, RegisterId}
@@ -48,8 +48,8 @@ final class RegistersMigration(
           case Nil => IO.unit
           case xs =>
             log.info(s"[${xs.size}] boxes processed") *>
-            IO.sleep(conf.interval) >>
-            migrateBatch(offset + limit, limit)
+              IO.sleep(conf.interval) >>
+              migrateBatch(offset + limit, limit)
         }
       }
 
@@ -63,9 +63,8 @@ final class RegistersMigration(
           RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(rawValue).toOption
         } yield BoxRegister(id, out.boxId, out.headerId, valueType, rawValue, value)
         val registersJson = registers
-          .map {
-            case BoxRegister(id, _, _, valueType, rawValue, decodedValue) =>
-              id.entryName -> ExpandedRegister(rawValue, valueType, decodedValue)
+          .map { case BoxRegister(id, _, _, valueType, rawValue, decodedValue) =>
+            id.entryName -> ExpandedRegister(rawValue, valueType, decodedValue)
           }
           .toMap
           .asJson
@@ -110,7 +109,6 @@ object RegistersMigration {
     for {
       logger <- Slf4jLogger.create[IO]
       repo   <- BoxRegisterRepo[IO, ConnectionIO]
-      migration = new RegistersMigration(conf, repo, xa, logger)
-      _ <- migration.run
+      _      <- new RegistersMigration(conf, repo, xa, logger).run
     } yield ()
 }
