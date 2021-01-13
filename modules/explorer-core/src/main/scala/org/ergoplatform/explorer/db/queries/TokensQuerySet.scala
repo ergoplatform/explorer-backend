@@ -27,7 +27,7 @@ object TokensQuerySet extends QuerySet {
          |left join node_outputs o on o.box_id = t.box_id
          |order by o.creation_height $ordering
          |offset $offset limit $limit
-         |""".query[Token]
+         |""".stripMargin.query[Token]
 
   def countAll(implicit lh: LogHandler): Query0[Int] =
     sql"select count(*) from tokens".query[Int]
