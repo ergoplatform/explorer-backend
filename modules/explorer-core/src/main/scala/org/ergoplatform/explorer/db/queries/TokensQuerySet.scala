@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.db.queries
 
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.util.fragment.Fragment
 import doobie.util.log.LogHandler
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.constraints.OrderingString
@@ -21,13 +22,16 @@ object TokensQuerySet extends QuerySet {
     "emission_amount"
   )
 
-  def getAll(offset: Int, limit: Int, ordering: OrderingString)(implicit lh: LogHandler): Query0[Token] =
-    sql"""
+  def getAll(offset: Int, limit: Int, ordering: OrderingString)(implicit lh: LogHandler): Query0[Token] = {
+    val query =
+      sql"""
          |select t.token_id, t.box_id, t.name, t.description, t.type, t.decimals, t.emission_amount from tokens t
          |left join node_outputs o on o.box_id = t.box_id
-         |order by o.creation_height $ordering
-         |offset $offset limit $limit
-         |""".query[Token]
+         |""".stripMargin
+    val orderingFr    = Fragment.const(s"order by o.creation_height $ordering")
+    val offsetLimitFr = Fragment.const(s"offset $offset limit $limit")
+    (query ++ orderingFr ++ offsetLimitFr).query[Token]
+  }
 
   def countAll(implicit lh: LogHandler): Query0[Int] =
     sql"select count(*) from tokens".query[Int]
