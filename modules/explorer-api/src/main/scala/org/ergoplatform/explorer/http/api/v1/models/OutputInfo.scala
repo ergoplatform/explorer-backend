@@ -10,17 +10,17 @@ import sttp.tapir.{Schema, SchemaType, Validator}
 import sttp.tapir.json.circe.validatorForCirceJson
 
 final case class OutputInfo(
-  boxId: BoxId,
-  transactionId: TxId,
-  value: Long,
-  index: Int,
-  creationHeight: Int,
-  ergoTree: HexString,
-  address: Option[Address],
-  assets: List[AssetInfo],
-  additionalRegisters: Json,
-  spentTransactionId: Option[TxId],
-  mainChain: Boolean
+                             boxId: BoxId,
+                             transactionId: TxId,
+                             value: Long,
+                             index: Int,
+                             creationHeight: Int,
+                             ergoTree: HexString,
+                             address: Option[Address],
+                             assets: List[TokenInfo],
+                             additionalRegisters: Json,
+                             spentTransactionId: Option[TxId],
+                             mainChain: Boolean
 )
 
 object OutputInfo {

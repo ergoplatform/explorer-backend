@@ -267,3 +267,5 @@ CREATE TABLE tokens
     decimals        INTEGER       NOT NULL,
     emission_amount BIGINT        NOT NULL
 );
+
+CREATE INDEX "tokens__box_id" ON tokens (box_id);

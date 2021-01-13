@@ -6,7 +6,7 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedAsset
 import org.ergoplatform.explorer.{BoxId, Id, TokenId}
 import sttp.tapir.{Schema, Validator}
 
-final case class ExtendedAssetInfo(
+final case class AssetInfo(
   headerId: Id,
   boxId: BoxId,
   tokenId: TokenId,
@@ -17,10 +17,10 @@ final case class ExtendedAssetInfo(
   `type`: Option[String]
 )
 
-object ExtendedAssetInfo {
+object AssetInfo {
 
-  def apply(asset: ExtendedAsset): ExtendedAssetInfo =
-    ExtendedAssetInfo(
+  def apply(asset: ExtendedAsset): AssetInfo =
+    AssetInfo(
       asset.headerId,
       asset.boxId,
       asset.tokenId,
@@ -31,11 +31,11 @@ object ExtendedAssetInfo {
       asset.`type`
     )
 
-  implicit val codec: Codec[ExtendedAssetInfo] = deriveCodec
+  implicit val codec: Codec[AssetInfo] = deriveCodec
 
-  implicit val schema: Schema[ExtendedAssetInfo] =
+  implicit val schema: Schema[AssetInfo] =
     Schema
-      .derive[ExtendedAssetInfo]
+      .derive[AssetInfo]
       .modify(_.headerId)(_.description("Header ID this asset belongs to"))
       .modify(_.boxId)(_.description("Box ID this asset belongs to"))
       .modify(_.tokenId)(_.description("Token ID"))
@@ -45,5 +45,5 @@ object ExtendedAssetInfo {
       .modify(_.decimals)(_.description("Number of decimal places"))
       .modify(_.`type`)(_.description("Type of the asset (token standard)"))
 
-  implicit val validator: Validator[ExtendedAssetInfo] = Validator.derive
+  implicit val validator: Validator[AssetInfo] = Validator.derive
 }

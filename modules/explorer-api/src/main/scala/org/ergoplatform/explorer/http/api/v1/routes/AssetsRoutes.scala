@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.http.api.v1.routes
 
 import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
@@ -18,11 +19,16 @@ final class AssetsRoutes[
   val defs = new AssetsEndpointDefs[F](settings)
 
   val routes: HttpRoutes[F] =
-    getUnspentOutputsByAddressR
+    listTokensR <+> getUnspentOutputsByAddressR
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
     defs.searchByTokenIdDef.toRoutes { case (q, paging) =>
       service.getAllLike(q, paging).adaptThrowable.value
+    }
+
+  private def listTokensR: HttpRoutes[F] =
+    defs.listTokensDef.toRoutes { paging =>
+      service.getTokens(paging).adaptThrowable.value
     }
 }
 
