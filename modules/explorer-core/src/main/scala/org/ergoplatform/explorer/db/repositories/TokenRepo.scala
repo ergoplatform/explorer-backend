@@ -18,6 +18,10 @@ trait TokenRepo[D[_]] {
   def insert(token: Token): D[Unit]
 
   def insertMany(tokens: List[Token]): D[Unit]
+
+  def getAll(offset: Int, limit: Int): D[List[Token]]
+
+  def countAll: D[Int]
 }
 
 object TokenRepo {
@@ -34,5 +38,9 @@ object TokenRepo {
     def insert(token: Token): ConnectionIO[Unit] = QS.insert(token).void
 
     def insertMany(tokens: List[Token]): ConnectionIO[Unit] = QS.insertMany(tokens).void
+
+    def getAll(offset: Int, limit: Int): ConnectionIO[List[Token]] = QS.getAll(offset, limit).to[List]
+
+    def countAll: ConnectionIO[Int] = QS.countAll.unique
   }
 }
