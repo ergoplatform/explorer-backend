@@ -1,26 +1,26 @@
 package org.ergoplatform.explorer.http.api.v1.models
 
-import io.circe.{Codec, Json}
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
-import org.ergoplatform.explorer.db.models.{Asset, Output}
+import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.http.api.models.AssetInfo
+import org.ergoplatform.explorer.db.models.{Asset, Output}
+import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
+import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.{Schema, SchemaType, Validator}
 import sttp.tapir.json.circe.validatorForCirceJson
 
 final case class OutputInfo(
-                             boxId: BoxId,
-                             transactionId: TxId,
-                             value: Long,
-                             index: Int,
-                             creationHeight: Int,
-                             ergoTree: HexString,
-                             address: Option[Address],
-                             assets: List[TokenInfo],
-                             additionalRegisters: Json,
-                             spentTransactionId: Option[TxId],
-                             mainChain: Boolean
+  boxId: BoxId,
+  transactionId: TxId,
+  value: Long,
+  index: Int,
+  creationHeight: Int,
+  ergoTree: HexString,
+  address: Option[Address],
+  assets: List[AssetInstanceInfo],
+  additionalRegisters: Json,
+  spentTransactionId: Option[TxId],
+  mainChain: Boolean
 )
 
 object OutputInfo {
@@ -61,7 +61,7 @@ object OutputInfo {
       o.output.creationHeight,
       o.output.ergoTree,
       o.output.addressOpt,
-      assets.sortBy(_.index).map(x => AssetInfo(x.tokenId, x.index, x.amount)),
+      assets.sortBy(_.index).map(x => AssetInstanceInfo(x.tokenId, x.index, x.amount)),
       o.output.additionalRegisters,
       o.spentByOpt,
       o.output.mainChain
@@ -79,7 +79,7 @@ object OutputInfo {
       o.creationHeight,
       o.ergoTree,
       o.addressOpt,
-      assets.sortBy(_.index).map(x => AssetInfo(x.tokenId, x.index, x.amount)),
+      assets.sortBy(_.index).map(x => AssetInstanceInfo(x.tokenId, x.index, x.amount)),
       o.additionalRegisters,
       None,
       o.mainChain

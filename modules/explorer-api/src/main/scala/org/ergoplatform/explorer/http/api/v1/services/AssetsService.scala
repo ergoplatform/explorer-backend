@@ -9,6 +9,7 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
+import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.{AssetInfo, TokenInfo}
 import tofu.syntax.monadic._
@@ -23,7 +24,7 @@ trait AssetsService[F[_], S[_[_], _]] {
 
   /** Get all issued tokens.
     */
-  def getTokens(paging: Paging): F[Items[TokenInfo]]
+  def getTokens(paging: Paging, ordering: SortOrder): F[Items[TokenInfo]]
 }
 
 object AssetsService {
@@ -51,11 +52,11 @@ object AssetsService {
         }
         .thrushK(trans.xa)
 
-    def getTokens(paging: Paging): F[Items[TokenInfo]] =
+    def getTokens(paging: Paging, ordering: SortOrder): F[Items[TokenInfo]] =
       tokenRepo.countAll
         .flatMap { total =>
           tokenRepo
-            .getAll(paging.offset, paging.limit)
+            .getAll(paging.offset, paging.limit, ordering.value)
             .map(_.map(TokenInfo(_)))
             .map(Items(_, total))
         }

@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v1.defs
 
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
+import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.{AssetInfo, TokenInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
@@ -24,9 +25,10 @@ final class AssetsEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[AssetInfo]])
 
-  def listTokensDef: Endpoint[Paging, ApiErr, Items[TokenInfo], Any] =
+  def listTokensDef: Endpoint[(Paging, SortOrder), ApiErr, Items[TokenInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix)
       .in(paging(settings.maxEntitiesPerRequest))
+      .in(ordering)
       .out(jsonBody[Items[TokenInfo]])
 }

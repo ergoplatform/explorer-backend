@@ -4,24 +4,24 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.Asset
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.http.api.models.AssetInfo
+import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.protocol.registers
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.json.circe.validatorForCirceJson
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class OutputInfo(
-  id: BoxId,
-  txId: TxId,
-  value: Long,
-  index: Int,
-  creationHeight: Int,
-  ergoTree: HexString,
-  address: Option[Address],
-  assets: List[AssetInfo],
-  additionalRegisters: Json,
-  spentTransactionId: Option[TxId],
-  mainChain: Boolean
+                             id: BoxId,
+                             txId: TxId,
+                             value: Long,
+                             index: Int,
+                             creationHeight: Int,
+                             ergoTree: HexString,
+                             address: Option[Address],
+                             assets: List[AssetInstanceInfo],
+                             additionalRegisters: Json,
+                             spentTransactionId: Option[TxId],
+                             mainChain: Boolean
 )
 
 object OutputInfo {
@@ -61,7 +61,7 @@ object OutputInfo {
       o.output.creationHeight,
       o.output.ergoTree,
       o.output.addressOpt,
-      assets.sortBy(_.index).map(x => AssetInfo(x.tokenId, x.index, x.amount)),
+      assets.sortBy(_.index).map(x => AssetInstanceInfo(x.tokenId, x.index, x.amount)),
       registers.convolveJson(o.output.additionalRegisters),
       o.spentByOpt,
       o.output.mainChain

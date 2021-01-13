@@ -2,10 +2,11 @@ package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.Sync
 import cats.tagless.syntax.functorK._
-import doobie.free.implicits._
 import derevo.derive
 import doobie.ConnectionIO
+import doobie.free.implicits._
 import doobie.util.log.LogHandler
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Token
@@ -19,7 +20,7 @@ trait TokenRepo[D[_]] {
 
   def insertMany(tokens: List[Token]): D[Unit]
 
-  def getAll(offset: Int, limit: Int): D[List[Token]]
+  def getAll(offset: Int, limit: Int, ordering: OrderingString): D[List[Token]]
 
   def countAll: D[Int]
 }
@@ -39,7 +40,8 @@ object TokenRepo {
 
     def insertMany(tokens: List[Token]): ConnectionIO[Unit] = QS.insertMany(tokens).void
 
-    def getAll(offset: Int, limit: Int): ConnectionIO[List[Token]] = QS.getAll(offset, limit).to[List]
+    def getAll(offset: Int, limit: Int, ordering: OrderingString): ConnectionIO[List[Token]] =
+      QS.getAll(offset, limit, ordering).to[List]
 
     def countAll: ConnectionIO[Int] = QS.countAll.unique
   }

@@ -3,22 +3,22 @@ package org.ergoplatform.explorer.http.api.v0.models
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.{UAsset, UOutput}
-import org.ergoplatform.explorer.http.api.models.AssetInfo
+import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.protocol.registers
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.{Schema, SchemaType, Validator}
 import sttp.tapir.json.circe.validatorForCirceJson
 
 final case class UOutputInfo(
-  id: BoxId,
-  txId: TxId,
-  value: Long,
-  index: Int,
-  creationHeight: Int,
-  ergoTree: HexString,
-  address: Option[Address],
-  assets: List[AssetInfo],
-  additionalRegisters: Json
+                              id: BoxId,
+                              txId: TxId,
+                              value: Long,
+                              index: Int,
+                              creationHeight: Int,
+                              ergoTree: HexString,
+                              address: Option[Address],
+                              assets: List[AssetInstanceInfo],
+                              additionalRegisters: Json
 )
 
 object UOutputInfo {
@@ -55,7 +55,7 @@ object UOutputInfo {
       out.creationHeight,
       out.ergoTree,
       out.addressOpt,
-      assets.sortBy(_.index).map(AssetInfo.apply),
+      assets.sortBy(_.index).map(AssetInstanceInfo.apply),
       registers.convolveJson(out.additionalRegisters)
     )
 

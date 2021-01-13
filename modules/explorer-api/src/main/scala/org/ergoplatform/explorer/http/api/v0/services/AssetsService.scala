@@ -14,7 +14,7 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.{AssetInfo, Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{AssetInstanceInfo, Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{CRaise, TokenId}

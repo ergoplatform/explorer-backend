@@ -27,8 +27,8 @@ final class AssetsRoutes[
     }
 
   private def listTokensR: HttpRoutes[F] =
-    defs.listTokensDef.toRoutes { paging =>
-      service.getTokens(paging).adaptThrowable.value
+    defs.listTokensDef.toRoutes { case (paging, ordering) =>
+      service.getTokens(paging, ordering).adaptThrowable.value
     }
 }
 

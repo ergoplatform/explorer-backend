@@ -170,6 +170,12 @@ package object explorer {
 
     val Eip004: TokenType = "EIP-004".coerce[TokenType]
 
+    implicit def schema: Schema[TokenType] =
+      Schema.schemaForString.description("Token type").asInstanceOf[Schema[TokenType]]
+
+    implicit def validator: Validator[TokenType] =
+      implicitly[Validator[String]].contramap[TokenType](_.value)
+
     // doobie instances
     implicit def get: Get[TokenType] = deriving
     implicit def put: Put[TokenType] = deriving
