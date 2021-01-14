@@ -2,8 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.db.models.Asset
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import sttp.tapir.{Schema, Validator}
 
 final case class DexSellOrderInfo(
@@ -22,6 +21,6 @@ object DexSellOrderInfo {
 
   implicit val validator: Validator[DexSellOrderInfo] = Validator.derive
 
-  def apply(o: ExtendedOutput, tokenPrice: Long, assets: List[Asset]): DexSellOrderInfo =
+  def apply(o: ExtendedOutput, tokenPrice: Long, assets: List[ExtendedAsset]): DexSellOrderInfo =
     new DexSellOrderInfo(OutputInfo(o, assets), tokenPrice)
 }

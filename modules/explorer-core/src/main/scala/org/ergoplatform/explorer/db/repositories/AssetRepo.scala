@@ -27,13 +27,13 @@ trait AssetRepo[D[_], S[_[_], _]] {
 
   /** Get all assets belonging to a given `boxId`.
     */
-  def getAllByBoxId(boxId: BoxId): D[List[Asset]]
+  def getAllByBoxId(boxId: BoxId): D[List[ExtendedAsset]]
 
   /** Get all assets belonging to a given list of `boxId`.
     */
-  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]]
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedAsset]]
 
-  def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]]
+  def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedAsset]]
 
   /** Get all addresses holding an asset with a given `assetId`.
     */
@@ -83,13 +83,13 @@ object AssetRepo {
     def insertMany(assets: List[Asset]): D[Unit] =
       QS.insertMany(assets).void.liftConnectionIO
 
-    def getAllByBoxId(boxId: BoxId): D[List[Asset]] =
+    def getAllByBoxId(boxId: BoxId): D[List[ExtendedAsset]] =
       QS.getAllByBoxId(boxId).to[List].liftConnectionIO
 
-    def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]] =
+    def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedAsset]] =
       QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
 
-    def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]] =
+    def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedAsset]] =
       QS.getAllMainUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
 
     def getAllHoldingAddresses(

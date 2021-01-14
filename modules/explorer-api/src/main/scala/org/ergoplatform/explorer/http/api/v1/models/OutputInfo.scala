@@ -2,12 +2,12 @@ package org.ergoplatform.explorer.http.api.v1.models
 
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.db.models.{Asset, Output}
+import org.ergoplatform.explorer.db.models.Output
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
-import sttp.tapir.{Schema, SchemaType, Validator}
 import sttp.tapir.json.circe.validatorForCirceJson
+import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class OutputInfo(
   boxId: BoxId,
@@ -51,7 +51,7 @@ object OutputInfo {
 
   def apply(
     o: ExtendedOutput,
-    assets: List[Asset]
+    assets: List[ExtendedAsset]
   ): OutputInfo =
     OutputInfo(
       o.output.boxId,
@@ -61,7 +61,7 @@ object OutputInfo {
       o.output.creationHeight,
       o.output.ergoTree,
       o.output.addressOpt,
-      assets.sortBy(_.index).map(x => AssetInstanceInfo(x.tokenId, x.index, x.amount)),
+      assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       o.output.additionalRegisters,
       o.spentByOpt,
       o.output.mainChain
@@ -69,7 +69,7 @@ object OutputInfo {
 
   def unspent(
     o: Output,
-    assets: List[Asset]
+    assets: List[ExtendedAsset]
   ): OutputInfo =
     OutputInfo(
       o.boxId,
@@ -79,13 +79,13 @@ object OutputInfo {
       o.creationHeight,
       o.ergoTree,
       o.addressOpt,
-      assets.sortBy(_.index).map(x => AssetInstanceInfo(x.tokenId, x.index, x.amount)),
+      assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       o.additionalRegisters,
       None,
       o.mainChain
     )
 
-  def batch(outputs: List[ExtendedOutput], assets: List[Asset]): List[OutputInfo] = {
+  def batch(outputs: List[ExtendedOutput], assets: List[ExtendedAsset]): List[OutputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)
     outputs
       .sortBy(_.output.index)
