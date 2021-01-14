@@ -31,11 +31,15 @@ final class AssetsMigration(
   private def migrateBatch(offset: Int, limit: Int): IO[Unit] =
     log.info(s"Current offset is [$offset]") *> txs
       .getTxsSince(0, Paging(offset, limit))
-      .map(_.flatMap(tokensFrom))
-      .flatMap(tokens => tokenRepo.insertMany(tokens).transact(xa))
-      .flatMap { _ =>
-        IO.sleep(conf.interval) >>
-        migrateBatch(offset + limit, limit)
+      .flatMap {
+        case Nil =>
+          log.info(s"Migration complete")
+        case txs =>
+          val tokens = txs.flatMap(tokensFrom)
+          log.info(s"Inserting [${tokens.size}] new tokens") >>
+          tokenRepo.insertMany(tokens).transact(xa) >>
+          IO.sleep(conf.interval) >>
+          migrateBatch(offset + limit, limit)
       }
 
   private def tokensFrom(tx: TransactionInfo): Option[Token] = {
