@@ -35,5 +35,5 @@ object TokensQuerySet extends QuerySet {
   }
 
   def countAll(implicit lh: LogHandler): Query0[Int] =
-    sql"select count(*) from tokens".query[Int]
+    sql"select count(*) from tokens left join node_outputs o on o.box_id = t.box_id where o.main_chain = true".query[Int]
 }

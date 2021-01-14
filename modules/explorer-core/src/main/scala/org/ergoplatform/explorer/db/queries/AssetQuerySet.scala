@@ -31,13 +31,13 @@ object AssetQuerySet extends QuerySet {
          |  a.box_id,
          |  a.header_id,
          |  a.index,
-         |  value,
+         |  a.value,
          |  t.name,
          |  t.decimals,
          |  t.type
          |from node_assets a
          |left join tokens t on a.token_id = t.token_id
-         |where box_id = $boxId
+         |where a.box_id = $boxId
          |""".stripMargin.query[ExtendedAsset]
 
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[ExtendedAsset] =
@@ -48,14 +48,14 @@ object AssetQuerySet extends QuerySet {
         |  a.box_id,
         |  a.header_id,
         |  a.index,
-        |  value,
+        |  a.value,
         |  t.name,
         |  t.decimals,
         |  t.type
         |from node_assets a
         |left join tokens t on a.token_id = t.token_id
         |""".stripMargin
-      ++ Fragments.in(fr"where box_id", boxIds))
+      ++ Fragments.in(fr"where a.box_id", boxIds))
       .query[ExtendedAsset]
 
   def getAllMainUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[ExtendedAsset] =
