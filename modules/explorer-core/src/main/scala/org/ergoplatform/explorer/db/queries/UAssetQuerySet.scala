@@ -31,7 +31,7 @@ object UAssetQuerySet extends QuerySet {
          |from node_u_assets a
          |left join tokens t on a.token_id = t.token_id
          |where box_id = $boxId
-         |""".query[ExtendedUAsset]
+         |""".stripMargin.query[ExtendedUAsset]
 
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[ExtendedUAsset] =
     (
@@ -46,7 +46,7 @@ object UAssetQuerySet extends QuerySet {
            |  t.type
            |from node_u_assets a
            |left join tokens t on a.token_id = t.token_id
-           |""" ++
+           |""".stripMargin ++
     Fragments.in(fr"where a.box_id", boxIds))
       .query[ExtendedUAsset]
 

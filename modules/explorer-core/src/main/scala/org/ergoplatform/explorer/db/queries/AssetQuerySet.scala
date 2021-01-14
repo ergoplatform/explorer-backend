@@ -54,7 +54,7 @@ object AssetQuerySet extends QuerySet {
         |  t.type
         |from node_assets a
         |left join tokens t on a.token_id = t.token_id
-        |"""
+        |""".stripMargin
       ++ Fragments.in(fr"where box_id", boxIds))
       .query[ExtendedAsset]
 
