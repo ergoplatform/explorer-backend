@@ -6,31 +6,28 @@ import doobie.ConnectionIO
 import org.ergoplatform.explorer.db
 import org.ergoplatform.explorer.db.RealDbTest
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class AssetRepoSpec
-  extends PropSpec
-  with Matchers
-  with RealDbTest
-  with ScalaCheckDrivenPropertyChecks {
+class AssetRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCheckDrivenPropertyChecks {
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.db.models.generators._
 
   property("insert/getAllByBoxId") {
     withLiveRepo[ConnectionIO] { repo =>
-      forSingleInstance(assetsWithBoxIdGen) {
-        case (boxId, assets) =>
-          repo.getAllByBoxId(boxId).runWithIO() shouldBe 'empty
-          assets.foreach { asset =>
-            repo.insert(asset).runWithIO()
-          }
-          repo
-            .getAllByBoxId(boxId)
-            .runWithIO() should contain theSameElementsAs assets
+      forSingleInstance(assetsWithBoxIdGen) { case (boxId, assets) =>
+        repo.getAllByBoxId(boxId).runWithIO() shouldBe 'empty
+        assets.foreach { asset =>
+          repo.insert(asset).runWithIO()
+        }
+        val eAssets =
+          assets.map(a => ExtendedAsset(a.tokenId, a.boxId, a.headerId, a.index, a.amount, None, None, None))
+        repo
+          .getAllByBoxId(boxId)
+          .runWithIO() should contain theSameElementsAs eAssets
       }
     }
   }
@@ -42,16 +39,15 @@ class AssetRepoSpec
         val issuedTokenIds = NonEmptyList.fromList(issuedTokens.map(_._3.tokenId)).get
         assetRepo.getIssuingBoxesByTokenIds(issuedTokenIds).runWithIO() shouldBe empty
 
-        issuedTokens.foreach {
-          case (input, out, token) =>
-            // issue a token
-            inputRepo.insert(input).runWithIO()
-            assetRepo.insert(token).runWithIO()
-            outputRepo.insert(out).runWithIO()
-            // use issued token in new output
-            val outUsingToken = outputGen(true).retryUntil(_ => true).sample.get
-            assetRepo.insert(token.copy(boxId = outUsingToken.boxId)).runWithIO()
-            outputRepo.insert(outUsingToken).runWithIO()
+        issuedTokens.foreach { case (input, out, token) =>
+          // issue a token
+          inputRepo.insert(input).runWithIO()
+          assetRepo.insert(token).runWithIO()
+          outputRepo.insert(out).runWithIO()
+          // use issued token in new output
+          val outUsingToken = outputGen(true).retryUntil(_ => true).sample.get
+          assetRepo.insert(token.copy(boxId = outUsingToken.boxId)).runWithIO()
+          outputRepo.insert(outUsingToken).runWithIO()
         }
 
         val outsIssuingToken = issuedTokens.map(_._2).map(ExtendedOutput(_, None))

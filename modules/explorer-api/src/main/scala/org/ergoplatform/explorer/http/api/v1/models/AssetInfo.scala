@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.models
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedAsset
-import org.ergoplatform.explorer.{BoxId, Id, TokenId}
+import org.ergoplatform.explorer.{BoxId, Id, TokenId, TokenType}
 import sttp.tapir.{Schema, Validator}
 
 final case class AssetInfo(
@@ -14,7 +14,7 @@ final case class AssetInfo(
   amount: Long,
   name: Option[String],
   decimals: Option[Int],
-  `type`: Option[String]
+  `type`: Option[TokenType]
 )
 
 object AssetInfo {

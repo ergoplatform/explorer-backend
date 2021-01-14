@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.db.models.aggregates
 
-import org.ergoplatform.explorer.{BoxId, TokenId}
+import org.ergoplatform.explorer.{BoxId, TokenId, TokenType}
 
 final case class ExtendedUAsset(
   tokenId: TokenId,
@@ -9,5 +9,5 @@ final case class ExtendedUAsset(
   amount: Long,
   name: Option[String],
   decimals: Option[Int],
-  `type`: Option[String]
+  `type`: Option[TokenType]
 )
