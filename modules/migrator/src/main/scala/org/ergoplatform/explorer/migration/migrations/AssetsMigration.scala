@@ -41,18 +41,18 @@ final class AssetsMigration(
   private def tokensFrom(tx: TransactionInfo): Option[Token] = {
     val allowedTokenId = TokenId.fromStringUnsafe(tx.inputs.head.id.value)
     for {
-      out   <- tx.outputs.find(_.assets.map(_.tokenId).contains(allowedTokenId))
-      regs  <- out.additionalRegisters.as[Map[RegisterId, HexString]].toOption
-      props <- TokenPropsParser.eip4.parse(regs)
+      out  <- tx.outputs.find(_.assets.map(_.tokenId).contains(allowedTokenId))
+      regs <- out.additionalRegisters.as[Map[RegisterId, HexString]].toOption
+      props = TokenPropsParser.eip4.parse(regs)
       asset <- out.assets.find(_.tokenId == allowedTokenId)
     } yield Token(
       asset.tokenId,
       out.id,
-      props.name,
-      props.description,
-      TokenType.Eip004,
-      props.decimals,
-      asset.amount
+      asset.amount,
+      props.map(_.name),
+      props.map(_.description),
+      props.map(_ => TokenType.Eip004),
+      props.map(_.decimals)
     )
   }
 }
