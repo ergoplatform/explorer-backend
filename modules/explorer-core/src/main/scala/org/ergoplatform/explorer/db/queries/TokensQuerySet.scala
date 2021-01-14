@@ -15,17 +15,17 @@ object TokensQuerySet extends QuerySet {
   val fields: List[String] = List(
     "token_id",
     "box_id",
+    "emission_amount",
     "name",
     "description",
     "type",
-    "decimals",
-    "emission_amount"
+    "decimals"
   )
 
   def getAll(offset: Int, limit: Int, ordering: OrderingString)(implicit lh: LogHandler): Query0[Token] = {
     val query =
       sql"""
-         |select t.token_id, t.box_id, t.name, t.description, t.type, t.decimals, t.emission_amount from tokens t
+         |select t.token_id, t.box_id, t.emission_amount, t.name, t.description, t.type, t.decimals from tokens t
          |left join node_outputs o on o.box_id = t.box_id
          |where o.main_chain = true
          |""".stripMargin

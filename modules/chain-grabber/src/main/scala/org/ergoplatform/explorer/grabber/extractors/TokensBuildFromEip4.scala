@@ -17,17 +17,17 @@ final class TokensBuildFromEip4[F[_]: Applicative] extends BuildFrom[F, SlotData
   private def tokensFrom(tx: ApiTransaction): Option[Token] = {
     val allowedTokenId = TokenId.fromStringUnsafe(tx.inputs.head.boxId.value)
     for {
-      out   <- tx.outputs.toList.find(_.assets.map(_.tokenId).contains(allowedTokenId))
-      props <- TokenPropsParser.eip4.parse(out.additionalRegisters)
+      out <- tx.outputs.toList.find(_.assets.map(_.tokenId).contains(allowedTokenId))
+      props = TokenPropsParser.eip4.parse(out.additionalRegisters)
       asset <- out.assets.find(_.tokenId == allowedTokenId)
     } yield Token(
       asset.tokenId,
       out.boxId,
-      props.name,
-      props.description,
-      TokenType.Eip004,
-      props.decimals,
-      asset.amount
+      asset.amount,
+      props.map(_.name),
+      props.map(_.description),
+      props.map(_ => TokenType.Eip004),
+      props.map(_.decimals)
     )
   }
 }
