@@ -261,11 +261,11 @@ CREATE TABLE tokens
 (
     token_id        VARCHAR(64)   PRIMARY KEY,
     box_id          VARCHAR(64)   NOT NULL,
-    name            VARCHAR(128)  NOT NULL,
-    description     VARCHAR(1024) NOT NULL,
-    type            VARCHAR(128)  NOT NULL,
-    decimals        INTEGER       NOT NULL,
-    emission_amount BIGINT        NOT NULL
+    emission_amount BIGINT        NOT NULL,
+    name            VARCHAR(128),
+    description     VARCHAR(1024),
+    type            VARCHAR(128),
+    decimals        INTEGER,
 );
 
 CREATE INDEX "tokens__box_id" ON tokens (box_id);
