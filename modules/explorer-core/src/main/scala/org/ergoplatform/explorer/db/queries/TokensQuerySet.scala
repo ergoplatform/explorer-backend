@@ -27,6 +27,7 @@ object TokensQuerySet extends QuerySet {
       sql"""
          |select t.token_id, t.box_id, t.name, t.description, t.type, t.decimals, t.emission_amount from tokens t
          |left join node_outputs o on o.box_id = t.box_id
+         |where o.main_chain = true
          |""".stripMargin
     val orderingFr    = Fragment.const(s"order by o.creation_height $ordering")
     val offsetLimitFr = Fragment.const(s"offset $offset limit $limit")
@@ -34,5 +35,5 @@ object TokensQuerySet extends QuerySet {
   }
 
   def countAll(implicit lh: LogHandler): Query0[Int] =
-    sql"select count(*) from tokens".query[Int]
+    sql"select count(*) from tokens t left join node_outputs o on o.box_id = t.box_id where o.main_chain = true".query[Int]
 }
