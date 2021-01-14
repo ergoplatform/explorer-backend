@@ -36,9 +36,9 @@ object TokenRepo {
 
     import org.ergoplatform.explorer.db.queries.{TokensQuerySet => QS}
 
-    def insert(token: Token): ConnectionIO[Unit] = QS.insert(token).void
+    def insert(token: Token): ConnectionIO[Unit] = QS.insertNoConflict(token).void
 
-    def insertMany(tokens: List[Token]): ConnectionIO[Unit] = QS.insertMany(tokens).void
+    def insertMany(tokens: List[Token]): ConnectionIO[Unit] = QS.insertManyNoConflict(tokens).void
 
     def getAll(offset: Int, limit: Int, ordering: OrderingString): ConnectionIO[List[Token]] =
       QS.getAll(offset, limit, ordering).to[List]
