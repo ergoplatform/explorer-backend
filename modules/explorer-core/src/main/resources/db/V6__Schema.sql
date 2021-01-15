@@ -265,7 +265,7 @@ CREATE TABLE tokens
     name            VARCHAR(128),
     description     VARCHAR(1024),
     type            VARCHAR(128),
-    decimals        INTEGER,
+    decimals        INTEGER
 );
 
 CREATE INDEX "tokens__box_id" ON tokens (box_id);
