@@ -256,3 +256,16 @@ CREATE TABLE known_miners
     miner_address VARCHAR PRIMARY KEY,
     miner_name    VARCHAR NOT NULL
 );
+
+CREATE TABLE tokens
+(
+    token_id        VARCHAR(64)   PRIMARY KEY,
+    box_id          VARCHAR(64)   NOT NULL,
+    emission_amount BIGINT        NOT NULL,
+    name            VARCHAR(128),
+    description     VARCHAR(1024),
+    type            VARCHAR(128),
+    decimals        INTEGER
+);
+
+CREATE INDEX "tokens__box_id" ON tokens (box_id);

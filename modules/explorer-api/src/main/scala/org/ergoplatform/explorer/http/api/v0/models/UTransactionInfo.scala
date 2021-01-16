@@ -6,10 +6,9 @@ import cats.syntax.traverse._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.TxId
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUDataInput, ExtendedUInput}
-import org.ergoplatform.explorer.db.models.{UAsset, UOutput, UTransaction}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUDataInput, ExtendedUInput}
+import org.ergoplatform.explorer.db.models.{UOutput, UTransaction}
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
 
 final case class UTransactionInfo(
   id: TxId,
@@ -25,7 +24,8 @@ object UTransactionInfo {
   implicit val codec: Codec[UTransactionInfo] = deriveCodec
 
   implicit val schema: Schema[UTransactionInfo] =
-    Schema.derive[UTransactionInfo]
+    Schema
+      .derive[UTransactionInfo]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.creationTimestamp)(
         _.description("Approximate time this transaction appeared in the network")
@@ -41,7 +41,7 @@ object UTransactionInfo {
     ins: List[ExtendedUInput],
     dataIns: List[ExtendedUDataInput],
     outs: List[UOutput],
-    assets: List[UAsset]
+    assets: List[ExtendedUAsset]
   ): UTransactionInfo = {
     val inputsInfo     = UInputInfo.batch(ins)
     val dataInputsInfo = UDataInputInfo.batch(dataIns)
@@ -54,7 +54,7 @@ object UTransactionInfo {
     ins: List[ExtendedUInput],
     dataIns: List[ExtendedUDataInput],
     outs: List[UOutput],
-    assets: List[UAsset]
+    assets: List[ExtendedUAsset]
   ): List[UTransactionInfo] = {
     val assetsByBox    = assets.groupBy(_.boxId)
     val inputsByTx     = ins.groupBy(_.input.txId)
@@ -67,7 +67,7 @@ object UTransactionInfo {
           dataInputs = dataInputsByTx.get(tx.id).toList.flatten
           outputs <- outsByTx.get(tx.id).map(_.sortBy(_.index))
           assets = outputs
-                     .foldLeft(List.empty[UAsset]) { (acc, o) =>
+                     .foldLeft(List.empty[ExtendedUAsset]) { (acc, o) =>
                        assetsByBox.get(o.boxId).toList.flatten ++ acc
                      }
         } yield apply(tx, inputs, dataInputs, outputs, assets)

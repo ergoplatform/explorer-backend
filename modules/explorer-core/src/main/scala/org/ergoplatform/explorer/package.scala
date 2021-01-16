@@ -14,6 +14,7 @@ import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.estatico.newtype.macros.newtype
+import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
@@ -159,6 +160,29 @@ package object explorer {
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[TokenId] =
       HexString.fromString(s).map(TokenId.apply)
+
+    def fromStringUnsafe(s: String): TokenId = unsafeWrap(HexString.fromStringUnsafe(s))
+  }
+
+  @newtype case class TokenType(value: String)
+
+  object TokenType {
+
+    val Eip004: TokenType = "EIP-004".coerce[TokenType]
+
+    implicit def schema: Schema[TokenType] =
+      Schema.schemaForString.description("Token type").asInstanceOf[Schema[TokenType]]
+
+    implicit def validator: Validator[TokenType] =
+      implicitly[Validator[String]].contramap[TokenType](_.value)
+
+    // doobie instances
+    implicit def get: Get[TokenType] = deriving
+    implicit def put: Put[TokenType] = deriving
+
+    // circe instances
+    implicit def encoder: Encoder[TokenType] = deriving
+    implicit def decoder: Decoder[TokenType] = deriving
   }
 
   sealed abstract class RegisterId extends EnumEntry
@@ -275,6 +299,8 @@ package object explorer {
         .leftMap(RefinementFailed)
         .toRaise[F]
         .map(HexString.apply)
+
+    def fromStringUnsafe(s: String): HexString = unsafeWrap(refineV[HexStringSpec].unsafeFrom(s))
   }
 
   @newtype case class UrlString(value: UrlStringType) {

@@ -3,8 +3,8 @@ package org.ergoplatform.explorer.http.api.v0.models
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.HexString
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, ExtendedInput, ExtendedOutput}
-import org.ergoplatform.explorer.db.models.{AdProof, Asset, BlockExtension, Header, Transaction}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedDataInput, ExtendedInput, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.{AdProof, BlockExtension, Header, Transaction}
 import sttp.tapir.{Schema, Validator}
 
 final case class FullBlockInfo(
@@ -19,7 +19,8 @@ object FullBlockInfo {
   implicit val codec: Codec[FullBlockInfo] = deriveCodec
 
   implicit val schema: Schema[FullBlockInfo] =
-    Schema.derive[FullBlockInfo]
+    Schema
+      .derive[FullBlockInfo]
       .modify(_.adProofs)(_.description("Serialized hex-encoded AD Proofs"))
 
   implicit val validator: Validator[FullBlockInfo] = Validator.derive
@@ -31,7 +32,7 @@ object FullBlockInfo {
     inputs: List[ExtendedInput],
     dataInputs: List[ExtendedDataInput],
     outputs: List[ExtendedOutput],
-    assets: List[Asset],
+    assets: List[ExtendedAsset],
     extension: BlockExtension,
     adProof: Option[AdProof],
     blockSize: Int

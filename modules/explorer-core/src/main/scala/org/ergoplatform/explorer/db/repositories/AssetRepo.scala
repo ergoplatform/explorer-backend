@@ -9,7 +9,7 @@ import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Asset
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
@@ -27,13 +27,13 @@ trait AssetRepo[D[_], S[_[_], _]] {
 
   /** Get all assets belonging to a given `boxId`.
     */
-  def getAllByBoxId(boxId: BoxId): D[List[Asset]]
+  def getAllByBoxId(boxId: BoxId): D[List[ExtendedAsset]]
 
   /** Get all assets belonging to a given list of `boxId`.
     */
-  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]]
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedAsset]]
 
-  def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]]
+  def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedAsset]]
 
   /** Get all addresses holding an asset with a given `assetId`.
     */
@@ -59,7 +59,7 @@ trait AssetRepo[D[_], S[_[_], _]] {
 
   /** Get all assets matching a given `idSubstring`.
     */
-  def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[Asset]]
+  def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[ExtendedAsset]]
 
   /** Get the total number of assets matching a given `idSubstring`.
     */
@@ -83,13 +83,13 @@ object AssetRepo {
     def insertMany(assets: List[Asset]): D[Unit] =
       QS.insertMany(assets).void.liftConnectionIO
 
-    def getAllByBoxId(boxId: BoxId): D[List[Asset]] =
+    def getAllByBoxId(boxId: BoxId): D[List[ExtendedAsset]] =
       QS.getAllByBoxId(boxId).to[List].liftConnectionIO
 
-    def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[Asset]] =
+    def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedAsset]] =
       QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
 
-    def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[Asset]] =
+    def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedAsset]] =
       QS.getAllMainUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
 
     def getAllHoldingAddresses(
@@ -112,7 +112,7 @@ object AssetRepo {
     def getIssuingBoxesQty: D[Int] =
       QS.getIssuingBoxesQty.unique.liftConnectionIO
 
-    def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[Asset]] =
+    def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[ExtendedAsset]] =
       QS.getAllLike(idSubstring, offset, limit).to[List].liftConnectionIO
 
     def countAllLike(idSubstring: String): D[Int] =

@@ -4,7 +4,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.TxId
 import org.ergoplatform.explorer.db.models.{UAsset, UOutput, UTransaction}
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUDataInput, ExtendedUInput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUDataInput, ExtendedUInput}
 import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
@@ -40,7 +40,7 @@ object UTransactionSummary {
     ins: List[ExtendedUInput],
     dataIns: List[ExtendedUDataInput],
     outs: List[UOutput],
-    assets: List[UAsset]
+    assets: List[ExtendedUAsset]
   ): UTransactionSummary = {
     val inputsInfo     = ins.map(UInputInfo.apply)
     val dataInputsInfo = dataIns.map(UDataInputInfo.apply)

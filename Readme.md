@@ -9,7 +9,7 @@ This repository contains 4 services:
 Scans blockchain, dumps aggregated data to database
 
 Dependencies:
-- Postgres (Schema `modules/explorer-core/src/main/resources/db/V1__Node_data.sql`)
+- Postgres (Schema `modules/explorer-core/src/main/resources/db/V6__Schema.sql`)
 
 ### 2. Explorer API
 
@@ -20,7 +20,7 @@ Provides a set of HTTP API methods for querying chain/off-chain data.
 Specification: https://api.ergoplatform.com/docs/openapi
 
 Dependencies:
-- Postgres (Schema `modules/explorer-core/src/main/resources/db/V1__Node_data.sql`)
+- Postgres (Schema `modules/explorer-core/src/main/resources/db/V6__Schema.sql`)
 - Redis
 
 ### 3. UTX Tracker
@@ -30,7 +30,7 @@ Dependencies:
 Dumps unconfirmed transactions from mempool to local database
 
 Dependencies:
-- Postgres (Schema `modules/explorer-core/src/main/resources/db/V1__Node_data.sql`)
+- Postgres (Schema `modules/explorer-core/src/main/resources/db/V6__Schema.sql`)
 
 ### 4. UTX Broadcaster
 

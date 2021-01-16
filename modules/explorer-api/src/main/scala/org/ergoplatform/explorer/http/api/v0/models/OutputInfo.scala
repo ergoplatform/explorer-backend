@@ -2,9 +2,8 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
-import org.ergoplatform.explorer.db.models.Asset
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.http.api.models.AssetInfo
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
+import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.protocol.registers
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.json.circe.validatorForCirceJson
@@ -18,7 +17,7 @@ final case class OutputInfo(
   creationHeight: Int,
   ergoTree: HexString,
   address: Option[Address],
-  assets: List[AssetInfo],
+  assets: List[AssetInstanceInfo],
   additionalRegisters: Json,
   spentTransactionId: Option[TxId],
   mainChain: Boolean
@@ -51,7 +50,7 @@ object OutputInfo {
 
   def apply(
     o: ExtendedOutput,
-    assets: List[Asset]
+    assets: List[ExtendedAsset]
   ): OutputInfo =
     OutputInfo(
       o.output.boxId,
@@ -61,13 +60,13 @@ object OutputInfo {
       o.output.creationHeight,
       o.output.ergoTree,
       o.output.addressOpt,
-      assets.sortBy(_.index).map(x => AssetInfo(x.tokenId, x.index, x.amount)),
+      assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       registers.convolveJson(o.output.additionalRegisters),
       o.spentByOpt,
       o.output.mainChain
     )
 
-  def batch(outputs: List[ExtendedOutput], assets: List[Asset]): List[OutputInfo] = {
+  def batch(outputs: List[ExtendedOutput], assets: List[ExtendedAsset]): List[OutputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)
     outputs
       .sortBy(_.output.index)

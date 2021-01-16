@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.http.api.models.AssetInfo
+import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.{Address, TxId}
 import sttp.tapir.{Schema, Validator}
 

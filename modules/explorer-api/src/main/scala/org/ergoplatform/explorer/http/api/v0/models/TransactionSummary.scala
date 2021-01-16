@@ -4,7 +4,7 @@ import io.circe.{Codec, Decoder, Encoder, Json}
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder}
 import io.circe.syntax._
 import org.ergoplatform.explorer.{Id, TxId}
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, ExtendedInput, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedDataInput, ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.db.models.{Asset, Transaction}
 import org.ergoplatform.explorer.http.api.v0.models.TransactionSummary.MiniBlockInfo
 import org.ergoplatform.explorer.protocol.constants
@@ -76,7 +76,7 @@ object TransactionSummary {
     inputs: List[ExtendedInput],
     dataInputs: List[ExtendedDataInput],
     outputs: List[ExtendedOutput],
-    assets: List[Asset]
+    assets: List[ExtendedAsset]
   ): TransactionSummary = {
     val ins     = InputInfo.batch(inputs)
     val dataIns = DataInputInfo.batch(dataInputs)

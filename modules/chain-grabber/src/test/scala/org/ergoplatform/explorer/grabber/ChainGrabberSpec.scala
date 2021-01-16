@@ -8,6 +8,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.HeaderRepo
 import org.ergoplatform.explorer.db.{RealDbTest, repositories}
 import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
+import org.ergoplatform.explorer.grabber.processes.ChainGrabber
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 import org.ergoplatform.explorer.settings.GrabberAppSettings
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._

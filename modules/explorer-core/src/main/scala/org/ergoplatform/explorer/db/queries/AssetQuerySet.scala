@@ -5,8 +5,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.{Fragments, LogHandler}
-import org.ergoplatform.explorer.db.models.Asset
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
 /** A set of queries for doobie implementation of  [AssetRepo].
@@ -25,20 +24,53 @@ object AssetQuerySet extends QuerySet {
     "value"
   )
 
-  def getAllByBoxId(boxId: BoxId)(implicit lh: LogHandler): Query0[Asset] =
+  def getAllByBoxId(boxId: BoxId)(implicit lh: LogHandler): Query0[ExtendedAsset] =
     sql"""
-         |select distinct on (token_id, box_id) token_id, box_id, header_id, index, value from node_assets
-         |where box_id = $boxId
-         |""".stripMargin.query[Asset]
+         |select distinct on (a.token_id, a.box_id)
+         |  a.token_id,
+         |  a.box_id,
+         |  a.header_id,
+         |  a.index,
+         |  a.value,
+         |  t.name,
+         |  t.decimals,
+         |  t.type
+         |from node_assets a
+         |left join tokens t on a.token_id = t.token_id
+         |where a.box_id = $boxId
+         |""".stripMargin.query[ExtendedAsset]
 
-  def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[Asset] =
-    (sql"select distinct on (token_id, box_id) token_id, box_id, header_id, index, value from node_assets "
-      ++ Fragments.in(fr"where box_id", boxIds))
-      .query[Asset]
+  def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[ExtendedAsset] =
+    (
+      sql"""
+        |select distinct on (a.token_id, a.box_id)
+        |  a.token_id,
+        |  a.box_id,
+        |  a.header_id,
+        |  a.index,
+        |  a.value,
+        |  t.name,
+        |  t.decimals,
+        |  t.type
+        |from node_assets a
+        |left join tokens t on a.token_id = t.token_id
+        |""".stripMargin
+      ++ Fragments.in(fr"where a.box_id", boxIds))
+      .query[ExtendedAsset]
 
-  def getAllMainUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[Asset] =
+  def getAllMainUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[ExtendedAsset] =
     sql"""
-         |select a.token_id, a.box_id, a.token_id, a.index, a.value from node_assets a
+         |select
+         |  a.token_id,
+         |  a.box_id,
+         |  a.token_id,
+         |  a.index,
+         |  a.value,
+         |  t.name,
+         |  t.decimals,
+         |  t.type
+         |from node_assets a
+         |left join tokens t on a.token_id = t.token_id
          |inner join (
          |  select o.box_id from node_outputs o
          |  left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
@@ -46,7 +78,7 @@ object AssetQuerySet extends QuerySet {
          |    and (i.box_id is null or i.main_chain = false)
          |    and o.ergo_tree = $ergoTree
          |) as uo on uo.box_id = a.box_id
-         """.stripMargin.query[Asset]
+         """.stripMargin.query[ExtendedAsset]
 
   def getAllHoldingAddresses(
     tokenId: TokenId,
@@ -128,16 +160,19 @@ object AssetQuerySet extends QuerySet {
          |) as a
          """.stripMargin.query[Int]
 
-  def getAllLike(idSubstring: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Asset] =
+  def getAllLike(idSubstring: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedAsset] =
     sql"""
-         |select a.token_id, a.box_id, a.token_id, a.index, a.value from node_assets a
-         |where a.token_id like ${idSubstring + "%"}
+         |select a.token_id, a.box_id, a.header_id, a.index, a.value, t.name, t.decimals, t.type from node_assets a
+         |left join tokens t on a.token_id = t.token_id
+         |left join node_outputs o on a.box_id = o.box_id
+         |where a.token_id like ${idSubstring + "%"} and o.main_chain = true
          |offset $offset limit $limit
-         """.stripMargin.query[Asset]
+         """.stripMargin.query[ExtendedAsset]
 
   def countAllLike(idSubstring: String)(implicit lh: LogHandler): Query0[Int] =
     sql"""
          |select count(*) from node_assets a
-         |where a.token_id like ${idSubstring + "%"}
+         |left join node_outputs o on a.box_id = o.box_id
+         |where a.token_id like ${idSubstring + "%"} and o.main_chain = true
          """.stripMargin.query[Int]
 }

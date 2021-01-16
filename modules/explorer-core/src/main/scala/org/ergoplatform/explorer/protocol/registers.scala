@@ -15,7 +15,7 @@ object registers {
     val expanded =
       for {
         (idSig, rawValue)               <- registers.toList
-        RegisterValue(valueType, value) <- RegistersParser[Try].parse(rawValue).toOption
+        RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(rawValue).toOption
       } yield idSig -> ExpandedRegister(rawValue, valueType, value)
     expanded.toMap
   }
