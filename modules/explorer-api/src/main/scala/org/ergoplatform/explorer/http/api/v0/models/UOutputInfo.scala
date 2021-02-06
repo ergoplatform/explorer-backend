@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
+import cats.syntax.option._
 import org.ergoplatform.explorer.db.models.UOutput
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUAsset
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
@@ -55,7 +56,7 @@ object UOutputInfo {
       out.index,
       out.creationHeight,
       out.ergoTree,
-      out.addressOpt,
+      out.address.some,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       registers.convolveJson(out.additionalRegisters)
     )

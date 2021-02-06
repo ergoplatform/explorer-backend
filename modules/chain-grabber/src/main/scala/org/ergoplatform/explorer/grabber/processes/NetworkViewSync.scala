@@ -6,7 +6,7 @@ import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{~>, Monad, Parallel}
+import cats.{Monad, Parallel, ~>}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -19,14 +19,14 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.grabber.extractors._
 import org.ergoplatform.explorer.grabber.models.{FlatBlock, SlotData}
-import org.ergoplatform.explorer.grabber.modules.BuildFrom.syntax._
+import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.grabber.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
-import org.ergoplatform.explorer.settings.ProtocolSettings
+import org.ergoplatform.explorer.settings.{GrabberAppSettings, ProtocolSettings}
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
-import tofu.{Context, Raise, Throws, WithContext}
+import tofu.{Context, MonadThrow, Raise, Throws, WithContext}
 
 trait NetworkViewSync[F[_]] {
 
@@ -39,9 +39,9 @@ object NetworkViewSync {
 
   def apply[
     F[_]: Sync: Parallel: Timer,
-    D[_]: LiftConnectionIO: Throws: Monad
+    D[_]: LiftConnectionIO: MonadThrow
   ](
-    settings: ProtocolSettings,
+    settings: GrabberAppSettings,
     network: ErgoNetworkClient[F]
   )(xa: D ~> F): F[NetworkViewSync[F]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
@@ -55,7 +55,7 @@ object NetworkViewSync {
     D[_]: Monad: Throws
   ](
     lastBlockCache: Ref[F, Option[BlockInfo]],
-    settings: ProtocolSettings,
+    settings: GrabberAppSettings,
     network: ErgoNetworkClient[F],
     repos: RepoBundle[D]
   )(xa: D ~> F)
@@ -64,6 +64,20 @@ object NetworkViewSync {
     private val log = Logger[F]
 
     def run: Stream[F, Unit] =
+      Stream(()).repeat
+        .covary[F]
+        .metered(settings.pollInterval)
+        .flatMap { _ =>
+          Stream.eval(Logger[F].info("Starting sync job ..")) >> sync.handleErrorWith { e =>
+            Stream.eval(
+              Logger[F].warn(e)(
+                "An error occurred while syncing with the network. Restarting ..."
+              )
+            )
+          }
+        }
+
+    def sync: Stream[F, Unit] =
       for {
         networkHeight <- Stream.eval(network.getBestHeight)
         localHeight   <- Stream.eval(getLastGrabbedBlockHeight)
@@ -146,7 +160,7 @@ object NetworkViewSync {
     }
 
     private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockInfo]): D[FlatBlock] = {
-      implicit val ctx: WithContext[D, ProtocolSettings] = Context.const(settings)
+      implicit val ctx: WithContext[D, ProtocolSettings] = Context.const(settings.protocol)
       SlotData(apiFullBlock, prevBlockInfoOpt).intoF[D, FlatBlock]
     }
 

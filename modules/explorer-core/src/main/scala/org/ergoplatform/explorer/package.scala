@@ -10,12 +10,13 @@ import doobie.util.{Get, Put}
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{refineV, W}
+import eu.timepit.refined.{W, refineV}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.estatico.newtype.macros.newtype
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.Err.RefinementFailed
+import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
@@ -162,6 +163,48 @@ package object explorer {
       HexString.fromString(s).map(TokenId.apply)
 
     def fromStringUnsafe(s: String): TokenId = unsafeWrap(HexString.fromStringUnsafe(s))
+  }
+
+  @newtype case class ErgoTreeTemplate(value: HexString)
+
+  object ErgoTreeTemplate {
+    // doobie instances
+    implicit def get: Get[ErgoTreeTemplate] = deriving
+    implicit def put: Put[ErgoTreeTemplate] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[ErgoTreeTemplate] = deriving
+
+    implicit def jsonCodec: Codec.JsonCodec[ErgoTreeTemplate] =
+      HexString.jsonCodec.map(ErgoTreeTemplate(_))(_.value)
+
+    implicit def schema: Schema[ErgoTreeTemplate] =
+      Schema.schemaForString.description("ErgoTree Template").asInstanceOf[Schema[ErgoTreeTemplate]]
+
+    implicit def validator: Validator[ErgoTreeTemplate] =
+      implicitly[Validator[HexString]].contramap[ErgoTreeTemplate](_.value)
+
+    def fromStringUnsafe(s: String): ErgoTreeTemplate = unsafeWrap(HexString.fromStringUnsafe(s))
+  }
+
+  @newtype case class ErgoTree(value: HexString)
+
+  object ErgoTree {
+    // doobie instances
+    implicit def get: Get[ErgoTree] = deriving
+    implicit def put: Put[ErgoTree] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[ErgoTree] = deriving
+
+    implicit def jsonCodec: Codec.JsonCodec[ErgoTree] =
+      HexString.jsonCodec.map(ErgoTree(_))(_.value)
+
+    implicit def schema: Schema[ErgoTree] =
+      Schema.schemaForString.description("ErgoTree Template").asInstanceOf[Schema[ErgoTree]]
+
+    implicit def validator: Validator[ErgoTree] =
+      implicitly[Validator[HexString]].contramap[ErgoTree](_.value)
   }
 
   @newtype case class TokenType(value: String)

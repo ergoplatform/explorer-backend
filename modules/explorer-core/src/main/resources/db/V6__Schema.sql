@@ -137,6 +137,7 @@ CREATE TABLE node_outputs
     creation_height      INTEGER     NOT NULL,
     index                INTEGER     NOT NULL,
     ergo_tree            VARCHAR     NOT NULL,
+    ergo_tree_template   VARCHAR     NOT NULL,
     address              VARCHAR,
     additional_registers JSON        NOT NULL,
     timestamp            BIGINT      NOT NULL,
@@ -228,6 +229,7 @@ CREATE TABLE node_u_outputs
     creation_height      INTEGER     NOT NULL,
     index                INTEGER     NOT NULL,
     ergo_tree            VARCHAR     NOT NULL,
+    ergo_tree_template   VARCHAR     NOT NULL,
     address              VARCHAR,
     additional_registers JSON        NOT NULL
 );

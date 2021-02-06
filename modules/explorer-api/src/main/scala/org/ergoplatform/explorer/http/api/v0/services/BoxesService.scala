@@ -69,23 +69,23 @@ object BoxesService {
 
     def getOutputsByAddress(address: Address): Stream[F, OutputInfo] =
       (utils.addressToErgoTreeHex(address).asStream >>= (outRepo
-          .getMainByErgoTree(_, 0, Int.MaxValue)
+          .streamAllByErgoTree(_, 0, Int.MaxValue)
           .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getUnspentOutputsByAddress(address: Address): Stream[F, OutputInfo] =
       (utils.addressToErgoTreeHex(address).asStream >>= (outRepo
-          .getMainUnspentByErgoTree(_, 0, Int.MaxValue)
+          .streamUnspentByErgoTree(_, 0, Int.MaxValue)
           .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getOutputsByErgoTree(ergoTree: HexString): Stream[F, OutputInfo] =
       outRepo
-        .getMainByErgoTree(ergoTree, 0, Int.MaxValue)
+        .streamAllByErgoTree(ergoTree, 0, Int.MaxValue)
         .chunkN(100)
         .through(toOutputInfo) ||> trans.xas
 
     def getUnspentOutputsByErgoTree(ergoTree: HexString): Stream[F, OutputInfo] =
       outRepo
-        .getMainUnspentByErgoTree(ergoTree, 0, Int.MaxValue)
+        .streamUnspentByErgoTree(ergoTree, 0, Int.MaxValue)
         .chunkN(100)
         .through(toOutputInfo) ||> trans.xas
 

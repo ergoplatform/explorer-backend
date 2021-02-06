@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.grabber.modules
+package org.ergoplatform.explorer
 
 import cats.{Applicative, FlatMap, Monad}
 import shapeless.{::, Generic, HList, HNil}

@@ -2,7 +2,6 @@ package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.{IO, Sync}
 import cats.instances.try_._
-import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -15,55 +14,48 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.Try
 
-class OutputRepoSpec
-  extends PropSpec
-  with Matchers
-  with RealDbTest
-  with ScalaCheckDrivenPropertyChecks {
+class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCheckDrivenPropertyChecks {
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.db.models.generators._
 
   property("insert/getByBoxId") {
     withLiveRepos[ConnectionIO] { (hRepo, txRepo, oRepo, _) =>
-      forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
-        case (header, tx, outputs) =>
-          hRepo.insert(header).runWithIO()
-          txRepo.insert(tx).runWithIO()
-          outputs.foreach { extOut =>
-            oRepo.getByBoxId(extOut.output.boxId).runWithIO() shouldBe None
-            oRepo.insert(extOut.output).runWithIO()
-            oRepo.getByBoxId(extOut.output.boxId).runWithIO() shouldBe Some(extOut)
-          }
+      forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) { case (header, tx, outputs) =>
+        hRepo.insert(header).runWithIO()
+        txRepo.insert(tx).runWithIO()
+        outputs.foreach { extOut =>
+          oRepo.getByBoxId(extOut.output.boxId).runWithIO() shouldBe None
+          oRepo.insert(extOut.output).runWithIO()
+          oRepo.getByBoxId(extOut.output.boxId).runWithIO() shouldBe Some(extOut)
+        }
       }
     }
   }
 
   property("getAllByAddress/getAllByErgoTree") {
     withLiveRepos[ConnectionIO] { (hRepo, txRepo, oRepo, _) =>
-      forSingleInstance(hexStringRGen.flatMap(hex => addressGen.map(_ -> hex))) {
-        case (address, ergoTree) =>
-          forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) {
-            case (header, tx, outputs) =>
-              hRepo.insert(header).runWithIO()
-              txRepo.insert(tx).runWithIO()
-              val nonMatching = outputs.head
-              val matching = outputs.tail
-                .map { extOut =>
-                  extOut.copy(
-                    output = extOut.output.copy(addressOpt = address.some, ergoTree = ergoTree)
-                  )
-                }
-              matching.foreach { extOut =>
-                oRepo.insert(extOut.output).runWithIO()
-              }
-              oRepo.insert(nonMatching.output).runWithIO()
-              oRepo
-                .getMainByErgoTree(ergoTree, 0, Int.MaxValue)
-                .compile
-                .toList
-                .runWithIO() should contain theSameElementsAs matching
+      forSingleInstance(hexStringRGen.flatMap(hex => addressGen.map(_ -> hex))) { case (address, ergoTree) =>
+        forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) { case (header, tx, outputs) =>
+          hRepo.insert(header).runWithIO()
+          txRepo.insert(tx).runWithIO()
+          val nonMatching = outputs.head
+          val matching = outputs.tail
+            .map { extOut =>
+              extOut.copy(
+                output = extOut.output.copy(address = address, ergoTree = ergoTree)
+              )
+            }
+          matching.foreach { extOut =>
+            oRepo.insert(extOut.output).runWithIO()
           }
+          oRepo.insert(nonMatching.output).runWithIO()
+          oRepo
+            .streamAllByErgoTree(ergoTree, 0, Int.MaxValue)
+            .compile
+            .toList
+            .runWithIO() should contain theSameElementsAs matching
+        }
       }
     }
   }
@@ -71,12 +63,12 @@ class OutputRepoSpec
   property("insert/getUnspentSellOrders") {
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, assetRepo) =>
       forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
-        val contractTemplate = dex.sellContractTemplate[IO].unsafeRunSync()
+        val contractTemplate = dex.sellContractTemplate
         val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
-          .getAllMainUnspentSellOrderByTokenId(
-            arbTokenId,
+          .streamUnspentByErgoTreeTemplateAndTokenId(
             contractTemplate,
+            arbTokenId,
             0,
             Int.MaxValue
           )
@@ -84,31 +76,29 @@ class OutputRepoSpec
           .toList
           .runWithIO() shouldBe empty
 
-        sellOrders.foreach {
-          case (out, asset) =>
-            assetRepo.insert(asset).runWithIO()
-            outputRepo.insert(out).runWithIO()
+        sellOrders.foreach { case (out, asset) =>
+          assetRepo.insert(asset).runWithIO()
+          outputRepo.insert(out).runWithIO()
         }
 
-        sellOrders.foreach {
-          case (out, asset) =>
-            val expectedOuts = List(ExtendedOutput(out, None))
-            outputRepo
-              .getAllMainUnspentSellOrderByTokenId(
-                asset.tokenId,
-                contractTemplate,
-                0,
-                Int.MaxValue
-              )
-              .compile
-              .toList
-              .runWithIO() should contain theSameElementsAs expectedOuts
+        sellOrders.foreach { case (out, asset) =>
+          val expectedOuts = List(ExtendedOutput(out, None))
+          outputRepo
+            .streamUnspentByErgoTreeTemplateAndTokenId(
+              contractTemplate,
+              asset.tokenId,
+              0,
+              Int.MaxValue
+            )
+            .compile
+            .toList
+            .runWithIO() should contain theSameElementsAs expectedOuts
         }
 
         outputRepo
-          .getAllMainUnspentSellOrderByTokenId(
-            arbTokenId,
+          .streamUnspentByErgoTreeTemplateAndTokenId(
             contractTemplate,
+            arbTokenId,
             0,
             Int.MaxValue
           )
@@ -122,12 +112,12 @@ class OutputRepoSpec
   property("insert/getUnspentBuyOrders") {
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, _) =>
       forSingleInstance(dexBuyOrderGen) { buyOrder =>
-        val contractTemplate = dex.buyContractTemplate[IO].unsafeRunSync()
+        val contractTemplate = dex.buyContractTemplate
         val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(
-            arbTokenId,
+          .streamUnspentByErgoTreeTemplateAndTokenId(
             contractTemplate,
+            arbTokenId,
             0,
             Int.MaxValue
           )
@@ -146,9 +136,9 @@ class OutputRepoSpec
         val expectedOuts = List(ExtendedOutput(buyOrder, None))
 
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(
-            tokenEmbeddedInContract,
+          .streamUnspentByErgoTreeTemplateAndTokenId(
             contractTemplate,
+            tokenEmbeddedInContract,
             0,
             Int.MaxValue
           )
@@ -157,9 +147,9 @@ class OutputRepoSpec
           .runWithIO() should contain theSameElementsAs expectedOuts
 
         outputRepo
-          .getAllMainUnspentBuyOrderByTokenId(
-            arbTokenId,
+          .streamUnspentByErgoTreeTemplateAndTokenId(
             contractTemplate,
+            arbTokenId,
             0,
             Int.MaxValue
           )

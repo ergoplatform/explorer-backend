@@ -67,13 +67,14 @@ object AddressesService {
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends AddressesService[F, Stream] {
 
+    // todo: optimize: use pg aggregation
     def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo] =
       (for {
         ergoTree <- utils.addressToErgoTreeHex(address)
         height   <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
         maxHeight = height - minConfirmations
-        outs                <- outputRepo.getAllMainByErgoTree(ergoTree, maxHeight)
-        balance             <- outputRepo.sumOfAllMainUnspentByErgoTree(ergoTree, maxHeight)
+        outs                <- outputRepo.getAllByErgoTree(ergoTree, maxHeight)
+        balance             <- outputRepo.sumUnspentByErgoTree(ergoTree, maxHeight)
         assets              <- assetRepo.getAllMainUnspentByErgoTree(ergoTree)
         unspentOffChainOuts <- uOutputRepo.getAllUnspentByErgoTree(ergoTree)
         offChainAssets      <- uAssetRepo.getAllUnspentByErgoTree(ergoTree)

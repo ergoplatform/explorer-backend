@@ -1,15 +1,16 @@
 package org.ergoplatform.explorer.grabber
 
-import cats.{Applicative, FlatMap, Monad}
+import cats.instances.list._
+import cats.syntax.traverse._
+import cats.{Applicative, Monad}
 import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.grabber.models.SlotData
-import org.ergoplatform.explorer.grabber.modules.BuildFrom
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
-import org.ergoplatform.explorer.protocol.{registers, utils, RegistersParser}
+import org.ergoplatform.explorer.protocol.{RegistersParser, registers, utils}
 import org.ergoplatform.explorer.settings.ProtocolSettings
+import org.ergoplatform.explorer.{Address, BuildFrom}
 import tofu.syntax.context._
 import tofu.syntax.monadic._
 import tofu.{Throws, WithContext}
@@ -116,21 +117,22 @@ package object extractors {
       }
     }
 
-  implicit def outputsBuildFrom[F[_]: FlatMap: WithContext[*[_], ProtocolSettings]]
+  implicit def outputsBuildFrom[F[_]: Monad: Throws: WithContext[*[_], ProtocolSettings]]
     : BuildFrom[F, SlotData, List[Output]] =
     BuildFrom.instance { case SlotData(ApiFullBlock(header, apiTxs, _, _, _), _) =>
-      context.map { protocolSettings =>
+      context.flatMap { protocolSettings =>
         implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
-        apiTxs.transactions.flatMap { apiTx =>
+        apiTxs.transactions.flatTraverse { apiTx =>
           apiTx.outputs.toList.zipWithIndex
-            .map { case (o, index) =>
-              val addressOpt = utils
-                .ergoTreeToAddress(o.ergoTree)
-                .map(_.toString)
-                .flatMap(Address.fromString[Try])
-                .toOption
-              val registersJson = registers.expand(o.additionalRegisters).asJson
-              Output(
+            .traverse { case (o, index) =>
+              for {
+                address <- utils
+                             .ergoTreeToAddress[F](o.ergoTree)
+                             .map(_.toString)
+                             .flatMap(Address.fromString[F])
+                scriptTemplate <- utils.deriveErgoTreeTemplate[F](o.ergoTree)
+                registersJson = registers.expand(o.additionalRegisters).asJson
+              } yield Output(
                 o.boxId,
                 apiTx.id,
                 apiTxs.headerId,
@@ -138,7 +140,8 @@ package object extractors {
                 o.creationHeight,
                 index,
                 o.ergoTree,
-                addressOpt,
+                scriptTemplate,
+                address,
                 registersJson,
                 header.timestamp,
                 header.mainChain

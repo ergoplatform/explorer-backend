@@ -14,13 +14,14 @@ import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
-import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.FlatUTransaction
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.settings.UtxTrackerSettings
-import tofu.MonadThrow
+import org.ergoplatform.explorer.settings.{ProtocolSettings, UtxTrackerSettings}
+import org.ergoplatform.explorer.tracker.extractors._
+import tofu.{Context, MonadThrow, WithContext}
 
 /** Synchronises local memory pool representation with the network.
   */
@@ -37,7 +38,8 @@ final class UtxTracker[
   assetRep: UAssetRepo[D]
 )(xa: D ~> F) {
 
-  implicit private val enc: ErgoAddressEncoder = settings.protocol.addressEncoder
+  implicit private val ctx: WithContext[F, ProtocolSettings] =
+    Context.const[F, ProtocolSettings](settings.protocol)
 
   def run: Stream[F, Unit] =
     Stream(()).repeat
@@ -56,7 +58,7 @@ final class UtxTracker[
       txs      <- network.getUnconfirmedTransactions.map(_.toList)
       newTxs  = txs.filterNot(tx => knownIds.contains(tx.id))
       dropIds = knownIds.diff(txs.map(_.id).toSet).toList.toNel
-      flatTxs <- newTxs.traverse(FlatUTransaction.fromApi[F](_))
+      flatTxs <- newTxs.traverse(_.intoF[F, FlatUTransaction])
       _       <- dropIds.fold(().pure[D])(txRepo.dropMany(_).void) >> writeFlatBatch(flatTxs) ||> xa
       _       <- Logger[F].info(s"${newTxs.size} new transactions written, ${dropIds.size} removed")
     } yield ()

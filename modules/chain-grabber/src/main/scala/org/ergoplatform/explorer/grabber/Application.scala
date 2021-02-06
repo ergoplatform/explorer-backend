@@ -7,7 +7,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.DoobieTrans
-import org.ergoplatform.explorer.grabber.processes.ChainGrabber
+import org.ergoplatform.explorer.grabber.processes.NetworkViewSync
 import org.ergoplatform.explorer.settings.GrabberAppSettings
 import org.http4s.client.blaze.BlazeClientBuilder
 
@@ -22,7 +22,7 @@ object Application extends TaskApp {
       case (logger, settings, client, xa) =>
         logger.info("Starting Grabber service ..") >>
         ErgoNetworkClient[Task](client, settings.masterNodesAddresses).flatMap { ns =>
-          ChainGrabber[Task, ConnectionIO](settings, ns)(xa)
+          NetworkViewSync[Task, ConnectionIO](settings, ns)(xa)
             .flatMap(_.run.compile.drain)
             .as(ExitCode.Success)
         }.guarantee(logger.info("Stopping Grabber service .."))

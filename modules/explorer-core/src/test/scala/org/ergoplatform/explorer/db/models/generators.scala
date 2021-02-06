@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.models
 
-import cats.syntax.option._
 import cats.instances.try_._
+import cats.syntax.option._
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
@@ -104,6 +104,7 @@ object generators {
       height   <- Gen.posNum[Int]
       idx      <- Gen.posNum[Int]
       tree     <- ergoTreeGen
+      template <- ergoTreeGen
       address  <- addressGen
       regs     <- jsonFieldsGen
       ts       <- Gen.posNum[Long]
@@ -115,7 +116,8 @@ object generators {
       height,
       idx,
       tree,
-      address.some,
+      template,
+      address,
       regs,
       ts,
       mainChain
@@ -148,7 +150,7 @@ object generators {
       inputGen(mainChain).map { in =>
         val inModified = in.copy(boxId = out.boxId)
         val extIn =
-          ExtendedInput(inModified, out.value.some, out.txId.some, out.index.some, out.addressOpt)
+          ExtendedInput(inModified, out.value.some, out.txId.some, out.index.some, out.address.some)
         out -> extIn
       }
     }

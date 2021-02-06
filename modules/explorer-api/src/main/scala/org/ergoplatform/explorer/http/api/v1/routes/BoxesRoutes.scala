@@ -4,14 +4,14 @@ import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
+import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
+import org.ergoplatform.explorer.http.api.syntax.routes._
 import org.ergoplatform.explorer.http.api.v1.defs.BoxesEndpointDefs
 import org.ergoplatform.explorer.http.api.v1.services.BoxesService
-import org.ergoplatform.explorer.http.api.{streaming, ApiErr}
+import org.ergoplatform.explorer.http.api.{ApiErr, streaming}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
-import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
-import org.ergoplatform.explorer.http.api.syntax.routes._
 
 final class BoxesRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
@@ -22,6 +22,8 @@ final class BoxesRoutes[
   val routes: HttpRoutes[F] =
     streamUnspentOutputsByEpochsR <+>
     streamUnspentOutputsR <+>
+    streamOutputsByErgoTreeTemplateR <+>
+    streamUnspentOutputsByErgoTreeTemplateR <+>
     unspentOutputsByTokenIdR <+>
     outputsByTokenIdR <+>
     getOutputByIdR <+>
@@ -40,16 +42,24 @@ final class BoxesRoutes[
       streaming.bytesStream(service.streamUnspentOutputs(lastEpochs))
     }
 
+  private def streamOutputsByErgoTreeTemplateR: HttpRoutes[F] =
+    defs.streamOutputsByErgoTreeTemplateDef.toRoutes { case (template, epochs) =>
+      streaming.bytesStream(service.streamOutputsByErgoTreeTemplate(template, epochs))
+    }
+
+  private def streamUnspentOutputsByErgoTreeTemplateR: HttpRoutes[F] =
+    defs.streamUnspentOutputsByErgoTreeTemplateDef.toRoutes { case (template, epochs) =>
+      streaming.bytesStream(service.streamUnspentOutputsErgoTreeTemplate(template, epochs))
+    }
+
   private def outputsByTokenIdR: HttpRoutes[F] =
-    defs.outputsByTokenIdDef.toRoutes {
-      case (tokenId, paging) =>
-        service.getOutputsByTokenId(tokenId, paging).adaptThrowable.value
+    defs.outputsByTokenIdDef.toRoutes { case (tokenId, paging) =>
+      service.getOutputsByTokenId(tokenId, paging).adaptThrowable.value
     }
 
   private def unspentOutputsByTokenIdR: HttpRoutes[F] =
-    defs.unspentOutputsByTokenIdDef.toRoutes {
-      case (tokenId, paging) =>
-        service.getUnspentOutputsByTokenId(tokenId, paging).adaptThrowable.value
+    defs.unspentOutputsByTokenIdDef.toRoutes { case (tokenId, paging) =>
+      service.getUnspentOutputsByTokenId(tokenId, paging).adaptThrowable.value
     }
 
   private def getOutputByIdR: HttpRoutes[F] =
@@ -62,27 +72,23 @@ final class BoxesRoutes[
     }
 
   private def getOutputsByErgoTreeR: HttpRoutes[F] =
-    defs.getOutputsByErgoTreeDef.toRoutes {
-      case (tree, paging) =>
-        service.getOutputsByErgoTree(tree, paging).adaptThrowable.value
+    defs.getOutputsByErgoTreeDef.toRoutes { case (tree, paging) =>
+      service.getOutputsByErgoTree(tree, paging).adaptThrowable.value
     }
 
   private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
-    defs.getUnspentOutputsByErgoTreeDef.toRoutes {
-      case (tree, paging) =>
-        service.getUnspentOutputsByErgoTree(tree, paging).adaptThrowable.value
+    defs.getUnspentOutputsByErgoTreeDef.toRoutes { case (tree, paging) =>
+      service.getUnspentOutputsByErgoTree(tree, paging).adaptThrowable.value
     }
 
   private def getOutputsByAddressR: HttpRoutes[F] =
-    defs.getOutputsByAddressDef.toRoutes {
-      case (address, paging) =>
-        service.getOutputsByAddress(address, paging).adaptThrowable.value
+    defs.getOutputsByAddressDef.toRoutes { case (address, paging) =>
+      service.getOutputsByAddress(address, paging).adaptThrowable.value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
-    defs.getUnspentOutputsByAddressDef.toRoutes {
-      case (address, paging) =>
-        service.getUnspentOutputsByAddress(address, paging).adaptThrowable.value
+    defs.getUnspentOutputsByAddressDef.toRoutes { case (address, paging) =>
+      service.getUnspentOutputsByAddress(address, paging).adaptThrowable.value
     }
 }
 

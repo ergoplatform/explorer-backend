@@ -14,5 +14,4 @@ CMD ["/usr/bin/java", "-jar", "/explorer-api.jar"]
 
 FROM openjdk:8-jre-slim
 COPY --from=builder /explorer-api.jar /explorer-api.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/explorer-api.jar"]
+ENTRYPOINT java -jar /explorer-api.jar $0

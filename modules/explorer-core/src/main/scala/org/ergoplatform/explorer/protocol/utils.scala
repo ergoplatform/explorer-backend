@@ -1,23 +1,22 @@
 package org.ergoplatform.explorer.protocol
 
 import cats.syntax.either._
-import cats.syntax.flatMap._
 import cats.{Applicative, Monad}
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
+import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.ErgoTreeSerializationErr.ErgoTreeDeserializationFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.{
   Base16DecodingFailed,
   ErgoTreeSerializationErr
 }
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.ErgoTreeSerializationErr.{
-  ErgoTreeDeserializationFailed,
-  ErgoTreeSerializationFailed
-}
 import org.ergoplatform.explorer.{Address, CRaise, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
 import scorex.util.encode.Base16
+import sigmastate.Values
 import sigmastate.Values.ErgoTree
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
+import tofu.Throws
+import tofu.syntax.monadic._
 import tofu.syntax.raise._
 
 import scala.util.Try
@@ -26,12 +25,21 @@ object utils {
 
   private val treeSerializer: ErgoTreeSerializer = ErgoTreeSerializer.DefaultSerializer
 
-  @inline def ergoTreeToAddress(
+  @inline def deserializeErgoTree[F[_]: Applicative: Throws](raw: HexString): F[Values.ErgoTree] =
+    Base16.decode(raw.unwrapped).map(treeSerializer.deserializeErgoTree).fold(_.raise, _.pure)
+
+  @inline def deriveErgoTreeTemplate[F[_]: Applicative: Throws](ergoTree: HexString): F[HexString] =
+    deserializeErgoTree(ergoTree).map(tree => HexString.fromStringUnsafe(Base16.encode(tree.template)))
+
+  @inline def ergoTreeToAddress[F[_]: Applicative: Throws](
     ergoTree: HexString
-  )(implicit enc: ErgoAddressEncoder): Try[ErgoAddress] =
-    Base16.decode(ergoTree.unwrapped).flatMap { bytes =>
-      enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
-    }
+  )(implicit enc: ErgoAddressEncoder): F[ErgoAddress] =
+    Base16
+      .decode(ergoTree.unwrapped)
+      .flatMap { bytes =>
+        enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
+      }
+      .fold(_.raise, _.pure)
 
   @inline def addressToErgoTree[F[_]: CRaise[*[_], AddressDecodingFailed]: Applicative](
     address: Address
@@ -46,9 +54,7 @@ object utils {
   @inline def addressToErgoTreeHex[
     F[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad
   ](address: Address)(implicit enc: ErgoAddressEncoder): F[HexString] =
-    addressToErgoTree[F](address).flatMap(tree =>
-      HexString.fromString(Base16.encode(tree.bytes))
-    )
+    addressToErgoTree[F](address).flatMap(tree => HexString.fromString(Base16.encode(tree.bytes)))
 
   @inline def hexStringToBytes[
     F[_]: CRaise[*[_], Base16DecodingFailed]: Applicative

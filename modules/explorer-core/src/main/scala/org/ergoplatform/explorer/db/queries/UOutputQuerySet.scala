@@ -1,12 +1,12 @@
 package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
+import doobie.Fragments.in
 import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
-import doobie.Fragments.in
-import org.ergoplatform.explorer.{HexString, TxId}
 import org.ergoplatform.explorer.db.models.UOutput
+import org.ergoplatform.explorer.{HexString, TxId}
 
 object UOutputQuerySet extends QuerySet {
 
@@ -21,6 +21,7 @@ object UOutputQuerySet extends QuerySet {
     "creation_height",
     "index",
     "ergo_tree",
+    "ergo_tree_template",
     "address",
     "additional_registers"
   )
@@ -46,6 +47,7 @@ object UOutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template,
          |  o.address,
          |  o.additional_registers
          |from node_u_outputs o

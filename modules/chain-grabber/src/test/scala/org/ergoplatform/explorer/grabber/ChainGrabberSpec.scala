@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.HeaderRepo
 import org.ergoplatform.explorer.db.{RealDbTest, repositories}
 import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
-import org.ergoplatform.explorer.grabber.processes.ChainGrabber
+import org.ergoplatform.explorer.grabber.processes.NetworkViewSync
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 import org.ergoplatform.explorer.settings.GrabberAppSettings
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
@@ -36,7 +36,7 @@ class ChainGrabberSpec
     forSingleInstance(consistentChainGen(12)) { apiBlocks =>
       withLiveRepo[ConnectionIO] { repo =>
         val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
-        ChainGrabber[IO, ConnectionIO](settings, networkService)(xa.trans)
+        NetworkViewSync[IO, ConnectionIO](settings, networkService)(xa.trans)
           .flatMap(_.run.take(11L).compile.drain)
           .unsafeRunSync()
         repo.getBestHeight.runWithIO() shouldBe 11
