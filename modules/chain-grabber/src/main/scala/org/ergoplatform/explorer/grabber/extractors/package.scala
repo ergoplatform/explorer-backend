@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.grabber.models.SlotData
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
-import org.ergoplatform.explorer.protocol.{RegistersParser, registers, sigma}
+import org.ergoplatform.explorer.protocol.{registers, sigma, RegistersParser}
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, BuildFrom}
 import tofu.syntax.context._
@@ -130,7 +130,7 @@ package object extractors {
                              .ergoTreeToAddress[F](o.ergoTree)
                              .map(_.toString)
                              .flatMap(Address.fromString[F])
-                scriptTemplate <- sigma.deriveErgoTreeTemplate[F](o.ergoTree)
+                scriptTemplateHash <- sigma.deriveErgoTreeTemplateHash[F](o.ergoTree)
                 registersJson = registers.expand(o.additionalRegisters).asJson
               } yield Output(
                 o.boxId,
@@ -140,7 +140,7 @@ package object extractors {
                 o.creationHeight,
                 index,
                 o.ergoTree,
-                scriptTemplate,
+                scriptTemplateHash,
                 address,
                 registersJson,
                 header.timestamp,

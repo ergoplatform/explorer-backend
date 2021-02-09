@@ -9,8 +9,9 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsing
   Base16DecodingFailed,
   ErgoTreeSerializationErr
 }
-import org.ergoplatform.explorer.{Address, CRaise, HexString}
+import org.ergoplatform.explorer.{Address, CRaise, ErgoTreeTemplateHash, HexString}
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
+import scorex.crypto.hash.Sha256
 import scorex.util.encode.Base16
 import sigmastate.Values
 import sigmastate.Values.ErgoTree
@@ -28,8 +29,10 @@ object sigma {
   @inline def deserializeErgoTree[F[_]: Applicative: Throws](raw: HexString): F[Values.ErgoTree] =
     Base16.decode(raw.unwrapped).map(treeSerializer.deserializeErgoTree).fold(_.raise, _.pure)
 
-  @inline def deriveErgoTreeTemplate[F[_]: Applicative: Throws](ergoTree: HexString): F[HexString] =
-    deserializeErgoTree(ergoTree).map(tree => HexString.fromStringUnsafe(Base16.encode(tree.template)))
+  @inline def deriveErgoTreeTemplateHash[F[_]: Applicative: Throws](ergoTree: HexString): F[ErgoTreeTemplateHash] =
+    deserializeErgoTree(ergoTree).map { tree =>
+      ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(Sha256.hash(tree.template)))
+    }
 
   @inline def ergoTreeToAddress[F[_]: Applicative: Throws](
     ergoTree: HexString

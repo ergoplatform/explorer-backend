@@ -180,7 +180,6 @@ CREATE TABLE box_registers
 
 CREATE INDEX "box_registers__id" ON box_registers (id);
 CREATE INDEX "box_registers__box_id" ON box_registers (box_id);
-CREATE INDEX "box_registers__header_id" ON box_registers (header_id);
 
 CREATE TABLE script_constants
 (

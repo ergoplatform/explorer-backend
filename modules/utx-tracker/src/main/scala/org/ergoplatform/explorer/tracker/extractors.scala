@@ -55,7 +55,7 @@ object extractors {
                          .ergoTreeToAddress[F](apiOut.ergoTree)
                          .map(_.toString)
                          .flatMap(Address.fromString[F])
-            scriptTemplate <- sigma.deriveErgoTreeTemplate[F](apiOut.ergoTree)
+            scriptTemplate <- sigma.deriveErgoTreeTemplateHash[F](apiOut.ergoTree)
             registersJson = registers.expand(apiOut.additionalRegisters).asJson
           } yield UOutput(
             apiOut.boxId,
