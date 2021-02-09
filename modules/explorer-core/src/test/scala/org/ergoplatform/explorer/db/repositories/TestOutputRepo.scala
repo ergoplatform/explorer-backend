@@ -38,28 +38,28 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   def sumAllByErgoTree(ergoTree: HexString, minConfirmations: Int): F[Long] = ???
 
-  def streamAllByErgoTreeTemplate(template: ErgoTreeTemplate, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] =
+  def streamAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] =
     ???
 
-  def streamUnspentByErgoTreeTemplate(template: ErgoTreeTemplate, offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+  def streamUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, offset: Int, limit: Int): fs2.Stream[F, Output] = ???
 
-  def streamAllByErgoTreeTemplateByEpochs(
-    template: ErgoTreeTemplate,
-    minHeight: Int,
-    maxHeight: Int
+  def streamAllByErgoTreeTemplateHashByEpochs(
+                                               hash: ErgoTreeTemplateHash,
+                                               minHeight: Int,
+                                               maxHeight: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
-  def streamUnspentByErgoTreeTemplateByEpochs(
-    template: ErgoTreeTemplate,
-    minHeight: Int,
-    maxHeight: Int
+  def streamUnspentByErgoTreeTemplateHashByEpochs(
+                                                   hash: ErgoTreeTemplateHash,
+                                                   minHeight: Int,
+                                                   maxHeight: Int
   ): fs2.Stream[F, Output] = ???
 
-  def streamUnspentByErgoTreeTemplateAndTokenId(
-    ergoTreeTemplate: ErgoTreeTemplate,
-    tokenId: TokenId,
-    offset: Int,
-    limit: Int
+  def streamUnspentByErgoTreeTemplateHashAndTokenId(
+                                                     hash: ErgoTreeTemplateHash,
+                                                     tokenId: TokenId,
+                                                     offset: Int,
+                                                     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
   override def getAllByTxId(

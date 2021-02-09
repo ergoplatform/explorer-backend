@@ -13,7 +13,7 @@ final case class Output(
   creationHeight: Int, // the height this output was created
   index: Int, // index of the output in the transaction
   ergoTree: HexString, // serialized and hex-encoded ErgoTree
-  ergoTreeTemplate: HexString, // serialized and hex-encoded ErgoTree template
+  ergoTreeTemplateHash: ErgoTreeTemplateHash, // hash of serialized and hex-encoded ErgoTree template
   address: Address, // an address derived from ergoTree (if possible)
   additionalRegisters: Json, // arbitrary key-value dictionary
   timestamp: Long, // time output appeared in the blockchain

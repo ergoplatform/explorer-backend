@@ -69,22 +69,22 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all main-chain outputs that are protected with given ergo tree template.
     */
-  def streamAllByErgoTreeTemplate(
-    template: ErgoTreeTemplate,
+  def streamAllByErgoTreeTemplateHash(
+    hash: ErgoTreeTemplateHash,
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
 
   /** Get all unspent main-chain outputs that are protected with given ergo tree template.
     */
-  def streamUnspentByErgoTreeTemplate(
-    template: ErgoTreeTemplate,
+  def streamUnspentByErgoTreeTemplateHash(
+    hash: ErgoTreeTemplateHash,
     offset: Int,
     limit: Int
   ): S[D, Output]
 
-  def streamUnspentByErgoTreeTemplateAndTokenId(
-    ergoTreeTemplate: ErgoTreeTemplate,
+  def streamUnspentByErgoTreeTemplateHashAndTokenId(
+    hash: ErgoTreeTemplateHash,
     tokenId: TokenId,
     offset: Int,
     limit: Int
@@ -92,16 +92,16 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all main-chain outputs that are protected with given ergo tree template.
     */
-  def streamAllByErgoTreeTemplateByEpochs(
-    template: ErgoTreeTemplate,
+  def streamAllByErgoTreeTemplateHashByEpochs(
+    hash: ErgoTreeTemplateHash,
     minHeight: Int,
     maxHeight: Int
   ): S[D, ExtendedOutput]
 
   /** Get all unspent main-chain outputs that are protected with given ergo tree template.
     */
-  def streamUnspentByErgoTreeTemplateByEpochs(
-    template: ErgoTreeTemplate,
+  def streamUnspentByErgoTreeTemplateHashByEpochs(
+    hash: ErgoTreeTemplateHash,
     minHeight: Int,
     maxHeight: Int
   ): S[D, Output]
@@ -193,45 +193,53 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
-    def streamAllByErgoTreeTemplate(template: ErgoTreeTemplate, offset: Int, limit: Int): Stream[D, ExtendedOutput] =
-      QS.getAllByErgoTreeTemplate(template, offset, limit).stream.translate(liftK)
+    def streamAllByErgoTreeTemplateHash(
+      hash: ErgoTreeTemplateHash,
+      offset: Int,
+      limit: Int
+    ): Stream[D, ExtendedOutput] =
+      QS.getAllByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
 
-    def streamUnspentByErgoTreeTemplate(template: ErgoTreeTemplate, offset: Int, limit: Int): Stream[D, Output] =
-      QS.getUnspentByErgoTreeTemplate(template, offset, limit).stream.translate(liftK)
+    def streamUnspentByErgoTreeTemplateHash(
+      hash: ErgoTreeTemplateHash,
+      offset: Int,
+      limit: Int
+    ): Stream[D, Output] =
+      QS.getUnspentByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
 
-    def streamAllByErgoTreeTemplateByEpochs(
-      template: ErgoTreeTemplate,
+    def streamAllByErgoTreeTemplateHashByEpochs(
+      hash: ErgoTreeTemplateHash,
       minHeight: Int,
       maxHeight: Int
     ): Stream[D, ExtendedOutput] =
-      QS.getAllByErgoTreeTemplateByEpochs(template, minHeight, maxHeight).stream.translate(liftK)
+      QS.getAllByErgoTreeTemplateHashByEpochs(hash, minHeight, maxHeight).stream.translate(liftK)
 
-    def streamUnspentByErgoTreeTemplateByEpochs(
-      template: ErgoTreeTemplate,
+    def streamUnspentByErgoTreeTemplateHashByEpochs(
+      hash: ErgoTreeTemplateHash,
       minHeight: Int,
       maxHeight: Int
     ): Stream[D, Output] =
-      QS.getUnspentByErgoTreeTemplateByEpochs(template, minHeight, maxHeight).stream.translate(liftK)
+      QS.getUnspentByErgoTreeTemplateHashByEpochs(hash, minHeight, maxHeight).stream.translate(liftK)
+
+    def streamUnspentByErgoTreeTemplateHashAndTokenId(
+      hash: ErgoTreeTemplateHash,
+      tokenId: TokenId,
+      offset: Int,
+      limit: Int
+    ): Stream[D, ExtendedOutput] =
+      QS.getUnspentByErgoTreeTemplateHashAndTokenId(
+        hash,
+        tokenId,
+        offset,
+        limit
+      ).stream
+        .translate(liftK)
 
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
-
-    def streamUnspentByErgoTreeTemplateAndTokenId(
-      ergoTreeTemplate: ErgoTreeTemplate,
-      tokenId: TokenId,
-      offset: Int,
-      limit: Int
-    ): Stream[D, ExtendedOutput] =
-      QS.getUnspentByErgoTreeTemplateAndTokenId(
-        ergoTreeTemplate,
-        tokenId,
-        offset,
-        limit
-      ).stream
-        .translate(liftK)
 
     def getAllLike(query: String): D[List[Address]] =
       QS.getAllLike(query).to[List].liftConnectionIO

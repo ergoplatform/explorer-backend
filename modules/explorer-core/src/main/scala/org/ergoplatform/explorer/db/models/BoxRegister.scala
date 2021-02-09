@@ -1,12 +1,11 @@
 package org.ergoplatform.explorer.db.models
 
-import org.ergoplatform.explorer.{BoxId, HexString, Id, RegisterId}
+import org.ergoplatform.explorer._
 
 final case class BoxRegister(
   id: RegisterId,
   boxId: BoxId,
-  headerId: Id,
-  valueType: String,
+  sigmaType: SigmaType,
   rawValue: HexString,
-  decodedValue: String
+  renderedValue: String
 )

@@ -66,7 +66,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
         val contractTemplate = dex.sellContractTemplate
         val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
-          .streamUnspentByErgoTreeTemplateAndTokenId(
+          .streamUnspentByErgoTreeTemplateHashAndTokenId(
             contractTemplate,
             arbTokenId,
             0,
@@ -84,7 +84,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
         sellOrders.foreach { case (out, asset) =>
           val expectedOuts = List(ExtendedOutput(out, None))
           outputRepo
-            .streamUnspentByErgoTreeTemplateAndTokenId(
+            .streamUnspentByErgoTreeTemplateHashAndTokenId(
               contractTemplate,
               asset.tokenId,
               0,
@@ -96,7 +96,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
         }
 
         outputRepo
-          .streamUnspentByErgoTreeTemplateAndTokenId(
+          .streamUnspentByErgoTreeTemplateHashAndTokenId(
             contractTemplate,
             arbTokenId,
             0,
@@ -115,7 +115,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
         val contractTemplate = dex.buyContractTemplate
         val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
-          .streamUnspentByErgoTreeTemplateAndTokenId(
+          .streamUnspentByErgoTreeTemplateHashAndTokenId(
             contractTemplate,
             arbTokenId,
             0,
@@ -136,7 +136,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
         val expectedOuts = List(ExtendedOutput(buyOrder, None))
 
         outputRepo
-          .streamUnspentByErgoTreeTemplateAndTokenId(
+          .streamUnspentByErgoTreeTemplateHashAndTokenId(
             contractTemplate,
             tokenEmbeddedInContract,
             0,
@@ -147,7 +147,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
           .runWithIO() should contain theSameElementsAs expectedOuts
 
         outputRepo
-          .streamUnspentByErgoTreeTemplateAndTokenId(
+          .streamUnspentByErgoTreeTemplateHashAndTokenId(
             contractTemplate,
             arbTokenId,
             0,

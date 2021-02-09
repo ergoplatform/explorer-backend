@@ -21,7 +21,7 @@ import tofu.syntax.raise._
 
 import scala.util.Try
 
-object utils {
+object sigma {
 
   private val treeSerializer: ErgoTreeSerializer = ErgoTreeSerializer.DefaultSerializer
 

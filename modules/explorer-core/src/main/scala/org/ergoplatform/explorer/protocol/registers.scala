@@ -2,8 +2,8 @@ package org.ergoplatform.explorer.protocol
 
 import io.circe.Json
 import io.circe.syntax._
-import org.ergoplatform.explorer.{HexString, RegisterId}
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
+import org.ergoplatform.explorer.{HexString, RegisterId}
 
 import scala.util.Try
 
@@ -14,9 +14,9 @@ object registers {
   @inline def expand(registers: Map[RegisterId, HexString]): Map[RegisterId, ExpandedRegister] = {
     val expanded =
       for {
-        (idSig, rawValue)               <- registers.toList
-        RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(rawValue).toOption
-      } yield idSig -> ExpandedRegister(rawValue, valueType, value)
+        (idSig, serializedValue)        <- registers.toList
+        RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(serializedValue).toOption
+      } yield idSig -> ExpandedRegister(serializedValue, valueType, value)
     expanded.toMap
   }
 
@@ -25,6 +25,6 @@ object registers {
   @inline def convolveJson(expanded: Json): Json =
     expanded
       .as[Map[RegisterId, ExpandedRegister]]
-      .map(_.mapValues(_.rawValue).asJson)
+      .map(_.mapValues(_.serializedValue).asJson)
       .fold(_ => expanded, identity)
 }

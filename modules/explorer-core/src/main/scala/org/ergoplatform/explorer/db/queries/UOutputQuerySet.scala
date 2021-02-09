@@ -21,7 +21,7 @@ object UOutputQuerySet extends QuerySet {
     "creation_height",
     "index",
     "ergo_tree",
-    "ergo_tree_template",
+    "ergo_tree_template_hash",
     "address",
     "additional_registers"
   )
@@ -47,7 +47,7 @@ object UOutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers
          |from node_u_outputs o

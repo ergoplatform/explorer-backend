@@ -7,9 +7,8 @@ object BoxRegisterQuerySet extends QuerySet {
   val fields: List[String] = List(
     "id",
     "box_id",
-    "header_id",
     "value_type",
-    "raw_value",
-    "decoded_value"
+    "serialized_value",
+    "rendered_value"
   )
 }

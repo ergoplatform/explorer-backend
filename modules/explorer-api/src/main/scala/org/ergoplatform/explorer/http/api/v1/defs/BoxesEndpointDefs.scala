@@ -1,11 +1,11 @@
 package org.ergoplatform.explorer.http.api.v1.defs
 
+import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.OutputInfo
 import org.ergoplatform.explorer.settings.RequestsSettings
-import org.ergoplatform.explorer._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -17,13 +17,15 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
   def endpoints: List[Endpoint[_, _, _, _]] =
     streamUnspentOutputsByEpochsDef ::
     streamUnspentOutputsDef ::
-    streamOutputsByErgoTreeTemplateDef ::
-    streamUnspentOutputsByErgoTreeTemplateDef ::
+    streamOutputsByErgoTreeTemplateHashDef ::
+    streamUnspentOutputsByErgoTreeTemplateHashDef ::
     unspentOutputsByTokenIdDef ::
     outputsByTokenIdDef ::
     getOutputByIdDef ::
     getOutputsByErgoTreeDef ::
+    getOutputsByErgoTreeTemplateHashDef ::
     getUnspentOutputsByErgoTreeDef ::
+    getUnspentOutputsByErgoTreeTemplateHashDef ::
     getOutputsByAddressDef ::
     getUnspentOutputsByAddressDef ::
     Nil
@@ -40,17 +42,17 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(lastEpochs(settings.maxEpochsPerRequest))
       .out(streamBody(Fs2Streams[F], schemaFor[OutputInfo], CodecFormat.Json(), None))
 
-  def streamOutputsByErgoTreeTemplateDef
-    : Endpoint[(ErgoTreeTemplate, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+  def streamOutputsByErgoTreeTemplateHashDef
+    : Endpoint[(ErgoTreeTemplateHash, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
-      .in(PathPrefix / "byErgoTreeTemplate" / path[ErgoTreeTemplate] / "stream")
+      .in(PathPrefix / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
       .in(epochSlicing(settings.maxEpochsPerRequest))
       .out(streamBody(Fs2Streams[F], schemaFor[OutputInfo], CodecFormat.Json(), None))
 
-  def streamUnspentOutputsByErgoTreeTemplateDef
-    : Endpoint[(ErgoTreeTemplate, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+  def streamUnspentOutputsByErgoTreeTemplateHashDef
+    : Endpoint[(ErgoTreeTemplateHash, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
-      .in(PathPrefix / "unspent" / "byErgoTreeTemplate" / path[ErgoTreeTemplate] / "stream")
+      .in(PathPrefix / "unspent" / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
       .in(epochSlicing(settings.maxEpochsPerRequest))
       .out(streamBody(Fs2Streams[F], schemaFor[OutputInfo], CodecFormat.Json(), None))
 
@@ -83,15 +85,16 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def getOutputsByErgoTreeTemplateDef: Endpoint[(ErgoTreeTemplate, Paging), ApiErr, Items[OutputInfo], Any] =
+  def getOutputsByErgoTreeTemplateHashDef: Endpoint[(ErgoTreeTemplateHash, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "byErgoTreeTemplate" / path[ErgoTreeTemplate])
+      .in(PathPrefix / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash])
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def getUnspentOutputsByErgoTreeTemplateDef: Endpoint[(ErgoTreeTemplate, Paging), ApiErr, Items[OutputInfo], Any] =
+  def getUnspentOutputsByErgoTreeTemplateHashDef
+    : Endpoint[(ErgoTreeTemplateHash, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "unspent" / "byErgoTreeTemplate" / path[ErgoTreeTemplate])
+      .in(PathPrefix / "unspent" / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash])
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 

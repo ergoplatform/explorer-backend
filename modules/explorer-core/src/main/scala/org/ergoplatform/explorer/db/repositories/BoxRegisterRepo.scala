@@ -34,9 +34,9 @@ object BoxRegisterRepo {
     import org.ergoplatform.explorer.db.queries.{BoxRegisterQuerySet => QS}
 
     def insert(register: BoxRegister): D[Unit] =
-      QS.insert(register).void.liftConnectionIO
+      QS.insertNoConflict(register).void.liftConnectionIO
 
     def insertMany(registers: List[BoxRegister]): D[Unit] =
-      QS.insertMany(registers).void.liftConnectionIO
+      QS.insertManyNoConflict(registers).void.liftConnectionIO
   }
 }

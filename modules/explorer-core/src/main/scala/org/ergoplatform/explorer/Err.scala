@@ -1,7 +1,6 @@
 package org.ergoplatform.explorer
 
 import scorex.util.encode.Base16
-import sigmastate.Values.ErgoTree
 
 import scala.util.control.NoStackTrace
 

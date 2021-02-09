@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.db.models
 
 import io.circe.Json
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
+import org.ergoplatform.explorer._
 
 /** Represents `node_u_outputs` table (Unconfirmed Output, which is a part of Unconfirmed Transaction).
   */
@@ -12,7 +12,7 @@ final case class UOutput(
   creationHeight: Int, // the height this output was created
   index: Int, // index of the output in the transaction
   ergoTree: HexString, // serialized and hex-encoded ErgoTree
-  ergoTreeTemplate: HexString, // serialized and hex-encoded ErgoTree template
+  ergoTreeTemplateHash: ErgoTreeTemplateHash, // hash of serialized and hex-encoded ErgoTree template
   address: Address, // an address derived from ergoTree (if possible)
   additionalRegisters: Json // arbitrary key-value dictionary
 )

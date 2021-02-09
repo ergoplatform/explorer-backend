@@ -6,8 +6,8 @@ import org.ergoplatform.contracts.{DexBuyerContractParameters, DexLimitOrderCont
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{DexBuyOrderAttributesFailed, DexSellOrderAttributesFailed}
-import org.ergoplatform.explorer.protocol.utils.bytesToErgoTree
-import org.ergoplatform.explorer.{CRaise, ErgoTreeTemplate, HexString, TokenId}
+import org.ergoplatform.explorer.protocol.sigma.bytesToErgoTree
+import org.ergoplatform.explorer.{CRaise, ErgoTreeTemplateHash, HexString, TokenId}
 import scorex.util.encode.Base16
 import sigmastate.Values.{ByteArrayConstant, ErgoTree}
 import sigmastate.basics.DLogProtocol.ProveDlog
@@ -37,11 +37,11 @@ object dex {
     DexLimitOrderContracts.buyerContractInstance(params).ergoTree
   }
 
-  def sellContractTemplate: ErgoTreeTemplate =
-    ErgoTreeTemplate.fromStringUnsafe(Base16.encode(sellContractInstance.template))
+  def sellContractTemplate: ErgoTreeTemplateHash =
+    ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(sellContractInstance.template))
 
-  def buyContractTemplate: ErgoTreeTemplate =
-    ErgoTreeTemplate.fromStringUnsafe(Base16.encode(buyContractInstance.template))
+  def buyContractTemplate: ErgoTreeTemplateHash =
+    ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(buyContractInstance.template))
 
   /** Extracts tokens price embedded in the DEX sell order contract
     * @param tree ErgoTree of the contract
@@ -68,7 +68,7 @@ object dex {
   def getTokenPriceFromSellOrderTree[
     F[_]: CRaise[*[_], DexErr]: FlatMap: Applicative
   ](ergoTreeStr: HexString): F[Long] =
-    utils
+    sigma
       .hexStringToBytes[F](ergoTreeStr)
       .flatMap(bytes =>
         bytesToErgoTree[F](bytes)
@@ -114,7 +114,7 @@ object dex {
   def getTokenInfoFromBuyOrderTree[
     F[_]: CRaise[*[_], DexErr]: CRaise[*[_], RefinementFailed]: Monad
   ](ergoTreeStr: HexString): F[(TokenId, Long)] =
-    utils
+    sigma
       .hexStringToBytes[F](ergoTreeStr)
       .flatMap(bytes =>
         bytesToErgoTree[F](bytes)

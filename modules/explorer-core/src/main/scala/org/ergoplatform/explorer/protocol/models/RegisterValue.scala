@@ -1,3 +1,5 @@
 package org.ergoplatform.explorer.protocol.models
 
-final case class RegisterValue(valueType: String, value: String)
+import org.ergoplatform.explorer.SigmaType
+
+final case class RegisterValue(sigmaType: SigmaType, value: String)

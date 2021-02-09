@@ -47,7 +47,7 @@ object DexService {
       paging: Paging
     ): Stream[F, DexSellOrderInfo] =
       (for {
-        output <- outputRepo.streamUnspentByErgoTreeTemplateAndTokenId(
+        output <- outputRepo.streamUnspentByErgoTreeTemplateHashAndTokenId(
                     dex.sellContractTemplate,
                     tokenId,
                     paging.offset,
@@ -64,7 +64,7 @@ object DexService {
       paging: Paging
     ): Stream[F, DexBuyOrderInfo] =
       (for {
-        eOut <- outputRepo.streamUnspentByErgoTreeTemplateAndTokenId(
+        eOut <- outputRepo.streamUnspentByErgoTreeTemplateHashAndTokenId(
                   dex.buyContractTemplate,
                   tokenId,
                   paging.offset,

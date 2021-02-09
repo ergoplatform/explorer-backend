@@ -8,6 +8,7 @@ import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
+import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Output
@@ -16,10 +17,9 @@ import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputR
 import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.OutputInfo
-import org.ergoplatform.explorer.protocol.utils._
+import org.ergoplatform.explorer.protocol.sigma._
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
-import org.ergoplatform.explorer._
 import tofu.fs2Instances._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.compile._
@@ -48,19 +48,19 @@ trait BoxesService[F[_]] {
 
   /** Get all outputs containing a given `tokenId`.
     */
-  def getOutputsByErgoTreeTemplate(template: ErgoTreeTemplate, paging: Paging): F[Items[OutputInfo]]
+  def getOutputsByErgoTreeTemplateHash(template: ErgoTreeTemplateHash, paging: Paging): F[Items[OutputInfo]]
 
   /** Get all unspent outputs containing a given `tokenId`.
     */
-  def getUnspentOutputsErgoTreeTemplate(template: ErgoTreeTemplate, paging: Paging): F[Items[OutputInfo]]
+  def getUnspentOutputsByErgoTreeTemplateHash(template: ErgoTreeTemplateHash, paging: Paging): F[Items[OutputInfo]]
 
   /** Get all outputs containing a given `tokenId`.
     */
-  def streamOutputsByErgoTreeTemplate(template: ErgoTreeTemplate, epochs: Epochs): Stream[F, OutputInfo]
+  def streamOutputsByErgoTreeTemplateHash(template: ErgoTreeTemplateHash, epochs: Epochs): Stream[F, OutputInfo]
 
   /** Get all unspent outputs containing a given `tokenId`.
     */
-  def streamUnspentOutputsErgoTreeTemplate(template: ErgoTreeTemplate, epochs: Epochs): Stream[F, OutputInfo]
+  def streamUnspentOutputsByErgoTreeTemplateHash(template: ErgoTreeTemplateHash, epochs: Epochs): Stream[F, OutputInfo]
 
   /** Get all unspent outputs appeared in the blockchain after `minHeight`.
     */
@@ -138,30 +138,34 @@ object BoxesService {
         .to[List]
         .map(items => Items(items, items.size))
 
-    def getOutputsByErgoTreeTemplate(template: ErgoTreeTemplate, paging: Paging): F[Items[OutputInfo]] =
-      outputs.streamAllByErgoTreeTemplate(template, paging.offset, paging.limit)
+    def getOutputsByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, paging: Paging): F[Items[OutputInfo]] =
+      outputs
+        .streamAllByErgoTreeTemplateHash(hash, paging.offset, paging.limit)
         .chunkN(serviceSettings.chunkSize)
         .through(toOutputInfo)
         .thrushK(trans.xas)
         .to[List]
         .map(items => Items(items, items.size))
 
-    def getUnspentOutputsErgoTreeTemplate(template: ErgoTreeTemplate, paging: Paging): F[Items[OutputInfo]] =
-      outputs.streamUnspentByErgoTreeTemplate(template, paging.offset, paging.limit)
+    def getUnspentOutputsByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, paging: Paging): F[Items[OutputInfo]] =
+      outputs
+        .streamUnspentByErgoTreeTemplateHash(hash, paging.offset, paging.limit)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)
         .to[List]
         .map(items => Items(items, items.size))
 
-    def streamOutputsByErgoTreeTemplate(template: ErgoTreeTemplate, epochs: Epochs): Stream[F, OutputInfo] =
-      outputs.streamAllByErgoTreeTemplateByEpochs(template, epochs.minHeight, epochs.maxHeight)
+    def streamOutputsByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, epochs: Epochs): Stream[F, OutputInfo] =
+      outputs
+        .streamAllByErgoTreeTemplateHashByEpochs(hash, epochs.minHeight, epochs.maxHeight)
         .chunkN(serviceSettings.chunkSize)
         .through(toOutputInfo)
         .thrushK(trans.xas)
 
-    def streamUnspentOutputsErgoTreeTemplate(template: ErgoTreeTemplate, epochs: Epochs): Stream[F, OutputInfo] =
-      outputs.streamUnspentByErgoTreeTemplateByEpochs(template, epochs.minHeight, epochs.maxHeight)
+    def streamUnspentOutputsByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, epochs: Epochs): Stream[F, OutputInfo] =
+      outputs
+        .streamUnspentByErgoTreeTemplateHashByEpochs(hash, epochs.minHeight, epochs.maxHeight)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)

@@ -25,7 +25,7 @@ object OutputQuerySet extends QuerySet {
     "creation_height",
     "index",
     "ergo_tree",
-    "ergo_tree_template",
+    "ergo_tree_template_hash",
     "address",
     "additional_registers",
     "timestamp",
@@ -42,7 +42,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -68,7 +68,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -95,6 +95,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -181,7 +182,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -205,7 +206,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -230,7 +231,7 @@ object OutputQuerySet extends QuerySet {
            |  o.creation_height,
            |  o.index,
            |  o.ergo_tree,
-           |  o.ergo_tree_template,
+           |  o.ergo_tree_template_hash,
            |  o.address,
            |  o.additional_registers,
            |  o.timestamp,
@@ -285,7 +286,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -310,7 +311,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -334,7 +335,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -349,7 +350,7 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[Output]
 
-  def getAllByErgoTreeTemplate(template: ErgoTreeTemplate, offset: Int, limit: Int)(implicit
+  def getAllByErgoTreeTemplateHash(templateHash: ErgoTreeTemplateHash, offset: Int, limit: Int)(implicit
     lh: LogHandler
   ): Query0[ExtendedOutput] =
     sql"""
@@ -361,7 +362,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -369,12 +370,12 @@ object OutputQuerySet extends QuerySet {
          |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
-         |where o.ergo_tree_template = $template
+         |where o.ergo_tree_template_hash = $templateHash
          |order by o.creation_height asc
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
-  def getUnspentByErgoTreeTemplate(template: ErgoTreeTemplate, offset: Int, limit: Int)(implicit
+  def getUnspentByErgoTreeTemplateHash(templateHash: ErgoTreeTemplateHash, offset: Int, limit: Int)(implicit
     lh: LogHandler
   ): Query0[Output] =
     sql"""
@@ -386,7 +387,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -395,41 +396,17 @@ object OutputQuerySet extends QuerySet {
          |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
-         |  and o.ergo_tree_template = $template
+         |  and o.ergo_tree_template_hash = $templateHash
          |order by o.creation_height asc
          |offset $offset limit $limit
          |""".stripMargin.query[Output]
 
-  def getUnspentByErgoTreeTemplateAndTokenId(template: ErgoTreeTemplate, tokenId: TokenId, offset: Int, limit: Int)(
-    implicit lh: LogHandler
-  ): Query0[ExtendedOutput] =
-    sql"""
-         |select distinct on (o.box_id, o.header_id, o.creation_height)
-         |  o.box_id,
-         |  o.tx_id,
-         |  o.header_id,
-         |  o.value,
-         |  o.creation_height,
-         |  o.index,
-         |  o.ergo_tree,
-         |  o.ergo_tree_template,
-         |  o.address,
-         |  o.additional_registers,
-         |  o.timestamp,
-         |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
-         |from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
-         |left join node_assets a on o.box_id = a.box_id
-         |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
-         |  and a.token_id = $tokenId
-         |  and o.ergo_tree_template = $template
-         |order by o.creation_height asc
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput]
-
-  def getAllByErgoTreeTemplateByEpochs(template: ErgoTreeTemplate, minHeight: Int, maxHeight: Int)(implicit
+  def getUnspentByErgoTreeTemplateHashAndTokenId(
+    templateHash: ErgoTreeTemplateHash,
+    tokenId: TokenId,
+    offset: Int,
+    limit: Int
+  )(implicit
     lh: LogHandler
   ): Query0[ExtendedOutput] =
     sql"""
@@ -441,7 +418,36 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  case i.main_chain when false then null else i.tx_id end
+         |from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_assets a on o.box_id = a.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and a.token_id = $tokenId
+         |  and o.ergo_tree_template_hash = $templateHash
+         |order by o.creation_height asc
+         |offset $offset limit $limit
+         |""".stripMargin.query[ExtendedOutput]
+
+  def getAllByErgoTreeTemplateHashByEpochs(templateHash: ErgoTreeTemplateHash, minHeight: Int, maxHeight: Int)(implicit
+    lh: LogHandler
+  ): Query0[ExtendedOutput] =
+    sql"""
+         |select distinct on (o.box_id, o.header_id, o.creation_height)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -450,13 +456,13 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |left join node_headers h on h.id = o.header_id
-         |where o.ergo_tree_template = $template
+         |where o.ergo_tree_template_hash = $templateHash
          |  and h.height >= $minHeight
          |  and h.height <= $maxHeight
          |order by h.height asc
          |""".stripMargin.query[ExtendedOutput]
 
-  def getUnspentByErgoTreeTemplateByEpochs(template: ErgoTreeTemplate, minHeight: Int, maxHeight: Int)(implicit
+  def getUnspentByErgoTreeTemplateHashByEpochs(templateHash: ErgoTreeTemplateHash, minHeight: Int, maxHeight: Int)(implicit
     lh: LogHandler
   ): Query0[Output] =
     sql"""
@@ -468,7 +474,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
-         |  o.ergo_tree_template,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -477,7 +483,7 @@ object OutputQuerySet extends QuerySet {
          |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
-         |  and o.ergo_tree_template = $template
+         |  and o.ergo_tree_template_hash = $templateHash
          |  and h.height >= $minHeight
          |  and h.height <= $maxHeight
          |order by h.height asc

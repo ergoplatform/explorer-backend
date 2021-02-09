@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.grabber.models.SlotData
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
-import org.ergoplatform.explorer.protocol.{RegistersParser, registers, utils}
+import org.ergoplatform.explorer.protocol.{RegistersParser, registers, sigma}
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, BuildFrom}
 import tofu.syntax.context._
@@ -126,11 +126,11 @@ package object extractors {
           apiTx.outputs.toList.zipWithIndex
             .traverse { case (o, index) =>
               for {
-                address <- utils
+                address <- sigma
                              .ergoTreeToAddress[F](o.ergoTree)
                              .map(_.toString)
                              .flatMap(Address.fromString[F])
-                scriptTemplate <- utils.deriveErgoTreeTemplate[F](o.ergoTree)
+                scriptTemplate <- sigma.deriveErgoTreeTemplate[F](o.ergoTree)
                 registersJson = registers.expand(o.additionalRegisters).asJson
               } yield Output(
                 o.boxId,
@@ -167,7 +167,7 @@ package object extractors {
         out                           <- tx.outputs.toList
         (id, rawValue)                <- out.additionalRegisters.toList
         RegisterValue(typeSig, value) <- RegistersParser[Try].parseAny(rawValue).toOption
-      } yield BoxRegister(id, out.boxId, apiTxs.headerId, typeSig, rawValue, value)
+      } yield BoxRegister(id, out.boxId, typeSig, rawValue, value)
     }
 
   implicit def tokensBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Token]] =

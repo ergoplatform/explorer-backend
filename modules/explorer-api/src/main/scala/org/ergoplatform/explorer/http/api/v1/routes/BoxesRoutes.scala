@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
 import org.ergoplatform.explorer.http.api.v1.defs.BoxesEndpointDefs
 import org.ergoplatform.explorer.http.api.v1.services.BoxesService
-import org.ergoplatform.explorer.http.api.{ApiErr, streaming}
+import org.ergoplatform.explorer.http.api.{streaming, ApiErr}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
@@ -22,13 +22,15 @@ final class BoxesRoutes[
   val routes: HttpRoutes[F] =
     streamUnspentOutputsByEpochsR <+>
     streamUnspentOutputsR <+>
-    streamOutputsByErgoTreeTemplateR <+>
-    streamUnspentOutputsByErgoTreeTemplateR <+>
+    streamOutputsByErgoTreeTemplateHashR <+>
+    streamUnspentOutputsByErgoTreeTemplateHashR <+>
     unspentOutputsByTokenIdR <+>
     outputsByTokenIdR <+>
     getOutputByIdR <+>
     getOutputsByErgoTreeR <+>
     getUnspentOutputsByErgoTreeR <+>
+    getOutputsByErgoTreeTemplateHashR <+>
+    getUnspentOutputsByErgoTreeTemplateHashR <+>
     getOutputsByAddressR <+>
     getUnspentOutputsByAddressR
 
@@ -42,14 +44,14 @@ final class BoxesRoutes[
       streaming.bytesStream(service.streamUnspentOutputs(lastEpochs))
     }
 
-  private def streamOutputsByErgoTreeTemplateR: HttpRoutes[F] =
-    defs.streamOutputsByErgoTreeTemplateDef.toRoutes { case (template, epochs) =>
-      streaming.bytesStream(service.streamOutputsByErgoTreeTemplate(template, epochs))
+  private def streamOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
+    defs.streamOutputsByErgoTreeTemplateHashDef.toRoutes { case (template, epochs) =>
+      streaming.bytesStream(service.streamOutputsByErgoTreeTemplateHash(template, epochs))
     }
 
-  private def streamUnspentOutputsByErgoTreeTemplateR: HttpRoutes[F] =
-    defs.streamUnspentOutputsByErgoTreeTemplateDef.toRoutes { case (template, epochs) =>
-      streaming.bytesStream(service.streamUnspentOutputsErgoTreeTemplate(template, epochs))
+  private def streamUnspentOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
+    defs.streamUnspentOutputsByErgoTreeTemplateHashDef.toRoutes { case (template, epochs) =>
+      streaming.bytesStream(service.streamUnspentOutputsByErgoTreeTemplateHash(template, epochs))
     }
 
   private def outputsByTokenIdR: HttpRoutes[F] =
@@ -79,6 +81,16 @@ final class BoxesRoutes[
   private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
     defs.getUnspentOutputsByErgoTreeDef.toRoutes { case (tree, paging) =>
       service.getUnspentOutputsByErgoTree(tree, paging).adaptThrowable.value
+    }
+
+  private def getOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
+    defs.getOutputsByErgoTreeTemplateHashDef.toRoutes { case (tree, paging) =>
+      service.getOutputsByErgoTreeTemplateHash(tree, paging).adaptThrowable.value
+    }
+
+  private def getUnspentOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
+    defs.getUnspentOutputsByErgoTreeTemplateHashDef.toRoutes { case (tree, paging) =>
+      service.getUnspentOutputsByErgoTreeTemplateHash(tree, paging).adaptThrowable.value
     }
 
   private def getOutputsByAddressR: HttpRoutes[F] =

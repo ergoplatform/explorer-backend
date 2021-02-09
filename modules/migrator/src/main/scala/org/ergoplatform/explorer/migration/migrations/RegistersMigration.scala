@@ -61,9 +61,9 @@ final class RegistersMigration(
         val registers = for {
           (id, rawValue)                  <- rawRegisters.toList
           RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(rawValue).toOption
-        } yield BoxRegister(id, out.boxId, out.headerId, valueType, rawValue, value)
+        } yield BoxRegister(id, out.boxId, valueType, rawValue, value)
         val registersJson = registers
-          .map { case BoxRegister(id, _, _, valueType, rawValue, decodedValue) =>
+          .map { case BoxRegister(id, _, valueType, rawValue, decodedValue) =>
             id.entryName -> ExpandedRegister(rawValue, valueType, decodedValue)
           }
           .toMap
