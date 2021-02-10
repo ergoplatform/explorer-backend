@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.grabber
 
 import cats.instances.list._
+import cats.instances.try_._
 import cats.syntax.traverse._
 import cats.{Applicative, Monad}
 import io.circe.syntax._
@@ -168,6 +169,18 @@ package object extractors {
         (id, rawValue)                <- out.additionalRegisters.toList
         RegisterValue(typeSig, value) <- RegistersParser[Try].parseAny(rawValue).toOption
       } yield BoxRegister(id, out.boxId, typeSig, rawValue, value)
+    }
+
+  implicit def scriptConstantsBuildFrom[F[_]: Monad]: BuildFrom[F, SlotData, List[ScriptConstant]] =
+    BuildFrom.pure { case SlotData(ApiFullBlock(_, apiTxs, _, _, _), _) =>
+      for {
+        tx        <- apiTxs.transactions
+        out       <- tx.outputs.toList
+        constants <- sigma.extractErgoTreeConstants[Try](out.ergoTree).toOption.toList
+        (ix, tp, v, rv) <- constants.flatMap { case (ix, c, v) =>
+                             sigma.renderEvaluatedValue(c).map { case (tp, rv) => (ix, tp, v, rv) }.toList
+                           }
+      } yield ScriptConstant(ix, out.boxId, tp, v, rv)
     }
 
   implicit def tokensBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Token]] =

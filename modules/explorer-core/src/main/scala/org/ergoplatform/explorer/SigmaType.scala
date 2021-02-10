@@ -108,8 +108,9 @@ object SigmaType {
   private def render(t: SigmaType): String = {
     def go(t0: SigmaType): Eval[String] =
       t0 match {
-        case st: SimpleKindSigmaType     => Eval.now(st.toString)
-        case hkt: HigherKinded1SigmaType => Eval.defer(go(hkt.typeParam)).map(r => s"${hkt.getClass.getName}[$r]")
+        case st: SimpleKindSigmaType => Eval.now(st.entryName)
+        case coll: SCollection       => Eval.defer(go(coll.typeParam)).map(r => s"Coll[$r]")
+        case opt: SOption            => Eval.defer(go(opt.typeParam)).map(r => s"Option[$r]")
         case STupleN(tParams) =>
           tParams.traverse(tp => Eval.defer(go(tp))).map(tps => "(" + tps.toList.mkString(", ") + ")")
       }

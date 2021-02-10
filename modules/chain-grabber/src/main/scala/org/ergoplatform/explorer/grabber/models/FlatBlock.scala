@@ -16,5 +16,6 @@ final case class FlatBlock(
   outputs: List[Output],
   assets: List[Asset],
   registers: List[BoxRegister],
-  tokens: List[Token]
+  tokens: List[Token],
+  constants: List[ScriptConstant]
 )

@@ -6,12 +6,13 @@ import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
-import cats.{Monad, Parallel, ~>}
+import cats.{~>, Monad, Parallel}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.macros.syntax.lens._
 import mouse.anyf._
+import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.Err.ProcessingErr
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
@@ -19,14 +20,13 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
 import org.ergoplatform.explorer.grabber.extractors._
 import org.ergoplatform.explorer.grabber.models.{FlatBlock, SlotData}
-import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.grabber.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.{GrabberAppSettings, ProtocolSettings}
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
-import tofu.{Context, MonadThrow, Raise, Throws, WithContext}
+import tofu._
 
 trait NetworkViewSync[F[_]] {
 
@@ -192,6 +192,7 @@ object NetworkViewSync {
       repos.outputs.insertMany(block.outputs) >>
       repos.assets.insertMany(block.assets) >>
       repos.registers.insertMany(block.registers) >>
-      repos.tokens.insertMany(block.tokens)
+      repos.tokens.insertMany(block.tokens) >>
+      repos.constants.insertMany(block.constants)
   }
 }

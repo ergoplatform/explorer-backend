@@ -2,8 +2,8 @@ package org.ergoplatform.explorer.protocol
 
 import cats.data.NonEmptyList
 import org.ergoplatform.explorer.HexString
-import org.ergoplatform.explorer.SigmaType.{SCollection, STupleN}
 import org.ergoplatform.explorer.SigmaType.SimpleKindSigmaType._
+import org.ergoplatform.explorer.SigmaType.{SCollection, STupleN}
 import org.ergoplatform.explorer.protocol.models.RegisterValue
 import org.scalatest.{Matchers, PropSpec}
 
@@ -20,11 +20,18 @@ class RegistersParserSpec extends PropSpec with Matchers {
   }
   property("Nested Coll register parsing") {
     val raw = HexString.fromStringUnsafe("0c400504b40180febe81027880d4d4ab015a80bfdf80013c80aaea55")
-    RegistersParser[Try].parseAny(raw) shouldBe Success(RegisterValue(SCollection(STupleN(NonEmptyList.of(SInt, SLong))), "[(90,270000000),(60,180000000),(45,135000000),(30,90000000)]"))
+    RegistersParser[Try].parseAny(raw) shouldBe Success(
+      RegisterValue(
+        SCollection(STupleN(NonEmptyList.of(SInt, SLong))),
+        "[[90,270000000],[60,180000000],[45,135000000],[30,90000000]]"
+      )
+    )
   }
   property("GroupElement register parsing") {
     val raw = HexString.fromStringUnsafe("0702d73c1f31a706c42ff3f50a57474e0319556e175e4c31cfcc327ad23f1bbbaafd")
-    RegistersParser[Try].parseAny(raw) shouldBe Success(RegisterValue(SGroupElement, "02d73c1f31a706c42ff3f50a57474e0319556e175e4c31cfcc327ad23f1bbbaafd"))
+    RegistersParser[Try].parseAny(raw) shouldBe Success(
+      RegisterValue(SGroupElement, "02d73c1f31a706c42ff3f50a57474e0319556e175e4c31cfcc327ad23f1bbbaafd")
+    )
   }
   property("ByteArray register parsing") {
     val raw = HexString.fromStringUnsafe(
