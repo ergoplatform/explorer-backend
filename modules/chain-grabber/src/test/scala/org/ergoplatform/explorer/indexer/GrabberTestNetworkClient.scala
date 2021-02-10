@@ -1,10 +1,10 @@
-package org.ergoplatform.explorer.grabber
+package org.ergoplatform.explorer.indexer
 
 import cats.Applicative
 import cats.syntax.applicative._
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.{ErgoLikeTransaction, explorer}
-import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
+import org.ergoplatform.explorer.indexer.GrabberTestNetworkClient.Source
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 
 final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)

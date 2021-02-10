@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.grabber
+package org.ergoplatform.explorer.indexer
 
 import cats.instances.list._
 import cats.instances.try_._
@@ -7,7 +7,7 @@ import cats.{Applicative, Monad}
 import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.models._
-import org.ergoplatform.explorer.grabber.models.SlotData
+import org.ergoplatform.explorer.indexer.models.SlotData
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
 import org.ergoplatform.explorer.protocol.{registers, sigma, RegistersParser}
 import org.ergoplatform.explorer.settings.ProtocolSettings

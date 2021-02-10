@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.grabber.processes
+package org.ergoplatform.explorer.indexer.processes
 
 import cats.effect.concurrent.Ref
 import cats.effect.{Sync, Timer}
@@ -18,9 +18,9 @@ import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockInfo
-import org.ergoplatform.explorer.grabber.extractors._
-import org.ergoplatform.explorer.grabber.models.{FlatBlock, SlotData}
-import org.ergoplatform.explorer.grabber.modules.RepoBundle
+import org.ergoplatform.explorer.indexer.extractors._
+import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData}
+import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants._
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.{GrabberAppSettings, ProtocolSettings}
@@ -28,14 +28,14 @@ import tofu.syntax.monadic._
 import tofu.syntax.raise._
 import tofu._
 
-trait NetworkViewSync[F[_]] {
+trait ChainIndexing[F[_]] {
 
   /** Sync local view with the network.
     */
   def run: Stream[F, Unit]
 }
 
-object NetworkViewSync {
+object ChainIndexing {
 
   def apply[
     F[_]: Sync: Parallel: Timer,
@@ -43,7 +43,7 @@ object NetworkViewSync {
   ](
     settings: GrabberAppSettings,
     network: ErgoNetworkClient[F]
-  )(xa: D ~> F): F[NetworkViewSync[F]] =
+  )(xa: D ~> F): F[ChainIndexing[F]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       Ref.of[F, Option[BlockInfo]](None).flatMap { cache =>
         RepoBundle[F, D].map(new Live[F, D](cache, settings, network, _)(xa))
@@ -59,7 +59,7 @@ object NetworkViewSync {
     network: ErgoNetworkClient[F],
     repos: RepoBundle[D]
   )(xa: D ~> F)
-    extends NetworkViewSync[F] {
+    extends ChainIndexing[F] {
 
     private val log = Logger[F]
 

@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.grabber.modules
+package org.ergoplatform.explorer.indexer.modules
 
 import cats.effect.Sync
 import fs2.Stream

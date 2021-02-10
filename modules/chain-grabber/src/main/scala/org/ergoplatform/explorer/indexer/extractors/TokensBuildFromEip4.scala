@@ -1,8 +1,8 @@
-package org.ergoplatform.explorer.grabber.extractors
+package org.ergoplatform.explorer.indexer.extractors
 
 import cats.Applicative
 import org.ergoplatform.explorer.db.models.Token
-import org.ergoplatform.explorer.grabber.models.SlotData
+import org.ergoplatform.explorer.indexer.models.SlotData
 import org.ergoplatform.explorer.protocol.TokenPropsParser
 import org.ergoplatform.explorer.protocol.models.ApiTransaction
 import org.ergoplatform.explorer.{BuildFrom, TokenId, TokenType}
