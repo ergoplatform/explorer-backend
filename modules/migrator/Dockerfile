@@ -14,4 +14,4 @@ CMD ["/usr/bin/java", "-jar", "/migrator.jar"]
 
 FROM openjdk:8-jre-slim
 COPY --from=builder /migrator.jar /migrator.jar
-ENTRYPOINT java -jar /migrator.jar $0
+ENTRYPOINT java -jar /migrator.jar $0 $1

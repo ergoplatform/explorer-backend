@@ -5,18 +5,27 @@ import doobie.util.transactor.Transactor
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.DoobieTrans
 import org.ergoplatform.explorer.migration.configs.{AssetsMigrationConfig, MigrationConfig, RegistersMigrationConfig}
-import org.ergoplatform.explorer.migration.migrations.{AssetsMigration, RegistersMigration}
+import org.ergoplatform.explorer.migration.migrations.{
+  AssetsMigration,
+  RegistersAndConstantsMigration,
+  RegistersMigration
+}
 import pureconfig.generic.auto._
+import tofu.syntax.console._
 
 import scala.concurrent.duration._
 
 object Application extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
-    resources(args.headOption).use { case (xa, conf) =>
+    resources(args.lift(1)).use { case (xa, conf) =>
       val migrations = makeMigrations(conf.offset, xa)(conf.addressEncoder)
-      migrations(conf.migrationId)
-        .as(ExitCode.Success)
+      args.headOption match {
+        case Some(migrationId) =>
+          migrations(migrationId) as ExitCode.Success
+        case None =>
+          putErrLn[IO]("Migration ID must be provided via program argument") as ExitCode.Error
+      }
     }
 
   private def resources(configPathOpt: Option[String]) =
@@ -28,6 +37,10 @@ object Application extends IOApp {
   private def makeMigrations(offset: Int, xa: Transactor[IO])(implicit e: ErgoAddressEncoder) =
     Map(
       "v4v5" -> RegistersMigration(RegistersMigrationConfig(batchSize = 1000, interval = 500.millis, offset), xa),
-      "v5v6" -> AssetsMigration(AssetsMigrationConfig(batchSize = 1000, interval = 500.millis, offset), xa)
+      "v5v6" -> AssetsMigration(AssetsMigrationConfig(batchSize = 1000, interval = 500.millis, offset), xa),
+      "v6v7" -> RegistersAndConstantsMigration(
+        RegistersMigrationConfig(batchSize = 1000, interval = 500.millis, offset),
+        xa
+      )
     )
 }

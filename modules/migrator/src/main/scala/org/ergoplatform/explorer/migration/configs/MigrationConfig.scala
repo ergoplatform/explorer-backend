@@ -12,7 +12,6 @@ import pureconfig.module.catseffect._
 
 final case class MigrationConfig(
   db: DbSettings,
-  migrationId: String,
   offset: Int,
   networkPrefix: String Refined ValidByte
 ) {
