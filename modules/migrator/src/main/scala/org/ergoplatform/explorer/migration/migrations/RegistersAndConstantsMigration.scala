@@ -1,8 +1,10 @@
 package org.ergoplatform.explorer.migration.migrations
 
+import cats.Parallel
 import cats.effect.{IO, Timer}
 import cats.instances.list._
 import cats.instances.try_._
+import cats.syntax.parallel._
 import cats.syntax.traverse._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
@@ -15,24 +17,28 @@ import io.circe.syntax._
 import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.{BoxRegister, Output, ScriptConstant}
 import org.ergoplatform.explorer.db.repositories.{BoxRegisterRepo, ScriptConstantsRepo}
-import org.ergoplatform.explorer.migration.configs.RegistersMigrationConfig
+import org.ergoplatform.explorer.migration.configs.V7MigrationConfig
 import org.ergoplatform.explorer.migration.migrations.RegistersAndConstantsMigration.LegacyExpandedRegister
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
-import org.ergoplatform.explorer.protocol.{sigma, RegistersParser}
-import org.ergoplatform.explorer.{HexString, RegisterId, SigmaType}
+import org.ergoplatform.explorer.protocol.{RegistersParser, sigma}
+import org.ergoplatform.explorer.{HexString, RegisterId}
 import tofu.syntax.monadic._
 
 import scala.util.Try
 
 final class RegistersAndConstantsMigration(
-  conf: RegistersMigrationConfig,
+  conf: V7MigrationConfig,
   registers: BoxRegisterRepo[ConnectionIO],
   constants: ScriptConstantsRepo[ConnectionIO],
   xa: Transactor[IO],
   log: Logger[IO]
-)(implicit timer: Timer[IO]) {
+)(implicit timer: Timer[IO], par: Parallel[IO]) {
 
-  def run: IO[Unit] = updateSchema >> migrateBatch(conf.offset, conf.batchSize)
+  def run: IO[Unit] = updateSchema >> countOutputs >>= { total =>
+    val interval         = total - conf.offset
+    val singleSectionLen = interval / conf.parallelism
+    (0 to conf.parallelism).toList.parTraverse_(i => migrateBatch(conf.offset + singleSectionLen * i, conf.batchSize))
+  }
 
   def updateSchema: IO[Unit] = {
     val txn =
@@ -100,6 +106,9 @@ final class RegistersAndConstantsMigration(
         updatedOutput -> registers
       }
 
+  def countOutputs: IO[Int] =
+    sql"select count(*) from node_outputs".query[Int].unique.transact(xa)
+
   def outputsBatch(offset: Int, limit: Int): ConnectionIO[List[Output]] =
     sql"""
          |select
@@ -118,7 +127,7 @@ final class RegistersAndConstantsMigration(
          |from node_outputs o
          |left join box_registers r on o.box_id = r.box_id
          |where r.id is null and o.additional_registers::text != '{}'
-         |order by o.creation_height asc
+         |order by o.timestamp asc
          |offset $offset limit $limit
          """.stripMargin.query[Output].to[List]
 
@@ -181,9 +190,9 @@ object RegistersAndConstantsMigration {
   )
 
   def apply(
-    conf: RegistersMigrationConfig,
+    conf: V7MigrationConfig,
     xa: Transactor[IO]
-  )(implicit timer: Timer[IO]): IO[Unit] =
+  )(implicit timer: Timer[IO], par: Parallel[IO]): IO[Unit] =
     for {
       logger <- Slf4jLogger.create[IO]
       rs     <- BoxRegisterRepo[IO, ConnectionIO]

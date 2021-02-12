@@ -4,7 +4,12 @@ import cats.effect.{ExitCode, IO, IOApp, Resource}
 import doobie.util.transactor.Transactor
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.DoobieTrans
-import org.ergoplatform.explorer.migration.configs.{AssetsMigrationConfig, MigrationConfig, RegistersMigrationConfig}
+import org.ergoplatform.explorer.migration.configs.{
+  AssetsMigrationConfig,
+  MigrationConfig,
+  RegistersMigrationConfig,
+  V7MigrationConfig
+}
 import org.ergoplatform.explorer.migration.migrations.{
   AssetsMigration,
   RegistersAndConstantsMigration,
@@ -40,7 +45,7 @@ object Application extends IOApp {
       "v4v5" -> RegistersMigration(RegistersMigrationConfig(batchSize = 1000, interval = 500.millis, offset), xa),
       "v5v6" -> AssetsMigration(AssetsMigrationConfig(batchSize = 1000, interval = 500.millis, offset), xa),
       "v6v7" -> RegistersAndConstantsMigration(
-        RegistersMigrationConfig(batchSize = 1000, interval = 500.millis, offset),
+        V7MigrationConfig(batchSize = 1000, interval = 500.millis, offset, parallelism = 4),
         xa
       )
     )
