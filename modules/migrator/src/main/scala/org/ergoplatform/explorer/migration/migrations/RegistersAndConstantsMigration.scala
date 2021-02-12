@@ -32,7 +32,16 @@ final class RegistersAndConstantsMigration(
   log: Logger[IO]
 )(implicit timer: Timer[IO]) {
 
-  def run: IO[Unit] = migrateBatch(conf.offset, conf.batchSize)
+  def run: IO[Unit] = updateSchema >> migrateBatch(conf.offset, conf.batchSize)
+
+  def updateSchema: IO[Unit] = {
+    val txn =
+      recreateRegistersTable >>
+      createConstantsTable >>
+      alterOutputsTable >>
+      alterUOutputsTable
+    log.info(s"Updating DB schema ..") >> txn.transact(xa)
+  }
 
   def migrateBatch(offset: Int, limit: Int): IO[Unit] =
     log.info(s"Current offset is [$offset]") *> outputsBatch(offset, limit)
@@ -118,6 +127,50 @@ final class RegistersAndConstantsMigration(
          |update node_outputs set additional_registers = ${output.additionalRegisters}
          |where box_id = ${output.boxId}
          """.stripMargin.update.run.void
+
+  def recreateRegistersTable: ConnectionIO[Unit] =
+    sql"drop table box_registers".update.run >>
+    sql"""
+         |create table box_registers
+         |(
+         |    id               varchar(2)    not null,
+         |    box_id           varchar(64)   not null,
+         |    value_type       varchar(128)  not null,
+         |    serialized_value varchar(4096) not null,
+         |    rendered_value   varchar(4096) not null,
+         |    primary key (id, box_id)
+         |)
+         |""".stripMargin.update.run >>
+    sql"create index box_registers__id on box_registers (id)".update.run >>
+    sql"create index box_registers__box_id on box_registers (box_id)".update.run >>
+    sql"create index box_registers__rendered_value on box_registers (rendered_value)".update.run.void
+
+  def createConstantsTable: ConnectionIO[Unit] =
+    sql"""
+         |create table script_constants
+         |(
+         |    index            integer       not null,
+         |    box_id           varchar(64)   not null,
+         |    sigma_type       varchar(128)  not null,
+         |    serialized_value varchar(2048) not null,
+         |    rendered_value   varchar(2048) not null,
+         |    primary key (index, box_id)
+         |)
+         |""".stripMargin.update.run >>
+    sql"create index script_constants__box_id on script_constants (box_id)".update.run >>
+    sql"create index script_constants__rendered_value on script_constants (rendered_value)".update.run.void
+
+  def alterOutputsTable: ConnectionIO[Unit] =
+    sql"""
+         |alter table node_outputs add column ergo_tree_template_hash varchar(64) not null default '<hash>'
+         |""".stripMargin.update.run >>
+    sql"create index node_outputs__ergo_tree_template_hash on node_outputs (ergo_tree_template_hash)".update.run.void
+
+  def alterUOutputsTable: ConnectionIO[Unit] =
+    sql"""
+         |alter table node_u_outputs add column ergo_tree_template_hash varchar(64) not null default '<hash>'
+         |""".stripMargin.update.run.void >>
+    sql"create index node_u_outputs__ergo_tree_template_hash on node_u_outputs (ergo_tree_template_hash)".update.run.void
 }
 
 object RegistersAndConstantsMigration {
@@ -135,7 +188,7 @@ object RegistersAndConstantsMigration {
   )(implicit timer: Timer[IO]): IO[Unit] =
     for {
       logger <- Slf4jLogger.create[IO]
-      rs   <- BoxRegisterRepo[IO, ConnectionIO]
+      rs     <- BoxRegisterRepo[IO, ConnectionIO]
       sc     <- ScriptConstantsRepo[IO, ConnectionIO]
       _      <- new RegistersAndConstantsMigration(conf, rs, sc, xa, logger).run
     } yield ()
