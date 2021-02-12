@@ -8,6 +8,8 @@ import org.ergoplatform.explorer.cache.Redis
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
 import org.http4s.client.blaze.BlazeClientBuilder
+import org.ergoplatform.explorer.settings.pureConfigInstances._
+import pureconfig.generic.auto._
 
 import scala.concurrent.ExecutionContext.global
 

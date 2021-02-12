@@ -21,7 +21,7 @@ object GrabberAppSettings {
 
   def load[F[_]: Sync](pathOpt: Option[String]): F[GrabberAppSettings] =
     pathOpt
-      .map(ConfigSource.file)
+      .map(ConfigSource.file(_).withFallback(ConfigSource.default))
       .getOrElse(ConfigSource.default)
       .loadF[F, GrabberAppSettings]
 }

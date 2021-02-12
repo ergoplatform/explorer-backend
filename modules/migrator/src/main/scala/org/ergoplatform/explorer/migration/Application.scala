@@ -10,6 +10,7 @@ import org.ergoplatform.explorer.migration.migrations.{
   RegistersAndConstantsMigration,
   RegistersMigration
 }
+import org.ergoplatform.explorer.settings.pureConfigInstances._
 import pureconfig.generic.auto._
 import tofu.syntax.console._
 
