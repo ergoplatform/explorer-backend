@@ -279,7 +279,7 @@ package object explorer {
 
   object HexString {
     // doobie instances
-    implicit def get: Get[HexString] = deriving
+    implicit def get: Get[HexString] = Get[String].map(fromStringUnsafe)
     implicit def put: Put[HexString] = deriving
 
     // circe instances

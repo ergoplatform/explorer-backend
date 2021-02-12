@@ -162,13 +162,13 @@ final class RegistersAndConstantsMigration(
 
   def alterOutputsTable: ConnectionIO[Unit] =
     sql"""
-         |alter table node_outputs add column ergo_tree_template_hash varchar(64) not null default '<hash>'
+         |alter table node_outputs add column ergo_tree_template_hash varchar(64) not null default '71bc9534d4a4fe8ff67698a5d0f29782836970635de8418da39fee1cd964fcbe'
          |""".stripMargin.update.run >>
     sql"create index node_outputs__ergo_tree_template_hash on node_outputs (ergo_tree_template_hash)".update.run.void
 
   def alterUOutputsTable: ConnectionIO[Unit] =
     sql"""
-         |alter table node_u_outputs add column ergo_tree_template_hash varchar(64) not null default '<hash>'
+         |alter table node_u_outputs add column ergo_tree_template_hash varchar(64) not null default '71bc9534d4a4fe8ff67698a5d0f29782836970635de8418da39fee1cd964fcbe'
          |""".stripMargin.update.run.void >>
     sql"create index node_u_outputs__ergo_tree_template_hash on node_u_outputs (ergo_tree_template_hash)".update.run.void
 }
