@@ -177,9 +177,7 @@ object RegistersAndConstantsMigration {
 
   @derive(encoder, decoder)
   final case class LegacyExpandedRegister(
-    rawValue: HexString,
-    valueType: SigmaType,
-    decodedValue: String
+    rawValue: HexString
   )
 
   def apply(
