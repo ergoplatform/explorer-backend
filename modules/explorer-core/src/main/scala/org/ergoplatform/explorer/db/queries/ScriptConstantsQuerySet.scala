@@ -2,12 +2,12 @@ package org.ergoplatform.explorer.db.queries
 
 object ScriptConstantsQuerySet extends QuerySet {
 
-  override val tableName: String = "script_constants"
+  val tableName: String = "script_constants"
 
-  override val fields: List[String] = List(
+  val fields: List[String] = List(
     "index",
     "box_id",
-    "sigma_type",
+    "value_type",
     "serialized_value",
     "rendered_value"
   )

@@ -185,7 +185,7 @@ CREATE TABLE script_constants
 (
     index            INTEGER       NOT NULL,
     box_id           VARCHAR(64)   NOT NULL,
-    sigma_type       VARCHAR(128)  NOT NULL,
+    value_type       VARCHAR(128)  NOT NULL,
     serialized_value VARCHAR(2048) NOT NULL,
     rendered_value   VARCHAR(2048) NOT NULL,
     PRIMARY KEY (index, box_id)

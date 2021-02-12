@@ -151,7 +151,7 @@ final class RegistersAndConstantsMigration(
          |(
          |    index            integer       not null,
          |    box_id           varchar(64)   not null,
-         |    sigma_type       varchar(128)  not null,
+         |    value_type       varchar(128)  not null,
          |    serialized_value varchar(2048) not null,
          |    rendered_value   varchar(2048) not null,
          |    primary key (index, box_id)
