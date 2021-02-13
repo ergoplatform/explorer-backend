@@ -13,7 +13,7 @@ import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedUAsset}
+import org.ergoplatform.explorer.db.models.aggregates.AggregatedAsset
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetSummary, BalanceInfo}
@@ -50,10 +50,6 @@ object AddressesService {
     (HeaderRepo[F, D], TransactionRepo[F, D], OutputRepo[F, D], UOutputRepo[F, D], AssetRepo[F, D], UAssetRepo[F, D])
       .mapN(new Live(_, _, _, _, _, _)(trans))
 
-  private case class AssetData(amount: Long, decimals: Option[Int], name: Option[String]) {
-    def addAmount(amt: Long): AssetData = copy(amount = amount + amt)
-  }
-
   final private class Live[
     F[_],
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad
@@ -67,43 +63,34 @@ object AddressesService {
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends AddressesService[F, Stream] {
 
-    // todo: optimize: use pg aggregation
     def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo] =
       (for {
         ergoTree <- sigma.addressToErgoTreeHex(address)
         height   <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
         maxHeight = height - minConfirmations
-        outs                <- outputRepo.getAllByErgoTree(ergoTree, maxHeight)
-        balance             <- outputRepo.sumUnspentByErgoTree(ergoTree, maxHeight)
-        assets              <- assetRepo.getAllMainUnspentByErgoTree(ergoTree)
-        unspentOffChainOuts <- uOutputRepo.getAllUnspentByErgoTree(ergoTree)
-        offChainAssets      <- uAssetRepo.getAllUnspentByErgoTree(ergoTree)
-        txsQty              <- txRepo.countRelatedToAddress(address)
+        totalReceived   <- outputRepo.sumAllByErgoTree(ergoTree, maxHeight)
+        balance         <- outputRepo.sumUnspentByErgoTree(ergoTree, maxHeight)
+        assets          <- assetRepo.aggregateUnspentByErgoTree(ergoTree, maxHeight)
+        offChainBalance <- uOutputRepo.sumUnspentByErgoTree(ergoTree)
+        offChainAssets  <- uAssetRepo.aggregateUnspentByErgoTree(ergoTree)
+        txsQty          <- txRepo.countRelatedToAddress(address)
       } yield {
-        val offChainBalance = unspentOffChainOuts.map(_.value).sum
-        val totalBalance    = balance + offChainBalance
-        val totalReceived   = outs.map(o => BigDecimal(o.output.value)).sum
-        val tokensBalance =
-          assets.foldLeft(Map.empty[TokenId, AssetData]) {
-            case (acc, ExtendedAsset(assetId, _, _, _, assetAmt, name, decimals, _)) =>
-              val init  = AssetData(0L, decimals, name)
-              val asset = acc.getOrElse(assetId, init)
-              acc.updated(assetId, asset addAmount assetAmt)
-          }
+        val totalBalance = balance + offChainBalance
         val tokensBalanceInfo =
-          tokensBalance.map { case (id, asset) =>
-            AssetSummary(id, asset.amount, asset.name, asset.decimals)
-          }.toList
+          assets.map { case AggregatedAsset(tokenId, amount, name, decimals) =>
+            AssetSummary(tokenId, amount, name, decimals)
+          }
+        val indexedAssets = assets.map(a => a.tokenId -> a).toMap
         val totalTokensBalance =
-          offChainAssets.foldLeft(tokensBalance) {
-            case (acc, ExtendedUAsset(assetId, _, _, assetAmt, name, decimals, _)) =>
-              val init  = AssetData(0L, decimals, name)
-              val asset = acc.getOrElse(assetId, init)
-              acc.updated(assetId, asset addAmount assetAmt)
+          offChainAssets.foldLeft(indexedAssets) { case (acc, asset) =>
+            acc.get(asset.tokenId).fold(acc.updated(asset.tokenId, asset)) { asset0 =>
+              val updatedAggregate = asset0.copy(totalAmount = asset0.totalAmount + asset.totalAmount)
+              acc.updated(asset.tokenId, updatedAggregate)
+            }
           }
         val totalTokensBalanceInfo =
-          totalTokensBalance.map { case (id, asset) =>
-            AssetSummary(id, asset.amount, asset.name, asset.decimals)
+          totalTokensBalance.values.map { asset =>
+            AssetSummary(asset.tokenId, asset.totalAmount, asset.name, asset.decimals)
           }.toList
         AddressInfo(
           address,

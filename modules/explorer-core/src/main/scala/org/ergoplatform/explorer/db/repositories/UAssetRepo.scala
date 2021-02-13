@@ -8,7 +8,7 @@ import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UAsset
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedUAsset
+import org.ergoplatform.explorer.db.models.aggregates.{AggregatedAsset, ExtendedUAsset}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{BoxId, HexString}
 
@@ -35,6 +35,8 @@ trait UAssetRepo[D[_]] {
   /** Get all unspent assets belonging to a given `address`.
     */
   def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUAsset]]
+
+  def aggregateUnspentByErgoTree(ergoTree: HexString): D[List[AggregatedAsset]]
 }
 
 object UAssetRepo {
@@ -62,5 +64,8 @@ object UAssetRepo {
 
     def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUAsset]] =
       QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
+
+    def aggregateUnspentByErgoTree(ergoTree: HexString): D[List[AggregatedAsset]] =
+      QS.aggregateUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
   }
 }

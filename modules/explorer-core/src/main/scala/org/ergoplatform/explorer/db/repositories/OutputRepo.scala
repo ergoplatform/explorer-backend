@@ -41,11 +41,11 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get total amount of all main-chain outputs with a given `ergoTree`.
     */
-  def sumAllByErgoTree(ergoTree: HexString, minConfirmations: Int): D[Long]
+  def sumAllByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long]
 
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
-  def sumUnspentByErgoTree(ergoTree: HexString, minConfirmations: Int): D[Long]
+  def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long]
 
   /** Get balances of all addresses in the network.
     */

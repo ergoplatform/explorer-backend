@@ -45,6 +45,10 @@ trait UOutputRepo[D[_], S[_[_], _]] {
   /** Get all unspent unconfirmed outputs belonging to the given `ergoTree`.
     */
   def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]]
+
+  /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
+    */
+  def sumUnspentByErgoTree(ergoTree: HexString): D[Long]
 }
 
 object UOutputRepo {
@@ -79,5 +83,8 @@ object UOutputRepo {
 
     def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]] =
       QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
+
+    def sumUnspentByErgoTree(ergoTree: HexString): D[Long] =
+      QS.sumUnspentByErgoTree(ergoTree).unique.liftConnectionIO
   }
 }

@@ -5,7 +5,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.{Fragments, LogHandler}
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{AggregatedAsset, ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
 /** A set of queries for doobie implementation of  [AssetRepo].
@@ -63,7 +63,7 @@ object AssetQuerySet extends QuerySet {
          |select
          |  a.token_id,
          |  a.box_id,
-         |  a.token_id,
+         |  a.header_id,
          |  a.index,
          |  a.value,
          |  t.name,
@@ -79,6 +79,30 @@ object AssetQuerySet extends QuerySet {
          |    and o.ergo_tree = $ergoTree
          |) as uo on uo.box_id = a.box_id
          """.stripMargin.query[ExtendedAsset]
+
+  def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int)(implicit lh: LogHandler): Query0[AggregatedAsset] =
+    sql"""
+         |select agg.token_id, agg.total, t.name, t.decimals from (
+         |  select ia.token_id, sum(ia.value) as total from (
+         |    select
+         |      a.token_id,
+         |      a.box_id,
+         |      a.value
+         |    from node_assets a
+         |    inner join (
+         |      select o.box_id from node_outputs o
+         |      left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |      left join node_transactions tx on tx.id = o.tx_id
+         |      where tx.inclusion_height <= $maxHeight
+         |        and o.main_chain = true
+         |        and (i.box_id is null or i.main_chain = false)
+         |        and o.ergo_tree = $ergoTree
+         |    ) as uo on uo.box_id = a.box_id
+         |  ) as ia
+         |  group by ia.token_id
+         |) agg
+         |left join tokens t on t.token_id = agg.token_id
+         |""".stripMargin.query[AggregatedAsset]
 
   def getAllHoldingAddresses(
     tokenId: TokenId,
