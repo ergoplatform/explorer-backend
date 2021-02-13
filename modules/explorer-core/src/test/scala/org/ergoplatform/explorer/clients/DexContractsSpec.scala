@@ -17,7 +17,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 class DexContractsSpec extends PropSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
   property("getTokenPriceFromSellOrderTree") {
-    forAll(Gen.posNum[Long]) { tokenPrice =>
+    forAll(tokenAmountGen) { tokenPrice =>
       val extractedTokenPrice =
         getTokenPriceFromSellContractTree[IO](sellContractInstance(tokenPrice))
           .unsafeRunSync()
@@ -27,7 +27,7 @@ class DexContractsSpec extends PropSpec with Matchers with ScalaCheckDrivenPrope
   }
 
   property("Buy orders (enrich ExtendedOutput with token info)") {
-    forAll(assetIdGen, Gen.posNum[Long]) { case (tokenId, tokenAmount) =>
+    forAll(assetIdGen, tokenAmountGen) { case (tokenId, tokenAmount) =>
       val extractedTokenInfo =
         getTokenInfoFromBuyContractTree[IO](buyContractInstance(tokenId, tokenAmount))
           .unsafeRunSync()
@@ -52,4 +52,6 @@ class DexContractsSpec extends PropSpec with Matchers with ScalaCheckDrivenPrope
     val params        = DexBuyerContractParameters(anyPk, tokenIdNative, price, 0L)
     DexLimitOrderContracts.buyerContractInstance(params).ergoTree
   }
+
+  private def tokenAmountGen = Gen.posNum[Long].map(_ + 1)
 }
