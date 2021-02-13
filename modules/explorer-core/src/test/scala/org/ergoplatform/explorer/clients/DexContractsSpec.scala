@@ -53,5 +53,5 @@ class DexContractsSpec extends PropSpec with Matchers with ScalaCheckDrivenPrope
     DexLimitOrderContracts.buyerContractInstance(params).ergoTree
   }
 
-  private def tokenAmountGen = Gen.posNum[Long].map(_ + 1)
+  private def tokenAmountGen = Gen.posNum[Long].map(_ + 2)
 }
