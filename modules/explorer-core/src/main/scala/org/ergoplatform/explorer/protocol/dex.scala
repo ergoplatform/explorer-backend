@@ -25,7 +25,7 @@ object dex {
     // since we're only using compiled contracts for constant(parameters) extraction PK value does not matter
     val anyPk      = ProveDlog(constants.group.generator)
     val anyTokenId = Base16.decode("7c232b68665d233356e9abadf3820abff725105c5ccfa8618b77bc3a8bf603ce").get
-    val params     = DexSellerContractParameters(anyPk, anyTokenId, 0L, 0L)
+    val params     = DexSellerContractParameters(anyPk, anyTokenId, 2L, 2L)
     DexLimitOrderContracts.sellerContractInstance(params).ergoTree
   }
 
@@ -33,7 +33,7 @@ object dex {
     // since we're only using compiled contracts for constant(parameters) extraction PK value does not matter
     val anyPk      = ProveDlog(constants.group.generator)
     val anyTokenId = Base16.decode("7c232b68665d233356e9abadf3820abff725105c5ccfa8618b77bc3a8bf603ce").get
-    val params     = DexBuyerContractParameters(anyPk, anyTokenId, 0L, 0L)
+    val params     = DexBuyerContractParameters(anyPk, anyTokenId, 2L, 2L)
     DexLimitOrderContracts.buyerContractInstance(params).ergoTree
   }
 
