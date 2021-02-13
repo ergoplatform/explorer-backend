@@ -53,8 +53,6 @@ final class RegistersAndConstantsMigration(
           expandRegisters(out)
             .handleErrorWith(e => log.error(e)("Error while migrating registers") as out -> Nil)
             .map {
-              case (_, Nil) =>
-                List()
               case (out, regs) =>
                 val consts     = extractConstants(out)
                 val updatedOut = addErgoTreeTemplateHash(out)
