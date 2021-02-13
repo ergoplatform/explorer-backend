@@ -7,7 +7,7 @@ import org.ergoplatform.explorer.settings.{DbSettings, SettingCompanion}
 
 final case class MigrationConfig(
   db: DbSettings,
-  offset: Int,
+  processing: ProcessingConfig,
   networkPrefix: String Refined ValidByte
 ) {
 

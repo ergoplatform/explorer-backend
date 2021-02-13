@@ -13,13 +13,13 @@ import org.ergoplatform.explorer.db.repositories.TokenRepo
 import org.ergoplatform.explorer.http.api.models.Paging
 import org.ergoplatform.explorer.http.api.v0.models.TransactionInfo
 import org.ergoplatform.explorer.http.api.v0.services.TransactionsService
-import org.ergoplatform.explorer.migration.configs.AssetsMigrationConfig
+import org.ergoplatform.explorer.migration.configs.ProcessingConfig
 import org.ergoplatform.explorer.protocol.TokenPropsParser
 import org.ergoplatform.explorer.{HexString, RegisterId, TokenId, TokenType}
 import tofu.syntax.monadic._
 
 final class AssetsMigration(
-  conf: AssetsMigrationConfig,
+  conf: ProcessingConfig,
   tokenRepo: TokenRepo[ConnectionIO],
   txs: TransactionsService[IO],
   xa: Transactor[IO],
@@ -64,7 +64,7 @@ final class AssetsMigration(
 object AssetsMigration {
 
   def apply(
-    conf: AssetsMigrationConfig,
+    conf: ProcessingConfig,
     xa: Transactor[IO]
   )(implicit timer: Timer[IO], e: ErgoAddressEncoder): IO[Unit] =
     for {

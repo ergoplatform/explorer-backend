@@ -17,7 +17,7 @@ import io.circe.syntax._
 import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.{BoxRegister, Output, ScriptConstant}
 import org.ergoplatform.explorer.db.repositories.{BoxRegisterRepo, ScriptConstantsRepo}
-import org.ergoplatform.explorer.migration.configs.V7MigrationConfig
+import org.ergoplatform.explorer.migration.configs.ProcessingConfig
 import org.ergoplatform.explorer.migration.migrations.RegistersAndConstantsMigration.UniversalExpandedRegister
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
 import org.ergoplatform.explorer.protocol.{sigma, RegistersParser}
@@ -27,7 +27,7 @@ import tofu.syntax.monadic._
 import scala.util.Try
 
 final class RegistersAndConstantsMigration(
-  conf: V7MigrationConfig,
+  conf: ProcessingConfig,
   registers: BoxRegisterRepo[ConnectionIO],
   constants: ScriptConstantsRepo[ConnectionIO],
   xa: Transactor[IO],
@@ -196,7 +196,7 @@ object RegistersAndConstantsMigration {
   )
 
   def apply(
-    conf: V7MigrationConfig,
+    conf: ProcessingConfig,
     xa: Transactor[IO]
   )(implicit timer: Timer[IO], par: Parallel[IO]): IO[Unit] =
     for {
