@@ -5,23 +5,23 @@ import cats.effect.{IO, Timer}
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.parallel._
-import cats.syntax.traverse._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import doobie.{ConnectionIO, Update}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.circe.Json
 import io.circe.syntax._
 import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.{BoxRegister, Output, ScriptConstant}
 import org.ergoplatform.explorer.db.repositories.{BoxRegisterRepo, ScriptConstantsRepo}
 import org.ergoplatform.explorer.migration.configs.V7MigrationConfig
-import org.ergoplatform.explorer.migration.migrations.RegistersAndConstantsMigration.LegacyExpandedRegister
+import org.ergoplatform.explorer.migration.migrations.RegistersAndConstantsMigration.UniversalExpandedRegister
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
-import org.ergoplatform.explorer.protocol.{RegistersParser, sigma}
-import org.ergoplatform.explorer.{HexString, RegisterId}
+import org.ergoplatform.explorer.protocol.{sigma, RegistersParser}
+import org.ergoplatform.explorer.{BoxId, ErgoTreeTemplateHash, HexString, RegisterId}
 import tofu.syntax.monadic._
 
 import scala.util.Try
@@ -34,11 +34,7 @@ final class RegistersAndConstantsMigration(
   log: Logger[IO]
 )(implicit timer: Timer[IO], par: Parallel[IO]) {
 
-  def run: IO[Unit] = updateSchema >> countOutputs >>= { total =>
-    val interval         = total - conf.offset
-    val singleSectionLen = interval / conf.parallelism
-    (0 to conf.parallelism).toList.parTraverse_(i => migrateBatch(conf.offset + singleSectionLen * i, conf.batchSize))
-  }
+  def run: IO[Unit] = updateSchema >> migrateBatch(conf.offset, conf.batchSize)
 
   def updateSchema: IO[Unit] = {
     val txn =
@@ -53,24 +49,30 @@ final class RegistersAndConstantsMigration(
     log.info(s"Current offset is [$offset]") *> outputsBatch(offset, limit)
       .transact(xa)
       .flatMap {
-        _.traverse { out =>
+        _.parTraverse { out =>
           expandRegisters(out)
-            .flatMap {
+            .handleErrorWith(e => log.error(e)("Error while migrating registers") as out -> Nil)
+            .map {
               case (_, Nil) =>
-                IO.unit
+                List()
               case (out, regs) =>
                 val consts     = extractConstants(out)
                 val updatedOut = addErgoTreeTemplateHash(out)
-                val txn        = updateOutput(updatedOut) >> registers.insertMany(regs) >> constants.insertMany(consts)
-                txn.transact(xa)
+                List((updatedOut, regs, consts))
             }
-            .handleErrorWith(e => log.error(e)("Error while migrating registers"))
         }.flatMap {
           case Nil => IO.unit
           case xs =>
-            log.info(s"[${xs.size}] boxes processed") *>
-              IO.sleep(conf.interval) >>
-              migrateBatch(offset + limit, limit)
+            val (outs, regs, consts) =
+              xs.flatten.foldLeft((List.empty[Output], List.empty[BoxRegister], List.empty[ScriptConstant])) {
+                case ((os, rs, cs), (o, rs0, cs0)) =>
+                  (o +: os, rs0 ++ rs, cs0 ++ cs)
+              }
+            val txn = updateOutputs(outs) >> registers.insertMany(regs) >> constants.insertMany(consts)
+            txn.transact(xa) >>
+            log.info(s"[${outs.size}] boxes, [${regs.size}] registers, [${consts.size}] constants processed") *>
+            IO.sleep(conf.interval) >>
+            migrateBatch(offset + limit, limit)
         }
       }
 
@@ -89,13 +91,14 @@ final class RegistersAndConstantsMigration(
 
   def expandRegisters(out: Output): IO[(Output, List[BoxRegister])] =
     out.additionalRegisters
-      .as[Map[RegisterId, LegacyExpandedRegister]]
+      .as[Map[RegisterId, UniversalExpandedRegister]]
       .fold(e => IO.raiseError(new Exception(s"Cannot deserialize registers in: $out, $e")), IO.pure)
       .map { legacyRegisters =>
         val registers = for {
-          (id, reg)                       <- legacyRegisters.toList
-          RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(reg.rawValue).toOption
-        } yield BoxRegister(id, out.boxId, valueType, reg.rawValue, value)
+          (id, reg) <- legacyRegisters.toList
+          serializedValue = reg.rawValue.orElse(reg.serializedValue).get
+          RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(serializedValue).toOption
+        } yield BoxRegister(id, out.boxId, valueType, serializedValue, value)
         val registersJson = registers
           .map { case BoxRegister(id, _, valueType, rawValue, decodedValue) =>
             id.entryName -> ExpandedRegister(rawValue, valueType, decodedValue)
@@ -105,9 +108,6 @@ final class RegistersAndConstantsMigration(
         val updatedOutput = out.copy(additionalRegisters = registersJson)
         updatedOutput -> registers
       }
-
-  def countOutputs: IO[Int] =
-    sql"select count(*) from node_outputs".query[Int].unique.transact(xa)
 
   def outputsBatch(offset: Int, limit: Int): ConnectionIO[List[Output]] =
     sql"""
@@ -131,11 +131,16 @@ final class RegistersAndConstantsMigration(
          |offset $offset limit $limit
          """.stripMargin.query[Output].to[List]
 
-  def updateOutput(output: Output): ConnectionIO[Unit] =
-    sql"""
-         |update node_outputs set additional_registers = ${output.additionalRegisters}
-         |where box_id = ${output.boxId}
-         """.stripMargin.update.run.void
+  def updateOutputs(outputs: List[Output]): ConnectionIO[Unit] = {
+    val sql = """
+                |update node_outputs set
+                |  additional_registers = ?,
+                |  ergo_tree_template_hash = ?
+                |where box_id = ?
+                """.stripMargin
+    val ds  = outputs.map(o => (o.additionalRegisters, o.ergoTreeTemplateHash, o.boxId))
+    Update[(Json, ErgoTreeTemplateHash, BoxId)](sql).updateMany(ds).void
+  }
 
   def recreateRegistersTable: ConnectionIO[Unit] =
     sql"drop table box_registers".update.run >>
@@ -185,8 +190,9 @@ final class RegistersAndConstantsMigration(
 object RegistersAndConstantsMigration {
 
   @derive(encoder, decoder)
-  final case class LegacyExpandedRegister(
-    rawValue: HexString
+  final case class UniversalExpandedRegister(
+    rawValue: Option[HexString],
+    serializedValue: Option[HexString]
   )
 
   def apply(
