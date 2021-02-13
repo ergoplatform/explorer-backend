@@ -6,8 +6,6 @@ import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
 import org.scalacheck.Gen
-import scorex.util.encode.Base16
-import scorex.crypto.hash.Sha256
 
 import scala.util.Try
 
@@ -106,7 +104,7 @@ object generators {
       height   <- Gen.posNum[Int]
       idx      <- Gen.posNum[Int]
       tree     <- ergoTreeGen
-      template <- ergoTreeGen.map(et => ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(Sha256.hash(et.bytes))))
+      template <- ergoTreeGen.map(ErgoTreeTemplateHash(_))
       address  <- addressGen
       regs     <- jsonFieldsGen
       ts       <- Gen.posNum[Long]
