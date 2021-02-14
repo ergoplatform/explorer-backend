@@ -70,8 +70,8 @@ object TransactionQuerySet extends QuerySet {
          |  left join node_inputs i on (i.box_id = os.box_id and i.main_chain = true)
          |  where os.main_chain = true and os.address = $address
          |) as os on os.tx_id = t.id
-         |order by t.timestamp desc
          |where t.main_chain = true
+         |order by t.timestamp desc
          |offset ${offset.toLong} limit ${limit.toLong}
          |""".stripMargin.query[Transaction]
 
