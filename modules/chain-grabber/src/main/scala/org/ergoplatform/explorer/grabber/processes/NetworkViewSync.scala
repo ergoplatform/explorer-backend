@@ -128,7 +128,7 @@ object NetworkViewSync {
                 log.info(s"Processing fork at height $prevHeight") >>
                   grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
               case parentOpt =>
-                log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<not found>")}") >>
+                log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<none>")}") >>
                   parentOpt.pure[D].pure[F]
             }
             .map { blockInfoOptDb =>
@@ -139,7 +139,7 @@ object NetworkViewSync {
             }
         }
       log.info(s"Processing full block $blockId") >>
-      getBlockInfo(block.header.id).flatMap {
+      getBlockInfo(block.header.id).flatMap { // out of tx!
         case None        => processF
         case Some(block) => log.warn(s"Block [$blockId] already written") as block.pure[D]
       }

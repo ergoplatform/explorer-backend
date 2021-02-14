@@ -36,7 +36,7 @@ object AdProofRepo {
     import org.ergoplatform.explorer.db.queries.{AdProofQuerySet => QS}
 
     def insert(proof: AdProof): D[Unit] =
-      QS.insert(proof).void.liftConnectionIO
+      QS.insertNoConflict(proof).void.liftConnectionIO
 
     def getByHeaderId(headerId: Id): D[Option[AdProof]] =
       QS.getByHeaderId(headerId).option.liftConnectionIO

@@ -52,10 +52,10 @@ object InputRepo {
     import org.ergoplatform.explorer.db.queries.{InputQuerySet => QS}
 
     def insert(input: Input): D[Unit] =
-      QS.insert(input).void.liftConnectionIO
+      QS.insertNoConflict(input).void.liftConnectionIO
 
     def insetMany(inputs: List[Input]): D[Unit] =
-      QS.insertMany(inputs).void.liftConnectionIO
+      QS.insertManyNoConflict(inputs).void.liftConnectionIO
 
     def getAllByTxId(txId: TxId): D[List[ExtendedInput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO

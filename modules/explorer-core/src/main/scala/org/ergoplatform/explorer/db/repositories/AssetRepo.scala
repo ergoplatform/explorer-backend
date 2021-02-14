@@ -78,10 +78,10 @@ object AssetRepo {
     import org.ergoplatform.explorer.db.queries.{AssetQuerySet => QS}
 
     def insert(asset: Asset): D[Unit] =
-      QS.insert(asset).void.liftConnectionIO
+      QS.insertNoConflict(asset).void.liftConnectionIO
 
     def insertMany(assets: List[Asset]): D[Unit] =
-      QS.insertMany(assets).void.liftConnectionIO
+      QS.insertManyNoConflict(assets).void.liftConnectionIO
 
     def getAllByBoxId(boxId: BoxId): D[List[ExtendedAsset]] =
       QS.getAllByBoxId(boxId).to[List].liftConnectionIO

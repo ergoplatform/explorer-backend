@@ -84,7 +84,7 @@ object BlockInfoRepo {
     import org.ergoplatform.explorer.db.queries.{BlockInfoQuerySet => QS}
 
     def insert(blockInfo: BlockInfo): D[Unit] =
-      QS.insert(blockInfo).void.liftConnectionIO
+      QS.insertNoConflict(blockInfo).void.liftConnectionIO
 
     def get(id: Id): D[Option[BlockInfo]] =
       QS.getBlockInfo(id).option.liftConnectionIO
