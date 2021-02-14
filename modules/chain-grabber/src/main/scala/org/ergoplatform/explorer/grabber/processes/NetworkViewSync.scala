@@ -128,7 +128,7 @@ object NetworkViewSync {
                 log.info(s"Processing fork at height $prevHeight") >>
                   grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
               case parentOpt =>
-                log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<not found>")}") >>
+                log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<none>")}") >>
                   parentOpt.pure[D].pure[F]
             }
             .map { blockInfoOptDb =>

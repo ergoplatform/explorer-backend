@@ -71,6 +71,7 @@ object TransactionQuerySet extends QuerySet {
          |  where os.main_chain = true and os.address = $address
          |) as os on os.tx_id = t.id
          |order by t.timestamp desc
+         |where t.main_chain = true
          |offset ${offset.toLong} limit ${limit.toLong}
          |""".stripMargin.query[Transaction]
 
@@ -85,6 +86,7 @@ object TransactionQuerySet extends QuerySet {
          |  left join node_inputs i on (i.box_id = os.box_id and i.main_chain = true)
          |  where os.main_chain = true and os.address = $address
          |) as os on os.tx_id = t.id
+         |where t.main_chain = true
          |""".stripMargin.query[Int]
 
   def countMainSince(ts: Long): Query0[Int] =

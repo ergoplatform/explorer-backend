@@ -52,7 +52,7 @@ object stats {
       case Nil =>
         StatsSummary.empty
       case x :: _ =>
-        val blocksCount   = blocks.length.toLong
+        val blocksCount   = blocks.size
         val avgMiningTime = blocks.map(_.blockMiningTime).sum / blocksCount
         val coins         = blocks.map(_.blockCoins).sum
         val txsCount      = blocks.map(_.txsCount.toLong).sum
