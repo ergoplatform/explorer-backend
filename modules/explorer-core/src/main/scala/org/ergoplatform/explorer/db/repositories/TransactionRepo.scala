@@ -87,10 +87,10 @@ object TransactionRepo {
     private val liftK = LiftConnectionIO[D].liftConnectionIOK
 
     def insert(tx: Transaction): D[Unit] =
-      QS.insert(tx).void.liftConnectionIO
+      QS.insertNoConflict(tx).void.liftConnectionIO
 
     def insertMany(txs: List[Transaction]): D[Unit] =
-      QS.insertMany(txs).void.liftConnectionIO
+      QS.insertManyNoConflict(txs).void.liftConnectionIO
 
     def getMain(id: TxId): D[Option[Transaction]] =
       QS.getMain(id).option.liftConnectionIO

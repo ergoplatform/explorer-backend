@@ -63,7 +63,7 @@ object HeaderRepo {
     import org.ergoplatform.explorer.db.queries.{HeaderQuerySet => QS}
 
     def insert(h: Header): D[Unit] =
-      QS.insert(h).void.liftConnectionIO
+      QS.insertNoConflict(h).void.liftConnectionIO
 
     def get(id: Id): D[Option[Header]] =
       QS.get(id).option.liftConnectionIO
