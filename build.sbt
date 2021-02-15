@@ -88,6 +88,5 @@ lazy val commonScalacOptions = List(
   "-unchecked",
   "-Xfuture",
   "-Yno-adapted-args",
-  "-Ywarn-numeric-widen",
   "-Ypartial-unification"
 )

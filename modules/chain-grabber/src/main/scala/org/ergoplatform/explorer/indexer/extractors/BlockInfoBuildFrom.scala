@@ -2,12 +2,13 @@ package org.ergoplatform.explorer.indexer.extractors
 
 import cats.Monad
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
-import org.ergoplatform.explorer.db.models.BlockInfo
+import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.indexer.models.SlotData
+import org.ergoplatform.explorer.indexer.modules.BuildFrom
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
-import org.ergoplatform.explorer.{Address, BuildFrom, CRaise}
+import org.ergoplatform.explorer.{Address, CRaise}
 import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
@@ -22,9 +23,9 @@ import scala.util.Try
 
 final class BlockInfoBuildFrom[
   F[_]: Monad: WithContext[*[_], ProtocolSettings]: CRaise[*[_], ProcessingErr]: CRaise[*[_], RefinementFailed]
-] extends BuildFrom[F, SlotData, BlockInfo] {
+] extends BuildFrom[F, SlotData, BlockStats] {
 
-  override def apply(slot: SlotData): F[BlockInfo] =
+  override def apply(slot: SlotData): F[BlockStats] =
     context.flatMap { protocolSettings =>
       val SlotData(apiBlock, prevBlockInfo) = slot
       minerRewardAddress(apiBlock)(protocolSettings).map { minerAddress =>
@@ -38,16 +39,14 @@ final class BlockInfoBuildFrom[
           .map(_.timestamp)
           .getOrElse(0L)
 
-        BlockInfo(
+        BlockStats(
           headerId   = apiBlock.header.id,
           timestamp  = apiBlock.header.timestamp,
           height     = apiBlock.header.height,
           difficulty = apiBlock.header.difficulty.value.toLong,
           blockSize  = apiBlock.size,
           blockCoins = blockCoins,
-          blockMiningTime = apiBlock.header.timestamp - prevBlockInfo
-            .map(_.timestamp)
-            .getOrElse(0L),
+          blockMiningTime = prevBlockInfo.map(parent => apiBlock.header.timestamp - parent.timestamp),
           txsCount     = apiBlock.transactions.transactions.length,
           txsSize      = apiBlock.transactions.transactions.map(_.size).sum,
           minerAddress = minerAddress,
@@ -69,7 +68,7 @@ final class BlockInfoBuildFrom[
             .map(_.totalMinersReward)
             .getOrElse(0L) + reward,
           totalCoinsInTxs = prevBlockInfo.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins,
-          mainChain       = apiBlock.header.mainChain
+          mainChain       = false
         )
       }
     }

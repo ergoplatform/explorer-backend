@@ -6,16 +6,16 @@ import org.ergoplatform.explorer.db.models._
   * Ergo protocol enriched with statistics.
   */
 final case class FlatBlock(
-  header: Header,
-  info: BlockInfo,
-  extension: BlockExtension,
-  adProofOpt: Option[AdProof],
-  txs: List[Transaction],
-  inputs: List[Input],
-  dataInputs: List[DataInput],
-  outputs: List[Output],
-  assets: List[Asset],
-  registers: List[BoxRegister],
-  tokens: List[Token],
+                            header: Header,
+                            info: BlockStats,
+                            extension: BlockExtension,
+                            adProofOpt: Option[AdProof],
+                            txs: List[Transaction],
+                            inputs: List[Input],
+                            dataInputs: List[DataInput],
+                            outputs: List[Output],
+                            assets: List[Asset],
+                            registers: List[BoxRegister],
+                            tokens: List[Token],
   constants: List[ScriptConstant]
 )

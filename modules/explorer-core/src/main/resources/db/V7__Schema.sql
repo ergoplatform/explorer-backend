@@ -49,7 +49,7 @@ CREATE TABLE blocks_info
     difficulty             BIGINT  NOT NULL,
     block_size             INTEGER NOT NULL,
     block_coins            BIGINT  NOT NULL,
-    block_mining_time      BIGINT  NOT NULL,
+    block_mining_time      BIGINT,
     txs_count              INTEGER NOT NULL,
     txs_size               INTEGER NOT NULL,
     miner_address          VARCHAR NOT NULL,

@@ -38,7 +38,7 @@ object BlockExtensionRepo {
     import org.ergoplatform.explorer.db.queries.{BlockExtensionQuerySet => QS}
 
     def insert(extension: BlockExtension): D[Unit] =
-      QS.insert(extension).void.liftConnectionIO
+      QS.insertNoConflict(extension).void.liftConnectionIO
 
     def getByHeaderId(headerId: Id): D[Option[BlockExtension]] =
       QS.getByHeaderId(headerId).option.liftConnectionIO

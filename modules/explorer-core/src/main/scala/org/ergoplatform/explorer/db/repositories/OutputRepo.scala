@@ -149,10 +149,10 @@ object OutputRepo {
     private val liftK = LiftConnectionIO[D].liftConnectionIOK
 
     def insert(output: Output): D[Unit] =
-      QS.insert(output).void.liftConnectionIO
+      QS.insertNoConflict(output).void.liftConnectionIO
 
     def insertMany(outputs: List[Output]): D[Unit] =
-      QS.insertMany(outputs).void.liftConnectionIO
+      QS.insertManyNoConflict(outputs).void.liftConnectionIO
 
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
       QS.getByBoxId(boxId).option.liftConnectionIO

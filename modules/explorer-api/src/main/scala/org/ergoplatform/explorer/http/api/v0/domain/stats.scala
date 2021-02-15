@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import cats.Functor
 import cats.syntax.functor._
 import cats.effect.Clock
-import org.ergoplatform.explorer.db.models.BlockInfo
+import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.http.api.v0.models.StatsSummary
 
 import scala.math.BigDecimal
@@ -13,7 +13,7 @@ import scala.math.BigDecimal
 object stats {
 
   private val SecondsIn24H: Long = (24 * 60 * 60).toLong
-  private val MillisIn24H: Long = SecondsIn24H * 1000L
+  private val MillisIn24H: Long  = SecondsIn24H * 1000L
 
   // Get percent of fees in total miner rewards.
   private def percentOfFee(fees: Long, minersReward: Long): Double =
@@ -43,8 +43,9 @@ object stats {
 
   /** Obtain stats from recent blocks.
     */
+  // todo: Use DB aggregation
   @inline def recentToStats(
-    blocks: List[BlockInfo],
+    blocks: List[BlockStats],
     totalOutputs: BigDecimal,
     estimatedOutputs: BigDecimal
   ): StatsSummary =
@@ -52,8 +53,8 @@ object stats {
       case Nil =>
         StatsSummary.empty
       case x :: _ =>
-        val blocksCount   = blocks.length.toLong
-        val avgMiningTime = blocks.map(_.blockMiningTime).sum / blocksCount
+        val blocksCount   = blocks.size
+        val avgMiningTime = blocks.flatMap(_.blockMiningTime).sum / blocksCount
         val coins         = blocks.map(_.blockCoins).sum
         val txsCount      = blocks.map(_.txsCount.toLong).sum
         val totalFee      = blocks.map(_.blockFee).sum

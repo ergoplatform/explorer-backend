@@ -8,7 +8,7 @@ import doobie.util.query.Query0
 import doobie.util.update.Update0
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.constraints.OrderingString
-import org.ergoplatform.explorer.db.models.BlockInfo
+import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedBlockInfo, MinerStats, TimePoint}
 
 object BlockInfoQuerySet extends QuerySet {
@@ -39,8 +39,8 @@ object BlockInfoQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def getBlockInfo(headerId: Id)(implicit lh: LogHandler): Query0[BlockInfo] =
-    sql"select * from blocks_info where header_id = $headerId".query[BlockInfo]
+  def getBlockInfo(headerId: Id)(implicit lh: LogHandler): Query0[BlockStats] =
+    sql"select * from blocks_info where header_id = $headerId".query[BlockStats]
 
   def getManyExtendedMain(
     offset: Int,
@@ -84,8 +84,8 @@ object BlockInfoQuerySet extends QuerySet {
     (q ++ ord ++ lim).query[ExtendedBlockInfo]
   }
 
-  def getManySince(ts: Long)(implicit lh: LogHandler): Query0[BlockInfo] =
-    sql"select * from blocks_info where timestamp >= $ts".query[BlockInfo]
+  def getManySince(ts: Long)(implicit lh: LogHandler): Query0[BlockStats] =
+    sql"select * from blocks_info where timestamp >= $ts".query[BlockStats]
 
   def getManyExtendedByIdLike(q: String)(implicit lh: LogHandler): Query0[ExtendedBlockInfo] =
     sql"""
