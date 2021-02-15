@@ -20,14 +20,14 @@ trait QuerySet {
   def insert[M: Read: Write](m: M): ConnectionIO[M] =
     insert.withUniqueGeneratedKeys[M](fields: _*)(m)
 
-  def insertNoConflict[M: Read: Write](m: M): ConnectionIO[M] =
-    insertNoConflict.withUniqueGeneratedKeys[M](fields: _*)(m)
+  def insertNoConflict[M: Read: Write](m: M): ConnectionIO[Int] =
+    insertNoConflict.run(m)
 
-  def insertMany[M: Read: Write](list: List[M]): ConnectionIO[List[M]] =
-    insert.updateManyWithGeneratedKeys[M](fields: _*)(list).compile.to(List)
+  def insertMany[M: Read: Write](xs: List[M]): ConnectionIO[List[M]] =
+    insert.updateManyWithGeneratedKeys[M](fields: _*)(xs).compile.to(List)
 
-  def insertManyNoConflict[M: Read: Write](list: List[M]): ConnectionIO[List[M]] =
-    insertNoConflict.updateManyWithGeneratedKeys[M](fields: _*)(list).compile.to(List)
+  def insertManyNoConflict[M: Read: Write](xs: List[M]): ConnectionIO[Int] =
+    insertNoConflict.updateMany(xs)
 
   private def insert[M: Write]: Update[M] =
     Update[M](s"insert into $tableName ($fieldsString) values ($holdersString)")
