@@ -46,7 +46,7 @@ lazy val grabber = utils
   .mkModule("chain-grabber", "ChainGrabber")
   .settings(commonSettings)
   .settings(
-    mainClass in assembly := Some("org.ergoplatform.explorer.grabber.Application"),
+    mainClass in assembly := Some("org.ergoplatform.explorer.indexer.Application"),
     libraryDependencies ++= dependencies.grabber
   )
   .dependsOn(core % allConfigDependency)
