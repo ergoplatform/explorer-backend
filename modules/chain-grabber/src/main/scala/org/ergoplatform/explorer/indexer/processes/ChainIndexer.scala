@@ -108,13 +108,17 @@ object ChainIndexer {
       val height       = block.header.height
       val parentId     = block.header.parentId
       val parentHeight = block.header.height - 1
+      info"Applying best block [$id] at height [$height]" >>
       getBlock(parentId).flatMap {
-        case Some(parentBlock) if parentBlock.mainChain   => info"Applying best block [$id] at height [$height]"
-        case None if block.header.height == GenesisHeight => info"Applying genesis block [$id] at height [$height]"
-        case Some(parentBlock)                            => updateBestBlock(parentBlock)
+        case Some(parentBlock) if parentBlock.mainChain   => unit[F]
+        case None if block.header.height == GenesisHeight => unit[F]
+        case Some(parentBlock)                            =>
+          info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
         case None =>
+          info"Parent block [$parentId] needs to be downloaded" >>
           network.getFullBlockById(parentId).flatMap {
-            case Some(parentBlock) => applyBestBlock(parentBlock)
+            case Some(parentBlock) =>
+              applyBestBlock(parentBlock)
             case None =>
               InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]
           }
