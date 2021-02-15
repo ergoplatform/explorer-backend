@@ -1,12 +1,12 @@
-package org.ergoplatform.explorer.indexer
+package org.ergoplatform.explorer.grabber
 
 import cats.{Applicative, FlatMap, Monad}
 import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.db.models._
-import org.ergoplatform.explorer.indexer.models.SlotData
-import org.ergoplatform.explorer.indexer.modules.BuildFrom
+import org.ergoplatform.explorer.grabber.models.SlotData
+import org.ergoplatform.explorer.grabber.modules.BuildFrom
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
 import org.ergoplatform.explorer.protocol.{registers, utils, RegistersParser}
 import org.ergoplatform.explorer.settings.ProtocolSettings

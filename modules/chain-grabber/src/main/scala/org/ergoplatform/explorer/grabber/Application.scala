@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.indexer
+package org.ergoplatform.explorer.grabber
 
 import cats.effect.{ExitCode, Resource}
 import cats.syntax.functor._
@@ -7,7 +7,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
-import org.ergoplatform.explorer.indexer.processes.ChainIndexer
+import org.ergoplatform.explorer.grabber.processes.ChainIndexer
 import org.ergoplatform.explorer.settings.IndexerAppSettings
 import org.http4s.client.blaze.BlazeClientBuilder
 import tofu.concurrent.MakeRef

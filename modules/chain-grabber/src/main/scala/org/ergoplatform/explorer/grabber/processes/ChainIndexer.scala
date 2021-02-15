@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.indexer.processes
+package org.ergoplatform.explorer.grabber.processes
 
 import cats.effect.concurrent.Ref
 import cats.effect.syntax.bracket._
@@ -16,10 +16,10 @@ import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
-import org.ergoplatform.explorer.indexer.extractors._
-import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData}
-import org.ergoplatform.explorer.indexer.modules.BuildFrom.syntax._
-import org.ergoplatform.explorer.indexer.modules.RepoBundle
+import org.ergoplatform.explorer.grabber.extractors._
+import org.ergoplatform.explorer.grabber.models.{FlatBlock, SlotData}
+import org.ergoplatform.explorer.grabber.modules.BuildFrom.syntax._
+import org.ergoplatform.explorer.grabber.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.{IndexerAppSettings, ProtocolSettings}

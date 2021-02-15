@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.indexer.models
+package org.ergoplatform.explorer.grabber.models
 
 import org.ergoplatform.explorer.db.models._
 

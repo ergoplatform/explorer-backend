@@ -1,10 +1,10 @@
-package org.ergoplatform.explorer.indexer.extractors
+package org.ergoplatform.explorer.grabber.extractors
 
 import cats.Monad
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.db.models.BlockStats
-import org.ergoplatform.explorer.indexer.models.SlotData
-import org.ergoplatform.explorer.indexer.modules.BuildFrom
+import org.ergoplatform.explorer.grabber.models.SlotData
+import org.ergoplatform.explorer.grabber.modules.BuildFrom
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
