@@ -4,11 +4,10 @@ import cats.Applicative
 import cats.instances.either._
 import cats.syntax.either._
 import cats.syntax.functor._
-import doobie.refined.implicits._
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{W, refineV}
+import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
@@ -236,8 +235,8 @@ package object explorer {
 
   object Address {
     // doobie instances
-    implicit def get: Get[Address] = deriving
-    implicit def put: Put[Address] = deriving
+    implicit def get: Get[Address] = Get[String].map(fromStringUnsafe)
+    implicit def put: Put[Address] = Put[String].contramap(_.unwrapped)
 
     // circe instances
     implicit def encoder: Encoder[Address] = deriving
@@ -274,6 +273,8 @@ package object explorer {
         .leftMap(RefinementFailed)
         .toRaise[F]
         .map(Address.apply)
+
+    def fromStringUnsafe(s: String): Address = unsafeWrap(refineV[Base58Spec].unsafeFrom(s))
   }
 
   @newtype case class HexString(value: HexStringType) {
@@ -284,7 +285,7 @@ package object explorer {
   object HexString {
     // doobie instances
     implicit def get: Get[HexString] = Get[String].map(fromStringUnsafe)
-    implicit def put: Put[HexString] = deriving
+    implicit def put: Put[HexString] = Put[String].contramap(_.unwrapped)
 
     // circe instances
     implicit def encoder: Encoder[HexString] = deriving
@@ -327,9 +328,6 @@ package object explorer {
   }
 
   object UrlString {
-    // doobie instances
-    implicit def get: Get[UrlString] = deriving
-    implicit def put: Put[UrlString] = deriving
 
     // circe instances
     implicit def encoder: Encoder[UrlString] = deriving
