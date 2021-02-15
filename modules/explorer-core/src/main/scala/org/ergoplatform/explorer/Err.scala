@@ -23,6 +23,9 @@ object Err {
     final case class NoBlocksWritten(height: Int)
       extends ProcessingErr(s"No blocks written at height $height")
 
+    final case class InconsistentNodeView(details: String)
+      extends ProcessingErr(details)
+
     final case class EcPointDecodingFailed(details: String)
       extends ProcessingErr(s"EcPoint decoding failed: $details")
 

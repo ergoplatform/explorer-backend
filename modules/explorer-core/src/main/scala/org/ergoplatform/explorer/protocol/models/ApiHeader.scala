@@ -24,7 +24,7 @@ final case class ApiHeader(
   n: HexString,
   d: String,
   votes: String,
-  mainChain: Boolean = true
+  mainChain: Boolean = true // todo: remove
 )
 
 object ApiHeader {

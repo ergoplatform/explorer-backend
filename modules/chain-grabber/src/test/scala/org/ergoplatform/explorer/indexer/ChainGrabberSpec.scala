@@ -1,21 +1,24 @@
-package org.ergoplatform.explorer.grabber
+package org.ergoplatform.explorer.indexer
 
 import cats.effect._
 import doobie.free.connection.ConnectionIO
+import monix.eval.Task
 import monocle.macros.syntax.lens._
 import org.ergoplatform.explorer.MainNetConfiguration
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.HeaderRepo
-import org.ergoplatform.explorer.db.{RealDbTest, repositories}
-import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
-import org.ergoplatform.explorer.grabber.processes.ChainGrabber
+import org.ergoplatform.explorer.db.{RealDbTest, Trans, repositories}
+import org.ergoplatform.explorer.indexer.GrabberTestNetworkClient.Source
+import org.ergoplatform.explorer.indexer.processes.ChainIndexer
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
-import org.ergoplatform.explorer.settings.GrabberAppSettings
+import org.ergoplatform.explorer.settings.IndexerAppSettings
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalacheck.ScalacheckShapeless._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import tofu.concurrent.MakeRef
+import tofu.logging.Logs
 
 import scala.concurrent.duration._
 
@@ -30,13 +33,16 @@ class ChainGrabberSpec
   import org.ergoplatform.explorer.testConstants._
 
   private lazy val settings =
-    GrabberAppSettings(1.second, mainnetNodes, dbSettings, protocolSettings)
+    IndexerAppSettings(1.second, mainnetNodes, dbSettings, protocolSettings)
+
+  implicit val logs: Logs[IO, IO]       = Logs.sync[IO, IO]
+  implicit val makeRef: MakeRef[IO, IO] = MakeRef.syncInstance
 
   ignore("Network scanning") {
     forSingleInstance(consistentChainGen(12)) { apiBlocks =>
       withLiveRepo[ConnectionIO] { repo =>
         val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
-        ChainGrabber[IO, ConnectionIO](settings, networkService)(xa.trans)
+        ChainIndexer[IO, ConnectionIO](settings, networkService)(Trans.fromDoobie(xa))
           .flatMap(_.run.take(11L).compile.drain)
           .unsafeRunSync()
         repo.getBestHeight.runWithIO() shouldBe 11

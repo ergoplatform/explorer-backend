@@ -1,12 +1,12 @@
-package org.ergoplatform.explorer.grabber
+package org.ergoplatform.explorer.indexer
 
 import cats.{Applicative, FlatMap, Monad}
 import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.db.models._
-import org.ergoplatform.explorer.grabber.models.SlotData
-import org.ergoplatform.explorer.grabber.modules.BuildFrom
+import org.ergoplatform.explorer.indexer.models.SlotData
+import org.ergoplatform.explorer.indexer.modules.BuildFrom
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
 import org.ergoplatform.explorer.protocol.{registers, utils, RegistersParser}
 import org.ergoplatform.explorer.settings.ProtocolSettings
@@ -43,7 +43,7 @@ package object extractors {
 
   implicit def blockInfoBuildFrom[
     F[_]: Monad: WithContext[*[_], ProtocolSettings]: Throws
-  ]: BuildFrom[F, SlotData, BlockInfo] =
+  ]: BuildFrom[F, SlotData, BlockStats] =
     new BlockInfoBuildFrom
 
   implicit def blockExtensionBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, BlockExtension] =

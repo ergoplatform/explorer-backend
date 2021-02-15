@@ -5,7 +5,7 @@ import org.ergoplatform.explorer.{Address, Id}
 /** Represents `blocks_info` table.
   * Containing main fields from protocol header and full-block stats.
   */
-final case class BlockInfo(
+final case class BlockStats(
   headerId: Id,
   timestamp: Long,
   height: Int,

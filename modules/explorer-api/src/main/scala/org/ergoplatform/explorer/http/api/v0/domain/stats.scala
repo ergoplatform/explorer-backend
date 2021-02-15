@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import cats.Functor
 import cats.syntax.functor._
 import cats.effect.Clock
-import org.ergoplatform.explorer.db.models.BlockInfo
+import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.http.api.v0.models.StatsSummary
 
 import scala.math.BigDecimal
@@ -44,9 +44,9 @@ object stats {
   /** Obtain stats from recent blocks.
     */
   @inline def recentToStats(
-    blocks: List[BlockInfo],
-    totalOutputs: BigDecimal,
-    estimatedOutputs: BigDecimal
+                             blocks: List[BlockStats],
+                             totalOutputs: BigDecimal,
+                             estimatedOutputs: BigDecimal
   ): StatsSummary =
     blocks.sortBy(info => -info.height) match {
       case Nil =>

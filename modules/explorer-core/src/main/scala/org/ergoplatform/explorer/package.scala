@@ -10,12 +10,13 @@ import doobie.util.{Get, Put}
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{refineV, W}
+import eu.timepit.refined.{W, refineV}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import io.estatico.newtype.macros.newtype
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.Err.RefinementFailed
+import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
@@ -23,6 +24,7 @@ import scorex.util.encode.Base16
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
 import tofu.Raise.ContravariantRaise
+import tofu.logging.Loggable
 import tofu.syntax.raise._
 
 package object explorer {
@@ -78,6 +80,8 @@ package object explorer {
 
     implicit def validator: Validator[Id] =
       implicitly[Validator[HexString]].contramap[Id](_.value)
+
+    implicit def loggable: Loggable[Id] = deriving
 
     def fromString[
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
@@ -291,6 +295,8 @@ package object explorer {
 
     implicit def validator: Validator[HexString] =
       Validator.validatorForString.contramap[HexString](_.unwrapped)
+
+    implicit def loggable: Loggable[HexString] = Loggable.stringValue.contramap(_.unwrapped)
 
     def fromString[
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
