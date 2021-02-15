@@ -4,6 +4,7 @@ import cats.effect.concurrent.Ref
 import cats.effect.{Sync, Timer}
 import cats.instances.list._
 import cats.syntax.foldable._
+import cats.syntax.option._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
 import cats.{~>, Monad, Parallel}
@@ -71,7 +72,7 @@ object NetworkViewSync {
         _             <- Stream.eval(log.info(s"Current explorer height: $localHeight"))
         range = Stream.range(localHeight + 1, networkHeight + 1)
         _ <- range.evalMap { height =>
-               grabBlocksFromHeight(height)
+               scanHeight(height)
                  .flatMap(_ ||> xa)
                  .flatTap { blocks =>
                    if (blocks.nonEmpty)
@@ -82,7 +83,7 @@ object NetworkViewSync {
              }
       } yield ()
 
-    private def grabBlocksFromHeight(height: Int): F[D[List[BlockInfo]]] =
+    private def scanHeight(height: Int): F[D[List[BlockInfo]]] =
       for {
         ids         <- network.getBlockIdsAtHeight(height)
         existingIds <- getHeaderIdsAtHeight(height)
@@ -123,10 +124,10 @@ object NetworkViewSync {
             .flatMap {
               case None if block.header.height != GenesisHeight =>
                 log.info(s"Processing unknown fork at height $prevHeight") >>
-                  grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
+                  scanHeight(prevHeight).map(_.map(_.headOption))
               case Some(parent) if block.header.mainChain && !parent.mainChain =>
                 log.info(s"Processing fork at height $prevHeight") >>
-                  grabBlocksFromHeight(prevHeight).map(_.map(_.headOption))
+                  scanHeight(prevHeight).map(_.map(_ => parent.copy(mainChain = true).some))
               case parentOpt =>
                 log.debug(s"Parent block: ${parentOpt.map(_.headerId).getOrElse("<none>")}") >>
                   parentOpt.pure[D].pure[F]
