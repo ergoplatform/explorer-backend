@@ -427,7 +427,7 @@ object OutputQuerySet extends QuerySet {
          |  o.main_chain,
          |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join (select i.box_id, i.tx_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
          |left join node_assets a on o.box_id = a.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
