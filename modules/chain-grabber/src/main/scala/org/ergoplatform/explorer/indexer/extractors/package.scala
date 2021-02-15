@@ -37,7 +37,7 @@ package object extractors {
         apiHeader.n,
         apiHeader.d,
         apiHeader.votes,
-        apiHeader.mainChain
+        mainChain = false
       )
     }
 
@@ -68,24 +68,23 @@ package object extractors {
 
   implicit def txsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Transaction]] =
     BuildFrom.pure { case SlotData(apiBlock, _) =>
-      val headerId  = apiBlock.header.id
-      val height    = apiBlock.header.height
-      val mainChain = apiBlock.header.mainChain
-      val ts        = apiBlock.header.timestamp
-      val txs       = apiBlock.transactions.transactions.zipWithIndex
+      val headerId = apiBlock.header.id
+      val height   = apiBlock.header.height
+      val ts       = apiBlock.header.timestamp
+      val txs      = apiBlock.transactions.transactions.zipWithIndex
       val coinbaseTxOpt = txs.lastOption
         .map { case (tx, i) =>
-          Transaction(tx.id, headerId, height, isCoinbase = true, ts, tx.size, i, mainChain)
+          Transaction(tx.id, headerId, height, isCoinbase = true, ts, tx.size, i, mainChain = false)
         }
       val restTxs = txs.init
         .map { case (tx, i) =>
-          Transaction(tx.id, headerId, height, isCoinbase = false, ts, tx.size, i, mainChain)
+          Transaction(tx.id, headerId, height, isCoinbase = false, ts, tx.size, i, mainChain = false)
         }
       restTxs ++ coinbaseTxOpt
     }
 
   implicit def inputsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Input]] =
-    BuildFrom.pure { case SlotData(ApiFullBlock(header, apiTxs, _, _, _), _) =>
+    BuildFrom.pure { case SlotData(ApiFullBlock(_, apiTxs, _, _, _), _) =>
       apiTxs.transactions.flatMap { apiTx =>
         apiTx.inputs.toList.zipWithIndex.map { case (i, index) =>
           Input(
@@ -95,7 +94,7 @@ package object extractors {
             i.spendingProof.proofBytes,
             i.spendingProof.extension,
             index,
-            header.mainChain
+            mainChain = false
           )
         }
       }
@@ -110,7 +109,7 @@ package object extractors {
             apiTx.id,
             apiTxs.headerId,
             index,
-            header.mainChain
+            mainChain = false
           )
         }
       }
@@ -141,7 +140,7 @@ package object extractors {
                 addressOpt,
                 registersJson,
                 header.timestamp,
-                header.mainChain
+                mainChain = false
               )
             }
         }

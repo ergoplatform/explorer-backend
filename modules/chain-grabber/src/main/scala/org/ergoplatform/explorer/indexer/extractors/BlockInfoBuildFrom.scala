@@ -46,9 +46,7 @@ final class BlockInfoBuildFrom[
           difficulty = apiBlock.header.difficulty.value.toLong,
           blockSize  = apiBlock.size,
           blockCoins = blockCoins,
-          blockMiningTime = apiBlock.header.timestamp - prevBlockInfo
-            .map(_.timestamp)
-            .getOrElse(0L),
+          blockMiningTime = prevBlockInfo.map(parent => apiBlock.header.timestamp - parent.timestamp),
           txsCount     = apiBlock.transactions.transactions.length,
           txsSize      = apiBlock.transactions.transactions.map(_.size).sum,
           minerAddress = minerAddress,
@@ -70,7 +68,7 @@ final class BlockInfoBuildFrom[
             .map(_.totalMinersReward)
             .getOrElse(0L) + reward,
           totalCoinsInTxs = prevBlockInfo.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins,
-          mainChain       = apiBlock.header.mainChain
+          mainChain       = false
         )
       }
     }

@@ -12,7 +12,7 @@ final case class BlockStats(
   difficulty: Long,
   blockSize: Int, // block size (bytes)
   blockCoins: Long, // total amount of nERGs in the block
-  blockMiningTime: Long, // block mining time
+  blockMiningTime: Option[Long], // block mining time
   txsCount: Int, // number of txs in the block
   txsSize: Int, // total size of all transactions in this block (bytes)
   minerAddress: Address,
