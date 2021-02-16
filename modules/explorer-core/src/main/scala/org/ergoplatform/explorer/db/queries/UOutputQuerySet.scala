@@ -28,16 +28,68 @@ object UOutputQuerySet extends QuerySet {
   )
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[UOutput] =
-    sql"select * from node_u_outputs offset $offset limit $limit".query[UOutput]
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers
+         |from node_u_outputs o
+         |offset $offset limit $limit
+         |""".stripMargin.query[UOutput]
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[UOutput] =
-    sql"select * from node_u_outputs where tx_id = $txId".query[UOutput]
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers
+         |from node_u_outputs o where o.tx_id = $txId
+         |""".stripMargin.query[UOutput]
 
-  def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UOutput] =
-    in(fr"select * from node_u_outputs where tx_id", txIds).query[UOutput]
+  def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UOutput] = {
+    val q =
+      fr"""
+        |select
+        |  o.box_id,
+        |  o.tx_id,
+        |  o.value,
+        |  o.creation_height,
+        |  o.index,
+        |  o.ergo_tree,
+        |  o.ergo_tree_template_hash,
+        |  o.address,
+        |  o.additional_registers
+        |from node_u_outputs o where o.tx_id
+        |""".stripMargin
+    in(q, txIds).query[UOutput]
+  }
 
   def getAllByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
-    sql"select * from node_u_outputs where ergo_tree = $ergoTree".query[UOutput]
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers
+         |from node_u_outputs o where o.ergo_tree = $ergoTree
+         |""".stripMargin.query[UOutput]
 
   def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
     sql"""
