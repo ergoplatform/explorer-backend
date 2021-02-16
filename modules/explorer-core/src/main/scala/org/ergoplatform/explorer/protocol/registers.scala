@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.protocol
 
 import io.circe.Json
 import io.circe.syntax._
-import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
+import org.ergoplatform.explorer.protocol.models.{ExpandedLegacyRegister, ExpandedRegister, RegisterValue}
 import org.ergoplatform.explorer.{HexString, RegisterId}
 
 import scala.util.Try
@@ -26,5 +26,12 @@ object registers {
     expanded
       .as[Map[RegisterId, ExpandedRegister]]
       .map(_.mapValues(_.serializedValue).asJson)
-      .fold(_ => expanded, identity)
+      .fold(
+        _ =>
+          expanded
+            .as[Map[RegisterId, ExpandedLegacyRegister]]
+            .map(_.mapValues(_.rawValue).asJson)
+            .fold(_ => expanded, identity),
+        identity
+      )
 }

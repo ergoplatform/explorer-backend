@@ -10,3 +10,10 @@ final case class ExpandedRegister(
   sigmaType: SigmaType,
   renderedValue: String
 )
+
+@derive(encoder, decoder)
+final case class ExpandedLegacyRegister(
+  rawValue: HexString,
+  valueType: String,
+  decodedValue: String
+)
