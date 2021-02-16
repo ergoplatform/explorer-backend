@@ -5,12 +5,10 @@ import cats.{Applicative, FlatMap, Monad}
 import org.ergoplatform.contracts.{DexBuyerContractParameters, DexLimitOrderContracts, DexSellerContractParameters}
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{
-  DexBuyOrderAttributesFailed,
-  DexSellOrderAttributesFailed
-}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{DexBuyOrderAttributesFailed, DexSellOrderAttributesFailed}
 import org.ergoplatform.explorer.protocol.sigma.bytesToErgoTree
 import org.ergoplatform.explorer.{CRaise, ErgoTreeTemplateHash, HexString, TokenId}
+import scorex.crypto.hash.Sha256
 import scorex.util.encode.Base16
 import sigmastate.Values.{ByteArrayConstant, ErgoTree}
 import sigmastate.basics.DLogProtocol.ProveDlog
@@ -28,7 +26,7 @@ object dex {
     // since we're only using compiled contracts for constant(parameters) extraction PK value does not matter
     val anyPk      = ProveDlog(constants.group.generator)
     val anyTokenId = Base16.decode("7c232b68665d233356e9abadf3820abff725105c5ccfa8618b77bc3a8bf603ce").get
-    val params     = DexSellerContractParameters(anyPk, anyTokenId, 2L, 2L)
+    val params     = DexSellerContractParameters(anyPk, anyTokenId, 10L, 10L)
     DexLimitOrderContracts.sellerContractInstance(params).ergoTree
   }
 
@@ -36,15 +34,15 @@ object dex {
     // since we're only using compiled contracts for constant(parameters) extraction PK value does not matter
     val anyPk      = ProveDlog(constants.group.generator)
     val anyTokenId = Base16.decode("7c232b68665d233356e9abadf3820abff725105c5ccfa8618b77bc3a8bf603ce").get
-    val params     = DexBuyerContractParameters(anyPk, anyTokenId, 2L, 2L)
+    val params     = DexBuyerContractParameters(anyPk, anyTokenId, 10L, 10L)
     DexLimitOrderContracts.buyerContractInstance(params).ergoTree
   }
 
-  def sellContractTemplate: ErgoTreeTemplateHash =
-    ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(sellContractInstance.template))
+  def sellContractTemplateHash: ErgoTreeTemplateHash =
+    ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(Sha256.hash(sellContractInstance.template)))
 
-  def buyContractTemplate: ErgoTreeTemplateHash =
-    ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(buyContractInstance.template))
+  def buyContractTemplateHash: ErgoTreeTemplateHash =
+    ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(Sha256.hash(buyContractInstance.template)))
 
   /** Extracts tokens price embedded in the DEX sell order contract
     * @param tree ErgoTree of the contract

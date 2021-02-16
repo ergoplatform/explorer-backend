@@ -63,7 +63,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
   property("insert/getUnspentSellOrders") {
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, assetRepo) =>
       forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
-        val contractTemplate = dex.sellContractTemplate
+        val contractTemplate = dex.sellContractTemplateHash
         val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
           .streamUnspentByErgoTreeTemplateHashAndTokenId(
@@ -112,7 +112,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
   property("insert/getUnspentBuyOrders") {
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, _) =>
       forSingleInstance(dexBuyOrderGen) { buyOrder =>
-        val contractTemplate = dex.buyContractTemplate
+        val contractTemplate = dex.buyContractTemplateHash
         val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
         outputRepo
           .streamUnspentByErgoTreeTemplateHashAndTokenId(
