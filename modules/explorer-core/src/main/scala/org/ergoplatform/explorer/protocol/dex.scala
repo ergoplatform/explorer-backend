@@ -5,7 +5,10 @@ import cats.{Applicative, FlatMap, Monad}
 import org.ergoplatform.contracts.{DexBuyerContractParameters, DexLimitOrderContracts, DexSellerContractParameters}
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{DexBuyOrderAttributesFailed, DexSellOrderAttributesFailed}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.{
+  DexBuyOrderAttributesFailed,
+  DexSellOrderAttributesFailed
+}
 import org.ergoplatform.explorer.protocol.sigma.bytesToErgoTree
 import org.ergoplatform.explorer.{CRaise, ErgoTreeTemplateHash, HexString, TokenId}
 import scorex.util.encode.Base16
@@ -16,8 +19,8 @@ import tofu.syntax.raise._
 
 object dex {
 
-  private val SellContractTokenPriceIndexInConstants = 5
-  private val BuyContractTokenIdIndexInConstants     = 6
+  private val SellContractTokenPriceIndexInConstants = 9
+  private val BuyContractTokenIdIndexInConstants     = 1
   private val BuyContractTokenAmountIndexInConstants = 8
 
   // TODO ScalaDoc

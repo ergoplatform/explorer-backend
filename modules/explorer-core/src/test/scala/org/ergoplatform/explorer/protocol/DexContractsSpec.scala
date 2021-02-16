@@ -1,10 +1,9 @@
-package org.ergoplatform.explorer.clients
+package org.ergoplatform.explorer.protocol
 
 import cats.effect.IO
 import org.ergoplatform.contracts.{DexBuyerContractParameters, DexLimitOrderContracts, DexSellerContractParameters}
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.commonGenerators.assetIdGen
-import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.dex.{getTokenInfoFromBuyContractTree, getTokenPriceFromSellContractTree}
 import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
@@ -17,23 +16,27 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 class DexContractsSpec extends PropSpec with Matchers with ScalaCheckDrivenPropertyChecks {
 
   property("getTokenPriceFromSellOrderTree") {
-    forAll(tokenAmountGen) { tokenPrice =>
-      val extractedTokenPrice =
-        getTokenPriceFromSellContractTree[IO](sellContractInstance(tokenPrice))
-          .unsafeRunSync()
+    forAll(Gen.posNum[Long]) { tokenPrice =>
+      whenever(tokenPrice > 1) {
+        val extractedTokenPrice =
+          getTokenPriceFromSellContractTree[IO](sellContractInstance(tokenPrice))
+            .unsafeRunSync()
 
-      extractedTokenPrice shouldBe tokenPrice
+        extractedTokenPrice shouldBe tokenPrice
+      }
     }
   }
 
   property("Buy orders (enrich ExtendedOutput with token info)") {
-    forAll(assetIdGen, tokenAmountGen) { case (tokenId, tokenAmount) =>
-      val extractedTokenInfo =
-        getTokenInfoFromBuyContractTree[IO](buyContractInstance(tokenId, tokenAmount))
-          .unsafeRunSync()
+    forAll(assetIdGen, Gen.posNum[Long]) { case (tokenId, tokenAmount) =>
+      whenever(tokenAmount > 1) {
+        val extractedTokenInfo =
+          getTokenInfoFromBuyContractTree[IO](buyContractInstance(tokenId, tokenAmount))
+            .unsafeRunSync()
 
-      val expectedTokenInfo = (tokenId, tokenAmount)
-      extractedTokenInfo shouldEqual expectedTokenInfo
+        val expectedTokenInfo = (tokenId, tokenAmount)
+        extractedTokenInfo shouldEqual expectedTokenInfo
+      }
     }
   }
 
@@ -52,6 +55,4 @@ class DexContractsSpec extends PropSpec with Matchers with ScalaCheckDrivenPrope
     val params        = DexBuyerContractParameters(anyPk, tokenIdNative, price, 100L)
     DexLimitOrderContracts.buyerContractInstance(params).ergoTree
   }
-
-  private def tokenAmountGen = Gen.choose[Long](100, Long.MaxValue)
 }
