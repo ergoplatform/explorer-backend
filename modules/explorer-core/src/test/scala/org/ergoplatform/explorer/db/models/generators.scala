@@ -5,9 +5,8 @@ import cats.syntax.option._
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
+import org.ergoplatform.explorer.protocol.sigma
 import org.scalacheck.Gen
-import scorex.crypto.hash.Sha256
-import scorex.util.encode.Base16
 
 import scala.util.Try
 
@@ -106,10 +105,10 @@ object generators {
       height   <- Gen.posNum[Int]
       idx      <- Gen.posNum[Int]
       tree     <- ergoTreeGen
-      template <- ergoTreeGen.map(et => ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(Sha256.hash(et.bytes))))
-      address  <- addressGen
-      regs     <- jsonFieldsGen
-      ts       <- Gen.posNum[Long]
+      template = sigma.deriveErgoTreeTemplateHash[Try](tree).get
+      address <- addressGen
+      regs    <- jsonFieldsGen
+      ts      <- Gen.posNum[Long]
     } yield Output(
       boxId,
       txId,

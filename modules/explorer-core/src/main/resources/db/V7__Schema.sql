@@ -138,7 +138,7 @@ CREATE TABLE node_outputs
     index                   INTEGER     NOT NULL,
     ergo_tree               VARCHAR     NOT NULL,
     ergo_tree_template_hash VARCHAR(64) NOT NULL,
-    address                 VARCHAR,
+    address                 VARCHAR     NOT NULL,
     additional_registers    JSON        NOT NULL,
     timestamp               BIGINT      NOT NULL,
     main_chain              BOOLEAN     NOT NULL,
