@@ -18,7 +18,7 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, OutputRepo}
 import org.ergoplatform.explorer.{Address, BoxId, CRaise, HexString}
 import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
-import org.ergoplatform.explorer.protocol.utils
+import org.ergoplatform.explorer.protocol.sigma
 import org.ergoplatform.explorer.syntax.stream._
 
 trait BoxesService[F[_], S[_[_], _]] {
@@ -68,24 +68,24 @@ object BoxesService {
       } yield OutputInfo(box, assets)).value ||> trans.xa
 
     def getOutputsByAddress(address: Address): Stream[F, OutputInfo] =
-      (utils.addressToErgoTreeHex(address).asStream >>= (outRepo
-          .getMainByErgoTree(_, 0, Int.MaxValue)
+      (sigma.addressToErgoTreeHex(address).asStream >>= (outRepo
+          .streamAllByErgoTree(_, 0, Int.MaxValue)
           .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getUnspentOutputsByAddress(address: Address): Stream[F, OutputInfo] =
-      (utils.addressToErgoTreeHex(address).asStream >>= (outRepo
-          .getMainUnspentByErgoTree(_, 0, Int.MaxValue)
+      (sigma.addressToErgoTreeHex(address).asStream >>= (outRepo
+          .streamUnspentByErgoTree(_, 0, Int.MaxValue)
           .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getOutputsByErgoTree(ergoTree: HexString): Stream[F, OutputInfo] =
       outRepo
-        .getMainByErgoTree(ergoTree, 0, Int.MaxValue)
+        .streamAllByErgoTree(ergoTree, 0, Int.MaxValue)
         .chunkN(100)
         .through(toOutputInfo) ||> trans.xas
 
     def getUnspentOutputsByErgoTree(ergoTree: HexString): Stream[F, OutputInfo] =
       outRepo
-        .getMainUnspentByErgoTree(ergoTree, 0, Int.MaxValue)
+        .streamUnspentByErgoTree(ergoTree, 0, Int.MaxValue)
         .chunkN(100)
         .through(toOutputInfo) ||> trans.xas
 

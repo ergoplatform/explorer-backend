@@ -5,9 +5,9 @@ import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Output
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 
 /** A set of queries for doobie implementation of [OutputRepo].
   */
@@ -25,6 +25,7 @@ object OutputQuerySet extends QuerySet {
     "creation_height",
     "index",
     "ergo_tree",
+    "ergo_tree_template_hash",
     "address",
     "additional_registers",
     "timestamp",
@@ -41,6 +42,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -66,6 +68,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -92,6 +95,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -100,22 +104,27 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id
          |left join node_transactions tx on tx.id = o.tx_id
-         |where o.main_chain = true and tx.inclusion_height <= $maxHeight and o.ergo_tree = $ergoTree
+         |where o.main_chain = true
+         |  and tx.inclusion_height <= $maxHeight
+         |  and o.ergo_tree = $ergoTree
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
-  def getAllMainUnspentIdsByErgoTree(
-    ergoTree: HexString
-  )(implicit lh: LogHandler): Query0[BoxId] =
+  def sumAllByErgoTree(
+    ergoTree: HexString,
+    maxHeight: Int
+  )(implicit lh: LogHandler): Query0[Long] =
     sql"""
-         |select o.box_id from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |select coalesce(cast(sum(o.value) as bigint), 0)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_transactions tx on tx.id = o.tx_id
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and tx.inclusion_height <= $maxHeight
          |  and o.ergo_tree = $ergoTree
-         |""".stripMargin.query[BoxId]
+         |""".stripMargin.query[Long]
 
-  def sumOfAllMainUnspentByErgoTree(
+  def sumUnspentByErgoTree(
     ergoTree: HexString,
     maxHeight: Int
   )(implicit lh: LogHandler): Query0[Long] =
@@ -128,6 +137,17 @@ object OutputQuerySet extends QuerySet {
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
+
+  def getAllMainUnspentIdsByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[BoxId] =
+    sql"""
+         |select o.box_id from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[BoxId]
 
   def balanceStatsMain(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[(Address, Long)] =
     sql"""
@@ -164,6 +184,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -177,33 +198,6 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
-  def getMainUnspentByErgoTreeTemplate(
-    ergoTreeTemplate: HexString,
-    offset: Int,
-    limit: Int
-  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
-    sql"""
-         |select
-         |  o.box_id,
-         |  o.tx_id,
-         |  o.header_id,
-         |  o.value,
-         |  o.creation_height,
-         |  o.index,
-         |  o.ergo_tree,
-         |  o.address,
-         |  o.additional_registers,
-         |  o.timestamp,
-         |  o.main_chain,
-         |  null
-         |from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
-         |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
-         |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput]
-
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select distinct on (o.index, o.box_id)
@@ -214,6 +208,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -238,6 +233,7 @@ object OutputQuerySet extends QuerySet {
            |  o.creation_height,
            |  o.index,
            |  o.ergo_tree,
+           |  o.ergo_tree_template_hash,
            |  o.address,
            |  o.additional_registers,
            |  o.timestamp,
@@ -276,71 +272,13 @@ object OutputQuerySet extends QuerySet {
       )
       .query[BigDecimal]
 
-  def getMainUnspentSellOrderByTokenId(
-    tokenId: TokenId,
-    ergoTreeTemplate: HexString,
-    offset: Int,
-    limit: Int
-  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
-    sql"""
-         |select
-         |  o.box_id,
-         |  o.tx_id,
-         |  o.header_id,
-         |  o.value,
-         |  o.creation_height,
-         |  o.index,
-         |  o.ergo_tree,
-         |  o.address,
-         |  o.additional_registers,
-         |  o.timestamp,
-         |  o.main_chain,
-         |  null
-         |from node_outputs o
-         |inner join node_assets a on o.box_id = a.box_id and a.token_id = $tokenId
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
-         |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
-         |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput]
-
-  def getMainUnspentBuyOrderByTokenId(
-    tokenId: TokenId,
-    ergoTreeTemplate: HexString,
-    offset: Int,
-    limit: Int
-  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
-    sql"""
-         |select
-         |  o.box_id,
-         |  o.tx_id,
-         |  o.header_id,
-         |  o.value,
-         |  o.creation_height,
-         |  o.index,
-         |  o.ergo_tree,
-         |  o.address,
-         |  o.additional_registers,
-         |  o.timestamp,
-         |  o.main_chain,
-         |  null
-         |from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
-         |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
-         |  and o.ergo_tree like ${"%" + ergoTreeTemplate}
-         |  and o.ergo_tree like ${"%" + tokenId + "%"}
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput]
-
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
          |update node_outputs set main_chain = $newChainStatus
          |where header_id = $headerId
          """.stripMargin.update
 
-  def getAllMainUnspent(minHeight: Int, maxHeight: Int)(implicit lh: LogHandler): Query0[Output] =
+  def getUnspent(minHeight: Int, maxHeight: Int)(implicit lh: LogHandler): Query0[Output] =
     sql"""
          |select
          |  o.box_id,
@@ -350,16 +288,19 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain
          |from node_outputs o
          |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_headers h on h.id = o.header_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
-         |  and o.creation_height >= $minHeight
-         |  and o.creation_height <= $maxHeight
+         |  and h.height >= $minHeight
+         |  and h.height <= $maxHeight
+         |order by h.height asc
          |""".stripMargin.query[Output]
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedOutput] =
@@ -372,6 +313,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -395,6 +337,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers,
          |  o.timestamp,
@@ -407,5 +350,144 @@ object OutputQuerySet extends QuerySet {
          |  and a.token_id = $tokenId
          |order by o.creation_height asc
          |offset $offset limit $limit
+         |""".stripMargin.query[Output]
+
+  def getAllByErgoTreeTemplateHash(templateHash: ErgoTreeTemplateHash, offset: Int, limit: Int)(implicit
+    lh: LogHandler
+  ): Query0[ExtendedOutput] =
+    sql"""
+         |select distinct on (o.box_id, o.header_id, o.creation_height)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  case i.main_chain when false then null else i.tx_id end
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.ergo_tree_template_hash = $templateHash
+         |order by o.creation_height asc
+         |offset $offset limit $limit
+         |""".stripMargin.query[ExtendedOutput]
+
+  def getUnspentByErgoTreeTemplateHash(templateHash: ErgoTreeTemplateHash, offset: Int, limit: Int)(implicit
+    lh: LogHandler
+  ): Query0[Output] =
+    sql"""
+         |select distinct on (o.box_id, o.header_id, o.creation_height)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain
+         |from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree_template_hash = $templateHash
+         |order by o.creation_height asc
+         |offset $offset limit $limit
+         |""".stripMargin.query[Output]
+
+  def getUnspentByErgoTreeTemplateHashAndTokenId(
+    templateHash: ErgoTreeTemplateHash,
+    tokenId: TokenId,
+    offset: Int,
+    limit: Int
+  )(implicit
+    lh: LogHandler
+  ): Query0[ExtendedOutput] =
+    sql"""
+         |select distinct on (o.box_id, o.header_id, o.creation_height)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  case i.main_chain when false then null else i.tx_id end
+         |from node_outputs o
+         |left join (select i.box_id, i.tx_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_assets a on o.box_id = a.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and a.token_id = $tokenId
+         |  and o.ergo_tree_template_hash = $templateHash
+         |order by o.creation_height asc
+         |offset $offset limit $limit
+         |""".stripMargin.query[ExtendedOutput]
+
+  def getAllByErgoTreeTemplateHashByEpochs(templateHash: ErgoTreeTemplateHash, minHeight: Int, maxHeight: Int)(implicit
+    lh: LogHandler
+  ): Query0[ExtendedOutput] =
+    sql"""
+         |select distinct on (o.box_id, o.header_id, o.creation_height)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  case i.main_chain when false then null else i.tx_id end
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_headers h on h.id = o.header_id
+         |where o.ergo_tree_template_hash = $templateHash
+         |  and h.height >= $minHeight
+         |  and h.height <= $maxHeight
+         |order by h.height asc
+         |""".stripMargin.query[ExtendedOutput]
+
+  def getUnspentByErgoTreeTemplateHashByEpochs(templateHash: ErgoTreeTemplateHash, minHeight: Int, maxHeight: Int)(implicit
+    lh: LogHandler
+  ): Query0[Output] =
+    sql"""
+         |select distinct on (o.box_id, o.header_id, o.creation_height)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain
+         |from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree_template_hash = $templateHash
+         |  and h.height >= $minHeight
+         |  and h.height <= $maxHeight
+         |order by h.height asc
          |""".stripMargin.query[Output]
 }

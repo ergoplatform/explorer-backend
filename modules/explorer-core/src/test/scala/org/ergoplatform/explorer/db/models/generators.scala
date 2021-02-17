@@ -1,10 +1,11 @@
 package org.ergoplatform.explorer.db.models
 
-import cats.syntax.option._
 import cats.instances.try_._
+import cats.syntax.option._
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, ExtendedOutput}
+import org.ergoplatform.explorer.protocol.sigma
 import org.scalacheck.Gen
 
 import scala.util.Try
@@ -104,9 +105,10 @@ object generators {
       height   <- Gen.posNum[Int]
       idx      <- Gen.posNum[Int]
       tree     <- ergoTreeGen
-      address  <- addressGen
-      regs     <- jsonFieldsGen
-      ts       <- Gen.posNum[Long]
+      template = sigma.deriveErgoTreeTemplateHash[Try](tree).get
+      address <- addressGen
+      regs    <- jsonFieldsGen
+      ts      <- Gen.posNum[Long]
     } yield Output(
       boxId,
       txId,
@@ -115,13 +117,14 @@ object generators {
       height,
       idx,
       tree,
-      address.some,
+      template,
+      address,
       regs,
       ts,
       mainChain
     )
 
-  def outputGen(mainChain: Boolean): Gen[Output] = outputGen(mainChain, hexStringRGen)
+  def outputGen(mainChain: Boolean): Gen[Output] = outputGen(mainChain, sellOrderErgoTree)
 
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
@@ -148,7 +151,7 @@ object generators {
       inputGen(mainChain).map { in =>
         val inModified = in.copy(boxId = out.boxId)
         val extIn =
-          ExtendedInput(inModified, out.value.some, out.txId.some, out.index.some, out.addressOpt)
+          ExtendedInput(inModified, out.value.some, out.txId.some, out.index.some, out.address.some)
         out -> extIn
       }
     }

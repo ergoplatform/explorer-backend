@@ -7,13 +7,13 @@ import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import fs2.Stream
+import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TokenId, TxId}
-import org.ergoplatform.explorer.db.doobieInstances._
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */
@@ -33,19 +33,19 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all outputs with a given `ergoTree` appeared in the blockchain before `maxHeight`.
     */
-  def getAllMainByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]]
-
-  /** Get outputs with a given `ergoTree` from persistence.
-    */
-  def getMainByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
+  def getAllByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]]
 
   /** Get all unspent main-chain outputs with a given `ergoTree` from persistence.
     */
   def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): D[List[BoxId]]
 
+  /** Get total amount of all main-chain outputs with a given `ergoTree`.
+    */
+  def sumAllByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long]
+
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
-  def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, minConfirmations: Int): D[Long]
+  def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long]
 
   /** Get balances of all addresses in the network.
     */
@@ -55,23 +55,56 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def totalAddressesMain: D[Int]
 
+  /** Get outputs with a given `ergoTree` from persistence.
+    */
+  def streamAllByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
+
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
-  def getMainUnspentByErgoTree(
+  def streamUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
 
-  /** Get all unspent main-chain outputs that are protected with given ergo tree template
-    * see [[https://github.com/ScorexFoundation/sigmastate-interpreter/issues/264]]
-    * [[http://github.com/ScorexFoundation/sigmastate-interpreter/blob/633efcfd47f2fa4aa240eee2f774cc033cc241a5/sigmastate/src/main/scala/sigmastate/Values.scala#L828-L828]]
+  /** Get all main-chain outputs that are protected with given ergo tree template.
     */
-  def getAllMainUnspentByErgoTreeTemplate(
-    ergoTreeTemplate: HexString,
+  def streamAllByErgoTreeTemplateHash(
+    hash: ErgoTreeTemplateHash,
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
+
+  /** Get all unspent main-chain outputs that are protected with given ergo tree template.
+    */
+  def streamUnspentByErgoTreeTemplateHash(
+    hash: ErgoTreeTemplateHash,
+    offset: Int,
+    limit: Int
+  ): S[D, Output]
+
+  def streamUnspentByErgoTreeTemplateHashAndTokenId(
+    hash: ErgoTreeTemplateHash,
+    tokenId: TokenId,
+    offset: Int,
+    limit: Int
+  ): Stream[D, ExtendedOutput]
+
+  /** Get all main-chain outputs that are protected with given ergo tree template.
+    */
+  def streamAllByErgoTreeTemplateHashByEpochs(
+    hash: ErgoTreeTemplateHash,
+    minHeight: Int,
+    maxHeight: Int
+  ): S[D, ExtendedOutput]
+
+  /** Get all unspent main-chain outputs that are protected with given ergo tree template.
+    */
+  def streamUnspentByErgoTreeTemplateHashByEpochs(
+    hash: ErgoTreeTemplateHash,
+    minHeight: Int,
+    maxHeight: Int
+  ): S[D, Output]
 
   /** Get all outputs related to a given `txId`.
     */
@@ -80,24 +113,6 @@ trait OutputRepo[D[_], S[_[_], _]] {
   /** Get all outputs related to a given list of `txId`.
     */
   def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]]
-
-  /** Get all unspent main-chain DEX sell orders
-    */
-  def getAllMainUnspentSellOrderByTokenId(
-    tokenId: TokenId,
-    ergoTreeTemplate: HexString,
-    offset: Int,
-    limit: Int
-  ): S[D, ExtendedOutput]
-
-  /** Get all unspent main-chain DEX buy orders
-    */
-  def getAllMainUnspentBuyOrderByTokenId(
-    tokenId: TokenId,
-    ergoTreeTemplate: HexString,
-    offset: Int,
-    limit: Int
-  ): S[D, ExtendedOutput]
 
   /** Get all addresses matching the given `query`.
     */
@@ -142,12 +157,12 @@ object OutputRepo {
     def getByBoxId(boxId: BoxId): D[Option[ExtendedOutput]] =
       QS.getByBoxId(boxId).option.liftConnectionIO
 
-    def getAllMainByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]] =
+    def getAllByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[ExtendedOutput]] =
       QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue, maxHeight = maxHeight)
         .to[List]
         .liftConnectionIO
 
-    def getMainByErgoTree(
+    def streamAllByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int
@@ -159,8 +174,11 @@ object OutputRepo {
         .to[List]
         .liftConnectionIO
 
-    def sumOfAllMainUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
-      QS.sumOfAllMainUnspentByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
+    def sumAllByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
+      QS.sumAllByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
+
+    def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
+      QS.sumUnspentByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
 
     def balanceStatsMain(offset: Int, limit: Int): D[List[(Address, Long)]] =
       QS.balanceStatsMain(offset, limit).to[List].liftConnectionIO
@@ -168,20 +186,53 @@ object OutputRepo {
     def totalAddressesMain: D[Int] =
       QS.totalAddressesMain.unique.liftConnectionIO
 
-    def getMainUnspentByErgoTree(
+    def streamUnspentByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
-    def getAllMainUnspentByErgoTreeTemplate(
-      ergoTreeTemplate: HexString,
+    def streamAllByErgoTreeTemplateHash(
+      hash: ErgoTreeTemplateHash,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
-      QS.getMainUnspentByErgoTreeTemplate(ergoTreeTemplate, offset, limit)
-        .stream
+      QS.getAllByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
+
+    def streamUnspentByErgoTreeTemplateHash(
+      hash: ErgoTreeTemplateHash,
+      offset: Int,
+      limit: Int
+    ): Stream[D, Output] =
+      QS.getUnspentByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
+
+    def streamAllByErgoTreeTemplateHashByEpochs(
+      hash: ErgoTreeTemplateHash,
+      minHeight: Int,
+      maxHeight: Int
+    ): Stream[D, ExtendedOutput] =
+      QS.getAllByErgoTreeTemplateHashByEpochs(hash, minHeight, maxHeight).stream.translate(liftK)
+
+    def streamUnspentByErgoTreeTemplateHashByEpochs(
+      hash: ErgoTreeTemplateHash,
+      minHeight: Int,
+      maxHeight: Int
+    ): Stream[D, Output] =
+      QS.getUnspentByErgoTreeTemplateHashByEpochs(hash, minHeight, maxHeight).stream.translate(liftK)
+
+    def streamUnspentByErgoTreeTemplateHashAndTokenId(
+      hash: ErgoTreeTemplateHash,
+      tokenId: TokenId,
+      offset: Int,
+      limit: Int
+    ): Stream[D, ExtendedOutput] =
+      QS.getUnspentByErgoTreeTemplateHashAndTokenId(
+        hash,
+        tokenId,
+        offset,
+        limit
+      ).stream
         .translate(liftK)
 
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
@@ -189,34 +240,6 @@ object OutputRepo {
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
-
-    def getAllMainUnspentSellOrderByTokenId(
-      tokenId: TokenId,
-      ergoTreeTemplate: HexString,
-      offset: Int,
-      limit: Int
-    ): Stream[D, ExtendedOutput] =
-      QS.getMainUnspentSellOrderByTokenId(
-        tokenId,
-        ergoTreeTemplate,
-        offset,
-        limit
-      ).stream
-        .translate(liftK)
-
-    def getAllMainUnspentBuyOrderByTokenId(
-      tokenId: TokenId,
-      ergoTreeTemplate: HexString,
-      offset: Int,
-      limit: Int
-    ): Stream[D, ExtendedOutput] =
-      QS.getMainUnspentBuyOrderByTokenId(
-        tokenId,
-        ergoTreeTemplate,
-        offset,
-        limit
-      ).stream
-        .translate(liftK)
 
     def getAllLike(query: String): D[List[Address]] =
       QS.getAllLike(query).to[List].liftConnectionIO
@@ -231,7 +254,7 @@ object OutputRepo {
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
 
     def getAllMainUnspent(minHeight: Int, maxHeight: Int): Stream[D, Output] =
-      QS.getAllMainUnspent(minHeight, maxHeight).stream.translate(liftK)
+      QS.getUnspent(minHeight, maxHeight).stream.translate(liftK)
 
     def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, ExtendedOutput] =
       QS.getAllByTokenId(tokenId, offset, limit).stream.translate(liftK)

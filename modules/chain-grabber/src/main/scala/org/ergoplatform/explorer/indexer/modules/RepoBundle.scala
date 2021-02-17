@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.grabber.modules
+package org.ergoplatform.explorer.indexer.modules
 
 import cats.effect.Sync
 import fs2.Stream
@@ -17,7 +17,8 @@ final case class RepoBundle[D[_]](
   outputs: OutputRepo[D, Stream],
   assets: AssetRepo[D, Stream],
   registers: BoxRegisterRepo[D],
-  tokens: TokenRepo[D]
+  tokens: TokenRepo[D],
+  constants: ScriptConstantsRepo[D]
 )
 
 object RepoBundle {
@@ -34,6 +35,7 @@ object RepoBundle {
       OutputRepo[F, D],
       AssetRepo[F, D],
       BoxRegisterRepo[F, D],
-      TokenRepo[F, D]
-    ).mapN(RepoBundle(_, _, _, _, _, _, _, _, _, _, _))
+      TokenRepo[F, D],
+      ScriptConstantsRepo[F, D]
+    ).mapN(RepoBundle(_, _, _, _, _, _, _, _, _, _, _, _))
 }

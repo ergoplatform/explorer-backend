@@ -47,16 +47,15 @@ object DexService {
       paging: Paging
     ): Stream[F, DexSellOrderInfo] =
       (for {
-        sellOrderTemplate <- dex.sellContractTemplate.asStream
-        output <- outputRepo.getAllMainUnspentSellOrderByTokenId(
-                   tokenId,
-                   sellOrderTemplate,
-                   paging.offset,
-                   paging.limit
-                 )
+        output <- outputRepo.streamUnspentByErgoTreeTemplateHashAndTokenId(
+                    dex.sellContractTemplateHash,
+                    tokenId,
+                    paging.offset,
+                    paging.limit
+                  )
         tokenPrice <- dex
-                       .getTokenPriceFromSellOrderTree(output.output.ergoTree)
-                       .asStream
+                        .getTokenPriceFromSellOrderTree(output.output.ergoTree)
+                        .asStream
         assets <- assetRepo.getAllByBoxId(output.output.boxId).asStream
       } yield DexSellOrderInfo(output, tokenPrice, assets)) ||> trans.xas
 
@@ -65,16 +64,15 @@ object DexService {
       paging: Paging
     ): Stream[F, DexBuyOrderInfo] =
       (for {
-        buyOrderTemplate <- dex.buyContractTemplate.asStream
-        eOut <- outputRepo.getAllMainUnspentBuyOrderByTokenId(
-                 tokenId,
-                 buyOrderTemplate,
-                 paging.offset,
-                 paging.limit
-               )
+        eOut <- outputRepo.streamUnspentByErgoTreeTemplateHashAndTokenId(
+                  dex.buyContractTemplateHash,
+                  tokenId,
+                  paging.offset,
+                  paging.limit
+                )
         (tokenId, tokenAmount) <- dex
-                                   .getTokenInfoFromBuyOrderTree(eOut.output.ergoTree)
-                                   .asStream
+                                    .getTokenInfoFromBuyOrderTree(eOut.output.ergoTree)
+                                    .asStream
         assets <- assetRepo.getAllByBoxId(eOut.output.boxId).asStream
       } yield DexBuyOrderInfo(eOut, tokenId, tokenAmount, assets)) ||> trans.xas
   }

@@ -2,7 +2,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   scalaVersion := "2.12.12",
   organization := "org.ergoplatform",
-  version := "6.0.0",
+  version := "7.0.0",
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= dependencies.Testing ++ dependencies.CompilerPlugins,
@@ -46,7 +46,7 @@ lazy val grabber = utils
   .mkModule("chain-grabber", "ChainGrabber")
   .settings(commonSettings)
   .settings(
-    mainClass in assembly := Some("org.ergoplatform.explorer.grabber.Application"),
+    mainClass in assembly := Some("org.ergoplatform.explorer.indexer.Application"),
     libraryDependencies ++= dependencies.grabber
   )
   .dependsOn(core % allConfigDependency)

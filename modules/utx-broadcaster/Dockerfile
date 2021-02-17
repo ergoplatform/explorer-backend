@@ -14,4 +14,4 @@ CMD ["/usr/bin/java", "-jar", "/utx-broadcaster.jar"]
 
 FROM openjdk:8-jre-slim
 COPY --from=builder /utx-broadcaster.jar /utx-broadcaster.jar
-ENTRYPOINT ["java", "-jar", "/utx-broadcaster.jar"]
+ENTRYPOINT java -jar /utx-broadcaster.jar $0

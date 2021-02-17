@@ -1,12 +1,13 @@
 package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
+import doobie.Fragments.in
 import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
-import doobie.Fragments.in
-import org.ergoplatform.explorer.{HexString, TxId}
+import doobie.util.query.Query0
 import org.ergoplatform.explorer.db.models.UOutput
+import org.ergoplatform.explorer.{HexString, TxId}
 
 object UOutputQuerySet extends QuerySet {
 
@@ -21,21 +22,74 @@ object UOutputQuerySet extends QuerySet {
     "creation_height",
     "index",
     "ergo_tree",
+    "ergo_tree_template_hash",
     "address",
     "additional_registers"
   )
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[UOutput] =
-    sql"select * from node_u_outputs offset $offset limit $limit".query[UOutput]
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers
+         |from node_u_outputs o
+         |offset $offset limit $limit
+         |""".stripMargin.query[UOutput]
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[UOutput] =
-    sql"select * from node_u_outputs where tx_id = $txId".query[UOutput]
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers
+         |from node_u_outputs o where o.tx_id = $txId
+         |""".stripMargin.query[UOutput]
 
-  def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UOutput] =
-    in(fr"select * from node_u_outputs where tx_id", txIds).query[UOutput]
+  def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UOutput] = {
+    val q =
+      fr"""
+        |select
+        |  o.box_id,
+        |  o.tx_id,
+        |  o.value,
+        |  o.creation_height,
+        |  o.index,
+        |  o.ergo_tree,
+        |  o.ergo_tree_template_hash,
+        |  o.address,
+        |  o.additional_registers
+        |from node_u_outputs o where o.tx_id
+        |""".stripMargin
+    in(q, txIds).query[UOutput]
+  }
 
   def getAllByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
-    sql"select * from node_u_outputs where ergo_tree = $ergoTree".query[UOutput]
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers
+         |from node_u_outputs o where o.ergo_tree = $ergoTree
+         |""".stripMargin.query[UOutput]
 
   def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
     sql"""
@@ -46,10 +100,23 @@ object UOutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.index,
          |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
          |  o.address,
          |  o.additional_registers
          |from node_u_outputs o
          |left join node_u_inputs i on i.box_id = o.box_id
          |where i.box_id is null and o.ergo_tree = $ergoTree
          |""".stripMargin.query[UOutput]
+
+  def sumUnspentByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[Long] =
+    sql"""
+         |select coalesce(cast(sum(o.value) as bigint), 0) from node_outputs o
+         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_transactions tx on tx.id = o.tx_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Long]
 }

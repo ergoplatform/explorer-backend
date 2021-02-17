@@ -1,15 +1,14 @@
-package org.ergoplatform.explorer.grabber
+package org.ergoplatform.explorer.indexer
 
 import cats.effect._
 import doobie.free.connection.ConnectionIO
-import monix.eval.Task
 import monocle.macros.syntax.lens._
 import org.ergoplatform.explorer.MainNetConfiguration
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.HeaderRepo
 import org.ergoplatform.explorer.db.{RealDbTest, Trans, repositories}
-import org.ergoplatform.explorer.grabber.GrabberTestNetworkClient.Source
-import org.ergoplatform.explorer.grabber.processes.ChainIndexer
+import org.ergoplatform.explorer.indexer.GrabberTestNetworkClient.Source
+import org.ergoplatform.explorer.indexer.processes.ChainIndexer
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 import org.ergoplatform.explorer.settings.IndexerAppSettings
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._

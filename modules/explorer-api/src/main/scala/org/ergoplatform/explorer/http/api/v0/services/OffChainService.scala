@@ -31,7 +31,7 @@ import org.ergoplatform.explorer.db.repositories.{
 }
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
-import org.ergoplatform.explorer.protocol.utils
+import org.ergoplatform.explorer.protocol.sigma
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 
@@ -125,7 +125,7 @@ object OffChainService {
       address: Address,
       paging: Paging
     ): F[Items[UTransactionInfo]] =
-      utils
+      sigma
         .addressToErgoTreeHex[F](address)
         .flatMap(getUnconfirmedTxsByErgoTree(_, paging))
 

@@ -1,14 +1,13 @@
-package org.ergoplatform.explorer.grabber.extractors
+package org.ergoplatform.explorer.indexer.extractors
 
 import cats.Monad
 import org.ergoplatform.explorer.Err.{ProcessingErr, RefinementFailed}
 import org.ergoplatform.explorer.db.models.BlockStats
-import org.ergoplatform.explorer.grabber.models.SlotData
-import org.ergoplatform.explorer.grabber.modules.BuildFrom
+import org.ergoplatform.explorer.indexer.models.SlotData
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
-import org.ergoplatform.explorer.{Address, CRaise}
+import org.ergoplatform.explorer.{Address, BuildFrom, CRaise}
 import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog

@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.cache.Redis
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.ergoplatform.explorer.settings.ApiSettings
 import org.ergoplatform.explorer.http.api.decodingFailureHandler._
+import org.ergoplatform.explorer.settings.pureConfigInstances._
 import pureconfig.generic.auto._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}

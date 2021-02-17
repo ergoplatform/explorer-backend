@@ -1,7 +1,7 @@
 object versions {
 
-  val ErgoWalletVersion     = "master-83d10111-SNAPSHOT"
-  val ErgoContractsVertions = "0.0.0-5-ee53f015-SNAPSHOT"
+  val ErgoWalletVersion    = "v3.3.8-aaaab5ef-SNAPSHOT"
+  val ErgoContractsVersion = "1.0.0"
 
   val Http4sVersion          = "0.21.1"
   val TapirVersion           = "0.17.0-M9"
@@ -44,5 +44,5 @@ object versions {
   val ScalaCheckVersion             = "1.14.1"
   val ScalaCheckShapelessVersion    = "1.2.3"
   val TestContainersPostgresVersion = "1.7.3"
-  val TestContainersScalaVersion    = "0.18.0"
+  val TestContainersScalaVersion    = "0.39.1"
 }

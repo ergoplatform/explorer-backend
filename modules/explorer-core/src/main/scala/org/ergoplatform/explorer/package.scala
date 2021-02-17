@@ -2,17 +2,14 @@ package org.ergoplatform
 
 import cats.Applicative
 import cats.instances.either._
-import cats.instances.string._
 import cats.syntax.either._
 import cats.syntax.functor._
-import doobie.refined.implicits._
 import doobie.util.{Get, Put}
-import enumeratum.{CirceEnum, Enum, EnumEntry}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{W, refineV}
+import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
-import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.Err.RefinementFailed
@@ -168,6 +165,48 @@ package object explorer {
     def fromStringUnsafe(s: String): TokenId = unsafeWrap(HexString.fromStringUnsafe(s))
   }
 
+  @newtype case class ErgoTreeTemplateHash(value: HexString)
+
+  object ErgoTreeTemplateHash {
+    // doobie instances
+    implicit def get: Get[ErgoTreeTemplateHash] = deriving
+    implicit def put: Put[ErgoTreeTemplateHash] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[ErgoTreeTemplateHash] = deriving
+
+    implicit def jsonCodec: Codec.JsonCodec[ErgoTreeTemplateHash] =
+      HexString.jsonCodec.map(ErgoTreeTemplateHash(_))(_.value)
+
+    implicit def schema: Schema[ErgoTreeTemplateHash] =
+      Schema.schemaForString.description("ErgoTree Template").asInstanceOf[Schema[ErgoTreeTemplateHash]]
+
+    implicit def validator: Validator[ErgoTreeTemplateHash] =
+      implicitly[Validator[HexString]].contramap[ErgoTreeTemplateHash](_.value)
+
+    def fromStringUnsafe(s: String): ErgoTreeTemplateHash = unsafeWrap(HexString.fromStringUnsafe(s))
+  }
+
+  @newtype case class ErgoTree(value: HexString)
+
+  object ErgoTree {
+    // doobie instances
+    implicit def get: Get[ErgoTree] = deriving
+    implicit def put: Put[ErgoTree] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[ErgoTree] = deriving
+
+    implicit def jsonCodec: Codec.JsonCodec[ErgoTree] =
+      HexString.jsonCodec.map(ErgoTree(_))(_.value)
+
+    implicit def schema: Schema[ErgoTree] =
+      Schema.schemaForString.description("ErgoTree Template").asInstanceOf[Schema[ErgoTree]]
+
+    implicit def validator: Validator[ErgoTree] =
+      implicitly[Validator[HexString]].contramap[ErgoTree](_.value)
+  }
+
   @newtype case class TokenType(value: String)
 
   object TokenType {
@@ -189,33 +228,6 @@ package object explorer {
     implicit def decoder: Decoder[TokenType] = deriving
   }
 
-  sealed abstract class RegisterId extends EnumEntry
-
-  object RegisterId extends Enum[RegisterId] with CirceEnum[RegisterId] {
-
-    case object R0 extends RegisterId
-    case object R1 extends RegisterId
-    case object R2 extends RegisterId
-    case object R3 extends RegisterId
-    case object R4 extends RegisterId
-    case object R5 extends RegisterId
-    case object R6 extends RegisterId
-    case object R7 extends RegisterId
-    case object R8 extends RegisterId
-    case object R9 extends RegisterId
-
-    val values = findValues
-
-    implicit val keyDecoder: KeyDecoder[RegisterId] = withNameOption
-    implicit val keyEncoder: KeyEncoder[RegisterId] = _.entryName
-
-    implicit val get: Get[RegisterId] =
-      Get[String].temap(s => withNameEither(s).leftMap(_ => s"No such RegisterId [$s]"))
-
-    implicit val put: Put[RegisterId] =
-      Put[String].contramap[RegisterId](_.entryName)
-  }
-
   // Ergo Address
   @newtype case class Address(value: AddressType) {
     final def unwrapped: String = value.value
@@ -223,8 +235,8 @@ package object explorer {
 
   object Address {
     // doobie instances
-    implicit def get: Get[Address] = deriving
-    implicit def put: Put[Address] = deriving
+    implicit def get: Get[Address] = Get[String].map(fromStringUnsafe)
+    implicit def put: Put[Address] = Put[String].contramap(_.unwrapped)
 
     // circe instances
     implicit def encoder: Encoder[Address] = deriving
@@ -261,6 +273,8 @@ package object explorer {
         .leftMap(RefinementFailed)
         .toRaise[F]
         .map(Address.apply)
+
+    def fromStringUnsafe(s: String): Address = unsafeWrap(refineV[Base58Spec].unsafeFrom(s))
   }
 
   @newtype case class HexString(value: HexStringType) {
@@ -270,8 +284,8 @@ package object explorer {
 
   object HexString {
     // doobie instances
-    implicit def get: Get[HexString] = deriving
-    implicit def put: Put[HexString] = deriving
+    implicit def get: Get[HexString] = Get[String].map(fromStringUnsafe)
+    implicit def put: Put[HexString] = Put[String].contramap(_.unwrapped)
 
     // circe instances
     implicit def encoder: Encoder[HexString] = deriving
@@ -314,9 +328,6 @@ package object explorer {
   }
 
   object UrlString {
-    // doobie instances
-    implicit def get: Get[UrlString] = deriving
-    implicit def put: Put[UrlString] = deriving
 
     // circe instances
     implicit def encoder: Encoder[UrlString] = deriving
@@ -334,24 +345,6 @@ package object explorer {
         .leftMap(RefinementFailed)
         .toRaise[F]
         .map(UrlString.apply)
-  }
-
-  @newtype case class ContractAttributes(value: Map[String, String])
-
-  object ContractAttributes {
-    // circe instances
-    implicit def encoder: Encoder[ContractAttributes] = deriving
-    implicit def decoder: Decoder[ContractAttributes] = deriving
-
-    implicit def jsonCodec: Codec.JsonCodec[ContractAttributes] =
-      implicitly[Codec.JsonCodec[Map[String, String]]]
-        .map(ContractAttributes(_))(_.value)
-
-    implicit def schema: Schema[ContractAttributes] =
-      implicitly[Schema[Map[String, String]]].asInstanceOf[Schema[ContractAttributes]]
-
-    implicit def validator: Validator[ContractAttributes] =
-      implicitly[Validator[Map[String, String]]].contramap[ContractAttributes](_.value)
   }
 
   private def deriveCodec[A, CF <: CodecFormat, T](

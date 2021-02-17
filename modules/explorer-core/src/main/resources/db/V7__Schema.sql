@@ -130,17 +130,18 @@ CREATE INDEX "node_data_inputs__main_chain" ON node_data_inputs (main_chain);
  */
 CREATE TABLE node_outputs
 (
-    box_id               VARCHAR(64) NOT NULL,
-    tx_id                VARCHAR(64) NOT NULL,
-    header_id            VARCHAR(64) NOT NULL,
-    value                BIGINT      NOT NULL,
-    creation_height      INTEGER     NOT NULL,
-    index                INTEGER     NOT NULL,
-    ergo_tree            VARCHAR     NOT NULL,
-    address              VARCHAR,
-    additional_registers JSON        NOT NULL,
-    timestamp            BIGINT      NOT NULL,
-    main_chain           BOOLEAN     NOT NULL,
+    box_id                  VARCHAR(64) NOT NULL,
+    tx_id                   VARCHAR(64) NOT NULL,
+    header_id               VARCHAR(64) NOT NULL,
+    value                   BIGINT      NOT NULL,
+    creation_height         INTEGER     NOT NULL,
+    index                   INTEGER     NOT NULL,
+    ergo_tree               VARCHAR     NOT NULL,
+    ergo_tree_template_hash VARCHAR(64) NOT NULL,
+    address                 VARCHAR     NOT NULL,
+    additional_registers    JSON        NOT NULL,
+    timestamp               BIGINT      NOT NULL,
+    main_chain              BOOLEAN     NOT NULL,
     PRIMARY KEY (box_id, header_id)
 );
 
@@ -149,6 +150,7 @@ CREATE INDEX "node_outputs__tx_id" ON node_outputs (tx_id);
 CREATE INDEX "node_outputs__header_id" ON node_outputs (header_id);
 CREATE INDEX "node_outputs__address" ON node_outputs (address);
 CREATE INDEX "node_outputs__ergo_tree" ON node_outputs (ergo_tree);
+CREATE INDEX "node_outputs__ergo_tree_template_hash" ON node_outputs (ergo_tree_template_hash);
 CREATE INDEX "node_outputs__timestamp" ON node_outputs (timestamp);
 CREATE INDEX "node_outputs__main_chain" ON node_outputs (main_chain);
 
@@ -168,18 +170,29 @@ CREATE INDEX "node_assets__header_id" ON node_assets (header_id);
 
 CREATE TABLE box_registers
 (
-    id              VARCHAR(2) NOT NULL,
-    box_id          VARCHAR(64) NOT NULL,
-    header_id       VARCHAR(64) NOT NULL,
-    value_type      VARCHAR(128) NOT NULL,
-    raw_value       VARCHAR(4096) NOT NULL,
-    decoded_value   VARCHAR(4096) NOT NULL,
-    PRIMARY KEY (id, box_id, header_id)
+    id               VARCHAR(2)    NOT NULL,
+    box_id           VARCHAR(64)   NOT NULL,
+    value_type       VARCHAR(128)  NOT NULL,
+    serialized_value VARCHAR(4096) NOT NULL,
+    rendered_value   VARCHAR(4096) NOT NULL,
+    PRIMARY KEY (id, box_id)
 );
 
 CREATE INDEX "box_registers__id" ON box_registers (id);
 CREATE INDEX "box_registers__box_id" ON box_registers (box_id);
-CREATE INDEX "box_registers__header_id" ON box_registers (header_id);
+
+CREATE TABLE script_constants
+(
+    index            INTEGER       NOT NULL,
+    box_id           VARCHAR(64)   NOT NULL,
+    value_type       VARCHAR(128)  NOT NULL,
+    serialized_value VARCHAR(2048) NOT NULL,
+    rendered_value   VARCHAR(2048) NOT NULL,
+    PRIMARY KEY (index, box_id)
+);
+
+CREATE INDEX "script_constants__box_id" ON script_constants (box_id);
+CREATE INDEX "script_constants__rendered_value" ON script_constants (rendered_value);
 
 /* Unconfirmed transactions.
  */
@@ -222,19 +235,21 @@ CREATE INDEX "node_u_data_inputs__box_id" ON node_u_data_inputs (box_id);
  */
 CREATE TABLE node_u_outputs
 (
-    box_id               VARCHAR(64) PRIMARY KEY,
-    tx_id                VARCHAR(64) NOT NULL REFERENCES node_u_transactions (id) ON DELETE CASCADE,
-    value                BIGINT      NOT NULL,
-    creation_height      INTEGER     NOT NULL,
-    index                INTEGER     NOT NULL,
-    ergo_tree            VARCHAR     NOT NULL,
-    address              VARCHAR,
-    additional_registers JSON        NOT NULL
+    box_id                  VARCHAR(64) PRIMARY KEY,
+    tx_id                   VARCHAR(64) NOT NULL REFERENCES node_u_transactions (id) ON DELETE CASCADE,
+    value                   BIGINT      NOT NULL,
+    creation_height         INTEGER     NOT NULL,
+    index                   INTEGER     NOT NULL,
+    ergo_tree               VARCHAR     NOT NULL,
+    ergo_tree_template_hash VARCHAR(64) NOT NULL,
+    address                 VARCHAR,
+    additional_registers    JSON        NOT NULL
 );
 
 CREATE INDEX "node_u_outputs__box_id" ON node_u_outputs (box_id);
 CREATE INDEX "node_u_outputs__tx_id" ON node_u_outputs (tx_id);
 CREATE INDEX "node_u_outputs__address" ON node_u_outputs (address);
+CREATE INDEX "node_u_outputs__ergo_tree_template_hash" ON node_u_outputs (ergo_tree_template_hash);
 
 /* Inputs containing in unconfirmed outputs.
  */

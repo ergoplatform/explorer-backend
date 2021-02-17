@@ -9,7 +9,7 @@ import fs2.Stream
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Asset
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{AggregatedAsset, ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TokenId}
 
@@ -34,6 +34,8 @@ trait AssetRepo[D[_], S[_[_], _]] {
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedAsset]]
 
   def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedAsset]]
+
+  def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[AggregatedAsset]]
 
   /** Get all addresses holding an asset with a given `assetId`.
     */
@@ -91,6 +93,9 @@ object AssetRepo {
 
     def getAllMainUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedAsset]] =
       QS.getAllMainUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
+
+    def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[AggregatedAsset]] =
+      QS.aggregateUnspentByErgoTree(ergoTree, maxHeight).to[List].liftConnectionIO
 
     def getAllHoldingAddresses(
       tokenId: TokenId,

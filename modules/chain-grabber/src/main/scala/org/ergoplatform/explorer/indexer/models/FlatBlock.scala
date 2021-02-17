@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.grabber.models
+package org.ergoplatform.explorer.indexer.models
 
 import org.ergoplatform.explorer.db.models._
 
@@ -16,5 +16,6 @@ final case class FlatBlock(
                             outputs: List[Output],
                             assets: List[Asset],
                             registers: List[BoxRegister],
-                            tokens: List[Token]
+                            tokens: List[Token],
+  constants: List[ScriptConstant]
 )

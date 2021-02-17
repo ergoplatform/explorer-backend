@@ -61,8 +61,8 @@ object dependencies {
   )
 
   val Ergo: List[ModuleID] = List(
-    "org.ergoplatform" %% "ergo-wallet"        % ErgoWalletVersion,
-    "org.ergoplatform" %% "verified-contracts" % ErgoContractsVertions
+    "org.ergoplatform" %% "ergo-wallet" % ErgoWalletVersion,
+    "org.ergoplatform" %% "contracts"   % ErgoContractsVersion
   )
 
   val Logging: List[ModuleID] = List(
@@ -80,12 +80,11 @@ object dependencies {
   )
 
   val Testing: List[ModuleID] = List(
-    //"org.tpolecat"               %% "doobie-scalatest"          % DoobieVersion                 % Test,
-    "org.scalatest"              %% "scalatest"                 % ScalaTestVersion              % Test,
-    "org.scalacheck"             %% "scalacheck"                % ScalaCheckVersion             % Test,
-    "org.testcontainers"          % "postgresql"                % TestContainersPostgresVersion % Test,
-    "com.dimafeng"               %% "testcontainers-scala"      % TestContainersScalaVersion    % Test,
-    "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % ScalaCheckShapelessVersion    % Test
+    "org.scalatest"              %% "scalatest"                       % ScalaTestVersion           % Test,
+    "org.scalacheck"             %% "scalacheck"                      % ScalaCheckVersion          % Test,
+    "com.dimafeng"               %% "testcontainers-scala-scalatest"  % TestContainersScalaVersion % Test,
+    "com.dimafeng"               %% "testcontainers-scala-postgresql" % TestContainersScalaVersion % Test,
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.14"       % ScalaCheckShapelessVersion % Test
   )
 
   val Typing: List[ModuleID] = List(

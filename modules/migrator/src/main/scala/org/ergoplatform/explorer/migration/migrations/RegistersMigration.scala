@@ -13,7 +13,7 @@ import io.circe.syntax._
 import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.{BoxRegister, Output}
 import org.ergoplatform.explorer.db.repositories.BoxRegisterRepo
-import org.ergoplatform.explorer.migration.configs.RegistersMigrationConfig
+import org.ergoplatform.explorer.migration.configs.ProcessingConfig
 import org.ergoplatform.explorer.protocol.RegistersParser
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
 import org.ergoplatform.explorer.{HexString, RegisterId}
@@ -22,7 +22,7 @@ import tofu.syntax.monadic._
 import scala.util.Try
 
 final class RegistersMigration(
-  conf: RegistersMigrationConfig,
+  conf: ProcessingConfig,
   registers: BoxRegisterRepo[ConnectionIO],
   xa: Transactor[IO],
   log: Logger[IO]
@@ -61,9 +61,9 @@ final class RegistersMigration(
         val registers = for {
           (id, rawValue)                  <- rawRegisters.toList
           RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(rawValue).toOption
-        } yield BoxRegister(id, out.boxId, out.headerId, valueType, rawValue, value)
+        } yield BoxRegister(id, out.boxId, valueType, rawValue, value)
         val registersJson = registers
-          .map { case BoxRegister(id, _, _, valueType, rawValue, decodedValue) =>
+          .map { case BoxRegister(id, _, valueType, rawValue, decodedValue) =>
             id.entryName -> ExpandedRegister(rawValue, valueType, decodedValue)
           }
           .toMap
@@ -103,7 +103,7 @@ final class RegistersMigration(
 object RegistersMigration {
 
   def apply(
-    conf: RegistersMigrationConfig,
+    conf: ProcessingConfig,
     xa: Transactor[IO]
   )(implicit timer: Timer[IO]): IO[Unit] =
     for {
