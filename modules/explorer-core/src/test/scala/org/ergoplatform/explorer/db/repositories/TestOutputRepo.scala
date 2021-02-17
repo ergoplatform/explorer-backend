@@ -91,6 +91,8 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
   override def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] = ???
 
   override def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+
+  override def searchAll(templateHash: ErgoTreeTemplateHash, constants: Option[NonEmptyList[(Int, String)]], offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] = ???
 }
 
 object TestOutputRepo {

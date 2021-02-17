@@ -4,7 +4,7 @@ import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.OutputInfo
+import org.ergoplatform.explorer.http.api.v1.models.{BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
@@ -28,6 +28,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     getUnspentOutputsByErgoTreeTemplateHashDef ::
     getOutputsByAddressDef ::
     getUnspentOutputsByAddressDef ::
+    searchOutputsDef ::
     Nil
 
   def streamUnspentOutputsDef: Endpoint[Epochs, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
@@ -107,6 +108,13 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
   def getUnspentOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byAddress" / path[Address])
+      .in(paging(settings.maxEntitiesPerRequest))
+      .out(jsonBody[Items[OutputInfo]])
+
+  def searchOutputsDef: Endpoint[(BoxQuery, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.post
+      .in(PathPrefix / "search")
+      .in(jsonBody[BoxQuery])
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 }

@@ -377,6 +377,41 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
+  def searchAll(
+    templateHash: ErgoTreeTemplateHash,
+    constants: Option[NonEmptyList[(Int, String)]],
+    offset: Int,
+    limit: Int
+  )(implicit
+    lh: LogHandler
+  ): Query0[ExtendedOutput] =
+    Fragment
+      .const(
+        s"""
+           |select distinct on (o.box_id, o.header_id, o.creation_height)
+           |  o.box_id,
+           |  o.tx_id,
+           |  o.header_id,
+           |  o.value,
+           |  o.creation_height,
+           |  o.index,
+           |   o.ergo_tree,
+           |  o.ergo_tree_template_hash,
+           |  o.address,
+           |  o.additional_registers,
+           |  o.timestamp,
+           |  o.main_chain,
+           |  case i.main_chain when false then null else i.tx_id end
+           |from node_outputs o
+           |left join node_inputs i on o.box_id = i.box_id
+           |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
+           |where o.ergo_tree_template_hash = $templateHash
+           |order by o.creation_height asc
+           |offset $offset limit $limit
+           |""".stripMargin
+      )
+      .query[ExtendedOutput]
+
   def getUnspentByErgoTreeTemplateHash(templateHash: ErgoTreeTemplateHash, offset: Int, limit: Int)(implicit
     lh: LogHandler
   ): Query0[Output] =
@@ -464,8 +499,8 @@ object OutputQuerySet extends QuerySet {
          |order by h.height asc
          |""".stripMargin.query[ExtendedOutput]
 
-  def getUnspentByErgoTreeTemplateHashByEpochs(templateHash: ErgoTreeTemplateHash, minHeight: Int, maxHeight: Int)(implicit
-    lh: LogHandler
+  def getUnspentByErgoTreeTemplateHashByEpochs(templateHash: ErgoTreeTemplateHash, minHeight: Int, maxHeight: Int)(
+    implicit lh: LogHandler
   ): Query0[Output] =
     sql"""
          |select distinct on (o.box_id, o.header_id, o.creation_height)

@@ -7,13 +7,13 @@ import cats.syntax.functor._
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{refineV, W}
+import eu.timepit.refined.{W, refineV}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.{Id, TokenId}
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
@@ -171,6 +171,10 @@ package object explorer {
     // doobie instances
     implicit def get: Get[ErgoTreeTemplateHash] = deriving
     implicit def put: Put[ErgoTreeTemplateHash] = deriving
+
+    // circe instances
+    implicit def encoder: Encoder[ErgoTreeTemplateHash] = deriving
+    implicit def decoder: Decoder[ErgoTreeTemplateHash] = deriving
 
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[ErgoTreeTemplateHash] = deriving

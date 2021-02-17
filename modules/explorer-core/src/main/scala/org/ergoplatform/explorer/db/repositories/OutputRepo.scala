@@ -133,6 +133,13 @@ trait OutputRepo[D[_], S[_[_], _]] {
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, ExtendedOutput]
 
   def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, Output]
+
+  def searchAll(
+    templateHash: ErgoTreeTemplateHash,
+    constants: Option[NonEmptyList[(Int, String)]],
+    offset: Int,
+    limit: Int
+  ): S[D, ExtendedOutput]
 }
 
 object OutputRepo {
@@ -261,5 +268,13 @@ object OutputRepo {
 
     def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, Output] =
       QS.getUnspentByTokenId(tokenId, offset, limit).stream.translate(liftK)
+
+    def searchAll(
+      templateHash: ErgoTreeTemplateHash,
+      constants: Option[NonEmptyList[(Int, String)]],
+      offset: Int,
+      limit: Int
+    ): Stream[D, ExtendedOutput] =
+      QS.searchAll(templateHash, constants, offset, limit).stream.translate(liftK)
   }
 }

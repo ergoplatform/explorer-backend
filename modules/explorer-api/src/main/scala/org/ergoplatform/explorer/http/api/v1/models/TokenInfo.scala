@@ -1,11 +1,12 @@
 package org.ergoplatform.explorer.http.api.v1.models
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import derevo.circe.{decoder, encoder}
+import derevo.derive
 import org.ergoplatform.explorer.db.models.Token
 import org.ergoplatform.explorer.{BoxId, TokenId, TokenType}
 import sttp.tapir.{Schema, Validator}
 
+@derive(encoder, decoder)
 final case class TokenInfo(
   id: TokenId,
   boxId: BoxId,
@@ -28,8 +29,6 @@ object TokenInfo {
       token.`type`,
       token.decimals
     )
-
-  implicit val codec: Codec[TokenInfo] = deriveCodec
 
   implicit val schema: Schema[TokenInfo] =
     Schema
