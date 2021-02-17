@@ -23,5 +23,5 @@ object BoxQuery {
       .modify(_.constants)(_.description("Pairs of (constant index, constant value) this box should contain"))
       .modify(_.constants)(_.description("IDs of tokens this box should contain"))
 
-  implicit val validator: Validator[BoxQuery] = Validator.derive
+  implicit val validator: Validator[BoxQuery] = Validator.pass
 }
