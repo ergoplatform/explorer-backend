@@ -44,5 +44,5 @@ object versions {
   val ScalaCheckVersion             = "1.14.1"
   val ScalaCheckShapelessVersion    = "1.2.3"
   val TestContainersPostgresVersion = "1.7.3"
-  val TestContainersScalaVersion    = "0.18.0"
+  val TestContainersScalaVersion    = "0.39.1"
 }

@@ -124,7 +124,7 @@ object generators {
       mainChain
     )
 
-  def outputGen(mainChain: Boolean): Gen[Output] = outputGen(mainChain, hexStringRGen)
+  def outputGen(mainChain: Boolean): Gen[Output] = outputGen(mainChain, sellOrderErgoTree)
 
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean

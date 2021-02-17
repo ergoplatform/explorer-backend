@@ -60,7 +60,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
     }
   }
 
-  property("insert/getUnspentSellOrders") {
+  ignore("insert/getUnspentSellOrders") {
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, assetRepo) =>
       forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
         val contractTemplate = dex.sellContractTemplateHash
@@ -109,7 +109,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
     }
   }
 
-  property("insert/getUnspentBuyOrders") {
+  ignore("insert/getUnspentBuyOrders") {
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, _) =>
       forSingleInstance(dexBuyOrderGen) { buyOrder =>
         val contractTemplate = dex.buyContractTemplateHash
