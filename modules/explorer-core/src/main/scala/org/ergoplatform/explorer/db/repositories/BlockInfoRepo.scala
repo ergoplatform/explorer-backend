@@ -9,20 +9,20 @@ import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
-import org.ergoplatform.explorer.db.models.BlockInfo
+import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedBlockInfo, MinerStats, TimePoint}
 
-/** [[BlockInfo]] data access operations.
+/** [[BlockStats]] data access operations.
   */
 trait BlockInfoRepo[D[_]] {
 
   /** Put a given `blockInfo` to persistence.
     */
-  def insert(blockInfo: BlockInfo): D[Unit]
+  def insert(blockInfo: BlockStats): D[Unit]
 
   /** Get block info with a given `headerId`.
     */
-  def get(id: Id): D[Option[BlockInfo]]
+  def get(id: Id): D[Option[BlockStats]]
 
   /** Get slice of the main chain.
     */
@@ -35,7 +35,7 @@ trait BlockInfoRepo[D[_]] {
 
   /** Get all blocks appeared in the main chain after the given timestamp `ts`.
     */
-  def getManySince(ts: Long): D[List[BlockInfo]]
+  def getManySince(ts: Long): D[List[BlockStats]]
 
   /** Get all blocks with id matching a given `query`.
     */
@@ -83,10 +83,10 @@ object BlockInfoRepo {
 
     import org.ergoplatform.explorer.db.queries.{BlockInfoQuerySet => QS}
 
-    def insert(blockInfo: BlockInfo): D[Unit] =
+    def insert(blockInfo: BlockStats): D[Unit] =
       QS.insertNoConflict(blockInfo).void.liftConnectionIO
 
-    def get(id: Id): D[Option[BlockInfo]] =
+    def get(id: Id): D[Option[BlockStats]] =
       QS.getBlockInfo(id).option.liftConnectionIO
 
     def getMany(
@@ -97,7 +97,7 @@ object BlockInfoRepo {
     ): D[List[ExtendedBlockInfo]] =
       QS.getManyExtendedMain(offset, limit, ordering, orderBy).to[List].liftConnectionIO
 
-    def getManySince(ts: Long): D[List[BlockInfo]] =
+    def getManySince(ts: Long): D[List[BlockStats]] =
       QS.getManySince(ts).to[List].liftConnectionIO
 
     def getManyByIdLike(query: String): D[List[ExtendedBlockInfo]] =

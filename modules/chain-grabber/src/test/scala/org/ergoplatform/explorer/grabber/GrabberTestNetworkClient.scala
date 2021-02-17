@@ -31,6 +31,5 @@ object GrabberTestNetworkClient {
     lazy val blocksStorage: Map[Int, List[ApiFullBlock]] =
       blocks
         .groupBy(_.header.height)
-        .map { case (k, vls) => k -> vls.sortBy(_.header.mainChain) }
   }
 }

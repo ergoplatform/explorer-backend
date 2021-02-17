@@ -10,18 +10,18 @@ import org.ergoplatform.explorer.settings.pureConfigInstances._
 
 import scala.concurrent.duration.FiniteDuration
 
-final case class GrabberAppSettings(
+final case class IndexerAppSettings(
   pollInterval: FiniteDuration,
   masterNodesAddresses: NonEmptyList[UrlString],
   db: DbSettings,
   protocol: ProtocolSettings
 )
 
-object GrabberAppSettings {
+object IndexerAppSettings {
 
-  def load[F[_]: Sync](pathOpt: Option[String]): F[GrabberAppSettings] =
+  def load[F[_]: Sync](pathOpt: Option[String]): F[IndexerAppSettings] =
     pathOpt
       .map(ConfigSource.file)
       .getOrElse(ConfigSource.default)
-      .loadF[F, GrabberAppSettings]
+      .loadF[F, IndexerAppSettings]
 }

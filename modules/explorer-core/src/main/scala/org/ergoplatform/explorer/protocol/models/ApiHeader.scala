@@ -23,8 +23,7 @@ final case class ApiHeader(
   w: HexString,
   n: HexString,
   d: String,
-  votes: String,
-  mainChain: Boolean = true
+  votes: String
 )
 
 object ApiHeader {
