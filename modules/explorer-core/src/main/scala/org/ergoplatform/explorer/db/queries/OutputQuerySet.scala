@@ -405,7 +405,7 @@ object OutputQuerySet extends QuerySet {
            |from node_outputs o
            |left join node_inputs i on o.box_id = i.box_id
            |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
-           |where o.ergo_tree_template_hash = $templateHash
+           |where o.ergo_tree_template_hash = '$templateHash'
            |order by o.creation_height asc
            |offset $offset limit $limit
            |""".stripMargin
