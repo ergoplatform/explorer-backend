@@ -34,7 +34,7 @@ final class RegistersAndConstantsMigration(
   log: Logger[IO]
 )(implicit timer: Timer[IO], par: Parallel[IO]) {
 
-  def run: IO[Unit] = updateSchema >> migrateBatch(conf.offset, conf.batchSize)
+  def run: IO[Unit] = (if (conf.updateSchema) updateSchema else IO.unit) >> migrateBatch(conf.offset, conf.batchSize)
 
   def updateSchema: IO[Unit] = {
     val txn =
@@ -141,9 +141,8 @@ final class RegistersAndConstantsMigration(
   }
 
   def recreateRegistersTable: ConnectionIO[Unit] =
-    sql"drop table box_registers".update.run >>
     sql"""
-         |create table box_registers
+         |create table if not exists box_registers
          |(
          |    id               varchar(2)    not null,
          |    box_id           varchar(64)   not null,
@@ -159,7 +158,7 @@ final class RegistersAndConstantsMigration(
 
   def createConstantsTable: ConnectionIO[Unit] =
     sql"""
-         |create table script_constants
+         |create table if not exists script_constants
          |(
          |    index            integer       not null,
          |    box_id           varchar(64)   not null,
