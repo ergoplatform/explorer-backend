@@ -210,8 +210,11 @@ object BoxesService {
         .map(items => Items(items, items.size))
 
     def searchAll(boxQuery: BoxQuery, paging: Paging): F[Items[OutputInfo]] = {
+      val registers = boxQuery.registers.flatMap(rs => NonEmptyList.fromList(rs.toList))
       val constants = boxQuery.constants.flatMap(cs => NonEmptyList.fromList(cs.toList))
-      outputs.searchAll(boxQuery.ergoTreeTemplateHash, constants, paging.offset, paging.limit)
+      val assets    = boxQuery.assets.flatMap(NonEmptyList.fromList)
+      outputs
+        .searchAll(boxQuery.ergoTreeTemplateHash, registers, constants, assets, paging.offset, paging.limit)
         .chunkN(serviceSettings.chunkSize)
         .through(toOutputInfo)
         .thrushK(trans.xas)
