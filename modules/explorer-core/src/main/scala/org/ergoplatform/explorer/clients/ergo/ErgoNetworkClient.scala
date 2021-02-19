@@ -27,6 +27,7 @@ import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}
+import fs2.Stream
 import tofu.syntax.raise._
 
 /** A service providing an access to the Ergo network.
@@ -77,6 +78,8 @@ object ErgoNetworkClient {
     nodesPool: Ref[F, List[UrlString]]
   ) extends ErgoNetworkClient[F] {
 
+    private val txsBatchSize = 20
+
     def getBestHeight: F[Int] =
       retrying { url =>
         client
@@ -102,7 +105,22 @@ object ErgoNetworkClient {
 
     def getUnconfirmedTransactions: F[List[ApiTransaction]] =
       retrying { url =>
-        client.expect[List[ApiTransaction]](makeGetRequest(s"$url/transactions/unconfirmed"))
+        def go(i: Int, acc: List[ApiTransaction]): F[List[ApiTransaction]] = {
+          val limit  = txsBatchSize
+          val offset = i * limit
+          val req = Request[F](
+            Method.GET,
+            Uri
+              .unsafeFromString(s"$url/transactions/unconfirmed")
+              .withQueryParam("offset", offset)
+              .withQueryParam("limit", limit)
+          )
+          client.expect[List[ApiTransaction]](req).flatMap {
+            case Nil => acc.pure[F]
+            case xs  => go(i + 1, acc ++ xs)
+          }
+        }
+        go(0, List())
       }
 
     def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =

@@ -173,8 +173,8 @@ CREATE TABLE box_registers
     id               VARCHAR(2)    NOT NULL,
     box_id           VARCHAR(64)   NOT NULL,
     value_type       VARCHAR(128)  NOT NULL,
-    serialized_value VARCHAR(4096) NOT NULL,
-    rendered_value   VARCHAR(4096) NOT NULL,
+    serialized_value VARCHAR(8192) NOT NULL,
+    rendered_value   VARCHAR(8192) NOT NULL,
     PRIMARY KEY (id, box_id)
 );
 
@@ -186,8 +186,8 @@ CREATE TABLE script_constants
     index            INTEGER       NOT NULL,
     box_id           VARCHAR(64)   NOT NULL,
     value_type       VARCHAR(128)  NOT NULL,
-    serialized_value VARCHAR(2048) NOT NULL,
-    rendered_value   VARCHAR(2048) NOT NULL,
+    serialized_value VARCHAR(4096) NOT NULL,
+    rendered_value   VARCHAR(4096) NOT NULL,
     PRIMARY KEY (index, box_id)
 );
 
@@ -278,7 +278,7 @@ CREATE TABLE tokens
     box_id          VARCHAR(64)   NOT NULL,
     emission_amount BIGINT        NOT NULL,
     name            VARCHAR(128),
-    description     VARCHAR(1024),
+    description     VARCHAR,
     type            VARCHAR(128),
     decimals        INTEGER
 );

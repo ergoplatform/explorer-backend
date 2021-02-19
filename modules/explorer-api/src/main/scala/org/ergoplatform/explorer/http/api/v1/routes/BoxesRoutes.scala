@@ -26,13 +26,14 @@ final class BoxesRoutes[
     streamUnspentOutputsByErgoTreeTemplateHashR <+>
     unspentOutputsByTokenIdR <+>
     outputsByTokenIdR <+>
-    getOutputByIdR <+>
+    searchOutputsR <+>
     getOutputsByErgoTreeR <+>
     getUnspentOutputsByErgoTreeR <+>
     getOutputsByErgoTreeTemplateHashR <+>
     getUnspentOutputsByErgoTreeTemplateHashR <+>
     getOutputsByAddressR <+>
-    getUnspentOutputsByAddressR
+    getUnspentOutputsByAddressR <+>
+    getOutputByIdR
 
   private def streamUnspentOutputsR: HttpRoutes[F] =
     defs.streamUnspentOutputsDef.toRoutes { epochs =>
@@ -101,6 +102,11 @@ final class BoxesRoutes[
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
     defs.getUnspentOutputsByAddressDef.toRoutes { case (address, paging) =>
       service.getUnspentOutputsByAddress(address, paging).adaptThrowable.value
+    }
+
+  private def searchOutputsR: HttpRoutes[F] =
+    defs.searchOutputsDef.toRoutes { case (query, paging) =>
+      service.searchAll(query, paging).adaptThrowable.value
     }
 }
 

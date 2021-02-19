@@ -1,11 +1,12 @@
 package org.ergoplatform.explorer.http.api.v1.models
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import derevo.circe.{decoder, encoder}
+import derevo.derive
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedAsset
 import org.ergoplatform.explorer.{BoxId, Id, TokenId, TokenType}
 import sttp.tapir.{Schema, Validator}
 
+@derive(encoder, decoder)
 final case class AssetInfo(
   headerId: Id,
   boxId: BoxId,
@@ -30,8 +31,6 @@ object AssetInfo {
       asset.decimals,
       asset.`type`
     )
-
-  implicit val codec: Codec[AssetInfo] = deriveCodec
 
   implicit val schema: Schema[AssetInfo] =
     Schema

@@ -38,28 +38,33 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   def sumAllByErgoTree(ergoTree: HexString, minConfirmations: Int): F[Long] = ???
 
-  def streamAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] =
+  def streamAllByErgoTreeTemplateHash(
+    hash: ErgoTreeTemplateHash,
+    offset: Int,
+    limit: Int
+  ): fs2.Stream[F, ExtendedOutput] =
     ???
 
-  def streamUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+  def streamUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, offset: Int, limit: Int): fs2.Stream[F, Output] =
+    ???
 
   def streamAllByErgoTreeTemplateHashByEpochs(
-                                               hash: ErgoTreeTemplateHash,
-                                               minHeight: Int,
-                                               maxHeight: Int
+    hash: ErgoTreeTemplateHash,
+    minHeight: Int,
+    maxHeight: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
   def streamUnspentByErgoTreeTemplateHashByEpochs(
-                                                   hash: ErgoTreeTemplateHash,
-                                                   minHeight: Int,
-                                                   maxHeight: Int
+    hash: ErgoTreeTemplateHash,
+    minHeight: Int,
+    maxHeight: Int
   ): fs2.Stream[F, Output] = ???
 
   def streamUnspentByErgoTreeTemplateHashAndTokenId(
-                                                     hash: ErgoTreeTemplateHash,
-                                                     tokenId: TokenId,
-                                                     offset: Int,
-                                                     limit: Int
+    hash: ErgoTreeTemplateHash,
+    tokenId: TokenId,
+    offset: Int,
+    limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
   override def getAllByTxId(
@@ -91,6 +96,15 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
   override def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] = ???
 
   override def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+
+  override def searchAll(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]],
+    offset: Int,
+    limit: Int
+  ): fs2.Stream[F, ExtendedOutput] = ???
 }
 
 object TestOutputRepo {

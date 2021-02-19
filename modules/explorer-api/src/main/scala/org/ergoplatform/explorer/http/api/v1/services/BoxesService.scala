@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v1.services
 
-import cats.data.OptionT
+import cats.data.{NonEmptyList, OptionT}
 import cats.effect.Sync
 import cats.syntax.list._
 import cats.{Functor, Monad}
@@ -16,7 +16,7 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputRepo}
 import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.OutputInfo
+import org.ergoplatform.explorer.http.api.v1.models.{BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.protocol.sigma._
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
@@ -77,6 +77,10 @@ trait BoxesService[F[_]] {
   /** Get all unspent outputs containing a given `tokenId`.
     */
   def getUnspentOutputsByTokenId(tokenId: TokenId, paging: Paging): F[Items[OutputInfo]]
+
+  /** Get all outputs matching a given `boxQuery`.
+    */
+  def searchAll(boxQuery: BoxQuery, paging: Paging): F[Items[OutputInfo]]
 }
 
 object BoxesService {
@@ -204,6 +208,19 @@ object BoxesService {
         .thrushK(trans.xas)
         .to[List]
         .map(items => Items(items, items.size))
+
+    def searchAll(boxQuery: BoxQuery, paging: Paging): F[Items[OutputInfo]] = {
+      val registers = boxQuery.registers.flatMap(rs => NonEmptyList.fromList(rs.toList))
+      val constants = boxQuery.constants.flatMap(cs => NonEmptyList.fromList(cs.toList))
+      val assets    = boxQuery.assets.flatMap(NonEmptyList.fromList)
+      outputs
+        .searchAll(boxQuery.ergoTreeTemplateHash, registers, constants, assets, paging.offset, paging.limit)
+        .chunkN(serviceSettings.chunkSize)
+        .through(toOutputInfo)
+        .thrushK(trans.xas)
+        .to[List]
+        .map(items => Items(items, items.size))
+    }
 
     private def toOutputInfo: Pipe[D, Chunk[ExtendedOutput], OutputInfo] =
       for {

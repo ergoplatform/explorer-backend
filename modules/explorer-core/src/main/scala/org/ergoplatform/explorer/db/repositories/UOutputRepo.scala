@@ -64,10 +64,10 @@ object UOutputRepo {
     import org.ergoplatform.explorer.db.queries.{UOutputQuerySet => QS}
 
     def insert(output: UOutput): D[Unit] =
-      QS.insert(output).void.liftConnectionIO
+      QS.insertNoConflict(output).void.liftConnectionIO
 
     def insertMany(outputs: List[UOutput]): D[Unit] =
-      QS.insertMany(outputs).void.liftConnectionIO
+      QS.insertManyNoConflict(outputs).void.liftConnectionIO
 
     def getAll(offset: Int, limit: Int): Stream[D, UOutput] =
       QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)

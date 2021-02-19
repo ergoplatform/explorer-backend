@@ -68,10 +68,10 @@ object UTransactionRepo {
     import org.ergoplatform.explorer.db.queries.{UTransactionQuerySet => QS}
 
     def insert(tx: UTransaction): D[Unit] =
-      QS.insert(tx).void.liftConnectionIO
+      QS.insertNoConflict(tx).void.liftConnectionIO
 
     def insertMany(txs: List[UTransaction]): D[Unit] =
-      QS.insertMany(txs).void.liftConnectionIO
+      QS.insertManyNoConflict(txs).void.liftConnectionIO
 
     def dropMany(ids: NonEmptyList[TxId]): D[Int] =
       QS.dropMany(ids).run.liftConnectionIO
