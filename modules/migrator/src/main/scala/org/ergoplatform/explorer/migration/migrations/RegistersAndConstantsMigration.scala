@@ -124,7 +124,7 @@ final class RegistersAndConstantsMigration(
          |  o.main_chain
          |from node_outputs o
          |left join box_registers r on o.box_id = r.box_id
-         |where r.id is null
+         |where o.ergo_tree_template_hash = '71bc9534d4a4fe8ff67698a5d0f29782836970635de8418da39fee1cd964fcbe'
          |order by o.timestamp asc
          |offset $offset limit $limit
          """.stripMargin.query[Output].to[List]

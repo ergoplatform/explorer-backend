@@ -381,7 +381,9 @@ object OutputQuerySet extends QuerySet {
 
   def searchAll(
     templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
     constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]],
     offset: Int,
     limit: Int
   )(implicit
@@ -397,7 +399,7 @@ object OutputQuerySet extends QuerySet {
            |  o.value,
            |  o.creation_height,
            |  o.index,
-           |   o.ergo_tree,
+           |  o.ergo_tree,
            |  o.ergo_tree_template_hash,
            |  o.address,
            |  o.additional_registers,
@@ -406,7 +408,9 @@ object OutputQuerySet extends QuerySet {
            |  case i.main_chain when false then null else i.tx_id end
            |from node_outputs o
            |left join node_inputs i on o.box_id = i.box_id
+           |${registers.map(innerJoinAllOfRegisters(as = "rs", tableAlias = "o", _)).getOrElse("")}
            |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
+           |${assets.map(innerJoinAllOfAssets(as = "ts", tableAlias = "o", _)).getOrElse("")}
            |where o.ergo_tree_template_hash = '$templateHash'
            |order by o.creation_height asc
            |offset $offset limit $limit

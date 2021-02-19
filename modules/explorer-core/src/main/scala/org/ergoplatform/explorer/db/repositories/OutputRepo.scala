@@ -136,7 +136,9 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   def searchAll(
     templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
     constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]],
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
@@ -271,10 +273,12 @@ object OutputRepo {
 
     def searchAll(
       templateHash: ErgoTreeTemplateHash,
+      registers: Option[NonEmptyList[(RegisterId, String)]],
       constants: Option[NonEmptyList[(Int, String)]],
+      assets: Option[NonEmptyList[TokenId]],
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
-      QS.searchAll(templateHash, constants, offset, limit).stream.translate(liftK)
+      QS.searchAll(templateHash, registers, constants, assets, offset, limit).stream.translate(liftK)
   }
 }
