@@ -53,10 +53,10 @@ object UInputRepo {
     import org.ergoplatform.explorer.db.queries.{UInputQuerySet => QS}
 
     def insert(input: UInput): D[Unit] =
-      QS.insert(input).void.liftConnectionIO
+      QS.insertNoConflict(input).void.liftConnectionIO
 
     def insetMany(inputs: List[UInput]): D[Unit] =
-      QS.insertMany(inputs).void.liftConnectionIO
+      QS.insertManyNoConflict(inputs).void.liftConnectionIO
 
     def getAll(offset: Int, limit: Int): Stream[D, ExtendedUInput] =
       QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
