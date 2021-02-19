@@ -103,9 +103,9 @@ object ErgoNetworkClient {
         )
       }
 
-    def getUnconfirmedTransactions: F[List[ApiTransaction]] = {
-      def go(i: Int, acc: List[ApiTransaction]): F[List[ApiTransaction]] =
-        retrying { url =>
+    def getUnconfirmedTransactions: F[List[ApiTransaction]] =
+      retrying { url =>
+        def go(i: Int, acc: List[ApiTransaction]): F[List[ApiTransaction]] = {
           val limit  = txsBatchSize
           val offset = i * limit
           val req = Request[F](
@@ -115,13 +115,13 @@ object ErgoNetworkClient {
               .withQueryParam("offset", offset)
               .withQueryParam("limit", limit)
           )
-          client.expect[List[ApiTransaction]](req)
-        }.flatMap {
-          case Nil => acc.pure[F]
-          case xs  => go(i + 1, acc ++ xs)
+          client.expect[List[ApiTransaction]](req).flatMap {
+            case Nil => acc.pure[F]
+            case xs  => go(i + 1, acc ++ xs)
+          }
         }
-      go(0, List())
-    }
+        go(0, List())
+      }
 
     def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
       nodesPool.get.flatMap {
