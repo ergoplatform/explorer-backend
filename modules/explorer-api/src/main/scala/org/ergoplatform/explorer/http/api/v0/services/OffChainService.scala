@@ -15,25 +15,20 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.estatico.newtype.ops._
 import mouse.anyf._
+import org.ergoplatform.explorer.Err.RequestProcessingErr.IllegalRequest
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.repositories.{
-  TransactionRepo,
-  UAssetRepo,
-  UDataInputRepo,
-  UInputRepo,
-  UOutputRepo,
-  UTransactionRepo
-}
+import org.ergoplatform.explorer.db.repositories.{TransactionRepo, UAssetRepo, UDataInputRepo, UInputRepo, UOutputRepo, UTransactionRepo}
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
 import org.ergoplatform.explorer.protocol.sigma
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
+import tofu.syntax.raise._
 
 /** A service providing an access to unconfirmed transactions data.
   */
@@ -67,12 +62,12 @@ object OffChainService {
 
   def apply[F[_]: Concurrent, D[_]: Monad: LiftConnectionIO](
     utxCacheSettings: UtxCacheSettings,
-    redis: RedisCommands[F, String, String]
+    redis: Option[RedisCommands[F, String, String]]
   )(
     trans: D Trans F
   )(implicit e: ErgoAddressEncoder): F[OffChainService[F]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
-      ErgoLikeTransactionRepo[F](utxCacheSettings, redis).flatMap { etxRepo =>
+      redis.map(ErgoLikeTransactionRepo[F](utxCacheSettings, _)).sequence.flatMap { etxRepo =>
         (
           TransactionRepo[F, D],
           UTransactionRepo[F, D],
@@ -94,7 +89,7 @@ object OffChainService {
     dataInRepo: UDataInputRepo[D, Stream],
     outRepo: UOutputRepo[D, Stream],
     assetRepo: UAssetRepo[D],
-    ergoLikeTxRepo: ErgoLikeTransactionRepo[F, Stream]
+    ergoLikeTxRepo: Option[ErgoLikeTransactionRepo[F, Stream]]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends OffChainService[F] {
 
@@ -144,8 +139,13 @@ object OffChainService {
       } ||> trans.xa
 
     def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse] =
-      Logger[F].info(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
-      ergoLikeTxRepo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
+      ergoLikeTxRepo match {
+        case Some(repo) =>
+          Logger[F].info(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
+            repo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
+        case None =>
+          IllegalRequest("Transaction broadcasting is disabled").raise
+      }
 
     private def assembleUInfo: List[UTransaction] => D[List[UTransactionInfo]] =
       txChunk =>
@@ -165,10 +165,9 @@ object OffChainService {
     )(confirmedIds: List[TxId]): Items[UTransactionInfo] = {
       val filter = confirmedIds.toSet
       val (unconfirmed, filteredQty) =
-        txs.foldLeft(Chain.empty[UTransactionInfo] -> 0) {
-          case ((acc, c), tx) =>
-            if (filter.contains(tx.id)) acc -> (c + 1)
-            else (acc :+ tx)                -> c
+        txs.foldLeft(Chain.empty[UTransactionInfo] -> 0) { case ((acc, c), tx) =>
+          if (filter.contains(tx.id)) acc -> (c + 1)
+          else (acc :+ tx)                -> c
         }
       Items(unconfirmed.toList, total - filteredQty)
     }

@@ -30,7 +30,7 @@ object RoutesV0Bundle {
   ](
     protocolSettings: ProtocolSettings,
     utxCacheSettings: UtxCacheSettings,
-    redis: RedisCommands[F, String, String]
+    redis: Option[RedisCommands[F, String, String]]
   )(trans: D Trans F)(implicit
     ec: ExecutionContext,
     encoder: ErgoAddressEncoder,

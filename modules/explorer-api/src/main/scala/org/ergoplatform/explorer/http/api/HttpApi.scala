@@ -29,7 +29,7 @@ object HttpApi {
     D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
   ](
     settings: ApiSettings,
-    redis: RedisCommands[F, String, String]
+    redis: Option[RedisCommands[F, String, String]]
   )(trans: D Trans F)(implicit
     ec: ExecutionContext,
     encoder: ErgoAddressEncoder,

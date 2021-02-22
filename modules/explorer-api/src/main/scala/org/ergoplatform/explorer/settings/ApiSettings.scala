@@ -5,7 +5,7 @@ final case class ApiSettings(
   db: DbSettings,
   protocol: ProtocolSettings,
   utxCache: UtxCacheSettings,
-  redis: RedisSettings,
+  redis: Option[RedisSettings],
   service: ServiceSettings,
   requests: RequestsSettings
 )
