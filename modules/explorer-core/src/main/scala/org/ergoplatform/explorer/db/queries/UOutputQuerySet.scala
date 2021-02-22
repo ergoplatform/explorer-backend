@@ -29,7 +29,7 @@ object UOutputQuerySet extends QuerySet {
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[UOutput] =
     sql"""
-         |select
+         |select distinct on (o.box_id)
          |  o.box_id,
          |  o.tx_id,
          |  o.value,
@@ -45,7 +45,7 @@ object UOutputQuerySet extends QuerySet {
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[UOutput] =
     sql"""
-         |select
+         |select distinct on (o.box_id)
          |  o.box_id,
          |  o.tx_id,
          |  o.value,
@@ -61,7 +61,7 @@ object UOutputQuerySet extends QuerySet {
   def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UOutput] = {
     val q =
       fr"""
-        |select
+        |select distinct on (o.box_id)
         |  o.box_id,
         |  o.tx_id,
         |  o.value,
@@ -78,7 +78,7 @@ object UOutputQuerySet extends QuerySet {
 
   def getAllByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
     sql"""
-         |select
+         |select distinct on (o.box_id)
          |  o.box_id,
          |  o.tx_id,
          |  o.value,
@@ -93,7 +93,7 @@ object UOutputQuerySet extends QuerySet {
 
   def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[UOutput] =
     sql"""
-         |select
+         |select distinct on (o.box_id)
          |  o.box_id,
          |  o.tx_id,
          |  o.value,
