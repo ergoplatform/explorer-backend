@@ -27,16 +27,16 @@ object UInputQuerySet extends QuerySet {
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedUInput] =
     sql"""
-         |select
+         |select distinct on (i.box_id)
          |  i.box_id,
          |  i.tx_id,
          |  i.index,
          |  i.proof_bytes,
          |  i.extension,
-         |  case o.value   when null then ou.value   else o.value end,
-         |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
-         |  case o.index   when null then ou.index   else o.index end,
-         |  case o.address when null then ou.address else o.address end
+         |  case when o.value   is null then ou.value   else o.value end,
+         |  case when o.tx_id   is null then ou.tx_id   else o.tx_id end,
+         |  case when o.index   is null then ou.index   else o.index end,
+         |  case when o.address is null then ou.address else o.address end
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
@@ -45,16 +45,16 @@ object UInputQuerySet extends QuerySet {
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedUInput] =
     sql"""
-         |select
+         |select distinct on (i.box_id)
          |  i.box_id,
          |  i.tx_id,
          |  i.index,
          |  i.proof_bytes,
          |  i.extension,
-         |  case o.value   when null then ou.value   else o.value end,
-         |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
-         |  case o.index   when null then ou.index   else o.index end,
-         |  case o.address when null then ou.address else o.address end
+         |  case when o.value   is null then ou.value   else o.value end,
+         |  case when o.tx_id   is null then ou.tx_id   else o.tx_id end,
+         |  case when o.index   is null then ou.index   else o.index end,
+         |  case when o.address is null then ou.address else o.address end
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
@@ -64,16 +64,16 @@ object UInputQuerySet extends QuerySet {
   def getAllByTxIxs(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedUInput] = {
     val queryFr =
       fr"""
-          |select
+          |select distinct on (i.box_id)
           |  i.box_id,
           |  i.tx_id,
           |  i.index,
           |  i.proof_bytes,
           |  i.extension,
-          |  case o.value   when null then ou.value   else o.value end,
-          |  case o.tx_id   when null then ou.tx_id   else o.tx_id end,
-          |  case o.index   when null then ou.index   else o.index end,
-          |  case o.address when null then ou.address else o.address end
+          |  case when o.value   is null then ou.value   else o.value end,
+          |  case when o.tx_id   is null then ou.tx_id   else o.tx_id end,
+          |  case when o.index   is null then ou.index   else o.index end,
+          |  case when o.address is null then ou.address else o.address end
           |from node_u_inputs i
           |left join node_outputs o on i.box_id = o.box_id
           |left join node_u_outputs ou on i.box_id = ou.box_id

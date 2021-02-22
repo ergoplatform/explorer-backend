@@ -24,7 +24,7 @@ object UTransactionQuerySet extends QuerySet {
     in(fr"delete from node_u_transactions where id", ids).update
 
   def get(id: TxId)(implicit lh: LogHandler): Query0[UTransaction] =
-    sql"select * from node_u_transactions where id = $id".query[UTransaction]
+    sql"select id, creation_timestamp, size from node_u_transactions where id = $id".query[UTransaction]
 
   def getAllRelatedToErgoTree(
     ergoTree: HexString,
