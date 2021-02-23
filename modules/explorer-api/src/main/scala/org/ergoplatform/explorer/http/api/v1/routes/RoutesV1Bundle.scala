@@ -32,8 +32,8 @@ object RoutesV1Bundle {
   ): F[RoutesV1Bundle[F]] =
     for {
       implicit0(log: Logger[F]) <- Slf4jLogger.create
-      boxesService              <- BoxesService(serviceSettings)(trans)
-      assetsService             <- AssetsService(trans)
+      boxesService              <- Boxes(serviceSettings)(trans)
+      assetsService             <- Assets(trans)
       boxesRoutes  = BoxesRoutes(requestsSettings, boxesService)
       assetsRoutes = AssetsRoutes(requestsSettings, assetsService)
       docs         = DocsRoutes(requestsSettings)

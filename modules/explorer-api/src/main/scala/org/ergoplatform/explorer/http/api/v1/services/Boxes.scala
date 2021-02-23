@@ -24,7 +24,7 @@ import tofu.fs2Instances._
 import tofu.syntax.monadic._
 import tofu.syntax.streams.compile._
 
-trait BoxesService[F[_]] {
+trait Boxes[F[_]] {
 
   /** Get output by `boxId`.
     */
@@ -83,12 +83,12 @@ trait BoxesService[F[_]] {
   def searchAll(boxQuery: BoxQuery, paging: Paging): F[Items[OutputInfo]]
 }
 
-object BoxesService {
+object Boxes {
 
   def apply[
     F[_]: Sync,
     D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: LiftConnectionIO: Monad
-  ](serviceSettings: ServiceSettings)(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[BoxesService[F]] =
+  ](serviceSettings: ServiceSettings)(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[Boxes[F]] =
     (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D]).mapN(new Live(serviceSettings, _, _, _)(trans))
 
   final private class Live[
@@ -100,7 +100,7 @@ object BoxesService {
     outputs: OutputRepo[D, Stream],
     assets: AssetRepo[D, Stream]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
-    extends BoxesService[F] {
+    extends Boxes[F] {
 
     def getOutputById(id: BoxId): F[Option[OutputInfo]] =
       (for {

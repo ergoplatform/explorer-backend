@@ -16,7 +16,7 @@ import tofu.syntax.monadic._
 
 /** A service providing an access to the assets data.
   */
-trait AssetsService[F[_], S[_[_], _]] {
+trait Assets[F[_], S[_[_], _]] {
 
   /** Get all assets matching a given `query`.
     */
@@ -27,19 +27,19 @@ trait AssetsService[F[_], S[_[_], _]] {
   def getTokens(paging: Paging, ordering: SortOrder): F[Items[TokenInfo]]
 }
 
-object AssetsService {
+object Assets {
 
   def apply[
     F[_]: Sync,
     D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
-  ](trans: D Trans F): F[AssetsService[F, Stream]] =
+  ](trans: D Trans F): F[Assets[F, Stream]] =
     (AssetRepo[F, D], TokenRepo[F, D]).mapN(new Live(_, _)(trans))
 
   final private class Live[
     F[_]: FlatMap,
     D[_]: CRaise[*[_], InconsistentDbData]: Monad
   ](assetRepo: AssetRepo[D, Stream], tokenRepo: TokenRepo[D])(trans: D Trans F)
-    extends AssetsService[F, Stream] {
+    extends Assets[F, Stream] {
 
     def getAllLike(idSubstring: String, paging: Paging): F[Items[AssetInfo]] =
       assetRepo
