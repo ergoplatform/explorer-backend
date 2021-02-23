@@ -8,8 +8,10 @@ import monix.eval.{Task, TaskApp}
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.ergoplatform.explorer.indexer.processes.ChainIndexer
-import org.ergoplatform.explorer.settings.IndexerAppSettings
+import org.ergoplatform.explorer.settings.IndexerSettings
 import org.http4s.client.blaze.BlazeClientBuilder
+import org.ergoplatform.explorer.settings.pureConfigInstances._
+import pureconfig.generic.auto._
 import tofu.concurrent.MakeRef
 import tofu.logging.Logs
 
@@ -37,7 +39,7 @@ object Application extends TaskApp {
   private def resources(configPathOpt: Option[String]) =
     for {
       logger   <- Resource.liftF(Slf4jLogger.create)
-      settings <- Resource.liftF(IndexerAppSettings.load(configPathOpt))
+      settings <- Resource.liftF(IndexerSettings.load(configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
       xa       <- DoobieTrans[Task]("IndexerPool", settings.db)
       trans = Trans.fromDoobie(xa)

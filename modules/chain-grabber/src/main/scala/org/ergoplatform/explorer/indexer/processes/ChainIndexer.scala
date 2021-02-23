@@ -22,7 +22,7 @@ import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
-import org.ergoplatform.explorer.settings.{IndexerAppSettings, ProtocolSettings}
+import org.ergoplatform.explorer.settings.{IndexerSettings, ProtocolSettings}
 import tofu.concurrent.MakeRef
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.logging._
@@ -40,7 +40,7 @@ trait ChainIndexer[F[_]] {
 object ChainIndexer {
 
   def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
-    settings: IndexerAppSettings,
+    settings: IndexerSettings,
     network: ErgoNetworkClient[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[ChainIndexer[F]] =
     logs.forService[ChainIndexer[F]].flatMap { implicit log =>
@@ -53,7 +53,7 @@ object ChainIndexer {
     F[_]: Monad: Parallel: Timer: Bracket[*[_], Throwable]: Logging,
     D[_]: Monad
   ](
-    settings: IndexerAppSettings,
+    settings: IndexerSettings,
     network: ErgoNetworkClient[F],
     pendingChainUpdates: Ref[F, List[(Id, Int)]],
     repos: RepoBundle[D]
@@ -112,22 +112,25 @@ object ChainIndexer {
       getBlock(parentId).flatMap {
         case Some(parentBlock) if parentBlock.mainChain   => unit[F]
         case None if block.header.height == GenesisHeight => unit[F]
-        case Some(parentBlock)                            =>
+        case Some(parentBlock) =>
           info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
         case None =>
           info"Parent block [$parentId] needs to be downloaded" >>
-          network.getFullBlockById(parentId).flatMap {
-            case Some(parentBlock) =>
-              applyBestBlock(parentBlock)
-            case None =>
-              InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]
-          }
+            network.getFullBlockById(parentId).flatMap {
+              case Some(parentBlock) =>
+                applyBestBlock(parentBlock)
+              case None =>
+                InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]
+            }
       } >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ => markAsMain(id, height))
     }
 
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
-      info"Applying orphaned block [${block.header.id}] at height [${block.header.height}]" >>
-      scan(block, None) >>= insertBlock
+      if (settings.writeOrphans)
+        info"Applying orphaned block [${block.header.id}] at height [${block.header.height}]" >>
+        scan(block, None) >>= insertBlock
+      else
+        info"Skipping orphaned block [${block.header.id}] at height [${block.header.height}]"
 
     private def updateBestBlock(block: Header): F[Unit] = {
       val id       = block.id
@@ -151,7 +154,7 @@ object ChainIndexer {
     }
 
     private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockStats]): F[FlatBlock] = {
-      implicit val ctx: WithContext[F, ProtocolSettings] = Context.const(settings.protocol)
+      implicit val ctx: F WithContext ProtocolSettings = Context.const(settings.protocol)
       SlotData(apiFullBlock, prevBlockInfoOpt).intoF[F, FlatBlock]
     }
 
