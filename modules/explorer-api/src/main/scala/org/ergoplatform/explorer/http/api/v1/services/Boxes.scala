@@ -110,56 +110,84 @@ object Boxes {
       } yield OutputInfo(box, assets)).value.thrushK(trans.xa)
 
     def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] =
-      (addressToErgoTreeHex(address).asStream >>= (outputs.streamAllByErgoTree(_, paging.offset, paging.limit)))
-        .chunkN(serviceSettings.chunkSize)
-        .through(toOutputInfo)
-        .thrushK(trans.xas)
-        .to[List]
-        .map(items => Items(items, items.size))
+      addressToErgoTreeHex(address)
+        .flatMap { ergoTree =>
+          outputs.countAllByErgoTree(ergoTree).flatMap { total =>
+            outputs
+              .streamAllByErgoTree(ergoTree, paging.offset, paging.limit)
+              .chunkN(serviceSettings.chunkSize)
+              .through(toOutputInfo)
+              .to[List]
+              .map(Items(_, total))
+          }
+        }
+        .thrushK(trans.xa)
 
     def getUnspentOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] =
-      (addressToErgoTreeHex(address).asStream >>= (outputs.streamUnspentByErgoTree(_, paging.offset, paging.limit)))
-        .chunkN(serviceSettings.chunkSize)
-        .through(toOutputInfo)
-        .thrushK(trans.xas)
-        .to[List]
-        .map(items => Items(items, items.size))
+      addressToErgoTreeHex(address)
+        .flatMap { ergoTree =>
+          outputs.countUnspentByErgoTree(ergoTree).flatMap { total =>
+            outputs
+              .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
+              .chunkN(serviceSettings.chunkSize)
+              .through(toOutputInfo)
+              .to[List]
+              .map(Items(_, total))
+          }
+        }
+        .thrushK(trans.xa)
 
     def getOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]] =
       outputs
-        .streamAllByErgoTree(ergoTree, paging.offset, paging.limit)
-        .chunkN(serviceSettings.chunkSize)
-        .through(toOutputInfo)
-        .thrushK(trans.xas)
-        .to[List]
-        .map(items => Items(items, items.size))
+        .countAllByErgoTree(ergoTree)
+        .flatMap { total =>
+          outputs
+            .streamAllByErgoTree(ergoTree, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toOutputInfo)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
 
     def getUnspentOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]] =
       outputs
-        .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
-        .chunkN(serviceSettings.chunkSize)
-        .through(toOutputInfo)
-        .thrushK(trans.xas)
-        .to[List]
-        .map(items => Items(items, items.size))
+        .countUnspentByErgoTree(ergoTree)
+        .flatMap { total =>
+          outputs
+            .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toOutputInfo)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
 
     def getOutputsByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, paging: Paging): F[Items[OutputInfo]] =
       outputs
-        .streamAllByErgoTreeTemplateHash(hash, paging.offset, paging.limit)
-        .chunkN(serviceSettings.chunkSize)
-        .through(toOutputInfo)
-        .thrushK(trans.xas)
-        .to[List]
-        .map(items => Items(items, items.size))
+        .countAllByErgoTreeTemplateHash(hash)
+        .flatMap { total =>
+          outputs
+            .streamAllByErgoTreeTemplateHash(hash, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toOutputInfo)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
 
     def getUnspentOutputsByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, paging: Paging): F[Items[OutputInfo]] =
       outputs
-        .streamUnspentByErgoTreeTemplateHash(hash, paging.offset, paging.limit)
-        .chunkN(serviceSettings.chunkSize)
-        .through(toUnspentOutputInfo)
-        .thrushK(trans.xas)
-        .to[List]
-        .map(items => Items(items, items.size))
+        .countUnspentByErgoTreeTemplateHash(hash)
+        .flatMap { total =>
+          outputs
+            .streamUnspentByErgoTreeTemplateHash(hash, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toUnspentOutputInfo)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
 
     def streamOutputsByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, epochs: Epochs): Stream[F, OutputInfo] =
       outputs
@@ -222,15 +250,18 @@ object Boxes {
       val registers = boxQuery.registers.flatMap(rs => NonEmptyList.fromList(rs.toList))
       val constants = boxQuery.constants.flatMap(cs => NonEmptyList.fromList(cs.toList))
       val assets    = boxQuery.assets.flatMap(NonEmptyList.fromList)
-      outputs.countAll(boxQuery.ergoTreeTemplateHash, registers, constants, assets).flatMap { total =>
-        outputs
-          .searchAll(boxQuery.ergoTreeTemplateHash, registers, constants, assets, paging.offset, paging.limit)
-          .chunkN(serviceSettings.chunkSize)
-          .through(toOutputInfo)
-          .to[List]
-          .map(Items(_, total))
-      }
-    }.thrushK(trans.xa)
+      outputs
+        .countAll(boxQuery.ergoTreeTemplateHash, registers, constants, assets)
+        .flatMap { total =>
+          outputs
+            .searchAll(boxQuery.ergoTreeTemplateHash, registers, constants, assets, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toOutputInfo)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
+    }
 
     private def toOutputInfo: Pipe[D, Chunk[ExtendedOutput], OutputInfo] =
       for {

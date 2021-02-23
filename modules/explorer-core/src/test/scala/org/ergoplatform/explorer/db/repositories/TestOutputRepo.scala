@@ -11,6 +11,14 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   override def insert(output: Output): F[Unit] = ???
 
+  def countAllByErgoTree(ergoTree: HexString): F[Int] = ???
+
+  def countUnspentByErgoTree(ergoTree: HexString): F[Int] = ???
+
+  def countAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): F[Int] = ???
+
+  def countUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): F[Int] = ???
+
   override def insertMany(outputs: scala.List[Output]): F[Unit] = ???
 
   override def getByBoxId(boxId: BoxId): F[Option[ExtendedOutput]] = ???

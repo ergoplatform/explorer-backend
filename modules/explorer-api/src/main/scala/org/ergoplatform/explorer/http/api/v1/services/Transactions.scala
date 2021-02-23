@@ -57,18 +57,18 @@ object Transactions {
         .thrushK(trans.xa)
 
     private def makeTransaction: Pipe[D, Chunk[Transaction], TransactionInfo] =
-      for {
-        chunk      <- _
-        txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
-        ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
-        inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
-        outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
-        outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-        outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
-        bestHeight <- Stream.eval(headers.getBestHeight)
-        txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-        txInfo <- Stream.emits(TransactionInfo.batch(txsWithHeights.toList, ins, outs, inAssets, outAssets))
-      } yield txInfo
+        for {
+          chunk      <- _
+          txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
+          ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
+          inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
+          inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
+          outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
+          outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
+          outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
+          bestHeight <- Stream.eval(headers.getBestHeight)
+          txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
+          txInfo <- Stream.emits(TransactionInfo.batch(txsWithHeights.toList, ins, outs, inAssets, outAssets))
+        } yield txInfo
   }
 }

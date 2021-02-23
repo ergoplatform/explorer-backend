@@ -59,6 +59,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def streamAllByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
 
+  /** Count outputs with a given `ergoTree` from persistence.
+    */
+  def countAllByErgoTree(ergoTree: HexString): D[Int]
+
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
   def streamUnspentByErgoTree(
@@ -66,6 +70,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
+
+  /** Count unspent main-chain outputs with a given `ergoTree` from persistence.
+    */
+  def countUnspentByErgoTree(ergoTree: HexString): D[Int]
 
   /** Get all main-chain outputs that are protected with given ergo tree template.
     */
@@ -75,6 +83,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, ExtendedOutput]
 
+  /** Count main-chain outputs that are protected with given ergo tree template.
+    */
+  def countAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int]
+
   /** Get all unspent main-chain outputs that are protected with given ergo tree template.
     */
   def streamUnspentByErgoTreeTemplateHash(
@@ -82,6 +94,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, Output]
+
+  /** Count unspent main-chain outputs that are protected with given ergo tree template.
+    */
+  def countUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int]
 
   def streamUnspentByErgoTreeTemplateHashAndTokenId(
     hash: ErgoTreeTemplateHash,
@@ -182,6 +198,9 @@ object OutputRepo {
         .to[List]
         .liftConnectionIO
 
+    def countAllByErgoTree(ergoTree: HexString): D[Int] =
+      QS.countAllByErgoTree(ergoTree).unique.liftConnectionIO
+
     def streamAllByErgoTree(
       ergoTree: HexString,
       offset: Int,
@@ -213,6 +232,9 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
+    def countUnspentByErgoTree(ergoTree: HexString): D[Int] =
+      QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+
     def streamAllByErgoTreeTemplateHash(
       hash: ErgoTreeTemplateHash,
       offset: Int,
@@ -220,12 +242,18 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getAllByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
 
+    def countAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int] =
+      QS.countAllByErgoTreeTemplateHash(hash).unique.liftConnectionIO
+
     def streamUnspentByErgoTreeTemplateHash(
       hash: ErgoTreeTemplateHash,
       offset: Int,
       limit: Int
     ): Stream[D, Output] =
       QS.getUnspentByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
+
+    def countUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int] =
+      QS.countUnspentByErgoTreeTemplateHash(hash).unique.liftConnectionIO
 
     def streamAllByErgoTreeTemplateHashByEpochs(
       hash: ErgoTreeTemplateHash,

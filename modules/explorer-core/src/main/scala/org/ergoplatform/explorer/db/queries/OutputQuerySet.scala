@@ -80,6 +80,16 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
+  def countAllByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.main_chain = true and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Int]
+
   def getMainByErgoTree(
     ergoTree: HexString,
     offset: Int,
@@ -172,13 +182,14 @@ object OutputQuerySet extends QuerySet {
          |) as _
          |""".stripMargin.query[Int]
 
+  // todo: try to join with main-chain inputs only in order to avoid explicit deduplication
   def getMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
   )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
-         |select
+         |select distinct on (o.box_id, o.creation_height)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -193,12 +204,25 @@ object OutputQuerySet extends QuerySet {
          |  o.main_chain,
          |  null
          |from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree = $ergoTree
+         |order by o.creation_height asc
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
+
+  def countUnspentByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Int]
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
@@ -397,6 +421,16 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
+  def countAllByErgoTreeTemplateHash(templateHash: ErgoTreeTemplateHash)(implicit
+    lh: LogHandler
+  ): Query0[Int] =
+    sql"""
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.ergo_tree_template_hash = $templateHash
+         |""".stripMargin.query[Int]
+
   def searchAll(
     templateHash: ErgoTreeTemplateHash,
     registers: Option[NonEmptyList[(RegisterId, String)]],
@@ -475,13 +509,25 @@ object OutputQuerySet extends QuerySet {
          |  o.timestamp,
          |  o.main_chain
          |from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
          |  and o.ergo_tree_template_hash = $templateHash
          |order by o.creation_height asc
          |offset $offset limit $limit
          |""".stripMargin.query[Output]
+
+  def countUnspentByErgoTreeTemplateHash(templateHash: ErgoTreeTemplateHash)(implicit
+    lh: LogHandler
+  ): Query0[Int] =
+    sql"""
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id
+         |where o.main_chain = true
+         |  and (i.box_id is null or i.main_chain = false)
+         |  and o.ergo_tree_template_hash = $templateHash
+         |""".stripMargin.query[Int]
 
   def getUnspentByErgoTreeTemplateHashAndTokenId(
     templateHash: ErgoTreeTemplateHash,
@@ -507,7 +553,7 @@ object OutputQuerySet extends QuerySet {
          |  o.main_chain,
          |  case i.main_chain when false then null else i.tx_id end
          |from node_outputs o
-         |left join (select i.box_id, i.tx_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id
          |left join node_assets a on o.box_id = a.box_id
          |where o.main_chain = true
          |  and (i.box_id is null or i.main_chain = false)
