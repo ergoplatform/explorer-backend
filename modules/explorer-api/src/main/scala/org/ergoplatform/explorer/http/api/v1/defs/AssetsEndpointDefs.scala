@@ -9,7 +9,7 @@ import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
-final class AssetsEndpointDefs[F[_]](settings: RequestsSettings) {
+final class AssetsEndpointDefs(settings: RequestsSettings) {
 
   private val PathPrefix = "assets"
 

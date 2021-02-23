@@ -58,6 +58,7 @@ object OutputInfo {
     OutputInfo(
       o.output.boxId,
       o.output.txId,
+      o.output.headerId,
       o.output.value,
       o.output.index,
       o.output.creationHeight,

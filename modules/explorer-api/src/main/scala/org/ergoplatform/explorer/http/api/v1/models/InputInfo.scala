@@ -2,12 +2,12 @@ package org.ergoplatform.explorer.http.api.v1.models
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import io.circe.generic.semiauto.deriveCodec
-import io.circe.{Codec, Json}
+import io.circe.Json
+import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, FullInput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
-import org.ergoplatform.explorer._
-import sttp.tapir.{Schema, Validator}
+import sttp.tapir.json.circe.validatorForCirceJson
+import sttp.tapir.{Schema, SchemaType, Validator}
 
 @derive(encoder, decoder)
 final case class InputInfo(
@@ -26,8 +26,6 @@ final case class InputInfo(
 
 object InputInfo {
 
-  implicit val codec: Codec[InputInfo] = deriveCodec
-
   implicit val schema: Schema[InputInfo] =
     Schema
       .derive[InputInfo]
@@ -42,6 +40,14 @@ object InputInfo {
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
 
   implicit val validator: Validator[InputInfo] = Validator.derive
+
+  implicit private def registersSchema: Schema[Json] =
+    Schema(
+      SchemaType.SOpenProduct(
+        SchemaType.SObjectInfo("AdditionalRegisters"),
+        Schema(SchemaType.SString)
+      )
+    )
 
   def apply(i: FullInput, assets: List[ExtendedAsset]): InputInfo =
     InputInfo(

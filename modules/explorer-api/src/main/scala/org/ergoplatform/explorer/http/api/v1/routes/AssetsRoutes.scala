@@ -16,7 +16,7 @@ final class AssetsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](settings: RequestsSettings, service: Assets[F, fs2.Stream])(implicit opts: Http4sServerOptions[F]) {
 
-  val defs = new AssetsEndpointDefs[F](settings)
+  val defs = new AssetsEndpointDefs(settings)
 
   val routes: HttpRoutes[F] =
     listTokensR <+> getUnspentOutputsByAddressR

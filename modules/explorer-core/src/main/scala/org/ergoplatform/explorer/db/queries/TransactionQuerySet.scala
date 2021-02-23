@@ -5,7 +5,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.util.update.Update0
-import org.ergoplatform.explorer.{Address, Id, TxId}
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, Id, TxId}
 import org.ergoplatform.explorer.db.models.Transaction
 
 /** A set of queries for doobie implementation of [TransactionRepo].
@@ -107,6 +107,29 @@ object TransactionQuerySet extends QuerySet {
 
   def getIdsLike(q: String)(implicit lh: LogHandler): Query0[TxId] =
     sql"select distinct id from node_transactions where id like ${s"%$q%"}".query[TxId]
+
+  def getByInputsScriptTemplate(template: ErgoTreeTemplateHash, offset: Int, limit: Int)(implicit
+    lh: LogHandler
+  ): Query0[Transaction] =
+    sql"""
+         |select distinct on (t.id) t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.main_chain
+         |from node_transactions t
+         |inner join node_inputs i on i.tx_id = t.id and i.header_id = t.header_id
+         |inner join node_outputs o on o.box_id = i.box_id and i.header_id = t.header_id
+         |where o.ergo_tree_template_hash = $template and t.main_chain = true
+         |offset $offset limit $limit
+         |""".stripMargin.query[Transaction]
+
+  def countByInputsScriptTemplate(template: ErgoTreeTemplateHash)(implicit
+    lh: LogHandler
+  ): Query0[Int] =
+    sql"""
+         |select count(distinct t.id)
+         |from node_transactions t
+         |inner join node_inputs i on i.tx_id = t.id and i.header_id = t.header_id
+         |inner join node_outputs o on o.box_id = i.box_id and i.header_id = t.header_id
+         |where o.ergo_tree_template_hash = $template and t.main_chain = true
+         |""".stripMargin.query[Int]
 
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""

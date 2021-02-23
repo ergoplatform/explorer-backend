@@ -2,8 +2,6 @@ package org.ergoplatform.explorer.http.api.v1.models
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput, FullInput}
 import org.ergoplatform.explorer.{Id, TxId}
@@ -22,8 +20,6 @@ final case class TransactionInfo(
 )
 
 object TransactionInfo {
-
-  implicit val codec: Codec[TransactionInfo] = deriveCodec
 
   implicit val validator: Validator[TransactionInfo] = Validator.derive
 
