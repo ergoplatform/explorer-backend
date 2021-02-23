@@ -32,6 +32,12 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
+  def countAllByTokenId(tokenId: TokenId): F[Int] = ???
+
+  def countUnspentByTokenId(tokenId: TokenId): F[Int] = ???
+
+  def countAll(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]]): F[Int] = ???
+
   override def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): F[Long] = ???
 
   override def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): F[List[BoxId]] = ???

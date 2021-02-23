@@ -6,7 +6,7 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v1.defs.TransactionsEndpointDefs
-import org.ergoplatform.explorer.http.api.v1.services.{Assets, Transactions}
+import org.ergoplatform.explorer.http.api.v1.services.Transactions
 import org.ergoplatform.explorer.settings.RequestsSettings
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s.{Http4sServerOptions, _}

@@ -132,7 +132,11 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, ExtendedOutput]
 
+  def countAllByTokenId(tokenId: TokenId): D[Int]
+
   def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, Output]
+
+  def countUnspentByTokenId(tokenId: TokenId): D[Int]
 
   def searchAll(
     templateHash: ErgoTreeTemplateHash,
@@ -142,6 +146,13 @@ trait OutputRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
+
+  def countAll(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]]
+  ): D[Int]
 }
 
 object OutputRepo {
@@ -268,8 +279,14 @@ object OutputRepo {
     def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, ExtendedOutput] =
       QS.getAllByTokenId(tokenId, offset, limit).stream.translate(liftK)
 
+    def countAllByTokenId(tokenId: TokenId): D[Int] =
+      QS.countAllByTokenId(tokenId).unique.liftConnectionIO
+
     def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, Output] =
       QS.getUnspentByTokenId(tokenId, offset, limit).stream.translate(liftK)
+
+    def countUnspentByTokenId(tokenId: TokenId): D[Int] =
+      QS.countUnspentByTokenId(tokenId).unique.liftConnectionIO
 
     def searchAll(
       templateHash: ErgoTreeTemplateHash,
@@ -280,5 +297,13 @@ object OutputRepo {
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.searchAll(templateHash, registers, constants, assets, offset, limit).stream.translate(liftK)
+
+    def countAll(
+      templateHash: ErgoTreeTemplateHash,
+      registers: Option[NonEmptyList[(RegisterId, String)]],
+      constants: Option[NonEmptyList[(Int, String)]],
+      assets: Option[NonEmptyList[TokenId]]
+    ): D[Int] =
+      QS.countAll(templateHash, registers, constants, assets).unique.liftConnectionIO
   }
 }
