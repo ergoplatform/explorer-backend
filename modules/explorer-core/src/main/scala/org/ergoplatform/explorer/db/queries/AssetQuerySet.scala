@@ -140,8 +140,8 @@ object AssetQuerySet extends QuerySet {
          |  i_spent.tx_id
          |from node_outputs o
          |left join node_assets a on o.box_id = a.box_id
-         |left join node_inputs i_spent on o.box_id = i_spent.box_id and i.main_chain = true
-         |left join node_inputs i_issued on a.token_id = i_issued.box_id and i.main_chain = true
+         |left join node_inputs i_spent on o.box_id = i_spent.box_id and i_spent.main_chain = true
+         |left join node_inputs i_issued on a.token_id = i_issued.box_id and i_issued.main_chain = true
          |where o.main_chain = true
          |  and i_issued.tx_id = o.tx_id
          |  and o.box_id = a.box_id
@@ -170,8 +170,8 @@ object AssetQuerySet extends QuerySet {
           |  i_spent.tx_id
           |from node_outputs o
           |left join node_assets a on o.box_id = a.box_id
-          |left join node_inputs i_spent on o.box_id = i_spent.box_id and i.main_chain = true
-          |left join node_inputs i_issued on a.token_id = i_issued.box_id and i.main_chain = true
+          |left join node_inputs i_spent on o.box_id = i_spent.box_id and i_spent.main_chain = true
+          |left join node_inputs i_issued on a.token_id = i_issued.box_id and i_issued.main_chain = true
           |where o.main_chain = true
           |  and i_issued.tx_id = o.tx_id
           |  and o.box_id = a.box_id
