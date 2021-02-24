@@ -47,9 +47,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  (select distinct(tx.id) from node_transactions tx left join node_headers h on tx.header_id = h.id where tx.id = i.tx_id and h.main_chain = true)
+         |  i.tx_id
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.box_id = $boxId
          |order by o.main_chain desc limit 1
          |""".stripMargin.query[ExtendedOutput]
@@ -73,9 +73,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
+         |  i.tx_id
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true and o.ergo_tree = $ergoTree
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
@@ -86,7 +86,6 @@ object OutputQuerySet extends QuerySet {
     sql"""
          |select count(distinct o.box_id)
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
          |where o.main_chain = true and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
 
@@ -110,9 +109,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
+         |  i.tx_id
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_transactions tx on tx.id = o.tx_id
          |where o.main_chain = true
          |  and tx.inclusion_height <= $maxHeight
@@ -127,7 +126,7 @@ object OutputQuerySet extends QuerySet {
     sql"""
          |select coalesce(cast(sum(o.value) as bigint), 0)
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_transactions tx on tx.id = o.tx_id
          |where tx.main_chain = true
          |  and tx.inclusion_height <= $maxHeight
@@ -141,12 +140,12 @@ object OutputQuerySet extends QuerySet {
   )(implicit lh: LogHandler): Query0[Long] =
     sql"""
          |select coalesce(cast(sum(o.value) as bigint), 0) from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_transactions tx on tx.id = o.tx_id
          |where tx.main_chain = true
          |  and tx.inclusion_height <= $maxHeight
          |  and o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
 
@@ -155,18 +154,18 @@ object OutputQuerySet extends QuerySet {
   )(implicit lh: LogHandler): Query0[BoxId] =
     sql"""
          |select o.box_id from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[BoxId]
 
   def balanceStatsMain(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[(Address, Long)] =
     sql"""
          |select o.address, coalesce(cast(sum(o.value) as bigint), 0) as balance from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_transactions tx on tx.id = o.tx_id
-         |where o.main_chain = true and (i.box_id is null or i.main_chain = false)
+         |where o.main_chain = true and i.box_id is null
          |group by o.address
          |order by balance desc
          |offset $offset limit $limit
@@ -176,20 +175,19 @@ object OutputQuerySet extends QuerySet {
     sql"""
          |select count(*) from (
          |  select distinct o.address from node_outputs o
-         |  left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |  left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |  left join node_transactions tx on tx.id = o.tx_id
-         |  where o.main_chain = true and (i.box_id is null or i.main_chain = false)
+         |  where o.main_chain = true and i.box_id is null
          |) as _
          |""".stripMargin.query[Int]
 
-  // todo: try to join with main-chain inputs only in order to avoid explicit deduplication
   def getMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
     limit: Int
   )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
-         |select distinct on (o.box_id, o.creation_height)
+         |select
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -204,9 +202,9 @@ object OutputQuerySet extends QuerySet {
          |  o.main_chain,
          |  null
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
          |order by o.creation_height asc
          |offset $offset limit $limit
@@ -218,9 +216,9 @@ object OutputQuerySet extends QuerySet {
     sql"""
          |select count(distinct o.box_id)
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
 
@@ -239,9 +237,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
+         |  i.tx_id
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.tx_id = $txId
          |order by o.index asc
          |""".stripMargin.query[ExtendedOutput]
@@ -264,9 +262,9 @@ object OutputQuerySet extends QuerySet {
            |  o.additional_registers,
            |  o.timestamp,
            |  o.main_chain,
-           |  case i.main_chain when false then null else i.tx_id end
+           |  i.tx_id
            |from node_outputs o
-           |left join node_inputs i on o.box_id = i.box_id
+           |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
            |""".stripMargin
     (q ++ Fragments.in(fr"where o.tx_id", txIds))
       .query[ExtendedOutput]
@@ -280,7 +278,7 @@ object OutputQuerySet extends QuerySet {
     sql"""
          |select coalesce(cast(sum(o.value) as decimal), 0)
          |from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where i.box_id is null and o.timestamp >= $ts
          |""".stripMargin.query[BigDecimal]
 
@@ -320,10 +318,10 @@ object OutputQuerySet extends QuerySet {
          |  o.timestamp,
          |  o.main_chain
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_headers h on h.id = o.header_id
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and h.height >= $minHeight
          |  and h.height <= $maxHeight
          |order by h.height asc
@@ -344,9 +342,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
+         |  i.tx_id
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_assets a on o.box_id = a.box_id
          |where a.token_id = $tokenId and o.main_chain = true
          |order by o.creation_height asc
@@ -377,10 +375,10 @@ object OutputQuerySet extends QuerySet {
          |  o.timestamp,
          |  o.main_chain
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_assets a on o.box_id = a.box_id
          |where a.token_id = $tokenId
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.main_chain = true
          |order by o.creation_height asc
          |offset $offset limit $limit
@@ -389,10 +387,10 @@ object OutputQuerySet extends QuerySet {
   def countUnspentByTokenId(tokenId: TokenId)(implicit lh: LogHandler): Query0[Int] =
     sql"""
          |select count(distinct o.box_id) from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_assets a on o.box_id = a.box_id
          |where a.token_id = $tokenId
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.main_chain = true
          |""".stripMargin.query[Int]
 
@@ -413,9 +411,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
+         |  i.tx_id
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.ergo_tree_template_hash = $templateHash
          |order by o.creation_height asc
          |offset $offset limit $limit
@@ -457,9 +455,9 @@ object OutputQuerySet extends QuerySet {
            |  o.additional_registers,
            |  o.timestamp,
            |  o.main_chain,
-           |  case i.main_chain when false then null else i.tx_id end
+           |  i.tx_id
            |from node_outputs o
-           |left join node_inputs i on o.box_id = i.box_id
+           |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
            |${registers.map(innerJoinAllOfRegisters(as = "rs", tableAlias = "o", _)).getOrElse("")}
            |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
            |${assets.map(innerJoinAllOfAssets(as = "ts", tableAlias = "o", _)).getOrElse("")}
@@ -482,7 +480,6 @@ object OutputQuerySet extends QuerySet {
       .const(
         s"""
            |select count(distinct o.box_id) from node_outputs o
-           |left join node_inputs i on o.box_id = i.box_id
            |${registers.map(innerJoinAllOfRegisters(as = "rs", tableAlias = "o", _)).getOrElse("")}
            |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
            |${assets.map(innerJoinAllOfAssets(as = "ts", tableAlias = "o", _)).getOrElse("")}
@@ -509,9 +506,9 @@ object OutputQuerySet extends QuerySet {
          |  o.timestamp,
          |  o.main_chain
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.ergo_tree_template_hash = $templateHash
          |order by o.creation_height asc
          |offset $offset limit $limit
@@ -523,9 +520,9 @@ object OutputQuerySet extends QuerySet {
     sql"""
          |select count(distinct o.box_id)
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.ergo_tree_template_hash = $templateHash
          |""".stripMargin.query[Int]
 
@@ -551,12 +548,12 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
+         |  null
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_assets a on o.box_id = a.box_id
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and a.token_id = $tokenId
          |  and o.ergo_tree_template_hash = $templateHash
          |order by o.creation_height asc
@@ -580,9 +577,9 @@ object OutputQuerySet extends QuerySet {
          |  o.additional_registers,
          |  o.timestamp,
          |  o.main_chain,
-         |  case i.main_chain when false then null else i.tx_id end
+         |  i.tx_id
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_headers h on h.id = o.header_id
          |where o.ergo_tree_template_hash = $templateHash
          |  and h.height >= $minHeight
@@ -608,9 +605,9 @@ object OutputQuerySet extends QuerySet {
          |  o.timestamp,
          |  o.main_chain
          |from node_outputs o
-         |left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and o.ergo_tree_template_hash = $templateHash
          |  and h.height >= $minHeight
          |  and h.height <= $maxHeight
