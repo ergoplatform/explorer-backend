@@ -5,6 +5,7 @@ import cats.implicits._
 import fs2.Stream
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
@@ -69,7 +70,12 @@ trait TransactionRepo[D[_], S[_[_], _]] {
 
   /** Get transactions whose inputs contains a given script template hash.
     */
-  def getByInputsScriptTemplate(template: ErgoTreeTemplateHash, offset: Int, limit: Int): S[D, Transaction]
+  def getByInputsScriptTemplate(
+    template: ErgoTreeTemplateHash,
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString
+  ): S[D, Transaction]
 
   /** Count transactions whose inputs contains a given script template hash.
     */
@@ -134,8 +140,13 @@ object TransactionRepo {
     def getIdsLike(query: String): D[List[TxId]] =
       QS.getIdsLike(query).to[List].liftConnectionIO
 
-    def getByInputsScriptTemplate(template: ErgoTreeTemplateHash, offset: Int, limit: Int): Stream[D, Transaction] =
-      QS.getByInputsScriptTemplate(template, offset, limit).stream.translate(liftK)
+    def getByInputsScriptTemplate(
+      template: ErgoTreeTemplateHash,
+      offset: Int,
+      limit: Int,
+      ordering: OrderingString
+    ): Stream[D, Transaction] =
+      QS.getByInputsScriptTemplate(template, offset, limit, ordering).stream.translate(liftK)
 
     def countByInputsScriptTemplate(template: ErgoTreeTemplateHash): D[Int] =
       QS.countByInputsScriptTemplate(template).unique.liftConnectionIO

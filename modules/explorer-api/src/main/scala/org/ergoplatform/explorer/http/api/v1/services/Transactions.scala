@@ -7,10 +7,12 @@ import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.ErgoTreeTemplateHash
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
+import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
@@ -20,7 +22,11 @@ import tofu.syntax.streams.compile._
 
 trait Transactions[F[_]] {
 
-  def getByInputsScriptTemplate(template: ErgoTreeTemplateHash, paging: Paging): F[Items[TransactionInfo]]
+  def getByInputsScriptTemplate(
+    template: ErgoTreeTemplateHash,
+    paging: Paging,
+    ordering: SortOrder
+  ): F[Items[TransactionInfo]]
 }
 
 object Transactions {
@@ -43,12 +49,16 @@ object Transactions {
   )(trans: D Trans F)
     extends Transactions[F] {
 
-    def getByInputsScriptTemplate(template: ErgoTreeTemplateHash, paging: Paging): F[Items[TransactionInfo]] =
+    def getByInputsScriptTemplate(
+      template: ErgoTreeTemplateHash,
+      paging: Paging,
+      ordering: SortOrder
+    ): F[Items[TransactionInfo]] =
       transactions
         .countByInputsScriptTemplate(template)
         .flatMap { total =>
           transactions
-            .getByInputsScriptTemplate(template, paging.offset, paging.limit)
+            .getByInputsScriptTemplate(template, paging.offset, paging.limit, ordering.value)
             .chunkN(serviceSettings.chunkSize)
             .through(makeTransaction)
             .to[List]
@@ -57,18 +67,18 @@ object Transactions {
         .thrushK(trans.xa)
 
     private def makeTransaction: Pipe[D, Chunk[Transaction], TransactionInfo] =
-        for {
-          chunk      <- _
-          txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
-          ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
-          inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-          inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
-          outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
-          outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-          outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
-          bestHeight <- Stream.eval(headers.getBestHeight)
-          txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-          txInfo <- Stream.emits(TransactionInfo.batch(txsWithHeights.toList, ins, outs, inAssets, outAssets))
-        } yield txInfo
+      for {
+        chunk      <- _
+        txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
+        ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
+        inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
+        inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
+        outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
+        outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
+        outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
+        bestHeight <- Stream.eval(headers.getBestHeight)
+        txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
+        txInfo <- Stream.emits(TransactionInfo.batch(txsWithHeights.toList, ins, outs, inAssets, outAssets))
+      } yield txInfo
   }
 }

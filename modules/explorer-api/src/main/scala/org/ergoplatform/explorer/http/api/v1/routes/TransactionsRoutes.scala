@@ -21,8 +21,8 @@ final class TransactionsRoutes[
     getByInputsScriptTemplateR
 
   private def getByInputsScriptTemplateR: HttpRoutes[F] =
-    defs.getByInputsScriptTemplateDef.toRoutes { case (template, paging) =>
-      service.getByInputsScriptTemplate(template, paging).adaptThrowable.value
+    defs.getByInputsScriptTemplateDef.toRoutes { case (template, paging, ordering) =>
+      service.getByInputsScriptTemplate(template, paging, ordering).adaptThrowable.value
     }
 }
 
