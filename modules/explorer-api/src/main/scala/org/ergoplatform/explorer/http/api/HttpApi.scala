@@ -9,6 +9,7 @@ import org.ergoplatform.explorer.CRaise
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.routes.RoutesV0Bundle
 import org.ergoplatform.explorer.http.api.v1.routes.RoutesV1Bundle
 import org.ergoplatform.explorer.settings.ApiSettings
@@ -17,6 +18,7 @@ import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
 import sttp.tapir.server.http4s.Http4sServerOptions
+import tofu.Throws
 
 import scala.concurrent.ExecutionContext
 
@@ -26,7 +28,7 @@ object HttpApi {
     */
   def apply[
     F[_]: ConcurrentEffect: ContextShift: Timer,
-    D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
+    D[_]: Monad: Throws: LiftConnectionIO: CompileStream
   ](
     settings: ApiSettings,
     redis: Option[RedisCommands[F, String, String]]

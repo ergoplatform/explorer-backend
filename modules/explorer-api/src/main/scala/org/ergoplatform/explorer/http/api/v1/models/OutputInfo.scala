@@ -6,7 +6,7 @@ import io.circe.Json
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
-import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
+import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TxId}
 import sttp.tapir.json.circe.validatorForCirceJson
 import sttp.tapir.{Schema, SchemaType, Validator}
 
@@ -14,6 +14,7 @@ import sttp.tapir.{Schema, SchemaType, Validator}
 final case class OutputInfo(
   boxId: BoxId,
   transactionId: TxId,
+  blockId: Id,
   value: Long,
   index: Int,
   creationHeight: Int,
@@ -32,6 +33,7 @@ object OutputInfo {
       .derive[OutputInfo]
       .modify(_.boxId)(_.description("Id of the box"))
       .modify(_.transactionId)(_.description("Id of the transaction that created the box"))
+      .modify(_.blockId)(_.description("Id of the block a box included in"))
       .modify(_.value)(_.description("Value of the box in nanoERG"))
       .modify(_.index)(_.description("Index of the output in a transaction"))
       .modify(_.creationHeight)(_.description("Height at which the box was created"))
@@ -56,6 +58,7 @@ object OutputInfo {
     OutputInfo(
       o.output.boxId,
       o.output.txId,
+      o.output.headerId,
       o.output.value,
       o.output.index,
       o.output.creationHeight,
@@ -74,6 +77,7 @@ object OutputInfo {
     OutputInfo(
       o.boxId,
       o.txId,
+      o.headerId,
       o.value,
       o.index,
       o.creationHeight,

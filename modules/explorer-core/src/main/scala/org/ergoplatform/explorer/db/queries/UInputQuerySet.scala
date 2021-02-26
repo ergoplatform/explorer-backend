@@ -27,7 +27,7 @@ object UInputQuerySet extends QuerySet {
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedUInput] =
     sql"""
-         |select distinct on (i.box_id)
+         |select distinct on (i.box_id, i.tx_id)
          |  i.box_id,
          |  i.tx_id,
          |  i.index,
@@ -61,10 +61,10 @@ object UInputQuerySet extends QuerySet {
          |where i.tx_id = $txId
          |""".stripMargin.query[ExtendedUInput]
 
-  def getAllByTxIxs(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedUInput] = {
+  def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedUInput] = {
     val queryFr =
       fr"""
-          |select distinct on (i.box_id)
+          |select distinct on (i.box_id, i.tx_id)
           |  i.box_id,
           |  i.tx_id,
           |  i.index,

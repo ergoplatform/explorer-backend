@@ -65,6 +65,6 @@ object UInputRepo {
       QS.getAllByTxId(txId).to[List].liftConnectionIO
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedUInput]] =
-      QS.getAllByTxIxs(txIds).to[List].liftConnectionIO
+      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
   }
 }

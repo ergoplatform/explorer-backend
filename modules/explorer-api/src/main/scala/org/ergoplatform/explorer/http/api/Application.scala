@@ -14,6 +14,7 @@ import org.ergoplatform.explorer.settings.ApiSettings
 import org.ergoplatform.explorer.http.api.decodingFailureHandler._
 import org.ergoplatform.explorer.settings.pureConfigInstances._
 import pureconfig.generic.auto._
+import tofu.fs2Instances._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 

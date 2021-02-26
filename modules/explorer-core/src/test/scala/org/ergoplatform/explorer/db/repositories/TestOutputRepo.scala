@@ -11,6 +11,14 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   override def insert(output: Output): F[Unit] = ???
 
+  def countAllByErgoTree(ergoTree: HexString): F[Int] = ???
+
+  def countUnspentByErgoTree(ergoTree: HexString): F[Int] = ???
+
+  def countAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): F[Int] = ???
+
+  def countUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): F[Int] = ???
+
   override def insertMany(outputs: scala.List[Output]): F[Unit] = ???
 
   override def getByBoxId(boxId: BoxId): F[Option[ExtendedOutput]] = ???
@@ -31,6 +39,12 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
     offset: Int,
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
+
+  def countAllByTokenId(tokenId: TokenId): F[Int] = ???
+
+  def countUnspentByTokenId(tokenId: TokenId): F[Int] = ???
+
+  def countAll(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]]): F[Int] = ???
 
   override def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): F[Long] = ???
 

@@ -59,6 +59,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def streamAllByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
 
+  /** Count outputs with a given `ergoTree` from persistence.
+    */
+  def countAllByErgoTree(ergoTree: HexString): D[Int]
+
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
   def streamUnspentByErgoTree(
@@ -66,6 +70,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
+
+  /** Count unspent main-chain outputs with a given `ergoTree` from persistence.
+    */
+  def countUnspentByErgoTree(ergoTree: HexString): D[Int]
 
   /** Get all main-chain outputs that are protected with given ergo tree template.
     */
@@ -75,6 +83,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, ExtendedOutput]
 
+  /** Count main-chain outputs that are protected with given ergo tree template.
+    */
+  def countAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int]
+
   /** Get all unspent main-chain outputs that are protected with given ergo tree template.
     */
   def streamUnspentByErgoTreeTemplateHash(
@@ -82,6 +94,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, Output]
+
+  /** Count unspent main-chain outputs that are protected with given ergo tree template.
+    */
+  def countUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int]
 
   def streamUnspentByErgoTreeTemplateHashAndTokenId(
     hash: ErgoTreeTemplateHash,
@@ -132,7 +148,11 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, ExtendedOutput]
 
+  def countAllByTokenId(tokenId: TokenId): D[Int]
+
   def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, Output]
+
+  def countUnspentByTokenId(tokenId: TokenId): D[Int]
 
   def searchAll(
     templateHash: ErgoTreeTemplateHash,
@@ -142,6 +162,13 @@ trait OutputRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, ExtendedOutput]
+
+  def countAll(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]]
+  ): D[Int]
 }
 
 object OutputRepo {
@@ -170,6 +197,9 @@ object OutputRepo {
       QS.getMainByErgoTree(ergoTree, offset = 0, limit = Int.MaxValue, maxHeight = maxHeight)
         .to[List]
         .liftConnectionIO
+
+    def countAllByErgoTree(ergoTree: HexString): D[Int] =
+      QS.countAllByErgoTree(ergoTree).unique.liftConnectionIO
 
     def streamAllByErgoTree(
       ergoTree: HexString,
@@ -202,6 +232,9 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
 
+    def countUnspentByErgoTree(ergoTree: HexString): D[Int] =
+      QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+
     def streamAllByErgoTreeTemplateHash(
       hash: ErgoTreeTemplateHash,
       offset: Int,
@@ -209,12 +242,18 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getAllByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
 
+    def countAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int] =
+      QS.countAllByErgoTreeTemplateHash(hash).unique.liftConnectionIO
+
     def streamUnspentByErgoTreeTemplateHash(
       hash: ErgoTreeTemplateHash,
       offset: Int,
       limit: Int
     ): Stream[D, Output] =
       QS.getUnspentByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
+
+    def countUnspentByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int] =
+      QS.countUnspentByErgoTreeTemplateHash(hash).unique.liftConnectionIO
 
     def streamAllByErgoTreeTemplateHashByEpochs(
       hash: ErgoTreeTemplateHash,
@@ -268,8 +307,14 @@ object OutputRepo {
     def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, ExtendedOutput] =
       QS.getAllByTokenId(tokenId, offset, limit).stream.translate(liftK)
 
+    def countAllByTokenId(tokenId: TokenId): D[Int] =
+      QS.countAllByTokenId(tokenId).unique.liftConnectionIO
+
     def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, Output] =
       QS.getUnspentByTokenId(tokenId, offset, limit).stream.translate(liftK)
+
+    def countUnspentByTokenId(tokenId: TokenId): D[Int] =
+      QS.countUnspentByTokenId(tokenId).unique.liftConnectionIO
 
     def searchAll(
       templateHash: ErgoTreeTemplateHash,
@@ -280,5 +325,13 @@ object OutputRepo {
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.searchAll(templateHash, registers, constants, assets, offset, limit).stream.translate(liftK)
+
+    def countAll(
+      templateHash: ErgoTreeTemplateHash,
+      registers: Option[NonEmptyList[(RegisterId, String)]],
+      constants: Option[NonEmptyList[(Int, String)]],
+      assets: Option[NonEmptyList[TokenId]]
+    ): D[Int] =
+      QS.countAll(templateHash, registers, constants, assets).unique.liftConnectionIO
   }
 }

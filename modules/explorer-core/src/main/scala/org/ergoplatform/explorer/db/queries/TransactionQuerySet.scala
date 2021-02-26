@@ -3,9 +3,11 @@ package org.ergoplatform.explorer.db.queries
 import doobie.LogHandler
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.util.fragment.Fragment
 import doobie.util.query.Query0
 import doobie.util.update.Update0
-import org.ergoplatform.explorer.{Address, Id, TxId}
+import org.ergoplatform.explorer.constraints.OrderingString
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, Id, TxId}
 import org.ergoplatform.explorer.db.models.Transaction
 
 /** A set of queries for doobie implementation of [TransactionRepo].
@@ -107,6 +109,41 @@ object TransactionQuerySet extends QuerySet {
 
   def getIdsLike(q: String)(implicit lh: LogHandler): Query0[TxId] =
     sql"select distinct id from node_transactions where id like ${s"%$q%"}".query[TxId]
+
+  def getByInputsScriptTemplate(template: ErgoTreeTemplateHash, offset: Int, limit: Int, ordering: OrderingString)(
+    implicit lh: LogHandler
+  ): Query0[Transaction] = {
+    val query =
+      sql"""
+         |select distinct on (t.id, t.inclusion_height)
+         |  t.id,
+         |  t.header_id,
+         |  t.inclusion_height,
+         |  t.coinbase,
+         |  t.timestamp,
+         |  t.size,
+         |  t.index,
+         |  t.main_chain
+         |from node_transactions t
+         |inner join node_inputs i on i.tx_id = t.id and i.header_id = t.header_id
+         |inner join node_outputs o on o.box_id = i.box_id and i.header_id = t.header_id
+         |where o.ergo_tree_template_hash = $template and t.main_chain = true
+         |""".stripMargin
+    val orderingFr    = Fragment.const(s"order by t.inclusion_height $ordering")
+    val offsetLimitFr = Fragment.const(s"offset $offset limit $limit")
+    (query ++ orderingFr ++ offsetLimitFr).query[Transaction]
+  }
+
+  def countByInputsScriptTemplate(template: ErgoTreeTemplateHash)(implicit
+    lh: LogHandler
+  ): Query0[Int] =
+    sql"""
+         |select count(distinct t.id)
+         |from node_transactions t
+         |inner join node_inputs i on i.tx_id = t.id and i.header_id = t.header_id
+         |inner join node_outputs o on o.box_id = i.box_id and i.header_id = t.header_id
+         |where o.ergo_tree_template_hash = $template and t.main_chain = true
+         |""".stripMargin.query[Int]
 
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""

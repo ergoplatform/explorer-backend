@@ -5,11 +5,12 @@ import cats.implicits._
 import fs2.Stream
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Transaction
-import org.ergoplatform.explorer.{Address, Id, TxId}
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, Id, TxId}
 
 /** [[Transaction]] data access operations.
   */
@@ -67,6 +68,19 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     */
   def getIdsLike(query: String): D[List[TxId]]
 
+  /** Get transactions whose inputs contains a given script template hash.
+    */
+  def getByInputsScriptTemplate(
+    template: ErgoTreeTemplateHash,
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString
+  ): S[D, Transaction]
+
+  /** Count transactions whose inputs contains a given script template hash.
+    */
+  def countByInputsScriptTemplate(template: ErgoTreeTemplateHash): D[Int]
+
   /** Update main_chain flag with a given `newChainStatus` for all txs related to given `headerId`.
     */
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
@@ -79,8 +93,7 @@ object TransactionRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends TransactionRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends TransactionRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{TransactionQuerySet => QS}
 
@@ -126,6 +139,17 @@ object TransactionRepo {
 
     def getIdsLike(query: String): D[List[TxId]] =
       QS.getIdsLike(query).to[List].liftConnectionIO
+
+    def getByInputsScriptTemplate(
+      template: ErgoTreeTemplateHash,
+      offset: Int,
+      limit: Int,
+      ordering: OrderingString
+    ): Stream[D, Transaction] =
+      QS.getByInputsScriptTemplate(template, offset, limit, ordering).stream.translate(liftK)
+
+    def countByInputsScriptTemplate(template: ErgoTreeTemplateHash): D[Int] =
+      QS.countByInputsScriptTemplate(template).unique.liftConnectionIO
 
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO

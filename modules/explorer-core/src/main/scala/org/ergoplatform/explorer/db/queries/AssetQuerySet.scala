@@ -73,9 +73,9 @@ object AssetQuerySet extends QuerySet {
          |left join tokens t on a.token_id = t.token_id
          |inner join (
          |  select o.box_id from node_outputs o
-         |  left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |  left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |  where o.main_chain = true
-         |    and (i.box_id is null or i.main_chain = false)
+         |    and i.box_id is null
          |    and o.ergo_tree = $ergoTree
          |) as uo on uo.box_id = a.box_id
          """.stripMargin.query[ExtendedAsset]
@@ -91,11 +91,11 @@ object AssetQuerySet extends QuerySet {
          |    from node_assets a
          |    inner join (
          |      select o.box_id from node_outputs o
-         |      left join (select i.box_id, i.main_chain from node_inputs i where i.main_chain = true) as i on o.box_id = i.box_id
+         |      left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |      left join node_transactions tx on tx.id = o.tx_id
          |      where tx.inclusion_height <= $maxHeight
          |        and o.main_chain = true
-         |        and (i.box_id is null or i.main_chain = false)
+         |        and i.box_id is null
          |        and o.ergo_tree = $ergoTree
          |    ) as uo on uo.box_id = a.box_id
          |  ) as ia
@@ -112,9 +112,9 @@ object AssetQuerySet extends QuerySet {
     sql"""
          |select distinct on (o.address) o.address from node_assets a
          |left join node_outputs o on a.box_id = o.box_id
-         |left join node_inputs i on o.box_id = i.box_id
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true
-         |  and (i.box_id is null or i.main_chain = false)
+         |  and i.box_id is null
          |  and a.token_id = $tokenId
          |offset $offset limit $limit
          |""".stripMargin.query[Address]
@@ -124,7 +124,7 @@ object AssetQuerySet extends QuerySet {
     */
   def getAllIssuingBoxes(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
-         |select
+         |select distinct on (o.box_id, o.creation_height)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -140,12 +140,13 @@ object AssetQuerySet extends QuerySet {
          |  i_spent.tx_id
          |from node_outputs o
          |left join node_assets a on o.box_id = a.box_id
-         |left join node_inputs i_spent on o.box_id = i_spent.box_id
-         |left join node_inputs i_issued on a.token_id = i_issued.box_id
+         |left join node_inputs i_spent on o.box_id = i_spent.box_id and i_spent.main_chain = true
+         |left join node_inputs i_issued on a.token_id = i_issued.box_id and i_issued.main_chain = true
          |where o.main_chain = true
          |  and i_issued.tx_id = o.tx_id
          |  and o.box_id = a.box_id
          |  and a.token_id = i_issued.box_id
+         |order by o.creation_height asc
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
@@ -153,7 +154,7 @@ object AssetQuerySet extends QuerySet {
     tokenIds: NonEmptyList[TokenId]
   )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     (sql"""
-          |select
+          |select distinct on (o.box_id, o.creation_height)
           |  o.box_id,
           |  o.tx_id,
           |  o.header_id,
@@ -169,13 +170,13 @@ object AssetQuerySet extends QuerySet {
           |  i_spent.tx_id
           |from node_outputs o
           |left join node_assets a on o.box_id = a.box_id
-          |left join node_inputs i_spent on o.box_id = i_spent.box_id
-          |left join node_inputs i_issued on a.token_id = i_issued.box_id
+          |left join node_inputs i_spent on o.box_id = i_spent.box_id and i_spent.main_chain = true
+          |left join node_inputs i_issued on a.token_id = i_issued.box_id and i_issued.main_chain = true
           |where o.main_chain = true
           |  and i_issued.tx_id = o.tx_id
           |  and o.box_id = a.box_id
           |  and a.token_id = i_issued.box_id
-          |""".stripMargin ++ Fragments.in(fr"and a.token_id", tokenIds))
+          |""".stripMargin ++ Fragments.in(fr"and a.token_id", tokenIds) ++ sql"order by o.creation_height asc")
       .query[ExtendedOutput]
 
   def getIssuingBoxesQty(implicit lh: LogHandler): Query0[Int] =
