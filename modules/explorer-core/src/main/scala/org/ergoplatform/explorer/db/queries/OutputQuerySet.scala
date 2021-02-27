@@ -126,7 +126,6 @@ object OutputQuerySet extends QuerySet {
     sql"""
          |select coalesce(cast(sum(o.value) as bigint), 0)
          |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_transactions tx on tx.id = o.tx_id
          |where tx.main_chain = true
          |  and tx.inclusion_height <= $maxHeight
