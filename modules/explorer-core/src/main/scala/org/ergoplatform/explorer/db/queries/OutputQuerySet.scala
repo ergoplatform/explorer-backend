@@ -124,7 +124,9 @@ object OutputQuerySet extends QuerySet {
     maxHeight: Int
   )(implicit lh: LogHandler): Query0[Long] =
     sql"""
-         |select sum(o.value) from node_outputs o
+         |select coalesce(cast(sum(o.value) as bigint), 0)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_transactions tx on tx.id = o.tx_id
          |where tx.main_chain = true
          |  and tx.inclusion_height <= $maxHeight
@@ -137,7 +139,7 @@ object OutputQuerySet extends QuerySet {
     maxHeight: Int
   )(implicit lh: LogHandler): Query0[Long] =
     sql"""
-         |select sum(o.value) from node_outputs o
+         |select coalesce(cast(sum(o.value) as bigint), 0) from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_transactions tx on tx.id = o.tx_id
          |where tx.main_chain = true
@@ -160,7 +162,7 @@ object OutputQuerySet extends QuerySet {
 
   def balanceStatsMain(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[(Address, Long)] =
     sql"""
-         |select o.address, sum(o.value) as balance from node_outputs o
+         |select o.address, coalesce(cast(sum(o.value) as bigint), 0) as balance from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_transactions tx on tx.id = o.tx_id
          |where o.main_chain = true and i.box_id is null
