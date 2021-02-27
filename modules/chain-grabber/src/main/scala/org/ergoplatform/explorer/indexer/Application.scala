@@ -33,7 +33,7 @@ object Application extends TaskApp {
               .flatMap(_.run.compile.drain)
               .as(ExitCode.Success)
           }
-          .guarantee(logger.info("Stopping Chain Indexer .."))
+          .guarantee(logger.info("Stopping Chain Indexer ..."))
     }
 
   private def resources(configPathOpt: Option[String]) =
