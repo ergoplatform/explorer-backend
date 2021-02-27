@@ -41,26 +41,25 @@ object AssetQuerySet extends QuerySet {
          |""".stripMargin.query[ExtendedAsset]
 
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[ExtendedAsset] =
-    (
-      sql"""
-        |select distinct on (a.token_id, a.box_id)
-        |  a.token_id,
-        |  a.box_id,
-        |  a.header_id,
-        |  a.index,
-        |  a.value,
-        |  t.name,
-        |  t.decimals,
-        |  t.type
-        |from node_assets a
-        |left join tokens t on a.token_id = t.token_id
-        |""".stripMargin
+    (sql"""
+           |select distinct on (a.token_id, a.box_id)
+           |  a.token_id,
+           |  a.box_id,
+           |  a.header_id,
+           |  a.index,
+           |  a.value,
+           |  t.name,
+           |  t.decimals,
+           |  t.type
+           |from node_assets a
+           |left join tokens t on a.token_id = t.token_id
+           |""".stripMargin
       ++ Fragments.in(fr"where a.box_id", boxIds))
       .query[ExtendedAsset]
 
   def getAllMainUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[ExtendedAsset] =
     sql"""
-         |select
+         |select distinct on (a.token_id, a.box_id)
          |  a.token_id,
          |  a.box_id,
          |  a.header_id,
@@ -80,19 +79,21 @@ object AssetQuerySet extends QuerySet {
          |) as uo on uo.box_id = a.box_id
          """.stripMargin.query[ExtendedAsset]
 
-  def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int)(implicit lh: LogHandler): Query0[AggregatedAsset] =
+  def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int)(implicit
+    lh: LogHandler
+  ): Query0[AggregatedAsset] =
     sql"""
          |select agg.token_id, agg.total, t.name, t.decimals from (
          |  select ia.token_id, sum(ia.value) as total from (
-         |    select
+         |    select distinct on (a.token_id, a.box_id)
          |      a.token_id,
          |      a.box_id,
          |      a.value
          |    from node_assets a
          |    inner join (
-         |      select o.box_id from node_outputs o
+         |      select distinct o.box_id from node_outputs o
          |      left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
-         |      left join node_transactions tx on tx.id = o.tx_id
+         |      left join node_transactions tx on tx.id = o.tx_id and tx.main_chain = true
          |      where tx.inclusion_height <= $maxHeight
          |        and o.main_chain = true
          |        and i.box_id is null
