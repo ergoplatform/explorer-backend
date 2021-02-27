@@ -1,0 +1,49 @@
+package org.ergoplatform.explorer.db.repositories
+
+import cats.effect.Sync
+import cats.syntax.functor._
+import doobie.free.implicits._
+import doobie.util.log.LogHandler
+import org.ergoplatform.explorer.db.DoobieLogHandler
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.db.models.EpochParameters
+
+/** [[EpochParameters]] data access operations.
+  */
+trait EpochInfoRepo[D[_]] {
+
+  /** Put a given `parameters` to persistence.
+    */
+  def insert(parameters: EpochParameters): D[Unit]
+
+  /** Get epoch parameters at the given `height`.
+    */
+  def getByHeight(height: Int): D[Option[EpochParameters]]
+
+  /** Get epoch parameters with a given id
+    */
+  def getByEpochId(id: Int): D[Option[EpochParameters]]
+}
+
+object EpochInfoRepo {
+
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[EpochInfoRepo[D]] =
+    DoobieLogHandler.create[F].map(implicit lh =>
+      new Live[D]
+    )
+
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends EpochInfoRepo[D] {
+
+    import org.ergoplatform.explorer.db.queries.{EpochParametersQuerySet => QS}
+
+    override def insert(parameters: EpochParameters): D[Unit] =
+      QS.insertNoConflict(parameters).void.liftConnectionIO
+
+    override def getByHeight(height: Int): D[Option[EpochParameters]] =
+      QS.getByHeight(height).option.liftConnectionIO
+
+    override def getByEpochId(id: Int): D[Option[EpochParameters]] =
+      QS.getById(id).option.liftConnectionIO
+  }
+}

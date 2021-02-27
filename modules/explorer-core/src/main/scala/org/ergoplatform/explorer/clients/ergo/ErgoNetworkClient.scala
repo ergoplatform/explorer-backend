@@ -89,6 +89,11 @@ object ErgoNetworkClient {
           .map(_.fullHeight)
       }
 
+    def getNodeInfo: F[ApiNodeInfo] =
+      retrying { url =>
+        client.expect[ApiNodeInfo](makeGetRequest(s"$url/info"))
+      }
+
     def getBlockIdsAtHeight(height: Int): F[List[Id]] =
       retrying { url =>
         client.expect[List[Id]](
