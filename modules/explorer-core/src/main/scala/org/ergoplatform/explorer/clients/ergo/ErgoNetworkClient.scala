@@ -38,6 +38,10 @@ trait ErgoNetworkClient[F[_]] {
     */
   def getBestHeight: F[Int]
 
+  /** Get info of current node state
+    */
+  def getNodeInfo: F[ApiNodeInfo]
+
   /** Get block ids at the given `height`.
     */
   def getBlockIdsAtHeight(height: Int): F[List[Id]]

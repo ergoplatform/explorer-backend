@@ -5,6 +5,7 @@ import doobie.util.query.Query0
 import org.ergoplatform.explorer.db.models.EpochParameters
 import doobie.LogHandler
 import doobie.implicits._
+import org.ergoplatform.ErgoLikeContext.Height
 
 object EpochParametersQuerySet extends QuerySet {
 
@@ -29,6 +30,9 @@ object EpochParametersQuerySet extends QuerySet {
   def getById(id: Int)(implicit lh: LogHandler): Query0[EpochParameters] =
     sql"select * from epochs_parameters where id = $id".query[EpochParameters]
 
-  def getByHeight(height: Int)(implicit lh: LogHandler): Query0[EpochParameters] =
+  def getByHeight(height: Height)(implicit lh: LogHandler): Query0[EpochParameters] =
     sql"select * from epochs_parameters where height = $height".query[EpochParameters]
+
+  def getLastHeight(implicit lh: LogHandler): Query0[Int] =
+    sql"select height from epochs_parameters order by height desc limit 1".query[Int]
 }
