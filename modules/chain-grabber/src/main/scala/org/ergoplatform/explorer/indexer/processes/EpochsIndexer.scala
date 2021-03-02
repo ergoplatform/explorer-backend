@@ -11,7 +11,6 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.EpochParameters
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants
-import org.ergoplatform.explorer.protocol.models.ApiNodeInfo
 import org.ergoplatform.explorer.settings.IndexerSettings
 import tofu.MonadThrow
 import tofu.concurrent.MakeRef
@@ -58,12 +57,17 @@ object EpochsIndexer {
       for {
         lastHeight  <- repos.epochInfoRepo.getLastHeight ||> trans.xa
         currentInfo <- client.getNodeInfo
-        _ <- if (isSuitable(currentInfo, lastHeight))
-               repos.epochInfoRepo.insert(currentInfo.parameters.into[EpochParameters].transform) ||> trans.xa
-             else trace"Not suitable height ($lastHeight) for epoch scanning"
+        epochInfo   <- repos.epochInfoRepo.getByEpochId(lastHeight / constants.EpochLength) ||> trans.xa
+        _ <- epochInfo match {
+               case Some(_) => trace"Epoch info at height ${currentInfo.fullHeight} already persist"
+               case None =>
+                 repos.epochInfoRepo.insert(
+                   currentInfo.parameters
+                     .into[EpochParameters]
+                     .withFieldComputed(_.id, _.height / constants.EpochLength)
+                     .transform
+                 ) ||> trans.xa
+             }
       } yield ()
-
-    def isSuitable(nodeInfo: ApiNodeInfo, lastHeight: Int): Boolean =
-      nodeInfo.fullHeight > (lastHeight + constants.EpochLength)
   }
 }

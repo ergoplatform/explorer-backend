@@ -5,7 +5,7 @@ import cats.syntax.applicative._
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.{ErgoLikeTransaction, explorer}
 import org.ergoplatform.explorer.indexer.GrabberTestNetworkClient.Source
-import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
+import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
 
 final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
   extends ErgoNetworkClient[F] {
@@ -22,6 +22,8 @@ final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
   def getUnconfirmedTransactions: F[List[ApiTransaction]] = ???
 
   def submitTransaction(tx: ErgoLikeTransaction): F[Unit] = ???
+
+  def getNodeInfo: F[ApiNodeInfo] = ???
 }
 
 object GrabberTestNetworkClient {

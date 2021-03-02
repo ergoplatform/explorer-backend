@@ -4,12 +4,15 @@ import cats.effect.{ExitCode, Resource}
 import cats.syntax.functor._
 import doobie.free.connection.ConnectionIO
 import fs2.Stream
+import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.ergoplatform.explorer.indexer.processes.{ChainIndexer, EpochsIndexer}
+import org.ergoplatform.explorer.settings.pureConfigInstances._
 import org.ergoplatform.explorer.settings.IndexerSettings
+import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import pureconfig.generic.auto._
 import tofu.concurrent.MakeRef
@@ -25,8 +28,8 @@ object Application extends TaskApp {
   implicit val makeRef: MakeRef[Task, Task] = MakeRef.syncInstance
 
   def run(args: List[String]): Task[ExitCode] =
-    resources(args.headOption).use { case (logger, settings, client, trans) =>
-      logger.info("Starting Chain Indexer ..") >>
+    resources(args.headOption).use[Task, ExitCode] { case (logger, settings, client, trans) =>
+      logger.info("Starting Indexers ..") >>
         ErgoNetworkClient[Task](client, settings.masterNodesAddresses)
           .flatMap { ns =>
             mkProgram(ns, settings, trans).compile.drain as ExitCode.Success
@@ -34,10 +37,10 @@ object Application extends TaskApp {
           .guarantee(logger.info("Stopping Chain Indexer ..."))
     }
 
-  private def resources(configPathOpt: Option[String]) =
+  private def resources(configPathOpt: Option[String]): Resource[Task, (SelfAwareStructuredLogger[Task], IndexerSettings, Client[Task], Trans[ConnectionIO, Task])] =
     for {
       logger   <- Resource.liftF(Slf4jLogger.create)
-      settings <- Resource.liftF(IndexerSettings.load(configPathOpt))
+      settings <- Resource.liftF(IndexerSettings.load[Task](configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
       xa       <- DoobieTrans[Task]("IndexerPool", settings.db)
       trans = Trans.fromDoobie(xa)

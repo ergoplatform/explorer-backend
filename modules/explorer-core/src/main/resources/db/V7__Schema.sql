@@ -284,3 +284,20 @@ CREATE TABLE tokens
 );
 
 CREATE INDEX "tokens__box_id" ON tokens (box_id);
+
+CREATE TABLE epochs_parameters
+(
+    id                 INTEGER  PRIMARY KEY,
+    height             INTEGER  NOT NULL,
+    storage_fee_factor INTEGER  NOT NULL,
+    min_value_per_byte INTEGER  NOT NULL,
+    max_block_size     INTEGER  NOT NULL,
+    max_block_cost     INTEGER  NOT NULL,
+    block_version      SMALLINT NOT NULL,
+    token_access_cost  INTEGER  NOT NULL,
+    input_cost         INTEGER  NOT NULL,
+    data_input_cost    INTEGER  NOT NULL,
+    output_cost        INTEGER  NOT NULL
+);
+
+CREATE INDEX "epochs_parameters_height" ON epochs_parameters (height);

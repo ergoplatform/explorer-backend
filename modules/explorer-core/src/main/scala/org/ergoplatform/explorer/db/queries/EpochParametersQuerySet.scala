@@ -15,6 +15,7 @@ object EpochParametersQuerySet extends QuerySet {
   /** Table column names listing according to a database schema.
     */
   override val fields: List[String] = List(
+    "id",
     "height",
     "storage_fee_factor",
     "min_value_per_byte",
