@@ -63,8 +63,6 @@ object UOutputInfo {
 
   def batch(outputs: List[UOutput], assets: List[ExtendedUAsset]): List[UOutputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)
-    outputs
-      .sortBy(_.index)
-      .map(out => apply(out, groupedAssets.get(out.boxId).toList.flatten))
+    outputs.map(out => apply(out, groupedAssets.get(out.boxId).toList.flatten))
   }
 }
