@@ -11,7 +11,7 @@ import sttp.tapir.{Schema, SchemaType, Validator}
 
 @derive(encoder, decoder)
 final case class InputInfo(
-  id: BoxId,
+  boxId: BoxId,
   value: Long,
   index: Int,
   spendingProof: Option[HexString],
@@ -29,7 +29,7 @@ object InputInfo {
   implicit val schema: Schema[InputInfo] =
     Schema
       .derive[InputInfo]
-      .modify(_.id)(_.description("ID of the corresponding box"))
+      .modify(_.boxId)(_.description("ID of the corresponding box"))
       .modify(_.spendingProof)(_.description("Hex-encoded serialized sigma proof"))
       .modify(_.value)(_.description("Number of nanoErgs in the corresponding box"))
       .modify(_.index)(_.description("Index of the input in a transaction"))
