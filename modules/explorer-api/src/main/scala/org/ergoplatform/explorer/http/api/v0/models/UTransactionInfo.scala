@@ -63,7 +63,7 @@ object UTransactionInfo {
     txs
       .traverse { tx =>
         for {
-          inputs <- inputsByTx.get(tx.id)
+          inputs <- inputsByTx.get(tx.id).map(_.sortBy(_.input.index))
           dataInputs = dataInputsByTx.get(tx.id).toList.flatten
           outputs <- outsByTx.get(tx.id).map(_.sortBy(_.index))
           assets = outputs

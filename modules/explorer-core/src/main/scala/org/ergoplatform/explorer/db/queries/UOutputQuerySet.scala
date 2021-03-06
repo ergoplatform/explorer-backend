@@ -45,7 +45,7 @@ object UOutputQuerySet extends QuerySet {
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[UOutput] =
     sql"""
-         |select distinct on (o.box_id)
+         |select distinct on (o.box_id, o.index)
          |  o.box_id,
          |  o.tx_id,
          |  o.value,
@@ -56,6 +56,7 @@ object UOutputQuerySet extends QuerySet {
          |  o.address,
          |  o.additional_registers
          |from node_u_outputs o where o.tx_id = $txId
+         |order by o.index asc
          |""".stripMargin.query[UOutput]
 
   def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[UOutput] = {

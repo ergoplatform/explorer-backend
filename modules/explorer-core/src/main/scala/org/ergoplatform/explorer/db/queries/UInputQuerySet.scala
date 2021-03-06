@@ -45,7 +45,7 @@ object UInputQuerySet extends QuerySet {
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedUInput] =
     sql"""
-         |select distinct on (i.box_id)
+         |select distinct on (i.box_id, i.index)
          |  i.box_id,
          |  i.tx_id,
          |  i.index,
@@ -59,6 +59,7 @@ object UInputQuerySet extends QuerySet {
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
          |where i.tx_id = $txId
+         |order by i.index asc
          |""".stripMargin.query[ExtendedUInput]
 
   def getAllByTxIds(txIds: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedUInput] = {
