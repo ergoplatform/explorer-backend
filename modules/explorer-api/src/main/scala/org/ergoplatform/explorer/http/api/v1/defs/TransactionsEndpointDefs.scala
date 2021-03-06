@@ -1,16 +1,14 @@
 package org.ergoplatform.explorer.http.api.v1.defs
 
 import org.ergoplatform.explorer.ErgoTreeTemplateHash
-import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
 import org.ergoplatform.explorer.settings.RequestsSettings
-import sttp.tapir.{Endpoint, path}
-import sttp.tapir._
 import sttp.tapir.json.circe._
+import sttp.tapir._
 
 final class TransactionsEndpointDefs(settings: RequestsSettings) {
 
