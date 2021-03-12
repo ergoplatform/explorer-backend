@@ -68,6 +68,28 @@ object InputQuerySet extends QuerySet {
       .query[ExtendedInput]
   }
 
+  def getFullByTxId(txId: TxId)(implicit lh: LogHandler): Query0[FullInput] =
+    sql"""
+         |select distinct on (i.box_id)
+         |  i.box_id,
+         |  i.tx_id,
+         |  i.header_id,
+         |  i.proof_bytes,
+         |  i.extension,
+         |  i.index,
+         |  i.main_chain,
+         |  o.header_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers
+         |from node_inputs i
+         |inner join node_outputs o on i.box_id = o.box_id
+         |where i.tx_id = $txId
+         |""".stripMargin.query[FullInput]
+
   def getFullByTxIds(txsId: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[FullInput] = {
     val q =
       sql"""
