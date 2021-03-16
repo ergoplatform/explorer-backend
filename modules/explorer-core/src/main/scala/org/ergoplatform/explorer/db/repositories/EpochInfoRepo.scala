@@ -26,6 +26,10 @@ trait EpochInfoRepo[D[_]] {
   /** Get height of the last known header in epoch.
     */
   def getLastHeight: D[Int]
+
+  /** Get info about last epoch
+    */
+  def getLastEpoch: D[Option[EpochParameters]]
 }
 
 object EpochInfoRepo {
@@ -49,5 +53,8 @@ object EpochInfoRepo {
       QS.getLastHeight.option
         .map(_.getOrElse(constants.PreGenesisHeight))
         .liftConnectionIO
+
+    override def getLastEpoch: D[Option[EpochParameters]] =
+      QS.getLastEpoch.option.liftConnectionIO
   }
 }

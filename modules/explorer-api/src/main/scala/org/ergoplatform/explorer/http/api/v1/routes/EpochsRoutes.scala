@@ -16,25 +16,16 @@ final class EpochsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](epochs: Epochs[F])(implicit opts: Http4sServerOptions[F]) {
 
-  val defs = new EpochsEndpointDefs[F]
+  val defs = new EpochsEndpointDefs
 
-  val routes: HttpRoutes[F] = getEpochInfoByHeightR <+> getEpochInfoByIdR
+  val routes: HttpRoutes[F] = getEpochInfoR
 
-  private def getEpochInfoByHeightR: HttpRoutes[F] =
-    defs.getEpochInfoByHeightDef.toRoutes { height =>
+  private def getEpochInfoR: HttpRoutes[F] =
+    defs.getEpochInfoDef.toRoutes { _ =>
       epochs
-        .getEpochParamsByHeight(height)
+        .getLastEpoch
         .adaptThrowable
-        .orNotFound(s"Unknown epoch at height $height")
-        .value
-    }
-
-  private def getEpochInfoByIdR: HttpRoutes[F] =
-    defs.getEpochInfoByIdDef.toRoutes { id =>
-      epochs
-        .getEpochParamsById(id)
-        .adaptThrowable
-        .orNotFound(s"Unknown epoch id $id")
+        .orNotFound(s"Data about last epoch is missing")
         .value
     }
 }

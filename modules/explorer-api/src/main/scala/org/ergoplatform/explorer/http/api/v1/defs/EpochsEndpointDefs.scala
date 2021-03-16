@@ -6,22 +6,16 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import sttp.tapir.{Endpoint, _}
 import sttp.tapir.json.circe._
 
-final class EpochsEndpointDefs[F[_]] {
+final class EpochsEndpointDefs {
 
   private val PathPrefix = "epochs"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    getEpochInfoByHeightDef ::
-    getEpochInfoByIdDef ::
+    getEpochInfoDef ::
     Nil
 
-  def getEpochInfoByHeightDef: Endpoint[Height, ApiErr, EpochParameters, Any] =
+  def getEpochInfoDef: Endpoint[Unit, ApiErr, EpochParameters, Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "info" / "height" / path[Height])
-      .out(jsonBody[EpochParameters])
-
-  def getEpochInfoByIdDef: Endpoint[Int, ApiErr, EpochParameters, Any] =
-    baseEndpointDef.get
-      .in(PathPrefix / "info" / "epoch" / path[Int])
+      .in(PathPrefix / "info")
       .out(jsonBody[EpochParameters])
 }

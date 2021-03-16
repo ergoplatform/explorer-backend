@@ -24,12 +24,14 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
   private def allEndpoints =
     new TransactionsEndpointDefs(settings).endpoints ++
     new BoxesEndpointDefs(settings).endpoints ++
-    new AssetsEndpointDefs(settings).endpoints
+    new AssetsEndpointDefs(settings).endpoints ++
+    (new EpochsEndpointDefs).endpoints
 
   private def tags =
     Tag("transactions", "Transactions methods".some) ::
     Tag("boxes", "Boxes methods".some) ::
     Tag("assets", "Assets methods".some) ::
+    Tag("epochs", "Epochs methods".some) ::
     Nil
 
   private def openApiSpecR: HttpRoutes[F] =

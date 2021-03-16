@@ -36,4 +36,7 @@ object EpochParametersQuerySet extends QuerySet {
 
   def getLastHeight(implicit lh: LogHandler): Query0[Int] =
     sql"select height from epochs_parameters order by height desc limit 1".query[Int]
+
+  def getLastEpoch(implicit lh: LogHandler): Query0[EpochParameters] =
+    sql"select * from epochs_parameters order by id desc limit 1".query[EpochParameters]
 }
