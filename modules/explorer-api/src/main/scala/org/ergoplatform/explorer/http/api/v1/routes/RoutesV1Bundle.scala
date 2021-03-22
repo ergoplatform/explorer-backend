@@ -35,10 +35,11 @@ object RoutesV1Bundle {
       boxes                     <- Boxes(serviceSettings)(trans)
       assets                    <- Assets(trans)
       transactions              <- Transactions(serviceSettings)(trans)
-      boxesRoutes  = BoxesRoutes(requestsSettings, boxes)
-      assetsRoutes = AssetsRoutes(requestsSettings, assets)
-      txsRoutes    = TransactionsRoutes(requestsSettings, transactions)
-      docs         = DocsRoutes(requestsSettings)
-      routes       = txsRoutes <+> boxesRoutes <+> assetsRoutes <+> docs
+      boxesRoutes     = BoxesRoutes(requestsSettings, boxes)
+      assetsRoutes    = AssetsRoutes(requestsSettings, assets)
+      txsRoutes       = TransactionsRoutes(requestsSettings, transactions)
+      addressesRoutes = AddressesRoutes(requestsSettings, transactions)
+      docs            = DocsRoutes(requestsSettings)
+      routes          = txsRoutes <+> boxesRoutes <+> assetsRoutes <+> addressesRoutes <+> docs
     } yield RoutesV1Bundle(routes)
 }
