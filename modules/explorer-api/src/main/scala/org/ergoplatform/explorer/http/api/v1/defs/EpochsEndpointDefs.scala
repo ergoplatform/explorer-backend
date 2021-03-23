@@ -16,6 +16,6 @@ final class EpochsEndpointDefs {
 
   def getEpochInfoDef: Endpoint[Unit, ApiErr, EpochParameters, Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "info")
+      .in(PathPrefix / "params")
       .out(jsonBody[EpochParameters])
 }
