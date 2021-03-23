@@ -2,14 +2,14 @@ package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.Sync
 import cats.implicits._
-import fs2.Stream
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
+import fs2.Stream
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Transaction
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, Id, TxId}
 
 /** [[Transaction]] data access operations.
@@ -47,6 +47,14 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): D[List[Transaction]]
+
+  /** Get transactions related to a given `address`.
+    */
+  def getRelatedToAddressS(
+    address: Address,
+    offset: Int,
+    limit: Int
+  ): S[D, Transaction]
 
   /** Get total number of transactions related to a given `address`.
     */
@@ -123,6 +131,13 @@ object TransactionRepo {
       limit: Int
     ): D[List[Transaction]] =
       QS.getAllRelatedToAddress(address, offset, limit).to[List].liftConnectionIO
+
+    def getRelatedToAddressS(
+      address: Address,
+      offset: Int,
+      limit: Int
+    ): Stream[D, Transaction] =
+      QS.getAllRelatedToAddress(address, offset, limit).stream.translate(liftK)
 
     def countRelatedToAddress(address: Address): D[Int] =
       QS.countRelatedToAddress(address).unique.liftConnectionIO

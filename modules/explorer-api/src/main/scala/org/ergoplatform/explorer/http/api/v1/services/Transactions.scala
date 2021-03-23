@@ -78,15 +78,10 @@ object Transactions {
         .countRelatedToAddress(address)
         .flatMap { total =>
           transactions
-            .getRelatedToAddress(address, paging.offset, paging.limit)
-            .map(_.grouped(100))
-            .flatMap(txs =>
-              Stream
-                .emits[D, Transaction](txs.flatten.toList)
-                .chunkN(serviceSettings.chunkSize)
-                .through(makeTransaction)
-                .to[List]
-            )
+            .getRelatedToAddressS(address, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(makeTransaction)
+            .to[List]
             .map(Items(_, total))
         }
         .thrushK(trans.xa)
