@@ -11,8 +11,7 @@ final class EpochsEndpointDefs {
   private val PathPrefix = "epochs"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    getEpochInfoDef ::
-    Nil
+    getEpochInfoDef :: Nil
 
   def getEpochInfoDef: Endpoint[Unit, ApiErr, EpochParameters, Any] =
     baseEndpointDef.get
