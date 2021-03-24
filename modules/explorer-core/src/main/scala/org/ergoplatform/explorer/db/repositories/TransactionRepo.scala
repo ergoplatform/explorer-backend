@@ -50,7 +50,7 @@ trait TransactionRepo[D[_], S[_[_], _]] {
 
   /** Get transactions related to a given `address`.
     */
-  def getRelatedToAddressS(
+  def streamRelatedToAddress(
     address: Address,
     offset: Int,
     limit: Int
@@ -132,7 +132,7 @@ object TransactionRepo {
     ): D[List[Transaction]] =
       QS.getAllRelatedToAddress(address, offset, limit).to[List].liftConnectionIO
 
-    def getRelatedToAddressS(
+    def streamRelatedToAddress(
       address: Address,
       offset: Int,
       limit: Int

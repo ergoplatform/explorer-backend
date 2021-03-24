@@ -78,7 +78,7 @@ object Transactions {
         .countRelatedToAddress(address)
         .flatMap { total =>
           transactions
-            .getRelatedToAddressS(address, paging.offset, paging.limit)
+            .streamRelatedToAddress(address, paging.offset, paging.limit)
             .chunkN(serviceSettings.chunkSize)
             .through(makeTransaction)
             .to[List]
