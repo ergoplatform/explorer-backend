@@ -52,6 +52,10 @@ object dependencies {
     "co.fs2" %% "fs2-core" % Fs2Version
   )
 
+  val Chimney: List[ModuleID] = List(
+    "io.scalaland" %% "chimney" % ChimneyVersion
+  )
+
   val Tofu: List[ModuleID] = List(
     "ru.tinkoff"  %% "tofu-core"        % TofuVersion,
     "ru.tinkoff"  %% "tofu-derivation"  % TofuVersion,
@@ -124,6 +128,7 @@ object dependencies {
     Cats ++
     Tofu ++
     Fs2 ++
+    Chimney ++
     Circe ++
     Http4s ++
     Tapir ++
