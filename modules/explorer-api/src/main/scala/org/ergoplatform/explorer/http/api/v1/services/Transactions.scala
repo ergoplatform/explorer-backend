@@ -6,8 +6,6 @@ import cats.{FlatMap, Monad}
 import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.ErgoTreeTemplateHash
-import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
@@ -17,6 +15,7 @@ import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
 import org.ergoplatform.explorer.settings.ServiceSettings
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash}
 import tofu.syntax.monadic._
 import tofu.syntax.streams.compile._
 
@@ -26,6 +25,11 @@ trait Transactions[F[_]] {
     template: ErgoTreeTemplateHash,
     paging: Paging,
     ordering: SortOrder
+  ): F[Items[TransactionInfo]]
+
+  def getTxsInfoByAddress(
+    address: Address,
+    paging: Paging
   ): F[Items[TransactionInfo]]
 }
 
@@ -59,6 +63,22 @@ object Transactions {
         .flatMap { total =>
           transactions
             .getByInputsScriptTemplate(template, paging.offset, paging.limit, ordering.value)
+            .chunkN(serviceSettings.chunkSize)
+            .through(makeTransaction)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
+
+    def getTxsInfoByAddress(
+      address: Address,
+      paging: Paging
+    ): F[Items[TransactionInfo]] =
+      transactions
+        .countRelatedToAddress(address)
+        .flatMap { total =>
+          transactions
+            .streamRelatedToAddress(address, paging.offset, paging.limit)
             .chunkN(serviceSettings.chunkSize)
             .through(makeTransaction)
             .to[List]
