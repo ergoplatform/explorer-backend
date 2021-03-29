@@ -4,7 +4,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import org.ergoplatform.explorer
 import org.ergoplatform.explorer.db.models.Transaction
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput, FullInput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedDataInput, ExtendedOutput, FullInput}
 import org.ergoplatform.explorer.{Id, TxId}
 import sttp.tapir.{Schema, Validator}
 
@@ -17,6 +17,7 @@ final case class TransactionInfo(
   index: Int,
   numConfirmations: Int,
   inputs: List[InputInfo],
+  dataInputs: List[DataInputInfo],
   outputs: List[OutputInfo],
   size: Int
 )
@@ -40,6 +41,7 @@ object TransactionInfo {
     tx: Transaction,
     numConfirmations: Int,
     inputs: List[FullInput],
+    dataInputs: List[ExtendedDataInput],
     outputs: List[ExtendedOutput],
     inAssets: List[ExtendedAsset],
     outAssets: List[ExtendedAsset]
@@ -52,6 +54,7 @@ object TransactionInfo {
   def unFlattenBatch(
     txs: List[(Transaction, Int)],
     inputs: List[FullInput],
+    dataInputs: List[ExtendedDataInput],
     outputs: List[ExtendedOutput],
     inAssets: List[ExtendedAsset],
     outAssets: List[ExtendedAsset]
@@ -59,7 +62,7 @@ object TransactionInfo {
     val groupedInAssets  = inAssets.groupBy(_.boxId)
     val groupedOutAssets = outAssets.groupBy(_.boxId)
     txs.map { case (tx, numConfirmations) =>
-      unFlattenIn(tx, numConfirmations, inputs, outputs, groupedInAssets, groupedOutAssets)
+      unFlattenIn(tx, numConfirmations, inputs, dataInputs, outputs, groupedInAssets, groupedOutAssets)
     }
   }
 
@@ -67,6 +70,7 @@ object TransactionInfo {
     tx: Transaction,
     numConfirmations: Int,
     inputs: List[FullInput],
+    dataInputs: List[ExtendedDataInput],
     outputs: List[ExtendedOutput],
     groupedInAssets: Map[explorer.BoxId, List[ExtendedAsset]],
     groupedOutAssets: Map[explorer.BoxId, List[ExtendedAsset]]
@@ -78,6 +82,10 @@ object TransactionInfo {
         val relAssets = groupedInAssets.get(in.input.boxId).toList.flatten
         InputInfo(in, relAssets)
       }
+    val relatedDataInputs = dataInputs
+      .filter(_.input.txId == tx.id)
+      .sortBy(_.input.index)
+      .map(DataInputInfo.apply)
     val relatedOutputs = outputs
       .filter(_.output.txId == tx.id)
       .sortBy(_.output.index)
@@ -93,6 +101,7 @@ object TransactionInfo {
       tx.index,
       numConfirmations,
       relatedInputs,
+      relatedDataInputs,
       relatedOutputs,
       tx.size
     )

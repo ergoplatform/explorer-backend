@@ -7,6 +7,7 @@ import cats.{FlatMap, Monad}
 import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.ErgoTreeTemplateHash
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
@@ -42,14 +43,15 @@ object Transactions {
     F[_]: Sync,
     D[_]: LiftConnectionIO: Monad: CompileStream
   ](serviceSettings: ServiceSettings)(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[Transactions[F]] =
-    (AssetRepo[F, D], InputRepo[F, D], OutputRepo[F, D], TransactionRepo[F, D], HeaderRepo[F, D]).mapN(
-      new Live(serviceSettings, _, _, _, _, _)(trans)
+    (AssetRepo[F, D], InputRepo[F, D], DataInputRepo[F, D], OutputRepo[F, D], TransactionRepo[F, D], HeaderRepo[F, D]).mapN(
+      new Live(serviceSettings, _, _, _, _, _, _)(trans)
     )
 
   final class Live[F[_]: FlatMap, D[_]: Monad: CompileStream](
     serviceSettings: ServiceSettings,
     assets: AssetRepo[D, Stream],
     inputs: InputRepo[D],
+    dataInputs: DataInputRepo[D],
     outputs: OutputRepo[D, Stream],
     transactions: TransactionRepo[D, Stream],
     headers: HeaderRepo[D]
@@ -112,12 +114,13 @@ object Transactions {
         ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
         inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
         inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
+        dataIns    <- Stream.eval(dataInputs.getAllByTxIds(txIds))
         outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
         outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
         outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-        txInfo <- Stream.emits(TransactionInfo.unFlattenBatch(txsWithHeights.toList, ins, outs, inAssets, outAssets))
+        txInfo <- Stream.emits(TransactionInfo.unFlattenBatch(txsWithHeights.toList, ins, dataIns, outs, inAssets, outAssets))
       } yield txInfo
   }
 }
