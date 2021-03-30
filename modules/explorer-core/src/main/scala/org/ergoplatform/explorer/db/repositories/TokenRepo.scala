@@ -29,11 +29,11 @@ trait TokenRepo[D[_]] {
 
   /** Get all tokens matching a given `idSubstring`.
     */
-  def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[Token]]
+  def getAllLike(q: String, offset: Int, limit: Int): D[List[Token]]
 
   /** Get the total number of tokens matching a given `idSubstring`.
     */
-  def countAllLike(idSubstring: String): D[Int]
+  def countAllLike(q: String): D[Int]
 }
 
 object TokenRepo {
@@ -58,10 +58,10 @@ object TokenRepo {
 
     def countAll: ConnectionIO[Int] = QS.countAll.unique
 
-    def getAllLike(idSubstring: String, offset: Int, limit: Int): ConnectionIO[List[Token]] =
-      QS.getAllLike(idSubstring, offset, limit).to[List]
+    def getAllLike(q: String, offset: Int, limit: Int): ConnectionIO[List[Token]] =
+      QS.getAllLike(q, offset, limit).to[List]
 
-    def countAllLike(idSubstring: String): ConnectionIO[Int] =
-      QS.countAllLike(idSubstring).unique
+    def countAllLike(q: String): ConnectionIO[Int] =
+      QS.countAllLike(q).unique
   }
 }

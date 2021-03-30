@@ -15,7 +15,7 @@ import sttp.tapir.server.http4s._
 
 final class TokensRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](settings: RequestsSettings, service: Tokens[F, fs2.Stream])(implicit opts: Http4sServerOptions[F]) {
+](settings: RequestsSettings, tokens: Tokens[F])(implicit opts: Http4sServerOptions[F]) {
 
   val defs = new TokensEndpointDefs(settings)
 
@@ -24,7 +24,7 @@ final class TokensRoutes[
 
   private def getByIdR: HttpRoutes[F] =
     defs.getByIdDef.toRoutes { id =>
-      service
+      tokens
         .get(id)
         .adaptThrowable
         .orNotFound(s"Token with id: $id")
@@ -33,12 +33,12 @@ final class TokensRoutes[
 
   private def searchByIdR: HttpRoutes[F] =
     defs.searchByIdDef.toRoutes { case (q, paging) =>
-      service.search(q, paging).adaptThrowable.value
+      tokens.search(q, paging).adaptThrowable.value
     }
 
   private def listR: HttpRoutes[F] =
     defs.listDef.toRoutes { case (paging, ordering) =>
-      service.getTokens(paging, ordering).adaptThrowable.value
+      tokens.getAll(paging, ordering).adaptThrowable.value
     }
 }
 
@@ -46,7 +46,7 @@ object TokensRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     settings: RequestsSettings,
-    service: Tokens[F, fs2.Stream]
+    tokens: Tokens[F]
   )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
-    new TokensRoutes(settings, service).routes
+    new TokensRoutes(settings, tokens).routes
 }

@@ -46,18 +46,18 @@ object TokensQuerySet extends QuerySet {
     sql"select count(*) from tokens t left join node_outputs o on o.box_id = t.box_id where o.main_chain = true"
       .query[Int]
 
-  def getAllLike(idSubstring: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Token] =
+  def getAllLike(q: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Token] =
     sql"""
          |select t.token_id, t.box_id, t.emission_amount, t.name, t.description, t.type, t.decimals from tokens t
          |left join node_outputs o on o.box_id = t.box_id
-         |where t.token_id like ${idSubstring + "%"} and o.main_chain = true
+         |where (t.token_id like ${q + "%"} or t.name like ${q + "%"}) and o.main_chain = true
          |offset $offset limit $limit
          """.stripMargin.query[Token]
 
-  def countAllLike(idSubstring: String)(implicit lh: LogHandler): Query0[Int] =
+  def countAllLike(q: String)(implicit lh: LogHandler): Query0[Int] =
     sql"""
          |select count(*) from tokens t
          |left join node_outputs o on t.box_id = o.box_id
-         |where t.token_id like ${idSubstring + "%"} and o.main_chain = true
+         |where (t.token_id like ${q + "%"} or t.name like ${q + "%"}) and o.main_chain = true
          """.stripMargin.query[Int]
 }
