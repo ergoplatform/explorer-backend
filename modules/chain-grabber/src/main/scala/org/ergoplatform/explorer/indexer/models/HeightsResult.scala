@@ -11,18 +11,18 @@ import tofu.syntax.raise._
 
 import scala.collection.immutable.SortedMap
 
-final case class DistinguishHeightsResult(
+final case class HeightsResult(
   bestHeight: Int,
   distinguishHeights: List[(UrlString, Int)]
 )
 
-object DistinguishHeightsResult {
+object HeightsResult {
 
-  def apply[F[_]: CRaise[*[_], IncorrectNetworkView]: Applicative](heights: List[(UrlString, Int)]): F[DistinguishHeightsResult] = {
+  def apply[F[_]: CRaise[*[_], IncorrectNetworkView]: Applicative](heights: List[(UrlString, Int)]): F[HeightsResult] = {
     val sorted = SortedMap(heights.groupBy(_._2).toSeq: _*)
     sorted.lastOption
-      .fold(IncorrectNetworkView("No one height was parsed").raise[F, DistinguishHeightsResult])(last =>
-        DistinguishHeightsResult(last._1, sorted.init.values.flatten.toList).pure[F]
+      .fold(IncorrectNetworkView("No one height was parsed").raise[F, HeightsResult])(last =>
+        HeightsResult(last._1, sorted.init.values.flatten.toList).pure[F]
       )
   }
 }

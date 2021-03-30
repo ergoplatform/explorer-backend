@@ -17,7 +17,7 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
 import org.ergoplatform.explorer.indexer.extractors._
-import org.ergoplatform.explorer.indexer.models.{DistinguishHeightsResult, FlatBlock, SlotData}
+import org.ergoplatform.explorer.indexer.models.{HeightsResult, FlatBlock, SlotData}
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
@@ -75,12 +75,12 @@ object ChainIndexer {
     def sync: Stream[F, Unit] =
       for {
         bestHeights     <- Stream.eval(network.getBestHeights)
-        processedHeight <- Stream.eval(DistinguishHeightsResult[F](bestHeights))
+        processedHeight <- Stream.eval(HeightsResult[F](bestHeights))
         networkHeight = processedHeight.bestHeight
         localHeight <- Stream.eval(getLastGrabbedBlockHeight)
         _           <- Stream.eval(info"Current network height : $networkHeight")
         _ <- Stream.eval(
-               debug"Qty of distinguish nodes at height $networkHeight: ${processedHeight.distinguishHeights.length}"
+               debug"Qty of not up to date nodes at height $networkHeight: ${processedHeight.distinguishHeights.length}"
              )
         _ <- Stream.eval(info"Current explorer height: $localHeight")
         range = Stream.range(localHeight + 1, networkHeight + 1)
