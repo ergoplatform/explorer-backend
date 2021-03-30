@@ -29,7 +29,7 @@ object Application extends IOApp {
 
   private def resources(configPathOpt: Option[String]) =
     for {
-      settings <- Resource.liftF(MigrationConfig.load[IO](configPathOpt))
+      settings <- Resource.eval(MigrationConfig.load[IO](configPathOpt))
       xa       <- DoobieTrans[IO]("Migrator", settings.db)
     } yield xa -> settings
 

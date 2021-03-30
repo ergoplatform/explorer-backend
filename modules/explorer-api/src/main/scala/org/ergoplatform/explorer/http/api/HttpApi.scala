@@ -38,8 +38,8 @@ object HttpApi {
     opts: Http4sServerOptions[F]
   ): Resource[F, Server[F]] =
     for {
-      v0 <- Resource.liftF(RoutesV0Bundle(settings.protocol, settings.utxCache, redis)(trans))
-      v1 <- Resource.liftF(RoutesV1Bundle(settings.service, settings.requests)(trans))
+      v0 <- Resource.eval(RoutesV0Bundle(settings.protocol, settings.utxCache, redis)(trans))
+      v1 <- Resource.eval(RoutesV1Bundle(settings.service, settings.requests)(trans))
       routes     = v0.routes <+> v1.routes
       corsRoutes = CORS(routes)
       http <- BlazeServerBuilder[F](ec)

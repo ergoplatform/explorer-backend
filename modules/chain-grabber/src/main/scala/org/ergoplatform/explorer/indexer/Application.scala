@@ -39,8 +39,8 @@ object Application extends TaskApp {
 
   private def resources(configPathOpt: Option[String]): Resource[Task, (SelfAwareStructuredLogger[Task], IndexerSettings, Client[Task], Trans[ConnectionIO, Task])] =
     for {
-      logger   <- Resource.liftF(Slf4jLogger.create)
-      settings <- Resource.liftF(IndexerSettings.load[Task](configPathOpt))
+      logger   <- Resource.eval(Slf4jLogger.create)
+      settings <- Resource.eval(IndexerSettings.load[Task](configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
       xa       <- DoobieTrans[Task]("IndexerPool", settings.db)
       trans = Trans.fromDoobie(xa)
@@ -59,5 +59,4 @@ object Application extends TaskApp {
         )
       )
       .parJoinUnbounded
-
 }

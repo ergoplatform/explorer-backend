@@ -35,8 +35,8 @@ object Application extends TaskApp {
 
   private def resources(configPathOpt: Option[String]) =
     for {
-      logger   <- Resource.liftF(Slf4jLogger.create)
-      settings <- Resource.liftF(ApiSettings.load(configPathOpt))
+      logger   <- Resource.eval(Slf4jLogger.create)
+      settings <- Resource.eval(ApiSettings.load(configPathOpt))
       tr       <- DoobieTrans[Task]("ApiPool", settings.db)
       redis    <- settings.redis.map(Redis[Task]).sequence
     } yield (logger, settings, tr, redis)

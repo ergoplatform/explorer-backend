@@ -32,8 +32,8 @@ object Application extends TaskApp {
 
   private def resources(configPathOpt: Option[String]) =
     for {
-      logger   <- Resource.liftF(Slf4jLogger.create)
-      settings <- Resource.liftF(UtxBroadcasterSettings.load(configPathOpt))
+      logger   <- Resource.eval(Slf4jLogger.create)
+      settings <- Resource.eval(UtxBroadcasterSettings.load(configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
       redis    <- Redis[Task](settings.redis)
     } yield (logger, settings, client, redis)
