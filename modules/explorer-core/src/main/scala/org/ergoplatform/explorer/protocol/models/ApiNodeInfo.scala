@@ -2,7 +2,6 @@ package org.ergoplatform.explorer.protocol.models
 
 import derevo.circe.decoder
 import derevo.derive
-import io.circe.refined._
 import org.ergoplatform.explorer.{HexString, Id}
 
 /** A model mirroring NodeInfo entity from Ergo node REST API.
@@ -25,5 +24,6 @@ final case class ApiNodeInfo(
   headersHeight: Int,
   stateVersion: HexString,
   launchTime: Long,
+  parameters: ApiNodeInfoEpochParameters,
   isMining: Boolean
 )

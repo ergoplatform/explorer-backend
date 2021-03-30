@@ -14,6 +14,7 @@ final case class RepoBundle[D[_]](
   txs: TransactionRepo[D, Stream],
   inputs: InputRepo[D],
   dataInputs: DataInputRepo[D],
+  epochInfoRepo: EpochInfoRepo[D],
   outputs: OutputRepo[D, Stream],
   assets: AssetRepo[D, Stream],
   registers: BoxRegisterRepo[D],
@@ -32,10 +33,11 @@ object RepoBundle {
       TransactionRepo[F, D],
       InputRepo[F, D],
       DataInputRepo[F, D],
+      EpochInfoRepo[F, D],
       OutputRepo[F, D],
       AssetRepo[F, D],
       BoxRegisterRepo[F, D],
       TokenRepo[F, D],
       ScriptConstantsRepo[F, D]
-    ).mapN(RepoBundle(_, _, _, _, _, _, _, _, _, _, _, _))
+    ).mapN(RepoBundle(_, _, _, _, _, _, _, _, _, _, _, _, _))
 }

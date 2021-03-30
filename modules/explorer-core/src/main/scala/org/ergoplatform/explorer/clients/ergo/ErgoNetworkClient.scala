@@ -38,6 +38,10 @@ trait ErgoNetworkClient[F[_]] {
     */
   def getBestHeight: F[Int]
 
+  /** Get info of current node state
+    */
+  def getNodeInfo: F[ApiNodeInfo]
+
   /** Get block ids at the given `height`.
     */
   def getBlockIdsAtHeight(height: Int): F[List[Id]]
@@ -87,6 +91,11 @@ object ErgoNetworkClient {
             makeGetRequest(s"$url/info")
           )
           .map(_.fullHeight)
+      }
+
+    def getNodeInfo: F[ApiNodeInfo] =
+      retrying { url =>
+        client.expect[ApiNodeInfo](makeGetRequest(s"$url/info"))
       }
 
     def getBlockIdsAtHeight(height: Int): F[List[Id]] =
