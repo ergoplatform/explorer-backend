@@ -10,19 +10,19 @@ import cats.syntax.traverse._
 import cats.{Monad, Parallel}
 import fs2.Stream
 import mouse.anyf._
+import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.Err.ProcessingErr.{InconsistentNodeView, NoBlocksWritten}
-import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
 import org.ergoplatform.explorer.indexer.extractors._
-import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData}
-import org.ergoplatform.explorer.BuildFrom.syntax._
+import org.ergoplatform.explorer.indexer.models.{DistinguishHeightsResult, FlatBlock, SlotData}
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.{IndexerSettings, ProtocolSettings}
+import org.ergoplatform.explorer.{Id, UrlString}
 import tofu.concurrent.MakeRef
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.logging._
@@ -74,10 +74,15 @@ object ChainIndexer {
 
     def sync: Stream[F, Unit] =
       for {
-        networkHeight <- Stream.eval(network.getBestHeight)
-        localHeight   <- Stream.eval(getLastGrabbedBlockHeight)
-        _             <- Stream.eval(info"Current network height : $networkHeight")
-        _             <- Stream.eval(info"Current explorer height: $localHeight")
+        bestHeights     <- Stream.eval(network.getBestHeights)
+        processedHeight <- Stream.eval(DistinguishHeightsResult[F](bestHeights))
+        networkHeight = processedHeight.bestHeight
+        localHeight <- Stream.eval(getLastGrabbedBlockHeight)
+        _           <- Stream.eval(info"Current network height : $networkHeight")
+        _ <- Stream.eval(
+               debug"Qty of distinguish nodes at height $networkHeight: ${processedHeight.distinguishHeights.length}"
+             )
+        _ <- Stream.eval(info"Current explorer height: $localHeight")
         range = Stream.range(localHeight + 1, networkHeight + 1)
         _ <- range.evalMap { height =>
                index(height)
@@ -157,6 +162,8 @@ object ChainIndexer {
       implicit val ctx: F WithContext ProtocolSettings = Context.const(settings.protocol)
       SlotData(apiFullBlock, prevBlockInfoOpt).intoF[F, FlatBlock]
     }
+
+    private def checkForDistinguishHeights(heights: List[(UrlString, Int)]): F[List[(UrlString, Int)]] = ???
 
     private def getLastGrabbedBlockHeight: F[Int] =
       repos.headers.getBestHeight.thrushK(trans.xa)

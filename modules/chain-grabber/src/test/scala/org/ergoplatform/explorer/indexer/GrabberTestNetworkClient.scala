@@ -24,6 +24,8 @@ final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
   def submitTransaction(tx: ErgoLikeTransaction): F[Unit] = ???
 
   def getNodeInfo: F[ApiNodeInfo] = ???
+
+  def getBestHeights: F[List[(explorer.UrlString, Int)]] = ???
 }
 
 object GrabberTestNetworkClient {

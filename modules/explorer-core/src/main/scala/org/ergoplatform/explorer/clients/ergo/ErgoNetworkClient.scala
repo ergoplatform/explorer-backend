@@ -38,6 +38,11 @@ trait ErgoNetworkClient[F[_]] {
     */
   def getBestHeight: F[Int]
 
+  /**
+    * Get best height of all known nodes
+    */
+  def getBestHeights: F[List[(UrlString, Int)]]
+
   /** Get info of current node state
     */
   def getNodeInfo: F[ApiNodeInfo]
@@ -92,6 +97,15 @@ object ErgoNetworkClient {
           )
           .map(_.fullHeight)
       }
+
+    def getBestHeights: F[List[(UrlString, Int)]] =
+      sendReqForAllNodes[Int](url =>
+        client
+          .expect[ApiNodeInfo](
+            makeGetRequest(s"$url/info")
+          )
+          .map(_.fullHeight)
+      )
 
     def getNodeInfo: F[ApiNodeInfo] =
       retrying { url =>
@@ -166,6 +180,15 @@ object ErgoNetworkClient {
               RequestFailed(pool).raise[F, A]
           }
         attempt(pool)(0)
+      }
+
+    private def sendReqForAllNodes[A](f: UrlString => F[A]): F[List[(UrlString, A)]] =
+      nodesPool.get.flatMap { pool =>
+        pool.parTraverse { url =>
+          f(url).handleErrorWith { e =>
+            Logger[F].error(s"Failed to execute request to '$url'. ${e.getMessage}") >> RequestFailed(pool).raise[F, A]
+          }.fmap(res => (url -> res))
+        }
       }
 
     private def makeGetRequest(uri: String) =
