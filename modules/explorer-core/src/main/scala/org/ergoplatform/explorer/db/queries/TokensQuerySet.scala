@@ -5,6 +5,7 @@ import doobie.refined.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.log.LogHandler
 import doobie.util.query.Query0
+import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.Token
 
@@ -22,6 +23,13 @@ object TokensQuerySet extends QuerySet {
     "decimals"
   )
 
+  def get(id: TokenId): Query0[Token] =
+    sql"""
+         |select t.token_id, t.box_id, t.emission_amount, t.name, t.description, t.type, t.decimals from tokens t
+         |left join node_outputs o on o.box_id = t.box_id
+         |where t.token_id = $id and o.main_chain = true
+         |""".stripMargin.query[Token]
+
   def getAll(offset: Int, limit: Int, ordering: OrderingString)(implicit lh: LogHandler): Query0[Token] = {
     val query =
       sql"""
@@ -35,5 +43,21 @@ object TokensQuerySet extends QuerySet {
   }
 
   def countAll(implicit lh: LogHandler): Query0[Int] =
-    sql"select count(*) from tokens t left join node_outputs o on o.box_id = t.box_id where o.main_chain = true".query[Int]
+    sql"select count(*) from tokens t left join node_outputs o on o.box_id = t.box_id where o.main_chain = true"
+      .query[Int]
+
+  def getAllLike(q: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Token] =
+    sql"""
+         |select t.token_id, t.box_id, t.emission_amount, t.name, t.description, t.type, t.decimals from tokens t
+         |left join node_outputs o on o.box_id = t.box_id
+         |where (t.token_id like ${q + "%"} or t.name like ${q + "%"}) and o.main_chain = true
+         |offset $offset limit $limit
+         """.stripMargin.query[Token]
+
+  def countAllLike(q: String)(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(*) from tokens t
+         |left join node_outputs o on t.box_id = o.box_id
+         |where (t.token_id like ${q + "%"} or t.name like ${q + "%"}) and o.main_chain = true
+         """.stripMargin.query[Int]
 }

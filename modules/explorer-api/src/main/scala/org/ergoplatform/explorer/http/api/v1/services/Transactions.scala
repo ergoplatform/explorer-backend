@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.http.api.v1.services
 
+import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.list._
 import cats.{FlatMap, Monad}
@@ -15,11 +16,13 @@ import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
 import org.ergoplatform.explorer.settings.ServiceSettings
-import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash}
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, TxId}
 import tofu.syntax.monadic._
 import tofu.syntax.streams.compile._
 
 trait Transactions[F[_]] {
+
+  def get(id: TxId): F[Option[TransactionInfo]]
 
   def getByInputsScriptTemplate(
     template: ErgoTreeTemplateHash,
@@ -27,7 +30,7 @@ trait Transactions[F[_]] {
     ordering: SortOrder
   ): F[Items[TransactionInfo]]
 
-  def getTxsInfoByAddress(
+  def getByAddress(
     address: Address,
     paging: Paging
   ): F[Items[TransactionInfo]]
@@ -53,6 +56,22 @@ object Transactions {
   )(trans: D Trans F)
     extends Transactions[F] {
 
+    def get(id: TxId): F[Option[TransactionInfo]] = {
+      val getTx =
+        for {
+          tx         <- OptionT(transactions.getMain(id))
+          ins        <- OptionT.liftF(inputs.getFullByTxId(id))
+          inIds      <- OptionT.fromOption(ins.map(_.input.boxId).toNel)
+          inAssets   <- OptionT.liftF(assets.getAllByBoxIds(inIds))
+          outs       <- OptionT.liftF(outputs.getAllByTxId(id))
+          outIds     <- OptionT.fromOption(outs.map(_.output.boxId).toNel)
+          outAssets  <- OptionT.liftF(assets.getAllByBoxIds(outIds))
+          bestHeight <- OptionT.liftF(headers.getBestHeight)
+          numConfirmations = tx.numConfirmations(bestHeight)
+        } yield TransactionInfo.unFlatten(tx, numConfirmations, ins, outs, inAssets, outAssets)
+      getTx.value.thrushK(trans.xa)
+    }
+
     def getByInputsScriptTemplate(
       template: ErgoTreeTemplateHash,
       paging: Paging,
@@ -70,7 +89,7 @@ object Transactions {
         }
         .thrushK(trans.xa)
 
-    def getTxsInfoByAddress(
+    def getByAddress(
       address: Address,
       paging: Paging
     ): F[Items[TransactionInfo]] =
@@ -98,7 +117,7 @@ object Transactions {
         outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-        txInfo <- Stream.emits(TransactionInfo.batch(txsWithHeights.toList, ins, outs, inAssets, outAssets))
+        txInfo <- Stream.emits(TransactionInfo.unFlattenBatch(txsWithHeights.toList, ins, outs, inAssets, outAssets))
       } yield txInfo
   }
 }

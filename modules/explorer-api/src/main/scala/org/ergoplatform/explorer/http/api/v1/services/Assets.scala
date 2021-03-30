@@ -9,22 +9,17 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{AssetInfo, TokenInfo}
+import org.ergoplatform.explorer.http.api.v1.models.AssetInfo
 import tofu.syntax.monadic._
 
 /** A service providing an access to the assets data.
   */
-trait Assets[F[_], S[_[_], _]] {
+trait Assets[F[_]] {
 
   /** Get all assets matching a given `query`.
     */
   def getAllLike(idSubstring: String, paging: Paging): F[Items[AssetInfo]]
-
-  /** Get all issued tokens.
-    */
-  def getTokens(paging: Paging, ordering: SortOrder): F[Items[TokenInfo]]
 }
 
 object Assets {
@@ -32,14 +27,14 @@ object Assets {
   def apply[
     F[_]: Sync,
     D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
-  ](trans: D Trans F): F[Assets[F, Stream]] =
-    (AssetRepo[F, D], TokenRepo[F, D]).mapN(new Live(_, _)(trans))
+  ](trans: D Trans F): F[Assets[F]] =
+    AssetRepo[F, D].map(new Live(_)(trans))
 
   final private class Live[
     F[_]: FlatMap,
     D[_]: CRaise[*[_], InconsistentDbData]: Monad
-  ](assetRepo: AssetRepo[D, Stream], tokenRepo: TokenRepo[D])(trans: D Trans F)
-    extends Assets[F, Stream] {
+  ](assetRepo: AssetRepo[D, Stream])(trans: D Trans F)
+    extends Assets[F] {
 
     def getAllLike(idSubstring: String, paging: Paging): F[Items[AssetInfo]] =
       assetRepo
@@ -48,16 +43,6 @@ object Assets {
           assetRepo
             .getAllLike(idSubstring, paging.offset, paging.limit)
             .map(_.map(AssetInfo(_)))
-            .map(Items(_, total))
-        }
-        .thrushK(trans.xa)
-
-    def getTokens(paging: Paging, ordering: SortOrder): F[Items[TokenInfo]] =
-      tokenRepo.countAll
-        .flatMap { total =>
-          tokenRepo
-            .getAll(paging.offset, paging.limit, ordering.value)
-            .map(_.map(TokenInfo(_)))
             .map(Items(_, total))
         }
         .thrushK(trans.xa)

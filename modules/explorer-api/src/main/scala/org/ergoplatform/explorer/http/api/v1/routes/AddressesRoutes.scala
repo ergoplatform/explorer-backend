@@ -22,7 +22,7 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
 
   private def getTxsByAddressR =
     defs.getTxsByAddressDef.toRoutes { case (addr, paging) =>
-      transactionsService.getTxsInfoByAddress(addr, paging).adaptThrowable.value
+      transactionsService.getByAddress(addr, paging).adaptThrowable.value
     }
 }
 

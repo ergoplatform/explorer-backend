@@ -22,7 +22,7 @@ object DoobieTrans {
               cp,
               blocker
             )
-      _ <- Resource.liftF(configure(xa)(poolName, settings.cpSize))
+      _ <- Resource.eval(configure(xa)(poolName, settings.cpSize))
     } yield xa
 
   private def configure[F[_]: Sync](

@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{Concurrent, ContextShift, Sync, Timer}
+import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
@@ -13,8 +13,8 @@ import sttp.tapir.server.http4s._
 
 final class TransactionsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](txsService: TransactionsService[F], offChainService: OffChainService[F])(
-  implicit opts: Http4sServerOptions[F]
+](txsService: TransactionsService[F], offChainService: OffChainService[F])(implicit
+  opts: Http4sServerOptions[F]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.TransactionsEndpointDefs._
@@ -50,21 +50,19 @@ final class TransactionsRoutes[
     }
 
   private def getUnconfirmedTxsByAddressR: HttpRoutes[F] =
-    getUnconfirmedTxsByAddressDef.toRoutes {
-      case (paging, address) =>
-        offChainService
-          .getUnconfirmedTxsByAddress(address, paging)
-          .adaptThrowable
-          .value
+    getUnconfirmedTxsByAddressDef.toRoutes { case (paging, address) =>
+      offChainService
+        .getUnconfirmedTxsByAddress(address, paging)
+        .adaptThrowable
+        .value
     }
 
   private def getTxsSinceR: HttpRoutes[F] =
-    getTxsSinceDef.toRoutes {
-      case (paging, height) =>
-        txsService
-          .getTxsSince(height, paging)
-          .adaptThrowable
-          .value
+    getTxsSinceDef.toRoutes { case (paging, height) =>
+      txsService
+        .getTxsSince(height, paging)
+        .adaptThrowable
+        .value
     }
 
   private def sendTransactionR: HttpRoutes[F] =

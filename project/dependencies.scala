@@ -32,11 +32,10 @@ object dependencies {
     )
 
   val Cats: List[ModuleID] = List(
-    "org.typelevel" %% "cats-core"     % CatsVersion,
-    "org.typelevel" %% "cats-effect"   % CatsEffectVersion,
-    "org.typelevel" %% "cats-mtl-core" % CatsMtlVersion,
-    "com.olegpy"    %% "meow-mtl-core" % CatsMeowMtl,
-    "org.typelevel" %% "mouse"         % MouseVersion
+    "org.typelevel" %% "cats-core"   % CatsVersion,
+    "org.typelevel" %% "cats-effect" % CatsEffectVersion,
+    "org.typelevel" %% "cats-mtl"    % CatsMtlVersion,
+    "org.typelevel" %% "mouse"       % MouseVersion
   )
 
   val Monix: List[ModuleID] = List(
@@ -57,10 +56,10 @@ object dependencies {
   )
 
   val Tofu: List[ModuleID] = List(
-    "ru.tinkoff"  %% "tofu-core"        % TofuVersion,
-    "ru.tinkoff"  %% "tofu-derivation"  % TofuVersion,
-    "ru.tinkoff"  %% "tofu-logging"     % TofuVersion,
-    "ru.tinkoff"  %% "tofu-fs2-interop" % TofuVersion,
+    "tf.tofu"     %% "tofu-core"        % TofuVersion,
+    "tf.tofu"     %% "tofu-derivation"  % TofuVersion,
+    "tf.tofu"     %% "tofu-logging"     % TofuVersion,
+    "tf.tofu"     %% "tofu-fs2-interop" % TofuVersion,
     "org.manatki" %% "derevo-circe"     % DerevoVersion
   )
 

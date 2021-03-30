@@ -34,8 +34,8 @@ object Application extends TaskApp {
 
   private def resources(configPathOpt: Option[String]) =
     for {
-      logger   <- Resource.liftF(Slf4jLogger.create)
-      settings <- Resource.liftF(UtxTrackerSettings.load(configPathOpt))
+      logger   <- Resource.eval(Slf4jLogger.create)
+      settings <- Resource.eval(UtxTrackerSettings.load(configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
       xa       <- DoobieTrans[Task]("UtxTrackerPool", settings.db).map(_.trans)
     } yield (logger, settings, client, xa)

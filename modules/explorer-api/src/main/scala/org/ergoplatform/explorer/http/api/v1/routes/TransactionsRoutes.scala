@@ -1,10 +1,12 @@
 package org.ergoplatform.explorer.http.api.v1.routes
 
 import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
+import org.ergoplatform.explorer.http.api.syntax.routes._
 import org.ergoplatform.explorer.http.api.v1.defs.TransactionsEndpointDefs
 import org.ergoplatform.explorer.http.api.v1.services.Transactions
 import org.ergoplatform.explorer.settings.RequestsSettings
@@ -18,7 +20,16 @@ final class TransactionsRoutes[
   val defs = new TransactionsEndpointDefs(settings)
 
   val routes: HttpRoutes[F] =
-    getByInputsScriptTemplateR
+    getByInputsScriptTemplateR <+> getByIdR
+
+  private def getByIdR: HttpRoutes[F] =
+    defs.getByIdDef.toRoutes { txId =>
+      service
+        .get(txId)
+        .adaptThrowable
+        .orNotFound(s"Transaction with id: $txId")
+        .value
+    }
 
   private def getByInputsScriptTemplateR: HttpRoutes[F] =
     defs.getByInputsScriptTemplateDef.toRoutes { case (template, paging, ordering) =>

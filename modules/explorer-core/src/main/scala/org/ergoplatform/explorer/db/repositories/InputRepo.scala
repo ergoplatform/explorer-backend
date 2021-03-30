@@ -6,13 +6,13 @@ import cats.syntax.functor._
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.{Id, TxId}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.Input
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, FullInput}
-import org.ergoplatform.explorer.db.doobieInstances._
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.{Id, TxId}
 
 /** [[Input]] and [[ExtendedInput]] data access operations.
   */
@@ -34,9 +34,13 @@ trait InputRepo[D[_]] {
     */
   def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedInput]]
 
+  /** Get all inputs related to a given `txId`.
+    */
+  def getFullByTxId(txId: TxId): D[List[FullInput]]
+
   /** Get all inputs related to a given list of `txId`.
-   */
-  def getFullByTxIds(txsId: NonEmptyList[TxId]): D[List[FullInput]]
+    */
+  def getFullByTxIds(txIds: NonEmptyList[TxId]): D[List[FullInput]]
 
   /** Update main_chain status for all inputs related to given `headerId`.
     */
@@ -50,8 +54,7 @@ object InputRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends InputRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends InputRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{InputQuerySet => QS}
 
@@ -66,6 +69,9 @@ object InputRepo {
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedInput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
+
+    def getFullByTxId(txId: TxId): D[List[FullInput]] =
+      QS.getFullByTxId(txId).to[List].liftConnectionIO
 
     def getFullByTxIds(txIds: NonEmptyList[TxId]): D[List[FullInput]] =
       QS.getFullByTxIds(txIds).to[List].liftConnectionIO
