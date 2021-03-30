@@ -16,8 +16,7 @@ import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
 import org.ergoplatform.explorer.settings.ServiceSettings
-import org.ergoplatform.explorer.{ErgoTreeTemplateHash, TxId}
-import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash}
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, TxId}
 import tofu.syntax.monadic._
 import tofu.syntax.streams.compile._
 
@@ -31,7 +30,7 @@ trait Transactions[F[_]] {
     ordering: SortOrder
   ): F[Items[TransactionInfo]]
 
-  def getTxsInfoByAddress(
+  def getByAddress(
     address: Address,
     paging: Paging
   ): F[Items[TransactionInfo]]
@@ -90,7 +89,7 @@ object Transactions {
         }
         .thrushK(trans.xa)
 
-    def getTxsInfoByAddress(
+    def getByAddress(
       address: Address,
       paging: Paging
     ): F[Items[TransactionInfo]] =
