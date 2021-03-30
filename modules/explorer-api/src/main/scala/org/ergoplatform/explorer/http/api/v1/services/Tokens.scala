@@ -4,50 +4,56 @@ import cats.effect.Sync
 import cats.{FlatMap, Monad}
 import fs2.Stream
 import mouse.anyf._
-import org.ergoplatform.explorer.CRaise
+import org.ergoplatform.explorer.{CRaise, TokenId}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{AssetInfo, TokenInfo}
+import org.ergoplatform.explorer.http.api.v1.models.TokenInfo
 import tofu.syntax.monadic._
+import tofu.syntax.foption._
 
 /** A service providing an access to the assets data.
   */
-trait Assets[F[_], S[_[_], _]] {
+trait Tokens[F[_], S[_[_], _]] {
+
+  def get(id: TokenId): F[Option[TokenInfo]]
 
   /** Get all assets matching a given `query`.
     */
-  def getAllLike(idSubstring: String, paging: Paging): F[Items[AssetInfo]]
+  def search(idSubstring: String, paging: Paging): F[Items[TokenInfo]]
 
   /** Get all issued tokens.
     */
   def getTokens(paging: Paging, ordering: SortOrder): F[Items[TokenInfo]]
 }
 
-object Assets {
+object Tokens {
 
   def apply[
     F[_]: Sync,
     D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
-  ](trans: D Trans F): F[Assets[F, Stream]] =
-    (AssetRepo[F, D], TokenRepo[F, D]).mapN(new Live(_, _)(trans))
+  ](trans: D Trans F): F[Tokens[F, Stream]] =
+    TokenRepo[F, D].map(new Live(_)(trans))
 
   final private class Live[
     F[_]: FlatMap,
     D[_]: CRaise[*[_], InconsistentDbData]: Monad
-  ](assetRepo: AssetRepo[D, Stream], tokenRepo: TokenRepo[D])(trans: D Trans F)
-    extends Assets[F, Stream] {
+  ](tokenRepo: TokenRepo[D])(trans: D Trans F)
+    extends Tokens[F, Stream] {
 
-    def getAllLike(idSubstring: String, paging: Paging): F[Items[AssetInfo]] =
-      assetRepo
+    def get(id: TokenId): F[Option[TokenInfo]] =
+      tokenRepo.get(id).mapIn(TokenInfo(_)).thrushK(trans.xa)
+
+    def search(idSubstring: String, paging: Paging): F[Items[TokenInfo]] =
+      tokenRepo
         .countAllLike(idSubstring)
         .flatMap { total =>
-          assetRepo
+          tokenRepo
             .getAllLike(idSubstring, paging.offset, paging.limit)
-            .map(_.map(AssetInfo(_)))
+            .map(_.map(TokenInfo(_)))
             .map(Items(_, total))
         }
         .thrushK(trans.xa)

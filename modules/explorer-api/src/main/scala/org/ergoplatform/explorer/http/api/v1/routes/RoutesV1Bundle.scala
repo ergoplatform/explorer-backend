@@ -33,12 +33,12 @@ object RoutesV1Bundle {
     for {
       implicit0(log: Logger[F]) <- Slf4jLogger.create
       boxes                     <- Boxes(serviceSettings)(trans)
-      assets                    <- Assets(trans)
+      assets                    <- Tokens(trans)
       epochs                    <- Epochs(trans)
       transactions              <- Transactions(serviceSettings)(trans)
       boxesRoutes     = BoxesRoutes(requestsSettings, boxes)
       epochsRoutes    = EpochsRoutes(epochs)
-      assetsRoutes    = AssetsRoutes(requestsSettings, assets)
+      assetsRoutes    = TokensRoutes(requestsSettings, assets)
       txsRoutes       = TransactionsRoutes(requestsSettings, transactions)
       addressesRoutes = AddressesRoutes(requestsSettings, transactions)
       docs            = DocsRoutes(requestsSettings)

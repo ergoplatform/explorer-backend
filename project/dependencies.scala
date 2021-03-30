@@ -57,10 +57,10 @@ object dependencies {
   )
 
   val Tofu: List[ModuleID] = List(
-    "ru.tinkoff"  %% "tofu-core"        % TofuVersion,
-    "ru.tinkoff"  %% "tofu-derivation"  % TofuVersion,
-    "ru.tinkoff"  %% "tofu-logging"     % TofuVersion,
-    "ru.tinkoff"  %% "tofu-fs2-interop" % TofuVersion,
+    "tf.tofu"  %% "tofu-core"        % TofuVersion,
+    "tf.tofu"  %% "tofu-derivation"  % TofuVersion,
+    "tf.tofu"  %% "tofu-logging"     % TofuVersion,
+    "tf.tofu"  %% "tofu-fs2-interop" % TofuVersion,
     "org.manatki" %% "derevo-circe"     % DerevoVersion
   )
 

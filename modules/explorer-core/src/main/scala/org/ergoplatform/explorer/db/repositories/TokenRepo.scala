@@ -6,6 +6,7 @@ import derevo.derive
 import doobie.ConnectionIO
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
+import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -20,9 +21,19 @@ trait TokenRepo[D[_]] {
 
   def insertMany(tokens: List[Token]): D[Unit]
 
+  def get(id: TokenId): D[Option[Token]]
+
   def getAll(offset: Int, limit: Int, ordering: OrderingString): D[List[Token]]
 
   def countAll: D[Int]
+
+  /** Get all tokens matching a given `idSubstring`.
+    */
+  def getAllLike(idSubstring: String, offset: Int, limit: Int): D[List[Token]]
+
+  /** Get the total number of tokens matching a given `idSubstring`.
+    */
+  def countAllLike(idSubstring: String): D[Int]
 }
 
 object TokenRepo {
@@ -40,9 +51,17 @@ object TokenRepo {
 
     def insertMany(tokens: List[Token]): ConnectionIO[Unit] = QS.insertManyNoConflict(tokens).void
 
+    def get(id: TokenId): ConnectionIO[Option[Token]] = QS.get(id).option
+
     def getAll(offset: Int, limit: Int, ordering: OrderingString): ConnectionIO[List[Token]] =
       QS.getAll(offset, limit, ordering).to[List]
 
     def countAll: ConnectionIO[Int] = QS.countAll.unique
+
+    def getAllLike(idSubstring: String, offset: Int, limit: Int): ConnectionIO[List[Token]] =
+      QS.getAllLike(idSubstring, offset, limit).to[List]
+
+    def countAllLike(idSubstring: String): ConnectionIO[Int] =
+      QS.countAllLike(idSubstring).unique
   }
 }

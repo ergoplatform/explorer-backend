@@ -24,7 +24,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
   private def allEndpoints =
     new TransactionsEndpointDefs(settings).endpoints ++
     new BoxesEndpointDefs(settings).endpoints ++
-    new AssetsEndpointDefs(settings).endpoints ++
+    new TokensEndpointDefs(settings).endpoints ++
     new EpochsEndpointDefs().endpoints ++
     new AddressesEndpointDefs(settings).endpoints
 
