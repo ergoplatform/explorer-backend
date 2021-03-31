@@ -7,7 +7,6 @@ import cats.{FlatMap, Monad}
 import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.ErgoTreeTemplateHash
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
@@ -43,9 +42,10 @@ object Transactions {
     F[_]: Sync,
     D[_]: LiftConnectionIO: Monad: CompileStream
   ](serviceSettings: ServiceSettings)(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[Transactions[F]] =
-    (AssetRepo[F, D], InputRepo[F, D], DataInputRepo[F, D], OutputRepo[F, D], TransactionRepo[F, D], HeaderRepo[F, D]).mapN(
-      new Live(serviceSettings, _, _, _, _, _, _)(trans)
-    )
+    (AssetRepo[F, D], InputRepo[F, D], DataInputRepo[F, D], OutputRepo[F, D], TransactionRepo[F, D], HeaderRepo[F, D])
+      .mapN(
+        new Live(serviceSettings, _, _, _, _, _, _)(trans)
+      )
 
   final class Live[F[_]: FlatMap, D[_]: Monad: CompileStream](
     serviceSettings: ServiceSettings,
@@ -63,6 +63,7 @@ object Transactions {
         for {
           tx         <- OptionT(transactions.getMain(id))
           ins        <- OptionT.liftF(inputs.getFullByTxId(id))
+          dataIns    <- OptionT.liftF(dataInputs.getAllByTxId(id))
           inIds      <- OptionT.fromOption(ins.map(_.input.boxId).toNel)
           inAssets   <- OptionT.liftF(assets.getAllByBoxIds(inIds))
           outs       <- OptionT.liftF(outputs.getAllByTxId(id))
@@ -70,7 +71,7 @@ object Transactions {
           outAssets  <- OptionT.liftF(assets.getAllByBoxIds(outIds))
           bestHeight <- OptionT.liftF(headers.getBestHeight)
           numConfirmations = tx.numConfirmations(bestHeight)
-        } yield TransactionInfo.unFlatten(tx, numConfirmations, ins, outs, inAssets, outAssets)
+        } yield TransactionInfo.unFlatten(tx, numConfirmations, ins, dataIns, outs, inAssets, outAssets)
       getTx.value.thrushK(trans.xa)
     }
 
@@ -120,7 +121,8 @@ object Transactions {
         outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-        txInfo <- Stream.emits(TransactionInfo.unFlattenBatch(txsWithHeights.toList, ins, dataIns, outs, inAssets, outAssets))
+        txInfo <-
+          Stream.emits(TransactionInfo.unFlattenBatch(txsWithHeights.toList, ins, dataIns, outs, inAssets, outAssets))
       } yield txInfo
   }
 }

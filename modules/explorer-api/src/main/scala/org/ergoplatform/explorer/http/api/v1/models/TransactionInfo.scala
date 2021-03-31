@@ -48,7 +48,7 @@ object TransactionInfo {
   ): TransactionInfo = {
     val groupedInAssets  = inAssets.groupBy(_.boxId)
     val groupedOutAssets = outAssets.groupBy(_.boxId)
-    unFlattenIn(tx, numConfirmations, inputs, outputs, groupedInAssets, groupedOutAssets)
+    unFlattenIn(tx, numConfirmations, inputs, dataInputs, outputs, groupedInAssets, groupedOutAssets)
   }
 
   def unFlattenBatch(
