@@ -19,7 +19,7 @@ final case class HeightsResult(
 object HeightsResult {
 
   def apply[F[_]: CRaise[*[_], IncorrectNetworkView]: Applicative](heights: List[(UrlString, Int)]): F[HeightsResult] = {
-    val sorted = SortedMap(heights.maxBy(_._2): _*)
+    val sorted = SortedMap(heights.groupBy(_._2).toSeq: _*)
     sorted.lastOption
       .fold(IncorrectNetworkView("No one height was parsed").raise[F, HeightsResult])(last =>
         HeightsResult(last._1, sorted.init.values.flatten.toList).pure[F]
