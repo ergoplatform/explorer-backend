@@ -50,7 +50,8 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
         .pure[F]
     }
 
-  private def swaggerApiSpecR: HttpRoutes[F] = new SwaggerHttp4s(docsAsYaml).routes
+  private def swaggerApiSpecR: HttpRoutes[F] =
+    new SwaggerHttp4s(docsAsYaml, contextPath = "api/v1/docs", yamlName = "openapi").routes
 }
 
 object DocsRoutes {
