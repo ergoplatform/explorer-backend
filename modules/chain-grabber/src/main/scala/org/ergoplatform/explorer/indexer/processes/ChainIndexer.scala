@@ -163,8 +163,6 @@ object ChainIndexer {
       SlotData(apiFullBlock, prevBlockInfoOpt).intoF[F, FlatBlock]
     }
 
-    private def checkForDistinguishHeights(heights: List[(UrlString, Int)]): F[List[(UrlString, Int)]] = ???
-
     private def getLastGrabbedBlockHeight: F[Int] =
       repos.headers.getBestHeight.thrushK(trans.xa)
 

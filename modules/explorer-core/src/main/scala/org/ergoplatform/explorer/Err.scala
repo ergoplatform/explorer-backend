@@ -25,7 +25,6 @@ object Err {
     final case class InconsistentNodeView(details: String)
       extends ProcessingErr(details)
 
-    //todo: naming
     final case class IncorrectNetworkView(details: String)
       extends ProcessingErr(details)
 
