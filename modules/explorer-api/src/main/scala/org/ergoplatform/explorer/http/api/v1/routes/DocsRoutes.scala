@@ -4,6 +4,7 @@ import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.applicative._
 import cats.syntax.either._
 import cats.syntax.option._
+import cats.syntax.semigroupk._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.v1.defs._
 import org.ergoplatform.explorer.settings.RequestsSettings
@@ -12,6 +13,7 @@ import sttp.tapir.apispec.Tag
 import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.server.http4s._
+import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
 final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: RequestsSettings)(implicit
   opts: Http4sServerOptions[F]
@@ -19,7 +21,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
 
   import org.ergoplatform.explorer.http.api.v1.defs.DocsEndpointDefs._
 
-  val routes: HttpRoutes[F] = openApiSpecR
+  val routes: HttpRoutes[F] = openApiSpecR <+> swaggerApiSpecR
 
   private def allEndpoints =
     new TransactionsEndpointDefs(settings).endpoints ++
@@ -36,15 +38,19 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
     Tag("addresses", "Addresses methods".some) ::
     Nil
 
+  private val docsAsYaml = allEndpoints
+    .toOpenAPI("Ergo Explorer API v1", "1.0")
+    .tags(tags)
+    .toYaml
+
   private def openApiSpecR: HttpRoutes[F] =
     apiSpecDef.toRoutes { _ =>
-      allEndpoints
-        .toOpenAPI("Ergo Explorer API v1", "1.0")
-        .tags(tags)
-        .toYaml
+      docsAsYaml
         .asRight[ApiErr]
         .pure[F]
     }
+
+  private def swaggerApiSpecR: HttpRoutes[F] = new SwaggerHttp4s(docsAsYaml).routes
 }
 
 object DocsRoutes {

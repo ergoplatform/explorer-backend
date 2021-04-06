@@ -18,7 +18,8 @@ object dependencies {
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe",
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-server",
       "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs",
-      "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml"
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml",
+      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s"
     ).map(_ % TapirVersion)
 
   val Circe: List[ModuleID] =
