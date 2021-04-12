@@ -4,6 +4,7 @@ import cats.syntax.either._
 import doobie.util.{Get, Put}
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import io.circe.{KeyDecoder, KeyEncoder}
+import sttp.tapir.codec.enumeratum._
 
 sealed abstract class RegisterId extends EnumEntry
 

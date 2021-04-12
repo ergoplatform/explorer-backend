@@ -34,7 +34,7 @@ object RoutesV0Bundle {
   )(trans: D Trans F)(implicit
     ec: ExecutionContext,
     encoder: ErgoAddressEncoder,
-    opts: Http4sServerOptions[F]
+    opts: Http4sServerOptions[F, F]
   ): F[RoutesV0Bundle[F]] =
     for {
       implicit0(log: Logger[F]) <- Slf4jLogger.create

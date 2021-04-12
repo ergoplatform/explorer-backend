@@ -12,9 +12,9 @@ object PowSolutionInfo {
   implicit val codec: Codec[PowSolutionInfo] = deriveCodec
 
   implicit val schema: Schema[PowSolutionInfo] =
-    Schema.derive[PowSolutionInfo]
+    Schema.derived[PowSolutionInfo]
       .modify(_.pk)(_.description("Miner public key"))
       .modify(_.d)(_.description("Autolykos.d"))
 
-  implicit val validator: Validator[PowSolutionInfo] = Validator.derive
+  implicit val validator: Validator[PowSolutionInfo] = schema.validator
 }

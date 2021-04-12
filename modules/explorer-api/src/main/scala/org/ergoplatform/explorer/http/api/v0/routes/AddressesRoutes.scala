@@ -20,7 +20,7 @@ final class AddressesRoutes[
 ](
   addressesService: AddressesService[F, Stream],
   transactionsService: TransactionsService[F]
-)(implicit opts: Http4sServerOptions[F]) {
+)(implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.AddressesEndpointDefs._
 
@@ -28,13 +28,13 @@ final class AddressesRoutes[
     getAddressR <+> getTxsByAddressR <+> getAssetHoldersR <+> getBalancesR
 
   def getAddressR: HttpRoutes[F] =
-    getAddressDef.toRoutes {
+    Http4sServerInterpreter.toRoutes(getAddressDef) {
       case (address, minConfirmations) =>
         addressesService.getAddressInfo(address, minConfirmations).adaptThrowable.value
     }
 
   def getTxsByAddressR: HttpRoutes[F] =
-    getTxsByAddressDef.toRoutes {
+    Http4sServerInterpreter.toRoutes(getTxsByAddressDef) {
       case (address, paging) =>
         transactionsService
           .getTxsInfoByAddress(address, paging)
@@ -43,7 +43,7 @@ final class AddressesRoutes[
     }
 
   def getAssetHoldersR: HttpRoutes[F] =
-    getAssetHoldersDef.toRoutes {
+    Http4sServerInterpreter.toRoutes(getAssetHoldersDef) {
       case (tokenId, paging) =>
         addressesService
           .getAssetHoldersAddresses(tokenId, paging)
@@ -54,7 +54,7 @@ final class AddressesRoutes[
     }
 
   def getBalancesR: HttpRoutes[F] =
-    getBalancesDef.toRoutes { paging =>
+    Http4sServerInterpreter.toRoutes(getBalancesDef) { paging =>
       addressesService.balances(paging).adaptThrowable.value
     }
 }
@@ -64,6 +64,6 @@ object AddressesRoutes {
   def apply[F[_]: Concurrent: Timer: ContextShift: Logger](
     addressesService: AddressesService[F, Stream],
     transactionsService: TransactionsService[F]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new AddressesRoutes(addressesService, transactionsService).routes
 }

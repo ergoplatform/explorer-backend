@@ -14,7 +14,7 @@ import sttp.tapir.server.http4s._
 final class TransactionsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](txsService: TransactionsService[F], offChainService: OffChainService[F])(implicit
-  opts: Http4sServerOptions[F]
+  opts: Http4sServerOptions[F, F]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.TransactionsEndpointDefs._
@@ -24,7 +24,7 @@ final class TransactionsRoutes[
     getTxsSinceR <+> sendTransactionR <+> getTxByIdR
 
   private def getTxByIdR: HttpRoutes[F] =
-    getTxByIdDef.toRoutes { txId =>
+    Http4sServerInterpreter.toRoutes(getTxByIdDef) { txId =>
       txsService
         .getTxInfo(txId)
         .adaptThrowable
@@ -33,7 +33,7 @@ final class TransactionsRoutes[
     }
 
   private def getUnconfirmedTxsR: HttpRoutes[F] =
-    getUnconfirmedTxsDef.toRoutes { paging =>
+    Http4sServerInterpreter.toRoutes(getUnconfirmedTxsDef) { paging =>
       offChainService
         .getUnconfirmedTxs(paging)
         .adaptThrowable
@@ -41,7 +41,7 @@ final class TransactionsRoutes[
     }
 
   private def getUnconfirmedTxByIdR: HttpRoutes[F] =
-    getUnconfirmedTxByIdDef.toRoutes { txId =>
+    Http4sServerInterpreter.toRoutes(getUnconfirmedTxByIdDef) { txId =>
       offChainService
         .getUnconfirmedTxInfo(txId)
         .adaptThrowable
@@ -50,7 +50,7 @@ final class TransactionsRoutes[
     }
 
   private def getUnconfirmedTxsByAddressR: HttpRoutes[F] =
-    getUnconfirmedTxsByAddressDef.toRoutes { case (paging, address) =>
+    Http4sServerInterpreter.toRoutes(getUnconfirmedTxsByAddressDef) { case (paging, address) =>
       offChainService
         .getUnconfirmedTxsByAddress(address, paging)
         .adaptThrowable
@@ -58,7 +58,7 @@ final class TransactionsRoutes[
     }
 
   private def getTxsSinceR: HttpRoutes[F] =
-    getTxsSinceDef.toRoutes { case (paging, height) =>
+    Http4sServerInterpreter.toRoutes(getTxsSinceDef) { case (paging, height) =>
       txsService
         .getTxsSince(height, paging)
         .adaptThrowable
@@ -66,7 +66,7 @@ final class TransactionsRoutes[
     }
 
   private def sendTransactionR: HttpRoutes[F] =
-    sendTransactionDef.toRoutes { tx =>
+    Http4sServerInterpreter.toRoutes(sendTransactionDef) { tx =>
       offChainService.submitTransaction(tx).adaptThrowable.value
     }
 }
@@ -76,6 +76,6 @@ object TransactionsRoutes {
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     txsService: TransactionsService[F],
     offChainService: OffChainService[F]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new TransactionsRoutes(txsService, offChainService).routes
 }

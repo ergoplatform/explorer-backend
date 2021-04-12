@@ -28,7 +28,7 @@ object RoutesV1Bundle {
   ](serviceSettings: ServiceSettings, requestsSettings: RequestsSettings)(trans: D Trans F)(implicit
     ec: ExecutionContext,
     encoder: ErgoAddressEncoder,
-    opts: Http4sServerOptions[F]
+    opts: Http4sServerOptions[F, F]
   ): F[RoutesV1Bundle[F]] =
     for {
       implicit0(log: Logger[F]) <- Slf4jLogger.create

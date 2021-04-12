@@ -15,7 +15,7 @@ import sttp.tapir.server.http4s._
 final class BlocksRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: BlockChainService[F])(
-  implicit opts: Http4sServerOptions[F]
+  implicit opts: Http4sServerOptions[F, F]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.BlocksEndpointDefs._
@@ -24,7 +24,7 @@ final class BlocksRoutes[
     getBlocksR <+> getBlockSummaryByIdR <+> getBlockIdsAtHeightR
 
   private def getBlocksR: HttpRoutes[F] =
-    getBlocksDef.toRoutes {
+    Http4sServerInterpreter.toRoutes(getBlocksDef) {
       case (paging, sorting) =>
         service
           .getBlocks(paging, sorting)
@@ -33,7 +33,7 @@ final class BlocksRoutes[
     }
 
   private def getBlockSummaryByIdR: HttpRoutes[F] =
-    getBlockSummaryByIdDef.toRoutes { id =>
+    Http4sServerInterpreter.toRoutes(getBlockSummaryByIdDef) { id =>
       service
         .getBlockSummaryById(id)
         .adaptThrowable
@@ -42,7 +42,7 @@ final class BlocksRoutes[
     }
 
   private def getBlockIdsAtHeightR: HttpRoutes[F] =
-    getBlockIdsAtHeightDef.toRoutes { height =>
+    Http4sServerInterpreter.toRoutes(getBlockIdsAtHeightDef) { height =>
       service
         .getBlockIdsAtHeight(height)
         .adaptThrowable
@@ -54,6 +54,6 @@ object BlocksRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     service: BlockChainService[F]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new BlocksRoutes(service).routes
 }

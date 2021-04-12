@@ -13,11 +13,11 @@ object AssetSummary {
 
   implicit val schema: Schema[AssetSummary] =
     Schema
-      .derive[AssetSummary]
+      .derived[AssetSummary]
       .modify(_.tokenId)(_.description("Token ID"))
       .modify(_.amount)(_.description("Amount of tokens"))
       .modify(_.decimals)(_.description("Number of decimal places"))
       .modify(_.name)(_.description("Name of a token"))
 
-  implicit val validator: Validator[AssetSummary] = Validator.derive
+  implicit val validator: Validator[AssetSummary] = schema.validator
 }

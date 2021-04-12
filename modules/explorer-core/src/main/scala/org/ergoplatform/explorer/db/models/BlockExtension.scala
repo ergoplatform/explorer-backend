@@ -18,13 +18,14 @@ object BlockExtension {
   implicit val codec: Codec[BlockExtension] = deriveCodec
 
   implicit def schema: Schema[BlockExtension] =
-    Schema.derive
+    Schema.derived
 
+  //todo: test
   implicit private def fieldsSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
         SchemaType.SObjectInfo("Fields"),
-        Schema(SchemaType.SString)
-      )
+        Schema.schemaForString
+      )(_ => Map.empty)
     )
 }

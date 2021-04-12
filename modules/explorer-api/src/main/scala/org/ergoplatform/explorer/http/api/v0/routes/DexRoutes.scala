@@ -13,7 +13,7 @@ import sttp.tapir.server.http4s._
 final class DexRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: DexService[F, fs2.Stream])(
-  implicit opts: Http4sServerOptions[F]
+  implicit opts: Http4sServerOptions[F, F]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DexEndpointsDefs._
@@ -22,7 +22,7 @@ final class DexRoutes[
     getUnspentSellOrdersR <+> getUnspentBuyOrdersR
 
   private def getUnspentSellOrdersR: HttpRoutes[F] =
-    getUnspentSellOrdersDef.toRoutes {
+    Http4sServerInterpreter.toRoutes(getUnspentSellOrdersDef) {
       case (tokenId, paging) =>
         service
           .getUnspentSellOrders(tokenId, paging)
@@ -33,7 +33,7 @@ final class DexRoutes[
     }
 
   private def getUnspentBuyOrdersR: HttpRoutes[F] =
-    getUnspentBuyOrdersDef.toRoutes {
+    Http4sServerInterpreter.toRoutes(getUnspentBuyOrdersDef) {
       case (tokenId, paging) =>
         service
           .getUnspentBuyOrders(tokenId, paging)
@@ -48,6 +48,6 @@ object DexRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     service: DexService[F, fs2.Stream]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new DexRoutes(service).routes
 }

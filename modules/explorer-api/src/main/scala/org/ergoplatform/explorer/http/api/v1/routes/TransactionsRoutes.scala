@@ -15,7 +15,7 @@ import sttp.tapir.server.http4s.{Http4sServerOptions, _}
 
 final class TransactionsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](settings: RequestsSettings, service: Transactions[F])(implicit opts: Http4sServerOptions[F]) {
+](settings: RequestsSettings, service: Transactions[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   val defs = new TransactionsEndpointDefs(settings)
 
@@ -23,7 +23,7 @@ final class TransactionsRoutes[
     getByInputsScriptTemplateR <+> getByIdR
 
   private def getByIdR: HttpRoutes[F] =
-    defs.getByIdDef.toRoutes { txId =>
+    Http4sServerInterpreter.toRoutes(defs.getByIdDef) { txId =>
       service
         .get(txId)
         .adaptThrowable
@@ -32,7 +32,7 @@ final class TransactionsRoutes[
     }
 
   private def getByInputsScriptTemplateR: HttpRoutes[F] =
-    defs.getByInputsScriptTemplateDef.toRoutes { case (template, paging, ordering) =>
+    Http4sServerInterpreter.toRoutes(defs.getByInputsScriptTemplateDef) { case (template, paging, ordering) =>
       service.getByInputsScriptTemplate(template, paging, ordering).adaptThrowable.value
     }
 }
@@ -42,6 +42,6 @@ object TransactionsRoutes {
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     settings: RequestsSettings,
     service: Transactions[F]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new TransactionsRoutes(settings, service).routes
 }

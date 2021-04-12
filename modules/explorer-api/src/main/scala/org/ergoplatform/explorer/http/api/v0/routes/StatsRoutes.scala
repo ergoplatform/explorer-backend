@@ -11,14 +11,14 @@ import sttp.tapir.server.http4s._
 
 final class StatsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](service: StatsService[F])(implicit opts: Http4sServerOptions[F]) {
+](service: StatsService[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.StatsEndpointDefs._
 
   val routes: HttpRoutes[F] = getCurrentStatsR
 
   private def getCurrentStatsR: HttpRoutes[F] =
-    getCurrentStatsDef.toRoutes { _ =>
+    Http4sServerInterpreter.toRoutes(getCurrentStatsDef) { _ =>
       service.getCurrentStats.adaptThrowable.value
     }
 }
@@ -26,7 +26,7 @@ final class StatsRoutes[
 object StatsRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](service: StatsService[F])(
-    implicit opts: Http4sServerOptions[F]
+    implicit opts: Http4sServerOptions[F, F]
   ): HttpRoutes[F] =
     new StatsRoutes(service).routes
 }

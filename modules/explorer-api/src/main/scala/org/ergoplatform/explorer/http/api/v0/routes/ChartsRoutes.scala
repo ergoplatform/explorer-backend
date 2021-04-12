@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 
 final class ChartsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](service: StatsService[F])(implicit opts: Http4sServerOptions[F]) {
+](service: StatsService[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.ChartsEndpointDefs._
 
@@ -24,47 +24,47 @@ final class ChartsRoutes[
     getMinersRevenuR <+> getHashRateR <+> getHashRateDistributionR
 
   private def getTotalCoinsAmtR: HttpRoutes[F] =
-    getTotalCoinsAmtDef.toRoutes { timespan =>
+    Http4sServerInterpreter.toRoutes(getTotalCoinsAmtDef) { timespan =>
       service.getTotalCoins(timespan).adaptThrowable.value
     }
 
   private def getAvgBlockSizeR: HttpRoutes[F] =
-    getAvgBlockSizeDef.toRoutes { timespan =>
+    Http4sServerInterpreter.toRoutes(getAvgBlockSizeDef) { timespan =>
       service.getAvgBlockSize(timespan).adaptThrowable.value
     }
 
   private def getBlockChainSizeR: HttpRoutes[F] =
-    getBlockChainSizeDef.toRoutes { timespan =>
+    Http4sServerInterpreter.toRoutes(getBlockChainSizeDef) { timespan =>
       service.getBlockChainSize(timespan).adaptThrowable.value
     }
 
   private def getAvgTxsNumPerBlockR: HttpRoutes[F] =
-    getAvgTxsNumPerBlockDef.toRoutes { timespan =>
+    Http4sServerInterpreter.toRoutes(getAvgTxsNumPerBlockDef) { timespan =>
       service.getAvgTxsNumPerBlock(timespan).adaptThrowable.value
     }
 
   private def getTotalTxsNumR: HttpRoutes[F] =
-    getTotalTxsNumDef.toRoutes { timespan =>
+    Http4sServerInterpreter.toRoutes(getTotalTxsNumDef) { timespan =>
       service.getTransactionsNum(timespan).adaptThrowable.value
     }
 
   private def getAvgDifficultyR: HttpRoutes[F] =
-    getAvgDifficultyDef.toRoutes { timespan =>
+    Http4sServerInterpreter.toRoutes(getAvgDifficultyDef) { timespan =>
       service.getAvgDifficulty(timespan).adaptThrowable.value
     }
 
   private def getMinersRevenuR: HttpRoutes[F] =
-    getMinersRevenueDef.toRoutes { timespan =>
+    Http4sServerInterpreter.toRoutes(getMinersRevenueDef) { timespan =>
       service.getMinersRevenue(timespan).adaptThrowable.value
     }
 
   private def getHashRateR: HttpRoutes[F] =
-    getHashRateDef.toRoutes { timespan =>
+    Http4sServerInterpreter.toRoutes(getHashRateDef) { timespan =>
       service.getHashRate(timespan).adaptThrowable.value
     }
 
   private def getHashRateDistributionR: HttpRoutes[F] =
-    getHashRateDistributionDef.toRoutes { _ =>
+    Http4sServerInterpreter.toRoutes(getHashRateDistributionDef) { _ =>
       service.getHashRateDistribution(24.hours).adaptThrowable.value
     }
 }
@@ -72,7 +72,7 @@ final class ChartsRoutes[
 object ChartsRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](service: StatsService[F])(
-    implicit opts: Http4sServerOptions[F]
+    implicit opts: Http4sServerOptions[F, F]
   ): HttpRoutes[F] =
     new ChartsRoutes(service).routes
 }

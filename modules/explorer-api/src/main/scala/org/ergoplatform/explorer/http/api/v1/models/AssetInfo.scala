@@ -34,7 +34,7 @@ object AssetInfo {
 
   implicit val schema: Schema[AssetInfo] =
     Schema
-      .derive[AssetInfo]
+      .derived[AssetInfo]
       .modify(_.headerId)(_.description("Header ID this asset belongs to"))
       .modify(_.boxId)(_.description("Box ID this asset belongs to"))
       .modify(_.tokenId)(_.description("Token ID"))
@@ -44,5 +44,5 @@ object AssetInfo {
       .modify(_.decimals)(_.description("Number of decimal places"))
       .modify(_.`type`)(_.description("Type of the asset (token standard)"))
 
-  implicit val validator: Validator[AssetInfo] = Validator.derive
+  implicit val validator: Validator[AssetInfo] = schema.validator
 }

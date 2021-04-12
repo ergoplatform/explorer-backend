@@ -16,10 +16,10 @@ object DexSellOrderInfo {
 
   implicit val schema: Schema[DexSellOrderInfo] =
     Schema
-      .derive[DexSellOrderInfo]
+      .derived[DexSellOrderInfo]
       .modify(_.amount)(_.description("ERG amount"))
 
-  implicit val validator: Validator[DexSellOrderInfo] = Validator.derive
+  implicit val validator: Validator[DexSellOrderInfo] = schema.validator
 
   def apply(o: ExtendedOutput, tokenPrice: Long, assets: List[ExtendedAsset]): DexSellOrderInfo =
     new DexSellOrderInfo(OutputInfo(o, assets), tokenPrice)

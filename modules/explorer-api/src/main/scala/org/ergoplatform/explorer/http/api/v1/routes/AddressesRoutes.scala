@@ -21,7 +21,7 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
   val routes: HttpRoutes[F] = getTxsByAddressR
 
   private def getTxsByAddressR =
-    defs.getTxsByAddressDef.toRoutes { case (addr, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging) =>
       transactionsService.getByAddress(addr, paging).adaptThrowable.value
     }
 }
@@ -31,6 +31,6 @@ object AddressesRoutes {
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     settings: RequestsSettings,
     service: Transactions[F]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new AddressesRoutes[F](settings, service).routes
 }

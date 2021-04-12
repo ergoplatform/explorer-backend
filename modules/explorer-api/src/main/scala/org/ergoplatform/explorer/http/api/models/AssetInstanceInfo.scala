@@ -2,8 +2,8 @@ package org.ergoplatform.explorer.http.api.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.{TokenId, TokenType}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedUAsset}
+import org.ergoplatform.explorer.{TokenId, TokenType}
 import sttp.tapir.{Schema, Validator}
 
 final case class AssetInstanceInfo(
@@ -27,7 +27,7 @@ object AssetInstanceInfo {
 
   implicit val schema: Schema[AssetInstanceInfo] =
     Schema
-      .derive[AssetInstanceInfo]
+      .derived[AssetInstanceInfo]
       .modify(_.tokenId)(_.description("Token ID"))
       .modify(_.index)(_.description("Index of the asset in an output"))
       .modify(_.amount)(_.description("Amount of tokens"))
@@ -35,5 +35,7 @@ object AssetInstanceInfo {
       .modify(_.decimals)(_.description("Number of decimal places"))
       .modify(_.`type`)(_.description("Type of a token (token standard)"))
 
-  implicit val validator: Validator[AssetInstanceInfo] = Validator.derive
+  implicit val validator: Validator[AssetInstanceInfo] = Schema
+    .derived[AssetInstanceInfo]
+    .validator
 }

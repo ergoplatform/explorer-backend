@@ -12,11 +12,11 @@ object BlockSummary {
   implicit val codec: Codec[BlockSummary] = deriveCodec
 
   implicit val schema: Schema[BlockSummary] =
-    Schema.derive[BlockSummary]
+    Schema.derived[BlockSummary]
       .modify(_.block)(_.description("Full block info"))
       .modify(_.references)(
         _.description("References to previous and next (if exists) blocks")
       )
 
-  implicit val validator: Validator[BlockSummary] = Validator.derive
+  implicit val validator: Validator[BlockSummary] = schema.validator
 }

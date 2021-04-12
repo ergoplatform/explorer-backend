@@ -11,14 +11,14 @@ import sttp.tapir.server.http4s._
 
 final class SearchRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](search: Search[F])(implicit opts: Http4sServerOptions[F]) {
+](search: Search[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.SearchEndpointDefs._
 
   val routes: HttpRoutes[F] = searchR
 
   private def searchR: HttpRoutes[F] =
-    searchDef.toRoutes { q =>
+    Http4sServerInterpreter.toRoutes(searchDef) { q =>
       search.search(q).adaptThrowable.value
     }
 }
@@ -26,7 +26,7 @@ final class SearchRoutes[
 object SearchRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](search: Search[F])(implicit
-    opts: Http4sServerOptions[F]
+    opts: Http4sServerOptions[F, F]
   ): HttpRoutes[F] =
     new SearchRoutes(search).routes
 }

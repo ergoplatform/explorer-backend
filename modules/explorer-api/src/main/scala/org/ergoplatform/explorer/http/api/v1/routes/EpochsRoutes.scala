@@ -14,14 +14,14 @@ import sttp.tapir.server.http4s._
 
 final class EpochsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](epochs: Epochs[F])(implicit opts: Http4sServerOptions[F]) {
+](epochs: Epochs[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   val defs = new EpochsEndpointDefs
 
   val routes: HttpRoutes[F] = getEpochInfoR
 
   private def getEpochInfoR: HttpRoutes[F] =
-    defs.getEpochInfoDef.toRoutes { _ =>
+    Http4sServerInterpreter.toRoutes(defs.getEpochInfoDef) { _ =>
       epochs
         .getLastEpoch
         .adaptThrowable
@@ -32,6 +32,6 @@ final class EpochsRoutes[
 
 object EpochsRoutes {
 
-  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](epochs: Epochs[F])(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](epochs: Epochs[F])(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new EpochsRoutes[F](epochs).routes
 }

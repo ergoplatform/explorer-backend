@@ -16,9 +16,9 @@ object DexBuyOrderInfo {
 
   implicit val codec: Codec[DexBuyOrderInfo] = deriveCodec
 
-  implicit val schema: Schema[DexBuyOrderInfo] = Schema.derive
+  implicit val schema: Schema[DexBuyOrderInfo] = Schema.derived
 
-  implicit val validator: Validator[DexBuyOrderInfo] = Validator.derive
+  implicit val validator: Validator[DexBuyOrderInfo] = schema.validator
 
   def apply(
     output: ExtendedOutput,

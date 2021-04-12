@@ -107,7 +107,7 @@ package object explorer {
       Schema.schemaForString.description("Transaction ID").asInstanceOf[Schema[TxId]]
 
     implicit def validator: Validator[TxId] =
-      Validator.validatorForString.contramap[TxId](_.value)
+      Schema.schemaForString.validator.contramap[TxId](_.value)
   }
 
   @newtype case class BoxId(value: String)
@@ -131,7 +131,7 @@ package object explorer {
       Schema.schemaForString.description("Box ID").asInstanceOf[Schema[BoxId]]
 
     implicit def validator: Validator[BoxId] =
-      Validator.validatorForString.contramap[BoxId](_.value)
+      Schema.schemaForString.validator.contramap[BoxId](_.value)
   }
 
   @newtype case class TokenId(value: HexString)
@@ -221,7 +221,7 @@ package object explorer {
       Schema.schemaForString.description("Token type").asInstanceOf[Schema[TokenType]]
 
     implicit def validator: Validator[TokenType] =
-      implicitly[Validator[String]].contramap[TokenType](_.value)
+      Schema.schemaForString.validator.contramap[TokenType](_.value)
 
     // doobie instances
     implicit def get: Get[TokenType] = deriving
@@ -263,7 +263,7 @@ package object explorer {
       Schema.schemaForString.description("Ergo Address").asInstanceOf[Schema[Address]]
 
     implicit def validator: Validator[Address] =
-      Validator.validatorForString.contramap[Address](_.unwrapped)
+      Schema.schemaForString.validator.contramap[Address](_.unwrapped)
 
     implicit def configReader: ConfigReader[Address] =
       implicitly[ConfigReader[String]].emap { s =>
@@ -312,7 +312,7 @@ package object explorer {
       Schema.schemaForString.description("Hex-encoded string").asInstanceOf[Schema[HexString]]
 
     implicit def validator: Validator[HexString] =
-      Validator.validatorForString.contramap[HexString](_.unwrapped)
+      Schema.schemaForString.validator.contramap[HexString](_.unwrapped)
 
     implicit def loggable: Loggable[HexString] = Loggable.stringValue.contramap(_.unwrapped)
 

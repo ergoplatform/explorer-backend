@@ -23,7 +23,7 @@ object BlockInfo {
 
   implicit val schema: Schema[BlockInfo] =
     Schema
-      .derive[BlockInfo]
+      .derived[BlockInfo]
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
       .modify(_.timestamp)(_.description("Timestamp the block was created (UNIX timestamp in millis)"))
@@ -36,7 +36,7 @@ object BlockInfo {
         _.description("The amount of nanoErgs miner received as a reward for block")
       )
 
-  implicit val validator: Validator[BlockInfo] = Validator.derive
+  implicit val validator: Validator[BlockInfo] = schema.validator
 
   def apply(extBlockInfo: ExtendedBlockInfo): BlockInfo = {
     val minerName = extBlockInfo.minerNameOpt.getOrElse(

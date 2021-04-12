@@ -53,22 +53,22 @@ object TransactionSummary {
 
   implicit val schemaBlockInfo: Schema[MiniBlockInfo] =
     Schema
-      .derive[MiniBlockInfo]
+      .derived[MiniBlockInfo]
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
 
-  implicit val validatorBlockInfo: Validator[MiniBlockInfo] = Validator.derive
+  implicit val validatorBlockInfo: Validator[MiniBlockInfo] = schemaBlockInfo.validator
 
   implicit val schema: Schema[TransactionSummary] =
     Schema
-      .derive[TransactionSummary]
+      .derived[TransactionSummary]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.timestamp)(_.description("Timestamp the transaction got into the network"))
       .modify(_.index)(_.description("Index of a transaction inside a block"))
       .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
       .modify(_.size)(_.description("Size of transaction in bytes"))
 
-  implicit val validator: Validator[TransactionSummary] = Validator.derive
+  implicit val validator: Validator[TransactionSummary] = schema.validator
 
   def apply(
     tx: Transaction,

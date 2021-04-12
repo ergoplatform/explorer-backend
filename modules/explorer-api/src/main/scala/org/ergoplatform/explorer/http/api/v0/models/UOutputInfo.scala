@@ -8,7 +8,6 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedUAsset
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.protocol.registers
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
-import sttp.tapir.json.circe.validatorForCirceJson
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class UOutputInfo(
@@ -29,7 +28,7 @@ object UOutputInfo {
 
   implicit val schema: Schema[UOutputInfo] =
     Schema
-      .derive[UOutputInfo]
+      .derived[UOutputInfo]
       .modify(_.id)(_.description("Id of the corresponding box"))
       .modify(_.txId)(_.description("Id of the transaction that created the box"))
       .modify(_.value)(_.description("Amount of nanoERGs containing in the box"))
@@ -38,14 +37,14 @@ object UOutputInfo {
       .modify(_.address)(_.description("Address derived from ErgoTree"))
       .modify(_.additionalRegisters)(_.description("Arbitrary key->value dictionary"))
 
-  implicit val validator: Validator[UOutputInfo] = Validator.derive
+  implicit val validator: Validator[UOutputInfo] = schema.validator
 
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
         SchemaType.SObjectInfo("AdditionalRegisters"),
-        Schema(SchemaType.SString)
-      )
+        Schema(SchemaType.SString[Json]())
+      )(_ => Map.empty)
     )
 
   def apply(out: UOutput, assets: List[ExtendedUAsset]): UOutputInfo =

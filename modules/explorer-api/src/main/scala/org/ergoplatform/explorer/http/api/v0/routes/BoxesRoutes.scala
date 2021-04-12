@@ -14,7 +14,7 @@ import sttp.tapir.server.http4s._
 
 final class BoxesRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](service: BoxesService[F, fs2.Stream])(implicit opts: Http4sServerOptions[F]) {
+](service: BoxesService[F, fs2.Stream])(implicit opts: Http4sServerOptions[F, F]) {
 
   import BoxesEndpointDefs._
 
@@ -23,7 +23,7 @@ final class BoxesRoutes[
     getOutputsByAddressR <+> getUnspentOutputsByAddressR
 
   private def getOutputByIdR: HttpRoutes[F] =
-    getOutputByIdDef.toRoutes { id =>
+    Http4sServerInterpreter.toRoutes(getOutputByIdDef) { id =>
       service
         .getOutputById(id)
         .adaptThrowable
@@ -32,22 +32,22 @@ final class BoxesRoutes[
     }
 
   private def getOutputsByErgoTreeR: HttpRoutes[F] =
-    getOutputsByErgoTreeDef.toRoutes { tree =>
+    Http4sServerInterpreter.toRoutes(getOutputsByErgoTreeDef) { tree =>
       service.getOutputsByErgoTree(tree).compile.toList.adaptThrowable.value
     }
 
   private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
-    getUnspentOutputsByErgoTreeDef.toRoutes { tree =>
+    Http4sServerInterpreter.toRoutes(getUnspentOutputsByErgoTreeDef) { tree =>
       service.getUnspentOutputsByErgoTree(tree).compile.toList.adaptThrowable.value
     }
 
   private def getOutputsByAddressR: HttpRoutes[F] =
-    getOutputsByAddressDef.toRoutes { address =>
+    Http4sServerInterpreter.toRoutes(getOutputsByAddressDef) { address =>
       service.getOutputsByAddress(address).compile.toList.adaptThrowable.value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
-    getUnspentOutputsByAddressDef.toRoutes { address =>
+    Http4sServerInterpreter.toRoutes(getUnspentOutputsByAddressDef) { address =>
       service.getUnspentOutputsByAddress(address).compile.toList.adaptThrowable.value
     }
 }
@@ -56,6 +56,6 @@ object BoxesRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     service: BoxesService[F, fs2.Stream]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new BoxesRoutes[F](service).routes
 }

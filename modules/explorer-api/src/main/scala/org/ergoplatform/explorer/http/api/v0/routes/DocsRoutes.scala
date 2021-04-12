@@ -12,7 +12,7 @@ import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.server.http4s._
 
-final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F]) {
+final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DocsEndpointDefs._
 
@@ -44,7 +44,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Htt
     Nil
 
   private def openApiSpecR: HttpRoutes[F] =
-    apiSpecDef.toRoutes { _ =>
+    Http4sServerInterpreter.toRoutes(apiSpecDef) { _ =>
       allEndpoints
         .toOpenAPI("Ergo Explorer API v0", "1.0")
         .tags(tags)
@@ -56,6 +56,6 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Htt
 
 object DocsRoutes {
 
-  def apply[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  def apply[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new DocsRoutes[F].routes
 }

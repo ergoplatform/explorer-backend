@@ -6,7 +6,6 @@ import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOu
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.protocol.registers
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
-import sttp.tapir.json.circe.validatorForCirceJson
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class OutputInfo(
@@ -29,7 +28,7 @@ object OutputInfo {
 
   implicit val schema: Schema[OutputInfo] =
     Schema
-      .derive[OutputInfo]
+      .derived[OutputInfo]
       .modify(_.id)(_.description("Id of the box"))
       .modify(_.txId)(_.description("Id of the transaction that created the box"))
       .modify(_.value)(_.description("Value of the box in nanoERG"))
@@ -38,14 +37,14 @@ object OutputInfo {
       .modify(_.ergoTree)(_.description("Serialized ergo tree"))
       .modify(_.address)(_.description("An address derived from ergo tree"))
 
-  implicit val validator: Validator[OutputInfo] = Validator.derive
+  implicit val validator: Validator[OutputInfo] = Schema.derived[OutputInfo].validator
 
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
         SchemaType.SObjectInfo("AdditionalRegisters"),
-        Schema(SchemaType.SString)
-      )
+        Schema(SchemaType.SString[Json]())
+      )(_ => Map.empty)
     )
 
   def apply(

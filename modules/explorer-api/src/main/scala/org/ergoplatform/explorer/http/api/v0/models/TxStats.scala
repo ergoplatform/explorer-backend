@@ -15,7 +15,7 @@ object TxStats {
 
   implicit val schema: Schema[TxStats] =
     Schema
-      .derive[TxStats]
+      .derived[TxStats]
       .modify(_.totalCoinsTransferred)(
         _.description("Total amount of coins transferred by transaction")
       )
@@ -26,7 +26,7 @@ object TxStats {
         _.description("Amount of nanoERGs ber byte in transaction")
       )
 
-  implicit val validator: Validator[TxStats] = Validator.derive
+  implicit val validator: Validator[TxStats] = schema.validator
 
   def apply(
     tx: Transaction,

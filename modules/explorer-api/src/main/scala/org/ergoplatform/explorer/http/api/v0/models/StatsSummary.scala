@@ -58,7 +58,7 @@ object StatsSummary {
 
   implicit val schema: Schema[StatsSummary] =
     Schema
-      .derive[StatsSummary]
+      .derived[StatsSummary]
       .modify(_.blocksCount)(_.description("Number of block within defined period"))
       .modify(_.blocksAvgTime)(_.description("Avg. block time within defined period"))
       .modify(_.totalCoins)(
@@ -83,5 +83,5 @@ object StatsSummary {
       .modify(_.lastDifficulty)(_.description("Latest network difficulty"))
       .modify(_.totalHashrate)(_.description("Total network hashrate within defined period"))
 
-  implicit val validator: Validator[StatsSummary] = Validator.derive
+  implicit val validator: Validator[StatsSummary] = schema.validator
 }

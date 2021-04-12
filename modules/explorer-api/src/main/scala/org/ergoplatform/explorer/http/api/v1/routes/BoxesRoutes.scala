@@ -15,7 +15,7 @@ import sttp.tapir.server.http4s._
 
 final class BoxesRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](settings: RequestsSettings, service: Boxes[F])(implicit opts: Http4sServerOptions[F]) {
+](settings: RequestsSettings, service: Boxes[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   val defs = new BoxesEndpointDefs[F](settings)
 
@@ -36,37 +36,37 @@ final class BoxesRoutes[
     getOutputByIdR
 
   private def streamUnspentOutputsR: HttpRoutes[F] =
-    defs.streamUnspentOutputsDef.toRoutes { epochs =>
+    Http4sServerInterpreter.toRoutes(defs.streamUnspentOutputsDef) { epochs =>
       streaming.bytesStream(service.streamUnspentOutputs(epochs))
     }
 
   private def streamUnspentOutputsByEpochsR: HttpRoutes[F] =
-    defs.streamUnspentOutputsByEpochsDef.toRoutes { lastEpochs =>
+    Http4sServerInterpreter.toRoutes(defs.streamUnspentOutputsByEpochsDef) { lastEpochs =>
       streaming.bytesStream(service.streamUnspentOutputs(lastEpochs))
     }
 
   private def streamOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
-    defs.streamOutputsByErgoTreeTemplateHashDef.toRoutes { case (template, epochs) =>
+    Http4sServerInterpreter.toRoutes(defs.streamOutputsByErgoTreeTemplateHashDef) { case (template, epochs) =>
       streaming.bytesStream(service.streamOutputsByErgoTreeTemplateHash(template, epochs))
     }
 
   private def streamUnspentOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
-    defs.streamUnspentOutputsByErgoTreeTemplateHashDef.toRoutes { case (template, epochs) =>
+    Http4sServerInterpreter.toRoutes(defs.streamUnspentOutputsByErgoTreeTemplateHashDef) { case (template, epochs) =>
       streaming.bytesStream(service.streamUnspentOutputsByErgoTreeTemplateHash(template, epochs))
     }
 
   private def outputsByTokenIdR: HttpRoutes[F] =
-    defs.outputsByTokenIdDef.toRoutes { case (tokenId, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.outputsByTokenIdDef){ case (tokenId, paging) =>
       service.getOutputsByTokenId(tokenId, paging).adaptThrowable.value
     }
 
   private def unspentOutputsByTokenIdR: HttpRoutes[F] =
-    defs.unspentOutputsByTokenIdDef.toRoutes { case (tokenId, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.unspentOutputsByTokenIdDef) { case (tokenId, paging) =>
       service.getUnspentOutputsByTokenId(tokenId, paging).adaptThrowable.value
     }
 
   private def getOutputByIdR: HttpRoutes[F] =
-    defs.getOutputByIdDef.toRoutes { id =>
+    Http4sServerInterpreter.toRoutes(defs.getOutputByIdDef) { id =>
       service
         .getOutputById(id)
         .adaptThrowable
@@ -75,37 +75,37 @@ final class BoxesRoutes[
     }
 
   private def getOutputsByErgoTreeR: HttpRoutes[F] =
-    defs.getOutputsByErgoTreeDef.toRoutes { case (tree, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.getOutputsByErgoTreeDef) { case (tree, paging) =>
       service.getOutputsByErgoTree(tree, paging).adaptThrowable.value
     }
 
   private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
-    defs.getUnspentOutputsByErgoTreeDef.toRoutes { case (tree, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByErgoTreeDef) { case (tree, paging) =>
       service.getUnspentOutputsByErgoTree(tree, paging).adaptThrowable.value
     }
 
   private def getOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
-    defs.getOutputsByErgoTreeTemplateHashDef.toRoutes { case (tree, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.getOutputsByErgoTreeTemplateHashDef) { case (tree, paging) =>
       service.getOutputsByErgoTreeTemplateHash(tree, paging).adaptThrowable.value
     }
 
   private def getUnspentOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
-    defs.getUnspentOutputsByErgoTreeTemplateHashDef.toRoutes { case (tree, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByErgoTreeTemplateHashDef) { case (tree, paging) =>
       service.getUnspentOutputsByErgoTreeTemplateHash(tree, paging).adaptThrowable.value
     }
 
   private def getOutputsByAddressR: HttpRoutes[F] =
-    defs.getOutputsByAddressDef.toRoutes { case (address, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.getOutputsByAddressDef) { case (address, paging) =>
       service.getOutputsByAddress(address, paging).adaptThrowable.value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
-    defs.getUnspentOutputsByAddressDef.toRoutes { case (address, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByAddressDef) { case (address, paging) =>
       service.getUnspentOutputsByAddress(address, paging).adaptThrowable.value
     }
 
   private def searchOutputsR: HttpRoutes[F] =
-    defs.searchOutputsDef.toRoutes { case (query, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.searchOutputsDef) { case (query, paging) =>
       service.searchAll(query, paging).adaptThrowable.value
     }
 }
@@ -115,6 +115,6 @@ object BoxesRoutes {
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     settings: RequestsSettings,
     service: Boxes[F]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new BoxesRoutes[F](settings, service).routes
 }

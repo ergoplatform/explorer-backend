@@ -17,10 +17,10 @@ object commonDirectives {
   def paging: EndpointInput[Paging] = paging(Int.MaxValue)
 
   def paging(maxLimit: Int): EndpointInput[Paging] =
-    (query[Option[Int]]("offset").validate(Validator.min(0).asOptionElement) and
+    (query[Option[Int]]("offset").validateOption(Validator.min(0)) and
       query[Option[Int]]("limit")
-        .validate(Validator.min(1).asOptionElement)
-        .validate(Validator.max(maxLimit).asOptionElement))
+        .validateOption(Validator.min(1))
+        .validateOption(Validator.max(maxLimit)))
       .map { input =>
         Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }

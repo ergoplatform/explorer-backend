@@ -25,7 +25,7 @@ object UTransactionInfo {
 
   implicit val schema: Schema[UTransactionInfo] =
     Schema
-      .derive[UTransactionInfo]
+      .derived[UTransactionInfo]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.creationTimestamp)(
         _.description("Approximate time this transaction appeared in the network")
@@ -34,7 +34,7 @@ object UTransactionInfo {
         _.description("Size of the transaction in bytes")
       )
 
-  implicit val validator: Validator[UTransactionInfo] = Validator.derive
+  implicit val validator: Validator[UTransactionInfo] = schema.validator
 
   def apply(
     tx: UTransaction,
