@@ -37,7 +37,7 @@ object OutputInfo {
       .modify(_.ergoTree)(_.description("Serialized ergo tree"))
       .modify(_.address)(_.description("An address derived from ergo tree"))
 
-  implicit val validator: Validator[OutputInfo] = Schema.derived[OutputInfo].validator
+  implicit val validator: Validator[OutputInfo] = schema.validator
 
   implicit private def registersSchema: Schema[Json] =
     Schema(
