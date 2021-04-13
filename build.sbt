@@ -8,8 +8,6 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= dependencies.Testing ++ dependencies.CompilerPlugins,
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
-    case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
-      MergeStrategy.singleOrError
     case "logback.xml"                                             => MergeStrategy.first
     case "module-info.class"                                       => MergeStrategy.discard
     case other if other.contains("scala/annotation/nowarn.class")  => MergeStrategy.first
