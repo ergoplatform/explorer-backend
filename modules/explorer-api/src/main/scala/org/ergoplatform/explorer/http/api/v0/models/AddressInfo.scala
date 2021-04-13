@@ -82,5 +82,5 @@ object AddressInfo {
 
   implicit val schema: Schema[AddressInfo] = Schema.derived[AddressInfo]
 
-  implicit val validator: Validator[AddressInfo] = Schema.derived[AddressInfo].validator
+  implicit val validator: Validator[AddressInfo] = schema.validator
 }
