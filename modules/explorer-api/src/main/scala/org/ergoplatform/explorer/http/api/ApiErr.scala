@@ -39,9 +39,9 @@ object ApiErr {
   implicit val notFoundS: Schema[NotFound]       = Schema.derived[NotFound]
   implicit val badInputS: Schema[BadRequest]     = Schema.derived[BadRequest]
 
-  implicit val unknownErrorV: Validator[UnknownErr] = Schema.derived[UnknownErr].validator
-  implicit val notFoundV: Validator[NotFound]       = Schema.derived[NotFound].validator
-  implicit val badInputV: Validator[BadRequest]     = Schema.derived[BadRequest].validator
+  implicit val unknownErrorV: Validator[UnknownErr] = unknownErrorS.validator
+  implicit val notFoundV: Validator[NotFound]       = notFoundS.validator
+  implicit val badInputV: Validator[BadRequest]     = badInputS.validator
 
   implicit val schema: Schema[ApiErr] =
     Schema.oneOfUsingField[ApiErr, String](_.getMessage, _.toString)(
