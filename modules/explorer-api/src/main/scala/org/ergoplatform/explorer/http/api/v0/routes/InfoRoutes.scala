@@ -14,17 +14,17 @@ import sttp.tapir.server.http4s._
 
 final class InfoRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](service: StatsService[F])(implicit opts: Http4sServerOptions[F]) {
+](service: StatsService[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.InfoEndpointDefs._
 
   val routes: HttpRoutes[F] = getCurrentStatsR <+> getCurrentSupplyR
 
   private def getCurrentStatsR: HttpRoutes[F] =
-    getBlockChainInfoDef.toRoutes(_ => service.getBlockChainInfo.adaptThrowable.value)
+    Http4sServerInterpreter.toRoutes(getBlockChainInfoDef)(_ => service.getBlockChainInfo.adaptThrowable.value)
 
   private def getCurrentSupplyR: HttpRoutes[F] =
-    getCurrentSupplyDef.toRoutes { _ =>
+    Http4sServerInterpreter.toRoutes(getCurrentSupplyDef) { _ =>
       service.getBlockChainInfo
         .map { info =>
           BigDecimal
@@ -40,7 +40,7 @@ final class InfoRoutes[
 object InfoRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](service: StatsService[F])(
-    implicit opts: Http4sServerOptions[F]
+    implicit opts: Http4sServerOptions[F, F]
   ): HttpRoutes[F] =
     new InfoRoutes(service).routes
 }

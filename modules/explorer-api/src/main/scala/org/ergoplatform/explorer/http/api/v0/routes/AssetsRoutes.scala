@@ -14,7 +14,7 @@ import sttp.tapir.server.http4s._
 final class AssetsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: AssetsService[F, fs2.Stream])(
-  implicit opts: Http4sServerOptions[F]
+  implicit opts: Http4sServerOptions[F, F]
 ) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.AssetsEndpointDefs._
@@ -23,7 +23,7 @@ final class AssetsRoutes[
     getAllIssuingBoxesR <+> getIssuingBoxR
 
   private def getAllIssuingBoxesR: HttpRoutes[F] =
-    getAllIssuingBoxesDef.toRoutes { paging =>
+    Http4sServerInterpreter.toRoutes(getAllIssuingBoxesDef) { paging =>
       service
         .getAllIssuingBoxes(paging)
         .adaptThrowable
@@ -31,7 +31,7 @@ final class AssetsRoutes[
     }
 
   private def getIssuingBoxR: HttpRoutes[F] =
-    getIssuingBoxDef.toRoutes { tokenId =>
+    Http4sServerInterpreter.toRoutes(getIssuingBoxDef) { tokenId =>
       service
         .getIssuingBoxes(NonEmptyList.one(tokenId))
         .compile
@@ -45,6 +45,6 @@ object AssetsRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     service: AssetsService[F, fs2.Stream]
-  )(implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new AssetsRoutes(service).routes
 }

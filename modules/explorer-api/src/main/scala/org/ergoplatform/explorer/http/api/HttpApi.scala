@@ -35,7 +35,7 @@ object HttpApi {
   )(trans: D Trans F)(implicit
     ec: ExecutionContext,
     encoder: ErgoAddressEncoder,
-    opts: Http4sServerOptions[F]
+    opts: Http4sServerOptions[F, F]
   ): Resource[F, Server[F]] =
     for {
       v0 <- Resource.eval(RoutesV0Bundle(settings.protocol, settings.utxCache, redis)(trans))

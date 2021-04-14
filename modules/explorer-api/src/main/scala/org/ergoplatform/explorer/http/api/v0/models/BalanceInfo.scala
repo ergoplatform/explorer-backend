@@ -13,10 +13,9 @@ object BalanceInfo {
 
   implicit val schema: Schema[BalanceInfo] =
     Schema
-      .derive[BalanceInfo]
+      .derived[BalanceInfo]
       .modify(_.address)(_.description("Address"))
       .modify(_.balance)(_.description("Balance in nanoERG"))
 
-  implicit val validator: Validator[BalanceInfo] =
-    Validator.derive
+  implicit val validator: Validator[BalanceInfo] = schema.validator
 }

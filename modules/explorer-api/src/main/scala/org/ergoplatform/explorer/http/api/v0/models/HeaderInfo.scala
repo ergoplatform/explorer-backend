@@ -29,11 +29,11 @@ object HeaderInfo {
 
   implicit val codec: Codec[HeaderInfo] = deriveCodec
 
-  implicit def schemaVotes: Schema[(Byte, Byte, Byte)] = Schema.derive
+  implicit def schemaVotes: Schema[(Byte, Byte, Byte)] = Schema.derived
 
   implicit val schema: Schema[HeaderInfo] =
     Schema
-      .derive[HeaderInfo]
+      .derived[HeaderInfo]
       .modify(_.id)(_.description("Block/header ID"))
       .modify(_.parentId)(_.description("ID of the parental block/header"))
       .modify(_.version)(_.description("Version of the header"))
@@ -48,9 +48,9 @@ object HeaderInfo {
       .modify(_.extensionHash)(_.description("Hex-encoded hash of the corresponding extension"))
       .modify(_.votes)(_.description("Block votes (3 bytes)"))
 
-  implicit def validatorVotes: Validator[(Byte, Byte, Byte)] = Validator.derive
+  implicit def validatorVotes: Validator[(Byte, Byte, Byte)] = schemaVotes.validator
 
-  implicit val validator: Validator[HeaderInfo] = Validator.derive
+  implicit val validator: Validator[HeaderInfo] = schema.validator
 
   def apply(h: Header, size: Int): HeaderInfo = {
     val powSolutions = PowSolutionInfo(h.minerPk, h.w, h.n, h.d)

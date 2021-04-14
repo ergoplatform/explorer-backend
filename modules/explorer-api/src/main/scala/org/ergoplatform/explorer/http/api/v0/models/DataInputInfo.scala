@@ -23,7 +23,7 @@ object DataInputInfo {
 
   implicit val schema: Schema[DataInputInfo] =
     Schema
-      .derive[DataInputInfo]
+      .derived[DataInputInfo]
       .modify(_.id)(_.description("ID of the corresponding box"))
       .modify(_.value)(_.description("Number of nanoErgs in the corresponding box"))
       .modify(_.transactionId)(_.description("ID of the transaction this data input was used in"))
@@ -32,7 +32,7 @@ object DataInputInfo {
       )
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
 
-  implicit val validator: Validator[DataInputInfo] = Validator.derive
+  implicit val validator: Validator[DataInputInfo] = schema.validator
 
   def apply(i: ExtendedDataInput): DataInputInfo =
     DataInputInfo(

@@ -18,10 +18,10 @@ object SearchResult {
 
   implicit val schema: Schema[SearchResult] =
     Schema
-      .derive[SearchResult]
+      .derived[SearchResult]
       .modify(_.blocks)(_.description("Blocks matching search query"))
       .modify(_.transactions)(_.description("Ids of transactions matching search query"))
       .modify(_.addresses)(_.description("Addresses matching search query"))
 
-  implicit val validator: Validator[SearchResult] = Validator.derive
+  implicit val validator: Validator[SearchResult] = schema.validator
 }

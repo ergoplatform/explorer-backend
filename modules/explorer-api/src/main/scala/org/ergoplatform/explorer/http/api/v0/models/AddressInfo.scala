@@ -53,14 +53,15 @@ object AddressInfo {
 
   implicit private def summarySchema: Schema[Summary] =
     Schema
-      .derive[Summary]
+      .derived[Summary]
       .modify(_.id)(_.description("Address identifier"))
 
-  implicit private val summaryValidator: Validator[Summary] = Validator.derive
+  implicit private val summaryValidator: Validator[Summary] = Schema
+    .derived[Summary].validator
 
   implicit private def txsSchema: Schema[Transactions] =
     Schema
-      .derive[Transactions]
+      .derived[Transactions]
       .modify(_.confirmed)(_.description("Number of confirmed txs"))
       .modify(_.totalReceived)(_.description("Total number of received nanoErgs"))
       .modify(_.confirmedBalance)(
@@ -76,9 +77,10 @@ object AddressInfo {
         _.description("Total (confirmed + unconfirmed) tokens balance of address")
       )
 
-  implicit private val txsValidator: Validator[Transactions] = Validator.derive
+  implicit private val txsValidator: Validator[Transactions] = Schema
+    .derived[Transactions].validator
 
-  implicit val schema: Schema[AddressInfo] = Schema.derive
+  implicit val schema: Schema[AddressInfo] = Schema.derived[AddressInfo]
 
-  implicit val validator: Validator[AddressInfo] = Validator.derive
+  implicit val validator: Validator[AddressInfo] = schema.validator
 }

@@ -4,19 +4,21 @@ import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.applicative._
 import cats.syntax.either._
 import cats.syntax.option._
+import cats.syntax.semigroupk._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.v0.defs._
 import org.http4s.HttpRoutes
 import sttp.tapir.apispec.Tag
 import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
+import sttp.tapir.redoc.http4s.RedocHttp4s
 import sttp.tapir.server.http4s._
 
-final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F]) {
+final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.DocsEndpointDefs._
 
-  val routes: HttpRoutes[F] = openApiSpecR
+  val routes: HttpRoutes[F] = openApiSpecR <+> redocApiSpecR
 
   private def allEndpoints =
     AddressesEndpointDefs.endpoints ++
@@ -43,19 +45,30 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Htt
     Tag("docs", "API documentation".some) ::
     Nil
 
+  private val docsAsYaml =
+    OpenAPIDocsInterpreter
+      .toOpenAPI(allEndpoints, "Ergo Explorer API v0", "1.0")
+      .tags(tags)
+      .toYaml
+
   private def openApiSpecR: HttpRoutes[F] =
-    apiSpecDef.toRoutes { _ =>
-      allEndpoints
-        .toOpenAPI("Ergo Explorer API v0", "1.0")
-        .tags(tags)
-        .toYaml
+    Http4sServerInterpreter.toRoutes(apiSpecDef) { _ =>
+      docsAsYaml
         .asRight[ApiErr]
         .pure[F]
     }
+
+  private def redocApiSpecR: HttpRoutes[F] =
+    new RedocHttp4s(
+      "Redoc",
+      docsAsYaml,
+      "openapi",
+      contextPath = "api" :: "v0" :: "docs" :: Nil
+    ).routes
 }
 
 object DocsRoutes {
 
-  def apply[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F]): HttpRoutes[F] =
+  def apply[F[_]: Concurrent: ContextShift: Timer](implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new DocsRoutes[F].routes
 }

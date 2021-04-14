@@ -35,27 +35,27 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "stream")
       .in(epochSlicing(settings.maxEpochsPerRequest))
-      .out(streamBody(Fs2Streams[F], schemaFor[OutputInfo], CodecFormat.Json(), None))
+      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def streamUnspentOutputsByEpochsDef: Endpoint[Int, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byLastEpochs" / "stream")
       .in(lastEpochs(settings.maxEpochsPerRequest))
-      .out(streamBody(Fs2Streams[F], schemaFor[OutputInfo], CodecFormat.Json(), None))
+      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def streamOutputsByErgoTreeTemplateHashDef
     : Endpoint[(ErgoTreeTemplateHash, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
       .in(epochSlicing(settings.maxEpochsPerRequest))
-      .out(streamBody(Fs2Streams[F], schemaFor[OutputInfo], CodecFormat.Json(), None))
+      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def streamUnspentOutputsByErgoTreeTemplateHashDef
     : Endpoint[(ErgoTreeTemplateHash, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
       .in(epochSlicing(settings.maxEpochsPerRequest))
-      .out(streamBody(Fs2Streams[F], schemaFor[OutputInfo], CodecFormat.Json(), None))
+      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def outputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get

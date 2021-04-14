@@ -23,6 +23,6 @@ final case class EpochParameters(
 
 object EpochParameters {
 
-  implicit def schema: Schema[EpochParameters]       = Schema.derive[EpochParameters]
-  implicit def validator: Validator[EpochParameters] = Validator.derive[EpochParameters]
+  implicit def schema: Schema[EpochParameters]       = Schema.derived[EpochParameters]
+  implicit def validator: Validator[EpochParameters] = schema.validator
 }

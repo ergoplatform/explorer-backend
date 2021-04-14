@@ -13,8 +13,8 @@ object TxIdResponse {
 
   implicit val schema: Schema[TxIdResponse] =
     Schema
-      .derive[TxIdResponse]
+      .derived[TxIdResponse]
       .modify(_.id)(_.description("Id of submitted transaction"))
 
-  implicit val validator: Validator[TxIdResponse] = Validator.derive
+  implicit val validator: Validator[TxIdResponse] = schema.validator
 }

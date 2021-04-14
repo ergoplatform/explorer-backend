@@ -23,11 +23,9 @@ final case class TransactionInfo(
 
 object TransactionInfo {
 
-  implicit val validator: Validator[TransactionInfo] = Validator.derive
-
   implicit val schema: Schema[TransactionInfo] =
     Schema
-      .derive[TransactionInfo]
+      .derived[TransactionInfo]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.blockId)(_.description("ID of the corresponding header"))
       .modify(_.inclusionHeight)(_.description("Height of the block the transaction was included in"))
@@ -35,6 +33,8 @@ object TransactionInfo {
       .modify(_.index)(_.description("Index of a transaction inside a block"))
       .modify(_.numConfirmations)(_.description("Number of transaction confirmations"))
       .modify(_.size)(_.description("Transaction size in bytes"))
+
+  implicit val validator: Validator[TransactionInfo] = schema.validator
 
   def unFlatten(
     tx: Transaction,

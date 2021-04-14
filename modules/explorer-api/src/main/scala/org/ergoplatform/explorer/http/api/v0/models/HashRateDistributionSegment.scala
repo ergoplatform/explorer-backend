@@ -14,11 +14,11 @@ object HashRateDistributionSegment {
 
   implicit val schema: Schema[HashRateDistributionSegment] =
     Schema
-      .derive[HashRateDistributionSegment]
+      .derived[HashRateDistributionSegment]
       .modify(_.name)(_.description("Segment name"))
       .modify(_.value)(_.description("Number of blocks mined"))
 
-  implicit val validator: Validator[HashRateDistributionSegment] = Validator.derive
+  implicit val validator: Validator[HashRateDistributionSegment] = schema.validator
 
   def batch(stats: List[MinerStats]): List[HashRateDistributionSegment] = {
     val totalCount = stats.map(_.blocksMined).sum

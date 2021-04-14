@@ -1,7 +1,6 @@
 package org.ergoplatform.explorer.protocol
 
 import java.math.BigInteger
-
 import cats.syntax.either._
 import io.circe._
 import io.circe.syntax._
@@ -18,6 +17,7 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll
+import sttp.tapir.SchemaType.SProductField
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 import scala.util.Try
@@ -29,7 +29,10 @@ object ergoInstances {
 
   implicit def schemaErgoLikeTx: Schema[ErgoLikeTransaction] =
     Schema(
-      SchemaType.SProduct(SchemaType.SObjectInfo("ErgoLikeTransaction"), Iterable.empty)
+      SchemaType.SProduct(
+        SchemaType.SObjectInfo("ErgoLikeTransaction"),
+        Iterable.empty[SProductField[ErgoLikeTransaction]].toList
+      )
     ) // todo: derive schema for the whole ErgoLikeTransaction.
 
   implicit def validatorErgoLikeTx: Validator[ErgoLikeTransaction] =

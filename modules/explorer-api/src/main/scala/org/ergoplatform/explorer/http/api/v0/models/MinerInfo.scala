@@ -12,9 +12,9 @@ object MinerInfo {
   implicit val codec: Codec[MinerInfo] = deriveCodec
 
   implicit val schema: Schema[MinerInfo] =
-    Schema.derive[MinerInfo]
+    Schema.derived[MinerInfo]
       .modify(_.address)(_.description("Miner reward address"))
       .modify(_.name)(_.description("Miner name"))
 
-  implicit val validator: Validator[MinerInfo] = Validator.derive
+  implicit val validator: Validator[MinerInfo] = schema.validator
 }

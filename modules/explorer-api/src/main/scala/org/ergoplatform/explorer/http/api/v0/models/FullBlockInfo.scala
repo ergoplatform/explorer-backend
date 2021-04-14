@@ -20,10 +20,10 @@ object FullBlockInfo {
 
   implicit val schema: Schema[FullBlockInfo] =
     Schema
-      .derive[FullBlockInfo]
+      .derived[FullBlockInfo]
       .modify(_.adProofs)(_.description("Serialized hex-encoded AD Proofs"))
 
-  implicit val validator: Validator[FullBlockInfo] = Validator.derive
+  implicit val validator: Validator[FullBlockInfo] = schema.validator
 
   def apply(
     h: Header,

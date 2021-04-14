@@ -14,7 +14,7 @@ object ChartPoint {
 
   implicit val codec: Codec[ChartPoint] = deriveCodec
 
-  implicit val schema: Schema[ChartPoint] = Schema.derive
+  implicit val schema: Schema[ChartPoint] = Schema.derived
 
-  implicit val validator: Validator[ChartPoint] = Validator.derive
+  implicit val validator: Validator[ChartPoint] = schema.validator
 }

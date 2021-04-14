@@ -23,17 +23,17 @@ object TransactionInfo {
 
   implicit val codec: Codec[TransactionInfo] = deriveCodec
 
-  implicit val validator: Validator[TransactionInfo] = Validator.derive
-
   implicit val schema: Schema[TransactionInfo] =
     Schema
-      .derive[TransactionInfo]
+      .derived[TransactionInfo]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.headerId)(_.description("ID of the corresponding header"))
       .modify(_.inclusionHeight)(_.description("Height of the block the transaction was included in"))
       .modify(_.timestamp)(_.description("Timestamp the transaction got into the network"))
       .modify(_.index)(_.description("Index of a transaction inside a block"))
       .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
+
+  implicit val validator: Validator[TransactionInfo] = schema.validator
 
   def batch(
     txs: List[(Transaction, Int)],

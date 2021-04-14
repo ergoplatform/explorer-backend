@@ -17,13 +17,13 @@ object BlockChainInfo {
   implicit val codec: Codec[BlockChainInfo] = deriveCodec
 
   implicit val schema: Schema[BlockChainInfo] =
-    Schema.derive[BlockChainInfo]
+    Schema.derived[BlockChainInfo]
       .modify(_.version)(_.description("Network protocol version"))
       .modify(_.supply)(_.description("Total supply in nanoErgs"))
       .modify(_.transactionAverage)(_.description("Average number of transactions per block"))
       .modify(_.hashRate)(_.description("Network hash rate"))
 
-  implicit val validator: Validator[BlockChainInfo] = Validator.derive
+  implicit val validator: Validator[BlockChainInfo] = schema.validator
 
   def empty: BlockChainInfo = BlockChainInfo("0.0.0", 0L, 0, 0L)
 }
