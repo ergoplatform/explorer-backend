@@ -5,7 +5,7 @@ import cats.{Monad, Parallel}
 import fs2.Stream
 import io.scalaland.chimney.dsl._
 import mouse.anyf._
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.EpochParameters
@@ -27,7 +27,7 @@ object EpochsIndexer {
 
   def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
-    network: ErgoNetworkClient[F]
+    network: ErgoNetwork[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[EpochsIndexer[F]] =
     logs.forService[EpochsIndexer[F]].flatMap { implicit log =>
       RepoBundle[F, D].map(new Live[F, D](settings, network, _)(trans))
@@ -35,7 +35,7 @@ object EpochsIndexer {
 
   final private class Live[F[_]: Logging: Monad: Timer, D[_]](
     settings: IndexerSettings,
-    client: ErgoNetworkClient[F],
+    network: ErgoNetwork[F],
     repos: RepoBundle[D]
   )(
     trans: Trans[D, F]
@@ -56,7 +56,7 @@ object EpochsIndexer {
     def sync: F[Unit] =
       for {
         lastHeight  <- repos.epochInfoRepo.getLastHeight ||> trans.xa
-        currentInfo <- client.getNodeInfo
+        currentInfo <- network.getNodeInfo
         epochInfo   <- repos.epochInfoRepo.getByEpochId(lastHeight / constants.EpochLength) ||> trans.xa
         _ <- epochInfo match {
                case Some(_) => trace"Epoch info at height ${currentInfo.fullHeight} already persist"

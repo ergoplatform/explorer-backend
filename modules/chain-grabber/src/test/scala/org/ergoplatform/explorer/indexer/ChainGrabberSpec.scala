@@ -7,7 +7,7 @@ import org.ergoplatform.explorer.MainNetConfiguration
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.HeaderRepo
 import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
-import org.ergoplatform.explorer.indexer.GrabberTestNetworkClient.Source
+import org.ergoplatform.explorer.indexer.GrabberTestNetwork.Source
 import org.ergoplatform.explorer.indexer.processes.ChainIndexer
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
 import org.ergoplatform.explorer.settings.{IndexerSettings, NetworkSettings}
@@ -46,7 +46,7 @@ class ChainGrabberSpec
   ignore("Network scanning") {
     forSingleInstance(consistentChainGen(12)) { apiBlocks =>
       withLiveRepo[ConnectionIO] { repo =>
-        val networkService = new GrabberTestNetworkClient[IO](Source(apiBlocks))
+        val networkService = new GrabberTestNetwork[IO](Source(apiBlocks))
         ChainIndexer[IO, ConnectionIO](settings, networkService)(Trans.fromDoobie(xa))
           .flatMap(_.run.take(11L).compile.drain)
           .unsafeRunSync()

@@ -1,4 +1,4 @@
-package org.ergoplatform.explorer.clients.ergo
+package org.ergoplatform.explorer.services
 
 import cats.Monad
 import cats.data.NonEmptyList

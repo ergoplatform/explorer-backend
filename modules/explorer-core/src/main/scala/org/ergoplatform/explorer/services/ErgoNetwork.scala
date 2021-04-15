@@ -1,8 +1,8 @@
-package org.ergoplatform.explorer.clients.ergo
+package org.ergoplatform.explorer.services
 
 import cats.Parallel
 import cats.effect.concurrent.Ref
-import cats.effect.{Clock, Sync}
+import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.parallel._
 import io.chrisdavenport.log4cats.Logger
@@ -24,7 +24,7 @@ import tofu.syntax.raise._
 
 /** A service providing an access to the Ergo network.
   */
-trait ErgoNetworkClient[F[_]] {
+trait ErgoNetwork[F[_]] {
 
   /** Get height of the best block.
     */
@@ -51,12 +51,12 @@ trait ErgoNetworkClient[F[_]] {
   def submitTransaction(tx: ErgoLikeTransaction): F[Unit]
 }
 
-object ErgoNetworkClient {
+object ErgoNetwork {
 
   def apply[F[_]: Sync: Parallel](
     client: Client[F],
     settings: NetworkSettings
-  ): F[ErgoNetworkClient[F]] =
+  ): F[ErgoNetwork[F]] =
     Slf4jLogger.create[F] >>= { implicit log =>
       (NodesPool(settings.masterNodes), Ref.of(0L))
         .mapN { (pool, tickRef) =>
@@ -71,7 +71,7 @@ object ErgoNetworkClient {
     client: Client[F],
     pool: NodesPool[F],
     tickRef: Ref[F, Long]
-  ) extends ErgoNetworkClient[F] {
+  ) extends ErgoNetwork[F] {
 
     private val txsBatchSize = 20
 
