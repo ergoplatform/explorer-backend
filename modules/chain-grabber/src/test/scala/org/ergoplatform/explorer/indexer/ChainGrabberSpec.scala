@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
 import org.ergoplatform.explorer.indexer.GrabberTestNetworkClient.Source
 import org.ergoplatform.explorer.indexer.processes.ChainIndexer
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
-import org.ergoplatform.explorer.settings.IndexerSettings
+import org.ergoplatform.explorer.settings.{IndexerSettings, NetworkSettings}
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalacheck.ScalacheckShapeless._
 import org.scalacheck.{Arbitrary, Gen}
@@ -33,11 +33,11 @@ class ChainGrabberSpec
 
   private lazy val settings =
     IndexerSettings(
-      pollInterval         = 1.second,
-      writeOrphans         = true,
-      masterNodesAddresses = mainnetNodes,
-      db                   = dbSettings,
-      protocol             = protocolSettings
+      pollInterval = 1.second,
+      writeOrphans = true,
+      network      = NetworkSettings(mainnetNodes, selfCheckIntervalRequests = 5),
+      db           = dbSettings,
+      protocol     = protocolSettings
     )
 
   implicit val logs: Logs[IO, IO]       = Logs.sync[IO, IO]

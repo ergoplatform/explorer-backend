@@ -30,7 +30,7 @@ object Application extends TaskApp {
   def run(args: List[String]): Task[ExitCode] =
     resources(args.headOption).use[Task, ExitCode] { case (logger, settings, client, trans) =>
       logger.info("Starting Indexers ..") >>
-        ErgoNetworkClient[Task](client, settings.masterNodesAddresses)
+        ErgoNetworkClient[Task](client, settings.network)
           .flatMap { ns =>
             mkProgram(ns, settings, trans).compile.drain as ExitCode.Success
           }

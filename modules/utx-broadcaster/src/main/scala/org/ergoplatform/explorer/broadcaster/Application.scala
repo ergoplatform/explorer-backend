@@ -21,7 +21,7 @@ object Application extends TaskApp {
     resources(args.headOption).use {
       case (logger, settings, client, redis) =>
         logger.info("Starting UtxBroadcaster service ..") >>
-        ErgoNetworkClient[Task](client, settings.masterNodesAddresses)
+        ErgoNetworkClient[Task](client, settings.network)
           .flatMap { ns =>
             UtxBroadcaster[Task](settings, ns, redis)
               .flatMap(_.run.compile.drain)

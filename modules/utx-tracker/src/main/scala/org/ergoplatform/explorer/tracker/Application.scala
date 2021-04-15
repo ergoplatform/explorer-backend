@@ -20,10 +20,9 @@ import scala.concurrent.ExecutionContext.global
 object Application extends TaskApp {
 
   def run(args: List[String]): Task[ExitCode] =
-    resources(args.headOption).use {
-      case (logger, settings, client, xa) =>
-        logger.info("Starting UtxTracker service ..") >>
-        ErgoNetworkClient[Task](client, settings.masterNodesAddresses)
+    resources(args.headOption).use { case (logger, settings, client, xa) =>
+      logger.info("Starting UtxTracker service ..") >>
+        ErgoNetworkClient[Task](client, settings.network)
           .flatMap { ns =>
             UtxTracker[Task, ConnectionIO](settings, ns)(xa)
               .flatMap(_.run.compile.drain)
