@@ -4,7 +4,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import org.ergoplatform.explorer
 import org.ergoplatform.explorer.db.models.Transaction
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedDataInput, ExtendedOutput, FullInput}
+import org.ergoplatform.explorer.db.models.aggregates._
 import org.ergoplatform.explorer.{Id, TxId}
 import sttp.tapir.{Schema, Validator}
 
@@ -41,7 +41,7 @@ object TransactionInfo {
     tx: Transaction,
     numConfirmations: Int,
     inputs: List[FullInput],
-    dataInputs: List[ExtendedDataInput],
+    dataInputs: List[FullDataInput],
     outputs: List[ExtendedOutput],
     inAssets: List[ExtendedAsset],
     outAssets: List[ExtendedAsset]
@@ -54,7 +54,7 @@ object TransactionInfo {
   def unFlattenBatch(
     txs: List[(Transaction, Int)],
     inputs: List[FullInput],
-    dataInputs: List[ExtendedDataInput],
+    dataInputs: List[FullDataInput],
     outputs: List[ExtendedOutput],
     inAssets: List[ExtendedAsset],
     outAssets: List[ExtendedAsset]
@@ -70,7 +70,7 @@ object TransactionInfo {
     tx: Transaction,
     numConfirmations: Int,
     inputs: List[FullInput],
-    dataInputs: List[ExtendedDataInput],
+    dataInputs: List[FullDataInput],
     outputs: List[ExtendedOutput],
     groupedInAssets: Map[explorer.BoxId, List[ExtendedAsset]],
     groupedOutAssets: Map[explorer.BoxId, List[ExtendedAsset]]
@@ -85,7 +85,10 @@ object TransactionInfo {
     val relatedDataInputs = dataInputs
       .filter(_.input.txId == tx.id)
       .sortBy(_.input.index)
-      .map(DataInputInfo.apply)
+      .map { in =>
+        val relAssets = groupedInAssets.get(in.input.boxId).toList.flatten
+        DataInputInfo(in, relAssets)
+      }
     val relatedOutputs = outputs
       .filter(_.output.txId == tx.id)
       .sortBy(_.output.index)

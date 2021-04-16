@@ -63,7 +63,7 @@ object Transactions {
         for {
           tx         <- OptionT(transactions.getMain(id))
           ins        <- OptionT.liftF(inputs.getFullByTxId(id))
-          dataIns    <- OptionT.liftF(dataInputs.getAllByTxId(id))
+          dataIns    <- OptionT.liftF(dataInputs.getFullByTxId(id))
           inIds      <- OptionT.fromOption(ins.map(_.input.boxId).toNel)
           inAssets   <- OptionT.liftF(assets.getAllByBoxIds(inIds))
           outs       <- OptionT.liftF(outputs.getAllByTxId(id))
@@ -115,7 +115,7 @@ object Transactions {
         ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
         inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
         inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
-        dataIns    <- Stream.eval(dataInputs.getAllByTxIds(txIds))
+        dataIns    <- Stream.eval(dataInputs.getFullByTxIds(txIds))
         outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
         outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
         outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))

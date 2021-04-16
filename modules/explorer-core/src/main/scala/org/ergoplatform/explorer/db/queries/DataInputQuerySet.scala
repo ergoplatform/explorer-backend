@@ -6,7 +6,7 @@ import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.util.update.Update0
 import doobie.{Fragments, LogHandler}
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedDataInput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, FullDataInput}
 import org.ergoplatform.explorer.{Id, TxId}
 
 /** A set of queries for doobie implementation of [InputRepo].
@@ -41,6 +41,48 @@ object DataInputQuerySet extends QuerySet {
          |join node_outputs o on i.box_id = o.box_id
          |where i.tx_id = $txId
          |""".stripMargin.query[ExtendedDataInput]
+
+  def getFullByTxId(txId: TxId)(implicit lh: LogHandler): Query0[FullDataInput] =
+    sql"""
+         |select distinct on (i.box_id)
+         |  i.box_id,
+         |  i.tx_id,
+         |  i.header_id,
+         |  i.index,
+         |  i.main_chain,
+         |  o.header_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers
+         |from node_data_inputs i
+         |inner join node_outputs o on i.box_id = o.box_id
+         |where i.tx_id = $txId
+         |""".stripMargin.query[FullDataInput]
+
+  def getFullByTxIds(txsId: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[FullDataInput] = {
+    val q = sql"""
+         |select distinct on (i.box_id)
+         |  i.box_id,
+         |  i.tx_id,
+         |  i.header_id,
+         |  i.index,
+         |  i.main_chain,
+         |  o.header_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.address,
+         |  o.additional_registers
+         |from node_data_inputs i
+         |inner join node_outputs o on i.box_id = o.box_id
+         |""".stripMargin
+    (q ++ Fragments.in(fr"where i.tx_id", txsId))
+      .query[FullDataInput]
+  }
 
   def getAllByTxIds(txsId: NonEmptyList[TxId])(implicit lh: LogHandler): Query0[ExtendedDataInput] = {
     val q =
