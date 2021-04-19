@@ -5,7 +5,6 @@ import io.circe.{Codec, Json}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, FullDataInput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
-import sttp.tapir.json.circe.validatorForCirceJson
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class DataInputInfo(
@@ -27,7 +26,7 @@ object DataInputInfo {
 
   implicit val schema: Schema[DataInputInfo] =
     Schema
-      .derive[DataInputInfo]
+      .derived[DataInputInfo]
       .modify(_.boxId)(_.description("ID of the corresponding box"))
       .modify(_.value)(_.description("Number of nanoErgs in the corresponding box"))
       .modify(_.index)(_.description("Index of the input in a transaction"))
@@ -37,14 +36,14 @@ object DataInputInfo {
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
 
-  implicit val validator: Validator[DataInputInfo] = Validator.derive
+  implicit val validator: Validator[DataInputInfo] = schema.validator
 
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
         SchemaType.SObjectInfo("AdditionalRegisters"),
-        Schema(SchemaType.SString)
-      )
+        Schema(SchemaType.SString[Json]())
+      )(_ => Map.empty)
     )
 
   def apply(i: FullDataInput, assets: List[ExtendedAsset]): DataInputInfo =
