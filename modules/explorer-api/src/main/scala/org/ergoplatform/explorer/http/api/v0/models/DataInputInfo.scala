@@ -1,7 +1,8 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedDataInput
 import org.ergoplatform.explorer.{Address, BoxId, TxId}
 import sttp.tapir.{Schema, Validator}
@@ -19,7 +20,7 @@ final case class DataInputInfo(
 
 object DataInputInfo {
 
-  implicit val codec: Codec[DataInputInfo] = deriveCodec
+  implicit val codec: Codec[DataInputInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[DataInputInfo] =
     Schema

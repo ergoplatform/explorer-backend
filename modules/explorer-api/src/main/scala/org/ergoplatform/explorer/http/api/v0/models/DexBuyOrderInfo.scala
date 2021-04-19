@@ -1,7 +1,8 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import sttp.tapir.{Schema, Validator}
@@ -14,7 +15,7 @@ final case class DexBuyOrderInfo(
 
 object DexBuyOrderInfo {
 
-  implicit val codec: Codec[DexBuyOrderInfo] = deriveCodec
+  implicit val codec: Codec[DexBuyOrderInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[DexBuyOrderInfo] = Schema.derived
 

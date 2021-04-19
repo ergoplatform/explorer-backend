@@ -1,16 +1,16 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.derivation.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.aggregates.MinerStats
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
 
 final case class HashRateDistributionSegment(name: String, value: Int)
 
 object HashRateDistributionSegment {
 
-  implicit val codec: Codec[HashRateDistributionSegment] = deriveCodec
+  implicit val codec: Codec[HashRateDistributionSegment] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[HashRateDistributionSegment] =
     Schema

@@ -2,6 +2,8 @@ package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.{Codec, Decoder, Encoder, Json}
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder}
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.syntax._
 import org.ergoplatform.explorer.{Id, TxId}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedDataInput, ExtendedInput, ExtendedOutput}
@@ -28,7 +30,7 @@ object TransactionSummary {
 
   final case class MiniBlockInfo(id: Id, height: Int)
 
-  implicit val decoder: Decoder[TransactionSummary] = deriveDecoder
+  implicit val decoder: Decoder[TransactionSummary] = deriveMagnoliaDecoder
 
   implicit val encoder: Encoder[TransactionSummary] = { ts =>
     Json.obj(
@@ -49,7 +51,7 @@ object TransactionSummary {
 
   implicit val codec: Codec[TransactionSummary] = Codec.from(decoder, encoder)
 
-  implicit val codecBlockInfo: Codec[MiniBlockInfo] = deriveCodec
+  implicit val codecBlockInfo: Codec[MiniBlockInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schemaBlockInfo: Schema[MiniBlockInfo] =
     Schema

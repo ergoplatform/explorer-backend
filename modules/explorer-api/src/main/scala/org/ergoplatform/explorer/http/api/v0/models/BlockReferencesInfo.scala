@@ -1,16 +1,16 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.Id
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
 
 final case class BlockReferencesInfo(previousId: Id, nextId: Option[Id])
 
 object BlockReferencesInfo {
 
-  implicit val codec: Codec[BlockReferencesInfo] = deriveCodec
+  implicit val codec: Codec[BlockReferencesInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[BlockReferencesInfo] =
     Schema

@@ -1,7 +1,8 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedDataInput, ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.{Id, TxId}
@@ -21,7 +22,7 @@ final case class TransactionInfo(
 
 object TransactionInfo {
 
-  implicit val codec: Codec[TransactionInfo] = deriveCodec
+  implicit val codec: Codec[TransactionInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[TransactionInfo] =
     Schema
