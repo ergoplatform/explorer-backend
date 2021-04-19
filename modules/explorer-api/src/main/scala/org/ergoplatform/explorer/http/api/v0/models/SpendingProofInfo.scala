@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.HexString
 import sttp.tapir.{Schema, SchemaType, Validator}
@@ -10,7 +11,7 @@ final case class SpendingProofInfo(proofBytes: Option[HexString], extension: Jso
 
 object SpendingProofInfo {
 
-  implicit val codec: Codec[SpendingProofInfo] = deriveCodec
+  implicit val codec: Codec[SpendingProofInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[SpendingProofInfo] =
     Schema

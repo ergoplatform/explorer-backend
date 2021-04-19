@@ -1,6 +1,9 @@
 package org.ergoplatform.explorer.db.models
 
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.{HexString, Id}
 import sttp.tapir.{Schema, SchemaType}
@@ -15,7 +18,7 @@ final case class BlockExtension(
 
 object BlockExtension {
 
-  implicit val codec: Codec[BlockExtension] = deriveCodec
+  implicit val codec: Codec[BlockExtension] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit def schema: Schema[BlockExtension] =
     Schema.derived

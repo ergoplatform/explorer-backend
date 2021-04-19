@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
 import cats.syntax.option._
 import org.ergoplatform.explorer.db.models.UOutput
@@ -24,7 +25,7 @@ final case class UOutputInfo(
 
 object UOutputInfo {
 
-  implicit val codec: Codec[UOutputInfo] = deriveCodec
+  implicit val codec: Codec[UOutputInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[UOutputInfo] =
     Schema

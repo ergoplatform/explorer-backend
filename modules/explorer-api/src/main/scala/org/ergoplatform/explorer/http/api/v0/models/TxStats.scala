@@ -1,7 +1,8 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.{Transaction, UTransaction}
 import org.ergoplatform.explorer.protocol.constants
 import sttp.tapir.{Schema, Validator}
@@ -11,7 +12,7 @@ final case class TxStats(totalCoinsTransferred: Long, totalFee: Long, feePerByte
 
 object TxStats {
 
-  implicit val codec: Codec[TxStats] = deriveCodec
+  implicit val codec: Codec[TxStats] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[TxStats] =
     Schema

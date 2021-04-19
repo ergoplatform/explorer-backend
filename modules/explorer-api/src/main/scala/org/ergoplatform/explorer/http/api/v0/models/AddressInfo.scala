@@ -1,11 +1,11 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.http.api.v0.models.AddressInfo.{Summary, Transactions}
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
 
 final case class AddressInfo(
   summary: Summary,
@@ -47,9 +47,9 @@ object AddressInfo {
       )
     )
 
-  implicit private def summaryCodec: Codec[Summary]  = deriveCodec
-  implicit private val txsCodec: Codec[Transactions] = deriveCodec
-  implicit val codec: Codec[AddressInfo]             = deriveCodec
+  implicit private def summaryCodec: Codec[Summary]  = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
+  implicit private val txsCodec: Codec[Transactions] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
+  implicit val codec: Codec[AddressInfo]             = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit private def summarySchema: Schema[Summary] =
     Schema
@@ -57,7 +57,8 @@ object AddressInfo {
       .modify(_.id)(_.description("Address identifier"))
 
   implicit private val summaryValidator: Validator[Summary] = Schema
-    .derived[Summary].validator
+    .derived[Summary]
+    .validator
 
   implicit private def txsSchema: Schema[Transactions] =
     Schema
@@ -78,7 +79,8 @@ object AddressInfo {
       )
 
   implicit private val txsValidator: Validator[Transactions] = Schema
-    .derived[Transactions].validator
+    .derived[Transactions]
+    .validator
 
   implicit val schema: Schema[AddressInfo] = Schema.derived[AddressInfo]
 

@@ -1,9 +1,9 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
 
 final case class BlockChainInfo(
   version: String,
@@ -14,10 +14,11 @@ final case class BlockChainInfo(
 
 object BlockChainInfo {
 
-  implicit val codec: Codec[BlockChainInfo] = deriveCodec
+  implicit val codec: Codec[BlockChainInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[BlockChainInfo] =
-    Schema.derived[BlockChainInfo]
+    Schema
+      .derived[BlockChainInfo]
       .modify(_.version)(_.description("Network protocol version"))
       .modify(_.supply)(_.description("Total supply in nanoErgs"))
       .modify(_.transactionAverage)(_.description("Average number of transactions per block"))

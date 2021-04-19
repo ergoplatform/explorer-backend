@@ -1,11 +1,11 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.BlockExtension
 import org.ergoplatform.explorer.{HexString, Id}
-import sttp.tapir.json.circe._
-import sttp.tapir.{Schema, Validator}
+import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class BlockExtensionInfo(
   headerId: Id,
@@ -15,7 +15,15 @@ final case class BlockExtensionInfo(
 
 object BlockExtensionInfo {
 
-  implicit val codec: Codec[BlockExtensionInfo] = deriveCodec
+  implicit val codec: Codec[BlockExtensionInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
+
+  implicit private def registersSchema: Schema[Json] =
+    Schema(
+      SchemaType.SOpenProduct(
+        SchemaType.SObjectInfo("fields"),
+        Schema(SchemaType.SString[Json]())
+      )(_ => Map.empty)
+    )
 
   implicit val schema: Schema[BlockExtensionInfo] =
     Schema

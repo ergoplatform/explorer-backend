@@ -1,7 +1,10 @@
 package org.ergoplatform.explorer.http.api.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedUAsset}
 import org.ergoplatform.explorer.{TokenId, TokenType}
 import sttp.tapir.{Schema, Validator}
@@ -23,7 +26,7 @@ object AssetInstanceInfo {
   def apply(asset: ExtendedAsset): AssetInstanceInfo =
     AssetInstanceInfo(asset.tokenId, asset.index, asset.amount, asset.name, asset.decimals, asset.`type`)
 
-  implicit val codec: Codec[AssetInstanceInfo] = deriveCodec
+  implicit val codec: Codec[AssetInstanceInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schema: Schema[AssetInstanceInfo] =
     Schema

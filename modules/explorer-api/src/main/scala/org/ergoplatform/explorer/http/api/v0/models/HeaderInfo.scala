@@ -1,7 +1,8 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
 import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
+import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.{HexString, Id}
 import scorex.util.encode.Base16
@@ -27,7 +28,7 @@ final case class HeaderInfo(
 
 object HeaderInfo {
 
-  implicit val codec: Codec[HeaderInfo] = deriveCodec
+  implicit val codec: Codec[HeaderInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit def schemaVotes: Schema[(Byte, Byte, Byte)] = Schema.derived
 
