@@ -5,7 +5,8 @@ import cats.syntax.applicative._
 import cats.syntax.functor._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.Codec
-import io.circe.derivation.deriveCodec
+import io.circe.magnolia.derivation.decoder.semiauto._
+import io.circe.magnolia.derivation.encoder.semiauto._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import sttp.tapir.{Schema, Validator}
@@ -25,9 +26,9 @@ object ApiErr {
 
   final case class UnknownErr(status: Int, reason: String) extends ApiErr
 
-  implicit val codec404: Codec[NotFound]   = deriveCodec
-  implicit val codec400: Codec[BadRequest] = deriveCodec
-  implicit val codec500: Codec[UnknownErr] = deriveCodec
+  implicit val codec404: Codec[NotFound]   = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
+  implicit val codec400: Codec[BadRequest] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
+  implicit val codec500: Codec[UnknownErr] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   def notFound(what: String): NotFound = NotFound(404, s"Not found $what")
 

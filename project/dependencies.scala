@@ -30,7 +30,7 @@ object dependencies {
       "io.circe" %% "circe-parser",
       "io.circe" %% "circe-refined"
     ).map(_       % CirceVersion) ++ List(
-      "io.circe" %% "circe-derivation" % CirceDerivationVersion
+      "io.circe" %% "circe-magnolia-derivation" % CirceMagniliaDerivationVersion
     )
 
   val Cats: List[ModuleID] = List(

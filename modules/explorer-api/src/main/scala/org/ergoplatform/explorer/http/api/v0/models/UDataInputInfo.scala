@@ -5,7 +5,6 @@ import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUDataInput
 import org.ergoplatform.explorer.{Address, BoxId, TxId}
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
 
 final case class UDataInputInfo(
   id: BoxId,
