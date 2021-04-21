@@ -36,14 +36,17 @@ object RoutesV1Bundle {
       tokens                    <- Tokens(trans)
       assets                    <- Assets(trans)
       epochs                    <- Epochs(trans)
+      blocks                    <- Blocks(trans)
       transactions              <- Transactions(serviceSettings)(trans)
       boxesRoutes     = BoxesRoutes(requestsSettings, boxes)
       epochsRoutes    = EpochsRoutes(epochs)
+      blocksRoutes    = BlocksRoutes(requestsSettings, blocks)
       tokensRoutes    = TokensRoutes(requestsSettings, tokens)
       assetsRoutes    = AssetsRoutes(requestsSettings, assets, tokens)
       txsRoutes       = TransactionsRoutes(requestsSettings, transactions)
       addressesRoutes = AddressesRoutes(requestsSettings, transactions)
       docs            = DocsRoutes(requestsSettings)
-      routes          = txsRoutes <+> boxesRoutes <+> epochsRoutes <+> tokensRoutes <+> assetsRoutes <+> addressesRoutes <+> docs
+      routes =
+        txsRoutes <+> boxesRoutes <+> epochsRoutes <+> tokensRoutes <+> assetsRoutes <+> addressesRoutes <+> blocksRoutes <+> docs
     } yield RoutesV1Bundle(routes)
 }

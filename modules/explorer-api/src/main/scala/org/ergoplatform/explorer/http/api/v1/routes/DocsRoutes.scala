@@ -28,7 +28,8 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
     new BoxesEndpointDefs(settings).endpoints ++
     new TokensEndpointDefs(settings).endpoints ++
     new EpochsEndpointDefs().endpoints ++
-    new AddressesEndpointDefs(settings).endpoints
+    new AddressesEndpointDefs(settings).endpoints ++
+    new BlocksEndpointDefs(settings).endpoints
 
   private def tags =
     Tag("transactions", "Transactions methods".some) ::
@@ -36,6 +37,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
     Tag("assets", "Assets methods".some) ::
     Tag("epochs", "Epochs methods".some) ::
     Tag("addresses", "Addresses methods".some) ::
+    Tag("blocks", "Blocks methods".some) ::
     Nil
 
   private val docsAsYaml =
