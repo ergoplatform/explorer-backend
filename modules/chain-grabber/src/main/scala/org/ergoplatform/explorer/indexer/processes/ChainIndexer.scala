@@ -10,6 +10,7 @@ import cats.syntax.traverse._
 import cats.{Monad, Parallel}
 import fs2.Stream
 import mouse.anyf._
+import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.Err.ProcessingErr.{InconsistentNodeView, NoBlocksWritten}
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
@@ -18,7 +19,6 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
 import org.ergoplatform.explorer.indexer.extractors._
 import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData}
-import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
@@ -108,21 +108,24 @@ object ChainIndexer {
       val height       = block.header.height
       val parentId     = block.header.parentId
       val parentHeight = block.header.height - 1
+      val checkParentF =
+        getBlock(parentId).flatMap {
+          case Some(parentBlock) if parentBlock.mainChain   => unit[F]
+          case None if block.header.height == GenesisHeight => unit[F]
+          case Some(parentBlock) =>
+            info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
+          case None =>
+            info"Parent block [$parentId] needs to be downloaded" >>
+              network.getFullBlockById(parentId).flatMap {
+                case Some(parentBlock) =>
+                  applyBestBlock(parentBlock)
+                case None =>
+                  InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]")
+                    .raise[F, Unit]
+              }
+        }
       info"Applying best block [$id] at height [$height]" >>
-      getBlock(parentId).flatMap {
-        case Some(parentBlock) if parentBlock.mainChain   => unit[F]
-        case None if block.header.height == GenesisHeight => unit[F]
-        case Some(parentBlock) =>
-          info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
-        case None =>
-          info"Parent block [$parentId] needs to be downloaded" >>
-            network.getFullBlockById(parentId).flatMap {
-              case Some(parentBlock) =>
-                applyBestBlock(parentBlock)
-              case None =>
-                InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]
-            }
-      } >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ => markAsMain(id, height))
+      checkParentF >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ => markAsMain(id, height))
     }
 
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
@@ -159,16 +162,16 @@ object ChainIndexer {
     }
 
     private def getLastGrabbedBlockHeight: F[Int] =
-      repos.headers.getBestHeight.thrushK(trans.xa)
+      repos.headers.getBestHeight ||> trans.xa
 
     private def getHeaderIdsAtHeight(height: Int): D[List[Id]] =
       repos.headers.getAllByHeight(height).map(_.map(_.id))
 
     private def getBlock(id: Id): F[Option[Header]] =
-      repos.headers.get(id).thrushK(trans.xa)
+      repos.headers.get(id) ||> trans.xa
 
     private def getBlockInfo(id: Id): F[Option[BlockStats]] =
-      repos.blocksInfo.get(id).thrushK(trans.xa)
+      repos.blocksInfo.get(id) ||> trans.xa
 
     private def markAsMain(id: Id, height: Int): F[Unit] =
       pendingChainUpdates.update(_ :+ (id -> height))
@@ -200,7 +203,7 @@ object ChainIndexer {
         repos.headers.insert(block.header) >>
         repos.blocksInfo.insert(block.info) >>
         repos.blockExtensions.insert(block.extension) >>
-        block.adProofOpt.map(repos.adProofs.insert).getOrElse(().pure[D]) >>
+        block.adProofOpt.map(repos.adProofs.insert).getOrElse(unit[D]) >>
         repos.txs.insertMany(block.txs) >>
         repos.inputs.insetMany(block.inputs) >>
         repos.dataInputs.insetMany(block.dataInputs) >>
@@ -209,7 +212,7 @@ object ChainIndexer {
         repos.registers.insertMany(block.registers) >>
         repos.tokens.insertMany(block.tokens) >>
         repos.constants.insertMany(block.constants)
-      insertAll.thrushK(trans.xa)
+      insertAll ||> trans.xa
     }
   }
 }
