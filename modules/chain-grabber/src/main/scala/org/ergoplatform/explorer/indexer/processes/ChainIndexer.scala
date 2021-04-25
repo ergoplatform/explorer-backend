@@ -131,7 +131,7 @@ object ChainIndexer {
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
       if (settings.writeOrphans)
         info"Applying orphaned block [${block.header.id}] at height [${block.header.height}]" >>
-        scan(block, None) >>= insertBlock
+          getBlockInfo(block.header.parentId) >>= (scan(block, _) >>= insertBlock)
       else
         info"Skipping orphaned block [${block.header.id}] at height [${block.header.height}]"
 
