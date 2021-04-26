@@ -103,7 +103,7 @@ package object extractors {
     }
 
   implicit def dataInputsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[DataInput]] =
-    BuildFrom.pure { case SlotData(ApiFullBlock(header, apiTxs, _, _, _), _) =>
+    BuildFrom.pure { case SlotData(ApiFullBlock(_, apiTxs, _, _, _), _) =>
       apiTxs.transactions.flatMap { apiTx =>
         apiTx.dataInputs.zipWithIndex.map { case (i, index) =>
           DataInput(
@@ -138,6 +138,7 @@ package object extractors {
                 apiTxs.headerId,
                 o.value,
                 o.creationHeight,
+                header.height,
                 index,
                 o.ergoTree,
                 scriptTemplateHash,

@@ -49,9 +49,9 @@ object TransactionSummary {
     )
   }
 
-  implicit val codec: Codec[TransactionSummary] = Codec.from(decoder, encoder)
+  implicit def codec: Codec[TransactionSummary] = Codec.from(decoder, encoder)
 
-  implicit val codecBlockInfo: Codec[MiniBlockInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
+  implicit def codecBlockInfo: Codec[MiniBlockInfo] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
   implicit val schemaBlockInfo: Schema[MiniBlockInfo] =
     Schema

@@ -115,6 +115,7 @@ object generators {
       headerId,
       value,
       height,
+      height,
       idx,
       tree,
       template,
