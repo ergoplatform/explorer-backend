@@ -10,6 +10,7 @@ import sttp.tapir.{Schema, Validator}
 final case class BlockInfo(
   id: Id,
   height: Int,
+  version: Byte,
   timestamp: Long,
   transactionsCount: Int,
   miner: MinerInfo,
@@ -27,6 +28,7 @@ object BlockInfo {
       .derived[BlockInfo]
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
+      .modify(_.version)(_.description("Version of the block"))
       .modify(_.timestamp)(_.description("Timestamp the block was created (UNIX timestamp in millis)"))
       .modify(_.transactionsCount)(
         _.description("Number of transactions included in the block")
@@ -46,6 +48,7 @@ object BlockInfo {
     new BlockInfo(
       id                = extBlockInfo.blockInfo.headerId,
       height            = extBlockInfo.blockInfo.height,
+      version           = extBlockInfo.blockInfo.version,
       timestamp         = extBlockInfo.blockInfo.timestamp,
       transactionsCount = extBlockInfo.blockInfo.txsCount,
       miner             = MinerInfo(extBlockInfo.blockInfo.minerAddress, minerName),
