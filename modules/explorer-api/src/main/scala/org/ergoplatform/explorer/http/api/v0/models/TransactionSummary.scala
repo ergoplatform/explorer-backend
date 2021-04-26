@@ -1,17 +1,14 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.{Codec, Decoder, Encoder, Json}
-import io.circe.generic.semiauto.{deriveCodec, deriveDecoder}
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.syntax._
-import org.ergoplatform.explorer.{Id, TxId}
+import io.circe.{Codec, Decoder, Encoder, Json}
+import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedDataInput, ExtendedInput, ExtendedOutput}
-import org.ergoplatform.explorer.db.models.{Asset, Transaction}
 import org.ergoplatform.explorer.http.api.v0.models.TransactionSummary.MiniBlockInfo
-import org.ergoplatform.explorer.protocol.constants
+import org.ergoplatform.explorer.{Id, TxId}
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
 
 final case class TransactionSummary(
   id: TxId,
