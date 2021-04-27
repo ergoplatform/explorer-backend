@@ -17,7 +17,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
-import org.ergoplatform.explorer.http.api.v0.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{CRaise, Id}
 import tofu.syntax.raise._
@@ -84,8 +84,8 @@ object Blocks {
         for {
           blockInfoOpt <- getFullBlockInfo(id)
           parentOpt <- blockInfoOpt
-            .flatTraverse(h => headerRepo.getByParentId(h.header.id))
-            .asStream
+                         .flatTraverse(h => headerRepo.getByParentId(h.header.id))
+                         .asStream
         } yield blockInfoOpt.map { blockInfo =>
           val refs =
             BlockReferencesInfo(blockInfo.header.parentId, parentOpt.map(_.id))
@@ -102,11 +102,13 @@ object Blocks {
         blockSizeOpt <- blockInfoRepo.getBlockSize(id).asStream
         bestHeight   <- headerRepo.getBestHeight.asStream
         txIdsNel     <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream
-        inputs       <- inputRepo.getAllByTxIds(txIdsNel).asStream
+        inputs       <- inputRepo.getFullByTxIds(txIdsNel).asStream
+        inIds        <- Stream.emit(inputs.map(_.input.boxId).toNel).unNone
+        inAssets     <- assetRepo.getAllByBoxIds(inIds).asStream
         dataInputs   <- dataInputRepo.getAllByTxIds(txIdsNel).asStream
         outputs      <- outputRepo.getAllByTxIds(txIdsNel).asStream
         boxIdsNel    <- outputs.map(_.output.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs")).asStream
-        assets       <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
+        outAssets    <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream
       } yield (blockSizeOpt, extensionOpt)
@@ -119,7 +121,8 @@ object Blocks {
             inputs,
             dataInputs,
             outputs,
-            assets,
+            inAssets,
+            outAssets,
             ext,
             adProofsOpt,
             size

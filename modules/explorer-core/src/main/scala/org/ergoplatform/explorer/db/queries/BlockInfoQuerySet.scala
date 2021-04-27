@@ -55,6 +55,7 @@ object BlockInfoQuerySet extends QuerySet {
     val q =
       sql"""
          |select
+         |  nh.version,
          |  bi.header_id,
          |  bi.timestamp,
          |  bi.height,
@@ -79,6 +80,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  mi.miner_name
          |from blocks_info bi
          |left join known_miners mi on bi.miner_address = mi.miner_address
+         |left join node_headers nh on bi.header_id = nh.id
          |where bi.main_chain = true
          |""".stripMargin
     (q ++ ord ++ lim).query[ExtendedBlockInfo]
@@ -90,6 +92,7 @@ object BlockInfoQuerySet extends QuerySet {
   def getManyExtendedByIdLike(q: String)(implicit lh: LogHandler): Query0[ExtendedBlockInfo] =
     sql"""
          |select
+         |  nh.version,
          |  bi.header_id,
          |  bi.timestamp,
          |  bi.height,
@@ -114,6 +117,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  mi.miner_name
          |from blocks_info bi
          |left join known_miners mi on bi.miner_address = mi.miner_address
+         |left join node_headers nh on bi.header_id = nh.id
          |where bi.header_id like ${s"%$q%"}
          |""".stripMargin.query[ExtendedBlockInfo]
 

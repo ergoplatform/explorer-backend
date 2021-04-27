@@ -43,7 +43,6 @@ final class BlockInfoBuildFrom[
           timestamp       = apiBlock.header.timestamp,
           height          = apiBlock.header.height,
           difficulty      = apiBlock.header.difficulty.value.toLong,
-          version         = apiBlock.header.version,
           blockSize       = apiBlock.size,
           blockCoins      = blockCoins,
           blockMiningTime = prevBlockInfo.map(parent => apiBlock.header.timestamp - parent.timestamp),

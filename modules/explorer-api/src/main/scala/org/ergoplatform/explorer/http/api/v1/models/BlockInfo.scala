@@ -28,7 +28,7 @@ object BlockInfo {
       .derived[BlockInfo]
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
-      .modify(_.version)(_.description("Version of the block"))
+      .modify(_.version)(_.description("Block version"))
       .modify(_.timestamp)(_.description("Timestamp the block was created (UNIX timestamp in millis)"))
       .modify(_.transactionsCount)(
         _.description("Number of transactions included in the block")
@@ -48,7 +48,7 @@ object BlockInfo {
     new BlockInfo(
       id                = extBlockInfo.blockInfo.headerId,
       height            = extBlockInfo.blockInfo.height,
-      version           = extBlockInfo.blockInfo.version,
+      version           = extBlockInfo.blockVersion,
       timestamp         = extBlockInfo.blockInfo.timestamp,
       transactionsCount = extBlockInfo.blockInfo.txsCount,
       miner             = MinerInfo(extBlockInfo.blockInfo.minerAddress, minerName),

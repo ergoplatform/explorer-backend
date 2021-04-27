@@ -7,7 +7,6 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
-import org.ergoplatform.explorer.http.api.v0.defs.BlocksEndpointDefs.{getBlockSummaryByIdDef, getBlocksDef}
 import org.ergoplatform.explorer.http.api.v1.defs.BlocksEndpointDefs
 import org.ergoplatform.explorer.http.api.v1.services.Blocks
 import org.ergoplatform.explorer.settings.RequestsSettings
@@ -23,7 +22,7 @@ final class BlocksRoutes[
   val routes = getBlocksR <+> getBlockSummaryByIdR
 
   private def getBlocksR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getBlocksDef) { case (paging, sorting) =>
+    Http4sServerInterpreter.toRoutes(defs.getBlocksDef) { case (paging, sorting) =>
       blocks
         .getBlocks(paging, sorting)
         .adaptThrowable
@@ -31,7 +30,7 @@ final class BlocksRoutes[
     }
 
   private def getBlockSummaryByIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getBlockSummaryByIdDef) { id =>
+    Http4sServerInterpreter.toRoutes(defs.getBlockSummaryByIdDef) { id =>
       blocks
         .getBlockSummaryById(id)
         .adaptThrowable

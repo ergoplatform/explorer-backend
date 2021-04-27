@@ -10,7 +10,6 @@ final case class BlockStats(
   timestamp: Long,
   height: Int,
   difficulty: Long,
-  version: Byte,
   blockSize: Int, // block size (bytes)
   blockCoins: Long, // total amount of nERGs in the block
   blockMiningTime: Option[Long], // block mining time
