@@ -183,8 +183,24 @@ object ChainIndexer {
       (for {
         prevBlockStats    <- OptionT(getBlockInfo(prevBlockId))
         currentBlockStats <- OptionT(getBlockInfo(blockId))
-        newSize = prevBlockStats.blockChainTotalSize + currentBlockStats.blockSize
-        _ <- OptionT.liftF[F, Unit](updateBlockInfoStats(blockId, newSize).thrushK(trans.xa))
+        correctTotalBlockchainSize = prevBlockStats.blockChainTotalSize + currentBlockStats.blockSize
+        correctTotalTxsCount       = prevBlockStats.totalTxsCount + currentBlockStats.txsCount
+        blockMiningTime            = currentBlockStats.timestamp - prevBlockStats.timestamp
+        correctTotalMiningTime     = prevBlockStats.totalMiningTime + blockMiningTime
+        correctTotalFees           = prevBlockStats.totalFees + currentBlockStats.blockFee
+        correctMinerReward         = prevBlockStats.totalMinersReward + currentBlockStats.minerReward
+        correctTotalCoins          = prevBlockStats.totalCoinsInTxs + currentBlockStats.blockCoins
+        _ <- OptionT.liftF[F, Unit](
+               updateBlockInfoStats(
+                 blockId,
+                 correctTotalBlockchainSize,
+                 correctTotalTxsCount,
+                 correctTotalMiningTime,
+                 correctTotalFees,
+                 correctMinerReward,
+                 correctTotalCoins
+               ).thrushK(trans.xa)
+             )
       } yield ()).value.void
 
     private def commitChainUpdates: F[Unit] =
@@ -201,8 +217,24 @@ object ChainIndexer {
           .flatMap(_ => pendingChainUpdates.update(_ => List.empty))
       }
 
-    private def updateBlockInfoStats(headerId: Id, newBlockchainSize: Long): D[Unit] =
-      repos.blocksInfo.updateTotalBlockchainSizeByHeaderId(headerId, newBlockchainSize)
+    private def updateBlockInfoStats(
+      headerId: Id,
+      newBlockchainSize: Long,
+      newTxsCount: Long,
+      newMiningTime: Long,
+      newFees: Long,
+      newReward: Long,
+      newCoins: Long
+    ): D[Unit] =
+      repos.blocksInfo.updateTotalParamsByHeaderId(
+        headerId,
+        newBlockchainSize,
+        newTxsCount,
+        newMiningTime,
+        newFees,
+        newReward,
+        newCoins
+      )
 
     private def updateChainStatus(headerId: Id, mainChain: Boolean): D[Unit] =
       repos.headers.updateChainStatusById(headerId, mainChain) >>

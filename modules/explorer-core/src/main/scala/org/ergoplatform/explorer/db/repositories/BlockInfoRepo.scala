@@ -71,7 +71,15 @@ trait BlockInfoRepo[D[_]] {
     */
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
 
-  def updateTotalBlockchainSizeByHeaderId(headerId: Id, newSize: Long): D[Unit]
+  def updateTotalParamsByHeaderId(
+    headerId: Id,
+    newSize: Long,
+    newTxsCount: Long,
+    newMiningTime: Long,
+    newFees: Long,
+    newReward: Long,
+    newCoins: Long
+  ): D[Unit]
 }
 
 object BlockInfoRepo {
@@ -144,7 +152,18 @@ object BlockInfoRepo {
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
 
-    def updateTotalBlockchainSizeByHeaderId(headerId: Id, newSize: Long): D[Unit] =
-      QS.updateTotalBlockchainSizeByHeaderId(headerId, newSize).run.void.liftConnectionIO
+    def updateTotalParamsByHeaderId(
+      headerId: Id,
+      newSize: Long,
+      newTxsCount: Long,
+      newMiningTime: Long,
+      newFees: Long,
+      newReward: Long,
+      newCoins: Long
+    ): D[Unit] =
+      QS.updateTotalParametersByHeaderId(headerId, newSize, newTxsCount, newMiningTime, newFees, newReward, newCoins)
+        .run
+        .void
+        .liftConnectionIO
   }
 }
