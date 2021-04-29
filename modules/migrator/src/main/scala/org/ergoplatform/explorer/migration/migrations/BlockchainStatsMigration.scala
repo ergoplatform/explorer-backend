@@ -30,9 +30,9 @@ final class BlockchainStatsMigration(
     for {
       _    <- log.info(s"Current offset is [$offset]")
       data <- blockInfoRepo.getMany(offset, limit, Asc.value, "height").transact(xa)
-      (correctHeights, _) = data.tail.foldLeft((List.empty[(Id, BlockStats)], data.headOption)) {
+      (correctHeights, _) = data.foldLeft((List.empty[(Id, BlockStats)], data.headOption)) {
                               case ((acc, Some(prevBlock)), currentBlock)
-                                  if currentBlock.blockInfo.blockChainTotalSize <= prevBlock.blockInfo.blockChainTotalSize =>
+                                  if currentBlock.blockInfo.blockChainTotalSize < prevBlock.blockInfo.blockChainTotalSize =>
                                 val blockMiningTime = currentBlock.blockInfo.timestamp - prevBlock.blockInfo.timestamp
                                 val newBlockStats = currentBlock.blockInfo.copy(
                                   blockChainTotalSize =
