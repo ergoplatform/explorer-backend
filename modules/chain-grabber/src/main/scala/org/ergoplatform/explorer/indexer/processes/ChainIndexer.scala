@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.indexer.processes
 
+import cats.data.OptionT
 import cats.effect.concurrent.Ref
 import cats.effect.syntax.bracket._
 import cats.effect.{Bracket, Sync, Timer}
@@ -109,7 +110,7 @@ object ChainIndexer {
       val parentId     = block.header.parentId
       val parentHeight = block.header.height - 1
       val checkParentF =
-        getBlock(parentId).flatMap {
+        getBlockHeader(parentId).flatMap {
           case Some(parentBlock) if parentBlock.mainChain   => unit[F]
           case None if block.header.height == GenesisHeight => unit[F]
           case Some(parentBlock) =>
@@ -125,35 +126,37 @@ object ChainIndexer {
               }
         }
       info"Applying best block [$id] at height [$height]" >>
-      checkParentF >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ => markAsMain(id, height))
+      checkParentF >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ =>
+        markAsMain(id, height) >> updateBlockInfo(parentId, id)
+      )
     }
 
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
       if (settings.writeOrphans)
         info"Applying orphaned block [${block.header.id}] at height [${block.header.height}]" >>
-          getBlockInfo(block.header.parentId) >>= (scan(block, _) >>= insertBlock)
+        getBlockInfo(block.header.parentId) >>= (scan(block, _) >>= insertBlock)
       else
         info"Skipping orphaned block [${block.header.id}] at height [${block.header.height}]"
 
-    private def updateBestBlock(block: Header): F[Unit] = {
-      val id       = block.id
-      val height   = block.height
-      val parentId = block.parentId
+    private def updateBestBlock(header: Header): F[Unit] = {
+      val id       = header.id
+      val height   = header.height
+      val parentId = header.parentId
       info"Updating best block [$id] at height [$height]" >>
-      getBlock(parentId).flatMap {
-        case Some(parentBlock) if parentBlock.mainChain => unit[F]
-        case None if block.height == GenesisHeight      => unit[F]
-        case Some(parentBlock) =>
-          info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
+      getBlockHeader(parentId).flatMap {
+        case Some(parentHeader) if parentHeader.mainChain => unit[F]
+        case None if header.height == GenesisHeight       => unit[F]
+        case Some(parentHeader) =>
+          info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentHeader)
         case None =>
           info"Parent block [$parentId] needs to be downloaded" >>
             network.getFullBlockById(parentId).flatMap {
               case Some(parentBlock) => applyBestBlock(parentBlock)
               case None =>
-                val parentHeight = block.height - 1
+                val parentHeight = header.height - 1
                 InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]
             }
-      } >> markAsMain(block.id, block.height)
+      } >> markAsMain(header.id, header.height) >> updateBlockInfo(header.parentId, header.id)
     }
 
     private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockStats]): F[FlatBlock] = {
@@ -167,7 +170,7 @@ object ChainIndexer {
     private def getHeaderIdsAtHeight(height: Int): D[List[Id]] =
       repos.headers.getAllByHeight(height).map(_.map(_.id))
 
-    private def getBlock(id: Id): F[Option[Header]] =
+    private def getBlockHeader(id: Id): F[Option[Header]] =
       repos.headers.get(id) ||> trans.xa
 
     private def getBlockInfo(id: Id): F[Option[BlockStats]] =
@@ -175,6 +178,14 @@ object ChainIndexer {
 
     private def markAsMain(id: Id, height: Int): F[Unit] =
       pendingChainUpdates.update(_ :+ (id -> height))
+
+    private def updateBlockInfo(prevBlockId: Id, blockId: Id): F[Unit] =
+      (for {
+        prevBlockStats    <- OptionT(getBlockInfo(prevBlockId))
+        currentBlockStats <- OptionT(getBlockInfo(blockId))
+        newSize = prevBlockStats.blockChainTotalSize + currentBlockStats.blockSize
+        _ <- OptionT.liftF[F, Unit](updateBlockInfoStats(blockId, newSize).thrushK(trans.xa))
+      } yield ()).value.void
 
     private def commitChainUpdates: F[Unit] =
       pendingChainUpdates.get.flatMap { ids =>
@@ -189,6 +200,9 @@ object ChainIndexer {
           .thrushK(trans.xa)
           .flatMap(_ => pendingChainUpdates.update(_ => List.empty))
       }
+
+    private def updateBlockInfoStats(headerId: Id, newBlockchainSize: Long): D[Unit] =
+      repos.blocksInfo.updateTotalBlockchainSizeByHeaderId(headerId, newBlockchainSize)
 
     private def updateChainStatus(headerId: Id, mainChain: Boolean): D[Unit] =
       repos.headers.updateChainStatusById(headerId, mainChain) >>

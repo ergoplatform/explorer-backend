@@ -70,6 +70,8 @@ trait BlockInfoRepo[D[_]] {
   /** Update main_chain status for all inputs related to given `headerId`.
     */
   def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
+
+  def updateTotalBlockchainSizeByHeaderId(headerId: Id, newSize: Long): D[Unit]
 }
 
 object BlockInfoRepo {
@@ -141,5 +143,8 @@ object BlockInfoRepo {
 
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
+
+    def updateTotalBlockchainSizeByHeaderId(headerId: Id, newSize: Long): D[Unit] =
+      QS.updateTotalBlockchainSizeByHeaderId(headerId, newSize).run.void.liftConnectionIO
   }
 }

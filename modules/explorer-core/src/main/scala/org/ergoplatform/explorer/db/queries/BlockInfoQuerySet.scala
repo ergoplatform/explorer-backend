@@ -240,4 +240,10 @@ object BlockInfoQuerySet extends QuerySet {
          |update blocks_info set main_chain = $newChainStatus
          |where header_id = $headerId
          |""".stripMargin.update
+
+  def updateTotalBlockchainSizeByHeaderId(headerId: Id, newSize: Long)(implicit lh: LogHandler): Update0 =
+    sql"""
+         |update blocks_info set block_chain_total_size = $newSize
+         |where header_id = $headerId
+         |""".stripMargin.update
 }
