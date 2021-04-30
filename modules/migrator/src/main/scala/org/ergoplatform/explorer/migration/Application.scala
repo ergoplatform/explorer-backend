@@ -5,11 +5,7 @@ import doobie.util.transactor.Transactor
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.DoobieTrans
 import org.ergoplatform.explorer.migration.configs.{MigrationConfig, ProcessingConfig}
-import org.ergoplatform.explorer.migration.migrations.{
-  AssetsMigration,
-  RegistersAndConstantsMigration,
-  RegistersMigration
-}
+import org.ergoplatform.explorer.migration.migrations.{AssetsMigration, BlockchainStatsMigration, RegistersAndConstantsMigration, RegistersMigration}
 import org.ergoplatform.explorer.settings.pureConfigInstances._
 import pureconfig.generic.auto._
 import tofu.syntax.console._
@@ -37,6 +33,7 @@ object Application extends IOApp {
     Map(
       "v4v5" -> RegistersMigration(conf, xa),
       "v5v6" -> AssetsMigration(conf, xa),
-      "v6v7" -> RegistersAndConstantsMigration(conf, xa)
+      "v6v7" -> RegistersAndConstantsMigration(conf, xa),
+      "blockchainStat" -> BlockchainStatsMigration(conf, xa)
     )
 }

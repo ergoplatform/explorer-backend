@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.indexer.processes
 
+import cats.data.OptionT
 import cats.effect.concurrent.Ref
 import cats.effect.syntax.bracket._
 import cats.effect.{Bracket, Sync, Timer}
@@ -18,7 +19,7 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
 import org.ergoplatform.explorer.indexer.extractors._
-import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData}
+import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData, TotalParams}
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
@@ -125,13 +126,15 @@ object ChainIndexer {
               }
         }
       info"Applying best block [$id] at height [$height]" >>
-      checkParentF >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ => markAsMain(id, height))
+      checkParentF >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ =>
+        markAsMain(id, height) >> updateBlockInfo(parentId, id)
+      )
     }
 
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
       if (settings.writeOrphans)
         info"Applying orphaned block [${block.header.id}] at height [${block.header.height}]" >>
-        scan(block, None) >>= insertBlock
+        getBlockInfo(block.header.parentId) >>= (scan(block, _) >>= insertBlock)
       else
         info"Skipping orphaned block [${block.header.id}] at height [${block.header.height}]"
 
@@ -153,7 +156,7 @@ object ChainIndexer {
                 val parentHeight = block.height - 1
                 InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]
             }
-      } >> markAsMain(block.id, block.height)
+      } >> markAsMain(block.id, block.height) >> updateBlockInfo(block.parentId, block.id)
     }
 
     private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockStats]): F[FlatBlock] = {
@@ -176,6 +179,15 @@ object ChainIndexer {
     private def markAsMain(id: Id, height: Int): F[Unit] =
       pendingChainUpdates.update(_ :+ (id -> height))
 
+    private def updateBlockInfo(prevBlockId: Id, blockId: Id): F[Unit] =
+      (for {
+        prevBlockStats    <- OptionT(getBlockInfo(prevBlockId))
+        currentBlockStats <- OptionT(getBlockInfo(blockId))
+        implicit0(ctx: WithContext[F, ProtocolSettings]) = Context.const[F, ProtocolSettings](settings.protocol)
+        totalParams <- OptionT.liftF(blockStats.produceTotalParams[F](currentBlockStats, prevBlockStats))
+        _           <- OptionT.liftF[F, Unit](updateBlockInfoStats(blockId, totalParams).thrushK(trans.xa))
+      } yield ()).value.void
+
     private def commitChainUpdates: F[Unit] =
       pendingChainUpdates.get.flatMap { ids =>
         info"Updating ${ids.size} chain slots: [${ids.mkString(", ")}]" >>
@@ -189,6 +201,20 @@ object ChainIndexer {
           .thrushK(trans.xa)
           .flatMap(_ => pendingChainUpdates.update(_ => List.empty))
       }
+
+    private def updateBlockInfoStats(
+      headerId: Id,
+      totalParams: TotalParams
+    ): D[Unit] =
+      repos.blocksInfo.updateTotalParamsByHeaderId(
+        headerId,
+        totalParams.blockChainTotalSize,
+        totalParams.totalTxsCount,
+        totalParams.totalMiningTime,
+        totalParams.totalFees,
+        totalParams.totalMinersReward,
+        totalParams.totalCoinsInTxs
+      )
 
     private def updateChainStatus(headerId: Id, mainChain: Boolean): D[Unit] =
       repos.headers.updateChainStatusById(headerId, mainChain) >>
