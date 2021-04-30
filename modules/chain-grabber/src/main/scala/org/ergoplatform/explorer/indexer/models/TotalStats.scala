@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.indexer.models
 
-final case class TotalParams(
+final case class TotalStats(
   blockChainTotalSize: Long, // cumulative blockchain size including this block
   totalTxsCount: Long, // total number of txs in all blocks in the chain
   totalCoinsIssued: Long, // amount of nERGs issued in the block
