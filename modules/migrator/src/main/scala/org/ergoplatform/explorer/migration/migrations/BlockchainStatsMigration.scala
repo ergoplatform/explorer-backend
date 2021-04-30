@@ -64,7 +64,7 @@ final class BlockchainStatsMigration(
                )
                .transact(xa)
            }
-      _ <- if (data.nonEmpty) migrateBatch(offset + limit, limit) else IO.unit
+      _ <- if (data.nonEmpty) migrateBatch((offset + limit - 1), limit) else IO.unit
     } yield ()
 }
 
