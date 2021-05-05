@@ -9,7 +9,8 @@ import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.tapir.{Endpoint, path}
 import sttp.tapir.json.circe.jsonBody
 import cats.syntax.option._
-import org.ergoplatform.explorer.http.api.v1.models.{BlockInfo, BlockSummary}
+import org.ergoplatform.explorer.http.api.v0.models.BlockSummary
+import org.ergoplatform.explorer.http.api.v1.models.BlockInfo
 import sttp.tapir._
 import sttp.tapir.json.circe._
 

@@ -4,7 +4,6 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
-import org.ergoplatform.explorer.http.api.v0.models.MinerInfo
 import sttp.tapir.{Schema, Validator}
 
 final case class BlockInfo(

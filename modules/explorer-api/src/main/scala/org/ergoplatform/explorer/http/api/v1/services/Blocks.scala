@@ -8,7 +8,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{FlatMap, Monad}
+import cats.{FlatMap, Functor, Monad}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
@@ -17,10 +17,15 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
-import org.ergoplatform.explorer.http.api.v1.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
+import org.ergoplatform.explorer.http.api.streaming.CompileStream
+import org.ergoplatform.explorer.http.api.v0.models.{BlockReferencesInfo, BlockSummary, FullBlockInfo}
+import org.ergoplatform.explorer.http.api.v1.models.BlockInfo
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{CRaise, Id}
+import tofu.data.Identity
 import tofu.syntax.raise._
+import tofu.fs2Instances._
+import tofu.syntax.streams.compile._
 
 trait Blocks[F[_]] {
 
@@ -37,7 +42,7 @@ object Blocks {
 
   def apply[
     F[_]: Sync,
-    D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
+    D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad: CompileStream
   ](trans: D Trans F): F[Blocks[F]] =
     (
       HeaderRepo[F, D],
@@ -54,8 +59,8 @@ object Blocks {
     }
 
   final private class Live[
-    F[_]: Sync,
-    D[_]: CRaise[*[_], InconsistentDbData]: Monad
+    F[_]: Functor: CompileStream,
+    D[_]: CRaise[*[_], InconsistentDbData]: Monad: CompileStream
   ](
     headerRepo: HeaderRepo[D],
     blockInfoRepo: BlockInfoRepo[D],
@@ -71,7 +76,7 @@ object Blocks {
 
     /** Get a slice of block info items.
       */
-    override def getBlocks(paging: Paging, sorting: Sorting): F[Items[BlockInfo]] =
+    def getBlocks(paging: Paging, sorting: Sorting): F[Items[BlockInfo]] =
       headerRepo.getBestHeight.flatMap { total =>
         blockInfoRepo
           .getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
@@ -92,23 +97,21 @@ object Blocks {
           BlockSummary(blockInfo, refs)
         }
 
-      (summary ||> trans.xas).compile.last.map(_.flatten)
+      summary.to[List].map(_.headOption.flatten).thrushK(trans.xa)
     }
 
     private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
       for {
         header       <- headerRepo.get(id).asStream.unNone
-        txs          <- transactionRepo.getAllByBlockId(id).fold(Array.empty[Transaction])(_ :+ _).map(_.toList)
+        txs          <- transactionRepo.getAllByBlockId(id).fold[List[Transaction]](List.empty[Transaction])(_ :+ _)
         blockSizeOpt <- blockInfoRepo.getBlockSize(id).asStream
         bestHeight   <- headerRepo.getBestHeight.asStream
         txIdsNel     <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream
-        inputs       <- inputRepo.getFullByTxIds(txIdsNel).asStream
-        inIds        <- Stream.emit(inputs.map(_.input.boxId).toNel).unNone
-        inAssets     <- assetRepo.getAllByBoxIds(inIds).asStream
+        inputs       <- inputRepo.getAllByTxIds(txIdsNel).asStream
         dataInputs   <- dataInputRepo.getAllByTxIds(txIdsNel).asStream
         outputs      <- outputRepo.getAllByTxIds(txIdsNel).asStream
         boxIdsNel    <- outputs.map(_.output.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs")).asStream
-        outAssets    <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
+        assets    <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream
       } yield (blockSizeOpt, extensionOpt)
@@ -121,8 +124,7 @@ object Blocks {
             inputs,
             dataInputs,
             outputs,
-            inAssets,
-            outAssets,
+            assets,
             ext,
             adProofsOpt,
             size
