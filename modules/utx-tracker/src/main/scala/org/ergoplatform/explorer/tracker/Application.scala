@@ -6,7 +6,7 @@ import cats.free.Free.catsFreeMonadForFree
 import doobie.free.connection.ConnectionIO
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.db.DoobieTrans
 import org.ergoplatform.explorer.settings.UtxTrackerSettings
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -20,10 +20,9 @@ import scala.concurrent.ExecutionContext.global
 object Application extends TaskApp {
 
   def run(args: List[String]): Task[ExitCode] =
-    resources(args.headOption).use {
-      case (logger, settings, client, xa) =>
-        logger.info("Starting UtxTracker service ..") >>
-        ErgoNetworkClient[Task](client, settings.masterNodesAddresses)
+    resources(args.headOption).use { case (logger, settings, client, xa) =>
+      logger.info("Starting UtxTracker service ..") >>
+        ErgoNetwork[Task](client, settings.network)
           .flatMap { ns =>
             UtxTracker[Task, ConnectionIO](settings, ns)(xa)
               .flatMap(_.run.compile.drain)

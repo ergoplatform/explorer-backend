@@ -1,9 +1,9 @@
 package org.ergoplatform.explorer.protocol.models
 
-import derevo.circe.decoder
+import derevo.circe.{decoder, encoder}
 import derevo.derive
 
-@derive(decoder)
+@derive(encoder, decoder)
 final case class ApiNodeInfoEpochParameters(
   height: Int,
   storageFeeFactor: Int,

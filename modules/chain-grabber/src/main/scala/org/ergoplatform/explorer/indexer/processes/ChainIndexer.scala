@@ -14,7 +14,7 @@ import mouse.anyf._
 import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.Err.ProcessingErr.{InconsistentNodeView, NoBlocksWritten}
 import org.ergoplatform.explorer.Id
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
@@ -42,7 +42,7 @@ object ChainIndexer {
 
   def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
-    network: ErgoNetworkClient[F]
+    network: ErgoNetwork[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[ChainIndexer[F]] =
     logs.forService[ChainIndexer[F]].flatMap { implicit log =>
       makeRef.refOf(List.empty[(Id, Int)]).flatMap { updatesRef =>
@@ -54,10 +54,10 @@ object ChainIndexer {
     F[_]: Monad: Parallel: Timer: Bracket[*[_], Throwable]: Logging,
     D[_]: Monad
   ](
-    settings: IndexerSettings,
-    network: ErgoNetworkClient[F],
-    pendingChainUpdates: Ref[F, List[(Id, Int)]],
-    repos: RepoBundle[D]
+     settings: IndexerSettings,
+     network: ErgoNetwork[F],
+     pendingChainUpdates: Ref[F, List[(Id, Int)]],
+     repos: RepoBundle[D]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
 

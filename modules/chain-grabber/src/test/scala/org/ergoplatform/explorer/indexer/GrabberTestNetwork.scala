@@ -2,13 +2,13 @@ package org.ergoplatform.explorer.indexer
 
 import cats.Applicative
 import cats.syntax.applicative._
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.{ErgoLikeTransaction, explorer}
-import org.ergoplatform.explorer.indexer.GrabberTestNetworkClient.Source
+import org.ergoplatform.explorer.indexer.GrabberTestNetwork.Source
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
 
-final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
-  extends ErgoNetworkClient[F] {
+final class GrabberTestNetwork[F[_]: Applicative](val source: Source)
+  extends ErgoNetwork[F] {
 
   def getBestHeight: F[Int] =
     source.blocksStorage.maxBy(_._1)._1.pure[F]
@@ -26,7 +26,7 @@ final class GrabberTestNetworkClient[F[_]: Applicative](val source: Source)
   def getNodeInfo: F[ApiNodeInfo] = ???
 }
 
-object GrabberTestNetworkClient {
+object GrabberTestNetwork {
 
   final case class Source(blocks: List[ApiFullBlock]) {
 

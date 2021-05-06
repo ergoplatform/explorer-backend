@@ -1,13 +1,10 @@
 package org.ergoplatform.explorer.settings
 
-import cats.data.NonEmptyList
-import org.ergoplatform.explorer.UrlString
-
 import scala.concurrent.duration.FiniteDuration
 
 final case class UtxTrackerSettings(
   pollInterval: FiniteDuration,
-  masterNodesAddresses: NonEmptyList[UrlString],
+  network: NetworkSettings,
   db: DbSettings,
   protocol: ProtocolSettings
 )

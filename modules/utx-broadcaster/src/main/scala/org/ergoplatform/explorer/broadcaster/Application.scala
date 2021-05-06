@@ -5,7 +5,7 @@ import cats.syntax.functor._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
 import org.ergoplatform.explorer.cache.Redis
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.ergoplatform.explorer.settings.pureConfigInstances._
@@ -21,7 +21,7 @@ object Application extends TaskApp {
     resources(args.headOption).use {
       case (logger, settings, client, redis) =>
         logger.info("Starting UtxBroadcaster service ..") >>
-        ErgoNetworkClient[Task](client, settings.masterNodesAddresses)
+        ErgoNetwork[Task](client, settings.network)
           .flatMap { ns =>
             UtxBroadcaster[Task](settings, ns, redis)
               .flatMap(_.run.compile.drain)
