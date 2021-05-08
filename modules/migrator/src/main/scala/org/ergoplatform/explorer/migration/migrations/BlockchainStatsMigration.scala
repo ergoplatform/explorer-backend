@@ -46,6 +46,7 @@ final class BlockchainStatsMigration(
                                     prevBlock.blockInfo.totalCoinsInTxs + currentBlock.blockInfo.blockCoins
                                 )
                                 (acc :+ (currentBlock.blockInfo.headerId -> newBlockStats)) -> ExtendedBlockInfo(
+                                  currentBlock.blockVersion,
                                   newBlockStats,
                                   currentBlock.minerNameOpt
                                 ).some
