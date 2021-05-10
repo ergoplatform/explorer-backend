@@ -59,7 +59,7 @@ object Blocks {
     }
 
   final private class Live[
-    F[_]: Functor: CompileStream,
+    F[_]: Functor,
     D[_]: CRaise[*[_], InconsistentDbData]: Monad: CompileStream
   ](
     headerRepo: HeaderRepo[D],

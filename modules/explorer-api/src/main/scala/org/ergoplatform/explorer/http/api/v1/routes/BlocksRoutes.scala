@@ -19,7 +19,7 @@ final class BlocksRoutes[
 
   val defs = new BlocksEndpointDefs[F](settings)
 
-  val routes = getBlocksR <+> getBlockSummaryByIdR
+  val routes: HttpRoutes[F] = getBlocksR <+> getBlockSummaryByIdR
 
   private def getBlocksR: HttpRoutes[F] =
     Http4sServerInterpreter.toRoutes(defs.getBlocksDef) { case (paging, sorting) =>
