@@ -135,6 +135,7 @@ CREATE TABLE node_outputs
     header_id               VARCHAR(64) NOT NULL,
     value                   BIGINT      NOT NULL,
     creation_height         INTEGER     NOT NULL,
+    settlement_height       INTEGER     NOT NULL,
     index                   INTEGER     NOT NULL,
     ergo_tree               VARCHAR     NOT NULL,
     ergo_tree_template_hash VARCHAR(64) NOT NULL,

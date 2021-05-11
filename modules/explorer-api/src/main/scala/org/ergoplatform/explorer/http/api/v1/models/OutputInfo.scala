@@ -3,10 +3,10 @@ package org.ergoplatform.explorer.http.api.v1.models
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.Json
+import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
-import org.ergoplatform.explorer.{Address, BoxId, HexString, Id, TxId}
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 @derive(encoder, decoder)
@@ -17,6 +17,7 @@ final case class OutputInfo(
   value: Long,
   index: Int,
   creationHeight: Int,
+  settlementHeight: Int,
   ergoTree: HexString,
   address: Address,
   assets: List[AssetInstanceInfo],
@@ -36,6 +37,7 @@ object OutputInfo {
       .modify(_.value)(_.description("Value of the box in nanoERG"))
       .modify(_.index)(_.description("Index of the output in a transaction"))
       .modify(_.creationHeight)(_.description("Height at which the box was created"))
+      .modify(_.settlementHeight)(_.description("Height at which the box got fixed in blockchain"))
       .modify(_.ergoTree)(_.description("Serialized ergo tree"))
       .modify(_.address)(_.description("An address derived from ergo tree"))
       .modify(_.spentTransactionId)(_.description("Id of the transaction this output was spent by"))
@@ -61,6 +63,7 @@ object OutputInfo {
       o.output.value,
       o.output.index,
       o.output.creationHeight,
+      o.output.settlementHeight,
       o.output.ergoTree,
       o.output.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
@@ -80,6 +83,7 @@ object OutputInfo {
       o.value,
       o.index,
       o.creationHeight,
+      o.settlementHeight,
       o.ergoTree,
       o.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
@@ -87,11 +91,4 @@ object OutputInfo {
       None,
       o.mainChain
     )
-
-  def batch(outputs: List[ExtendedOutput], assets: List[ExtendedAsset]): List[OutputInfo] = {
-    val groupedAssets = assets.groupBy(_.boxId)
-    outputs
-      .sortBy(_.output.index)
-      .map(out => OutputInfo(out, groupedAssets.get(out.output.boxId).toList.flatten))
-  }
 }
