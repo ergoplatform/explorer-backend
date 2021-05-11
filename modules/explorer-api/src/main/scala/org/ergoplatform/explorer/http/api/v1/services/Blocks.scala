@@ -42,7 +42,7 @@ object Blocks {
 
   def apply[
     F[_]: Sync,
-    D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad: CompileStream
+    D[_]: Monad: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: CompileStream
   ](trans: D Trans F): F[Blocks[F]] =
     (
       HeaderRepo[F, D],
