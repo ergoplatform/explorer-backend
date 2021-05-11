@@ -1,38 +1,30 @@
-package org.ergoplatform.explorer.clients.ergo
+package org.ergoplatform.explorer.services
 
 import cats.Parallel
-import cats.data.NonEmptyList
-import cats.effect.Sync
 import cats.effect.concurrent.Ref
+import cats.effect.Sync
 import cats.instances.list._
-import cats.syntax.applicative._
-import cats.syntax.applicativeError._
-import cats.syntax.flatMap._
-import cats.syntax.functor._
 import cats.syntax.parallel._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.ErgoLikeTransaction
-import org.ergoplatform.explorer.Err.ProcessingErr.TransactionDecodingFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr
-import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.{
-  InvalidTransaction,
-  RequestFailed,
-  TransactionSubmissionFailed
-}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.{InvalidTransaction, TransactionSubmissionFailed}
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
 import org.ergoplatform.explorer.protocol.ergoInstances._
-import org.ergoplatform.explorer.{CRaise, Id, UrlString}
+import org.ergoplatform.explorer.settings.NetworkSettings
+import org.ergoplatform.explorer.{Id, UrlString}
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}
-import fs2.Stream
+import tofu.Tries
+import tofu.syntax.handle._
+import tofu.syntax.monadic._
 import tofu.syntax.raise._
 
 /** A service providing an access to the Ergo network.
   */
-trait ErgoNetworkClient[F[_]] {
+trait ErgoNetwork[F[_]] {
 
   /** Get height of the best block.
     */
@@ -59,61 +51,56 @@ trait ErgoNetworkClient[F[_]] {
   def submitTransaction(tx: ErgoLikeTransaction): F[Unit]
 }
 
-object ErgoNetworkClient {
+object ErgoNetwork {
 
   def apply[F[_]: Sync: Parallel](
     client: Client[F],
-    masterNodesAddresses: NonEmptyList[UrlString]
-  ): F[ErgoNetworkClient[F]] =
-    Ref
-      .of(masterNodesAddresses.toList)
-      .flatMap { nodesPool =>
-        Slf4jLogger
-          .create[F]
-          .map { implicit logger =>
-            new Live[F](client, nodesPool)
-          }
-      }
+    settings: NetworkSettings
+  ): F[ErgoNetwork[F]] =
+    Slf4jLogger.create[F] >>= { implicit log =>
+      (NodesPool(settings.masterNodes), Ref.of(0L))
+        .mapN { (pool, tickRef) =>
+          new Live[F](settings, client, pool, tickRef)
+        }
+    }
 
   final private class Live[
-    F[_]: Sync: Parallel: Logger: CRaise[*[_], TransactionDecodingFailed]: CRaise[*[_], NetworkErr]
+    F[_]: Sync: Parallel: Logger: Tries
   ](
+    settings: NetworkSettings,
     client: Client[F],
-    nodesPool: Ref[F, List[UrlString]]
-  ) extends ErgoNetworkClient[F] {
+    pool: NodesPool[F],
+    tickRef: Ref[F, Long]
+  ) extends ErgoNetwork[F] {
 
     private val txsBatchSize = 20
 
+    private val log = Logger[F]
+
     def getBestHeight: F[Int] =
-      retrying { url =>
-        client
-          .expect[ApiNodeInfo](
-            makeGetRequest(s"$url/info")
-          )
-          .map(_.fullHeight)
-      }
+      run(getBestHeight)
 
     def getNodeInfo: F[ApiNodeInfo] =
-      retrying { url =>
+      run { url =>
         client.expect[ApiNodeInfo](makeGetRequest(s"$url/info"))
       }
 
     def getBlockIdsAtHeight(height: Int): F[List[Id]] =
-      retrying { url =>
+      run { url =>
         client.expect[List[Id]](
           makeGetRequest(s"$url/blocks/at/$height")
         )
       }
 
     def getFullBlockById(id: Id): F[Option[ApiFullBlock]] =
-      retrying { url =>
+      run { url =>
         client.expectOption[ApiFullBlock](
           makeGetRequest(s"$url/blocks/$id")
         )
       }
 
     def getUnconfirmedTransactions: F[List[ApiTransaction]] =
-      retrying { url =>
+      run { url =>
         def go(i: Int, acc: List[ApiTransaction]): F[List[ApiTransaction]] = {
           val limit  = txsBatchSize
           val offset = i * limit
@@ -133,7 +120,7 @@ object ErgoNetworkClient {
       }
 
     def submitTransaction(tx: ErgoLikeTransaction): F[Unit] =
-      nodesPool.get.flatMap {
+      pool.getAll.flatMap {
         _.parTraverse { url =>
           client
             .status(
@@ -145,28 +132,35 @@ object ErgoNetworkClient {
         }
           .flatMap { res =>
             if (res.exists(_.responseClass == Status.ClientError))
-              InvalidTransaction(tx.id).raise[F, Unit]
+              InvalidTransaction(tx.id).raise
             else if (!res.exists(_.isSuccess))
-              TransactionSubmissionFailed(tx.id).raise[F, Unit]
+              TransactionSubmissionFailed(tx.id).raise
             else ().pure[F]
           }
       }
 
-    private def retrying[A](f: UrlString => F[A]): F[A] =
-      nodesPool.get.flatMap { pool =>
-        def attempt(urls: List[UrlString])(i: Int): F[A] =
-          urls match {
-            case hd :: tl =>
-              f(hd).handleErrorWith { e =>
-                Logger[F].error(s"Failed to execute request to '$hd'. ${e.getMessage}") >>
-                nodesPool.set(tl :+ hd) >>
-                attempt(tl)(i + 1)
-              }
-            case Nil =>
-              RequestFailed(pool).raise[F, A]
-          }
-        attempt(pool)(0)
-      }
+    private def updateView: F[Unit] =
+      pool.getAll >>=
+        (_.parTraverse(node => getBestHeight(node).tupleLeft(node))) >>=
+        (xs => pool.setBest(xs.toList.maxBy(_._2)._1))
+
+    private def run[A](reqF: UrlString => F[A]): F[A] =
+      tickRef.update(_ + 1) >>
+      (tickRef.get >>= (tick => (tick % settings.selfCheckIntervalRequests == 0).when_(updateView))) >>
+      (pool.getBest >>= { node =>
+        reqF(node).handleWith[Throwable] { e =>
+          log.warn(s"Failed to execute request to `$node` due to $e") >>
+          pool.rotate >>
+          run(reqF)
+        }
+      })
+
+    private def getBestHeight(url: UrlString): F[Int] =
+      client
+        .expect[ApiNodeInfo](
+          makeGetRequest(s"$url/info")
+        )
+        .map(_.fullHeight)
 
     private def makeGetRequest(uri: String) =
       Request[F](Method.GET, Uri.unsafeFromString(uri))

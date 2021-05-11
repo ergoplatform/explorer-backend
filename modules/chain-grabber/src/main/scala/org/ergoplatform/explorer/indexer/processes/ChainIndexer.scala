@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.indexer.processes
 
+import cats.data.OptionT
 import cats.effect.concurrent.Ref
 import cats.effect.syntax.bracket._
 import cats.effect.{Bracket, Sync, Timer}
@@ -13,12 +14,12 @@ import mouse.anyf._
 import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.Err.ProcessingErr.{InconsistentNodeView, NoBlocksWritten}
 import org.ergoplatform.explorer.Id
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
 import org.ergoplatform.explorer.indexer.extractors._
-import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData}
+import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData, TotalStats}
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
@@ -41,7 +42,7 @@ object ChainIndexer {
 
   def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
-    network: ErgoNetworkClient[F]
+    network: ErgoNetwork[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[ChainIndexer[F]] =
     logs.forService[ChainIndexer[F]].flatMap { implicit log =>
       makeRef.refOf(List.empty[(Id, Int)]).flatMap { updatesRef =>
@@ -53,10 +54,10 @@ object ChainIndexer {
     F[_]: Monad: Parallel: Timer: Bracket[*[_], Throwable]: Logging,
     D[_]: Monad
   ](
-    settings: IndexerSettings,
-    network: ErgoNetworkClient[F],
-    pendingChainUpdates: Ref[F, List[(Id, Int)]],
-    repos: RepoBundle[D]
+     settings: IndexerSettings,
+     network: ErgoNetwork[F],
+     pendingChainUpdates: Ref[F, List[(Id, Int)]],
+     repos: RepoBundle[D]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
 
@@ -131,7 +132,7 @@ object ChainIndexer {
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
       if (settings.writeOrphans)
         info"Applying orphaned block [${block.header.id}] at height [${block.header.height}]" >>
-        scan(block, None) >>= insertBlock
+        getBlockInfo(block.header.parentId) >>= (scan(block, _) >>= insertBlock)
       else
         info"Skipping orphaned block [${block.header.id}] at height [${block.header.height}]"
 
@@ -153,7 +154,7 @@ object ChainIndexer {
                 val parentHeight = block.height - 1
                 InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]
             }
-      } >> markAsMain(block.id, block.height)
+      } >> markAsMain(block.id, block.height) >> updateBlockInfo(block.parentId, block.id)
     }
 
     private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockStats]): F[FlatBlock] = {
@@ -176,6 +177,16 @@ object ChainIndexer {
     private def markAsMain(id: Id, height: Int): F[Unit] =
       pendingChainUpdates.update(_ :+ (id -> height))
 
+    private def updateBlockInfo(prevBlockId: Id, blockId: Id): F[Unit] =
+      (for {
+        _                 <- OptionT.liftF(info"Updating stats of block $blockId")
+        prevBlockStats    <- OptionT(getBlockInfo(prevBlockId))
+        currentBlockStats <- OptionT(getBlockInfo(blockId))
+        implicit0(ctx: WithContext[F, ProtocolSettings]) = Context.const[F, ProtocolSettings](settings.protocol)
+        totalStats <- OptionT.liftF(blockStats.recalculateStats[F](currentBlockStats, prevBlockStats))
+        _          <- OptionT.liftF(updateBlockStats(blockId, totalStats) ||> trans.xa)
+      } yield ()).value.void
+
     private def commitChainUpdates: F[Unit] =
       pendingChainUpdates.get.flatMap { ids =>
         info"Updating ${ids.size} chain slots: [${ids.mkString(", ")}]" >>
@@ -190,13 +201,27 @@ object ChainIndexer {
           .flatMap(_ => pendingChainUpdates.update(_ => List.empty))
       }
 
-    private def updateChainStatus(headerId: Id, mainChain: Boolean): D[Unit] =
-      repos.headers.updateChainStatusById(headerId, mainChain) >>
-      repos.blocksInfo.updateChainStatusByHeaderId(headerId, mainChain) >>
-      repos.txs.updateChainStatusByHeaderId(headerId, mainChain) >>
-      repos.outputs.updateChainStatusByHeaderId(headerId, mainChain) >>
-      repos.inputs.updateChainStatusByHeaderId(headerId, mainChain) >>
-      repos.dataInputs.updateChainStatusByHeaderId(headerId, mainChain)
+    private def updateBlockStats(
+      blockId: Id,
+      totals: TotalStats
+    ): D[Unit] =
+      repos.blocksInfo.updateTotalParamsByHeaderId(
+        blockId,
+        totals.blockChainTotalSize,
+        totals.totalTxsCount,
+        totals.totalMiningTime,
+        totals.totalFees,
+        totals.totalMinersReward,
+        totals.totalCoinsInTxs
+      )
+
+    private def updateChainStatus(blockId: Id, mainChain: Boolean): D[Unit] =
+      repos.headers.updateChainStatusById(blockId, mainChain) >>
+      repos.blocksInfo.updateChainStatusByHeaderId(blockId, mainChain) >>
+      repos.txs.updateChainStatusByHeaderId(blockId, mainChain) >>
+      repos.outputs.updateChainStatusByHeaderId(blockId, mainChain) >>
+      repos.inputs.updateChainStatusByHeaderId(blockId, mainChain) >>
+      repos.dataInputs.updateChainStatusByHeaderId(blockId, mainChain)
 
     private def insertBlock(block: FlatBlock): F[Unit] = {
       val insertAll =

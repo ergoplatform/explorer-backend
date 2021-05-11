@@ -15,7 +15,7 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.anyf._
 import org.ergoplatform.explorer.BuildFrom.syntax._
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.FlatUTransaction
 import org.ergoplatform.explorer.db.repositories._
@@ -29,13 +29,13 @@ final class UtxTracker[
   F[_]: Timer: Logger: MonadThrow,
   D[_]: Monad
 ](
-  settings: UtxTrackerSettings,
-  network: ErgoNetworkClient[F],
-  txRepo: UTransactionRepo[D, Stream],
-  inRepo: UInputRepo[D, Stream],
-  dataInRepo: UDataInputRepo[D, Stream],
-  outRepo: UOutputRepo[D, Stream],
-  assetRep: UAssetRepo[D]
+   settings: UtxTrackerSettings,
+   network: ErgoNetwork[F],
+   txRepo: UTransactionRepo[D, Stream],
+   inRepo: UInputRepo[D, Stream],
+   dataInRepo: UDataInputRepo[D, Stream],
+   outRepo: UOutputRepo[D, Stream],
+   assetRep: UAssetRepo[D]
 )(xa: D ~> F) {
 
   implicit private val ctx: WithContext[F, ProtocolSettings] =
@@ -75,7 +75,7 @@ object UtxTracker {
 
   def apply[F[_]: Timer: Sync, D[_]: Monad: LiftConnectionIO](
     settings: UtxTrackerSettings,
-    network: ErgoNetworkClient[F]
+    network: ErgoNetwork[F]
   )(xa: D ~> F): F[UtxTracker[F, D]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
       (UTransactionRepo[F, D], UInputRepo[F, D], UDataInputRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])

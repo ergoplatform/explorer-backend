@@ -11,15 +11,15 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.InvalidTransaction
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
-import org.ergoplatform.explorer.clients.ergo.ErgoNetworkClient
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
 
 /** Broadcasts new transactions to the network.
   */
 final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
-  settings: UtxBroadcasterSettings,
-  network: ErgoNetworkClient[F],
-  repo: ErgoLikeTransactionRepo[F, Stream]
+                                                       settings: UtxBroadcasterSettings,
+                                                       network: ErgoNetwork[F],
+                                                       repo: ErgoLikeTransactionRepo[F, Stream]
 ) {
 
   private val log = Logger[F]
@@ -56,9 +56,9 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
 object UtxBroadcaster {
 
   def apply[F[_]: Timer: Concurrent](
-    settings: UtxBroadcasterSettings,
-    network: ErgoNetworkClient[F],
-    redis: RedisCommands[F, String, String]
+                                      settings: UtxBroadcasterSettings,
+                                      network: ErgoNetwork[F],
+                                      redis: RedisCommands[F, String, String]
   ): F[UtxBroadcaster[F]] =
     Slf4jLogger.create.flatMap { implicit logger =>
       ErgoLikeTransactionRepo[F](settings.utxCache, redis)

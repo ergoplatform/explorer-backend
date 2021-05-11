@@ -65,7 +65,7 @@ object TransactionSummary {
       .modify(_.timestamp)(_.description("Timestamp the transaction got into the network"))
       .modify(_.index)(_.description("Index of a transaction inside a block"))
       .modify(_.confirmationsCount)(_.description("Number of transaction confirmations"))
-      .modify(_.size)(_.description("Size of transaction in bytes"))
+      .modify(_.size)(_.description("Size of a transaction in bytes"))
 
   implicit val validator: Validator[TransactionSummary] = schema.validator
 
