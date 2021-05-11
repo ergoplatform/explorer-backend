@@ -20,8 +20,7 @@ object BlockExtension {
 
   implicit val codec: Codec[BlockExtension] = Codec.from(deriveMagnoliaDecoder, deriveMagnoliaEncoder)
 
-  implicit def schema: Schema[BlockExtension] =
-    Schema.derived
+  implicit def schema: Schema[BlockExtension] = Schema.derived[BlockExtension]
 
   //todo: test
   implicit private def fieldsSchema: Schema[Json] =

@@ -42,14 +42,16 @@ object Transactions {
     F[_]: Sync,
     D[_]: LiftConnectionIO: Monad: CompileStream
   ](serviceSettings: ServiceSettings)(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[Transactions[F]] =
-    (AssetRepo[F, D], InputRepo[F, D], OutputRepo[F, D], TransactionRepo[F, D], HeaderRepo[F, D]).mapN(
-      new Live(serviceSettings, _, _, _, _, _)(trans)
-    )
+    (AssetRepo[F, D], InputRepo[F, D], DataInputRepo[F, D], OutputRepo[F, D], TransactionRepo[F, D], HeaderRepo[F, D])
+      .mapN(
+        new Live(serviceSettings, _, _, _, _, _, _)(trans)
+      )
 
   final class Live[F[_]: FlatMap, D[_]: Monad: CompileStream](
     serviceSettings: ServiceSettings,
     assets: AssetRepo[D, Stream],
     inputs: InputRepo[D],
+    dataInputs: DataInputRepo[D],
     outputs: OutputRepo[D, Stream],
     transactions: TransactionRepo[D, Stream],
     headers: HeaderRepo[D]
@@ -61,6 +63,7 @@ object Transactions {
         for {
           tx         <- OptionT(transactions.getMain(id))
           ins        <- OptionT.liftF(inputs.getFullByTxId(id))
+          dataIns    <- OptionT.liftF(dataInputs.getFullByTxId(id))
           inIds      <- OptionT.fromOption(ins.map(_.input.boxId).toNel)
           inAssets   <- OptionT.liftF(assets.getAllByBoxIds(inIds))
           outs       <- OptionT.liftF(outputs.getAllByTxId(id))
@@ -68,7 +71,7 @@ object Transactions {
           outAssets  <- OptionT.liftF(assets.getAllByBoxIds(outIds))
           bestHeight <- OptionT.liftF(headers.getBestHeight)
           numConfirmations = tx.numConfirmations(bestHeight)
-        } yield TransactionInfo.unFlatten(tx, numConfirmations, ins, outs, inAssets, outAssets)
+        } yield TransactionInfo.unFlatten(tx, numConfirmations, ins, dataIns, outs, inAssets, outAssets)
       getTx.value.thrushK(trans.xa)
     }
 
@@ -112,12 +115,14 @@ object Transactions {
         ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
         inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
         inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
+        dataIns    <- Stream.eval(dataInputs.getFullByTxIds(txIds))
         outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
         outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
         outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-        txInfo <- Stream.emits(TransactionInfo.unFlattenBatch(txsWithHeights.toList, ins, outs, inAssets, outAssets))
+        txInfo <-
+          Stream.emits(TransactionInfo.unFlattenBatch(txsWithHeights.toList, ins, dataIns, outs, inAssets, outAssets))
       } yield txInfo
   }
 }
