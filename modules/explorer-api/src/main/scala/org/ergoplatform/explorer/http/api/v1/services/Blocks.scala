@@ -88,12 +88,12 @@ object Blocks {
       val summary =
         for {
           blockInfoOpt <- getFullBlockInfo(id)
-          parentOpt <- blockInfoOpt
-                         .flatTraverse(h => headerRepo.getByParentId(h.header.id))
-                         .asStream
+          ancestorOpt <- blockInfoOpt
+                           .flatTraverse(h => headerRepo.getByParentId(h.header.id))
+                           .asStream
         } yield blockInfoOpt.map { blockInfo =>
           val refs =
-            BlockReferencesInfo(blockInfo.header.parentId, parentOpt.map(_.id))
+            BlockReferencesInfo(blockInfo.header.parentId, ancestorOpt.map(_.id))
           BlockSummary(blockInfo, refs)
         }
 
@@ -111,7 +111,7 @@ object Blocks {
         dataInputs   <- dataInputRepo.getAllByTxIds(txIdsNel).asStream
         outputs      <- outputRepo.getAllByTxIds(txIdsNel).asStream
         boxIdsNel    <- outputs.map(_.output.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs")).asStream
-        assets    <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
+        assets       <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
         extensionOpt <- blockExtensionRepo.getByHeaderId(id).asStream
       } yield (blockSizeOpt, extensionOpt)

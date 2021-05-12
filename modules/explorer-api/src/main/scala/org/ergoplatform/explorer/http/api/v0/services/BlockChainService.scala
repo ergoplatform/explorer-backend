@@ -96,12 +96,12 @@ object BlockChainService {
       val summary =
         for {
           blockInfoOpt <- getFullBlockInfo(id)
-          parentOpt <- blockInfoOpt
-                         .flatTraverse(h => headerRepo.getByParentId(h.header.id))
-                         .asStream
+          ancestorOpt <- blockInfoOpt
+                           .flatTraverse(h => headerRepo.getByParentId(h.header.id))
+                           .asStream
         } yield blockInfoOpt.map { blockInfo =>
           val refs =
-            BlockReferencesInfo(blockInfo.header.parentId, parentOpt.map(_.id))
+            BlockReferencesInfo(blockInfo.header.parentId, ancestorOpt.map(_.id))
           BlockSummary(blockInfo, refs)
         }
 
