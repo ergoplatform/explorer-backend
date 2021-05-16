@@ -14,7 +14,7 @@ class AddressesEndpointDefs(settings: RequestsSettings) {
   private val PathPrefix = "addresses"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    getTxsByAddressDef :: getConfirmedBalanceDef :: getConfirmedBalanceDef :: Nil
+    getTxsByAddressDef :: getConfirmedBalanceDef :: getTotalBalanceDef :: Nil
 
   def getTxsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[TransactionInfo], Any] =
     baseEndpointDef.get
