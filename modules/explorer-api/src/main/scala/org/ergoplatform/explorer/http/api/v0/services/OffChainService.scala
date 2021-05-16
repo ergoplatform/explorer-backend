@@ -14,6 +14,7 @@ import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.estatico.newtype.ops._
+import mouse.any._
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.IllegalRequest
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
@@ -22,7 +23,7 @@ import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
-import org.ergoplatform.explorer.db.repositories.{TransactionRepo, UAssetRepo, UDataInputRepo, UInputRepo, UOutputRepo, UTransactionRepo}
+import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
 import org.ergoplatform.explorer.protocol.sigma
@@ -120,9 +121,7 @@ object OffChainService {
       address: Address,
       paging: Paging
     ): F[Items[UTransactionInfo]] =
-      sigma
-        .addressToErgoTreeHex[F](address)
-        .flatMap(getUnconfirmedTxsByErgoTree(_, paging))
+      sigma.addressToErgoTreeHex(address) |> (getUnconfirmedTxsByErgoTree(_, paging))
 
     def getUnconfirmedTxsByErgoTree(
       ergoTree: HexString,

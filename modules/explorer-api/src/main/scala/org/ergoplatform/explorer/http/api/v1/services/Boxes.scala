@@ -5,7 +5,7 @@ import cats.effect.Sync
 import cats.syntax.list._
 import cats.{Functor, Monad}
 import fs2.{Chunk, Pipe, Stream}
-import mouse.anyf._
+import mouse.all._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer._
@@ -14,7 +14,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputRepo}
-import org.ergoplatform.explorer.http.api.models.{Epochs => MEpochs, Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{Items, Paging, Epochs => MEpochs}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.{BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.protocol.sigma._
@@ -109,33 +109,35 @@ object Boxes {
         assets <- OptionT.liftF(assets.getAllByBoxId(box.output.boxId))
       } yield OutputInfo(box, assets)).value.thrushK(trans.xa)
 
-    def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] =
-      addressToErgoTreeHex(address)
-        .flatMap { ergoTree =>
-          outputs.countAllByErgoTree(ergoTree).flatMap { total =>
-            outputs
-              .streamAllByErgoTree(ergoTree, paging.offset, paging.limit)
-              .chunkN(serviceSettings.chunkSize)
-              .through(toOutputInfo)
-              .to[List]
-              .map(Items(_, total))
-          }
+    def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] = {
+      val ergoTree = addressToErgoTreeHex(address)
+      outputs
+        .countAllByErgoTree(ergoTree)
+        .flatMap { total =>
+          outputs
+            .streamAllByErgoTree(ergoTree, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toOutputInfo)
+            .to[List]
+            .map(Items(_, total))
         }
         .thrushK(trans.xa)
+    }
 
-    def getUnspentOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] =
-      addressToErgoTreeHex(address)
-        .flatMap { ergoTree =>
-          outputs.countUnspentByErgoTree(ergoTree).flatMap { total =>
-            outputs
-              .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
-              .chunkN(serviceSettings.chunkSize)
-              .through(toOutputInfo)
-              .to[List]
-              .map(Items(_, total))
-          }
+    def getUnspentOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] = {
+      val ergoTree = addressToErgoTreeHex(address)
+      outputs
+        .countUnspentByErgoTree(ergoTree)
+        .flatMap { total =>
+          outputs
+            .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toOutputInfo)
+            .to[List]
+            .map(Items(_, total))
         }
         .thrushK(trans.xa)
+    }
 
     def getOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]] =
       outputs

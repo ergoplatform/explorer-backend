@@ -7,7 +7,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.apply._
 import cats.syntax.list._
-import mouse.anyf._
+import mouse.all._
 import fs2.{Chunk, Pipe, Stream}
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.RefinementFailed
@@ -68,12 +68,12 @@ object BoxesService {
       } yield OutputInfo(box, assets)).value ||> trans.xa
 
     def getOutputsByAddress(address: Address): Stream[F, OutputInfo] =
-      (sigma.addressToErgoTreeHex(address).asStream >>= (outRepo
+      (sigma.addressToErgoTreeHex(address) |> (outRepo
           .streamAllByErgoTree(_, 0, Int.MaxValue)
           .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getUnspentOutputsByAddress(address: Address): Stream[F, OutputInfo] =
-      (sigma.addressToErgoTreeHex(address).asStream >>= (outRepo
+      (sigma.addressToErgoTreeHex(address) |> (outRepo
           .streamUnspentByErgoTree(_, 0, Int.MaxValue)
           .chunkN(100))).through(toOutputInfo) ||> trans.xas
 

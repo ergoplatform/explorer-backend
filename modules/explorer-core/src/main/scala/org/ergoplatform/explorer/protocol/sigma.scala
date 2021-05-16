@@ -3,8 +3,7 @@ package org.ergoplatform.explorer.protocol
 import cats.data.OptionT
 import cats.syntax.either._
 import cats.{Applicative, Eval, Monad}
-import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
+import mouse.any._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.ErgoTreeSerializationErr.ErgoTreeDeserializationFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.{
   Base16DecodingFailed,
@@ -61,20 +60,16 @@ object sigma {
       }
       .fold(_.raise, _.pure)
 
-  @inline def addressToErgoTree[F[_]: CRaise[*[_], AddressDecodingFailed]: Applicative](
+  @inline def addressToErgoTree(
     address: Address
-  )(implicit enc: ErgoAddressEncoder): F[ErgoTree] =
+  )(implicit enc: ErgoAddressEncoder): ErgoTree =
     enc
       .fromString(address.unwrapped)
       .map(_.script)
-      .toEither
-      .leftMap(e => AddressDecodingFailed(address, Option(e.getMessage)))
-      .toRaise
+      .get
 
-  @inline def addressToErgoTreeHex[
-    F[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad
-  ](address: Address)(implicit enc: ErgoAddressEncoder): F[HexString] =
-    addressToErgoTree[F](address).flatMap(tree => HexString.fromString(Base16.encode(tree.bytes)))
+  @inline def addressToErgoTreeHex(address: Address)(implicit enc: ErgoAddressEncoder): HexString =
+    addressToErgoTree(address) |> (tree => HexString.fromStringUnsafe(Base16.encode(tree.bytes)))
 
   @inline def hexStringToBytes[
     F[_]: CRaise[*[_], Base16DecodingFailed]: Applicative

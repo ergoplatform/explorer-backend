@@ -65,9 +65,9 @@ object AddressesService {
 
     def getAddressInfo(address: Address, minConfirmations: Int): F[AddressInfo] =
       (for {
-        ergoTree <- sigma.addressToErgoTreeHex(address)
-        height   <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
+        height <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
         maxHeight = height - minConfirmations
+        ergoTree  = sigma.addressToErgoTreeHex(address)
         totalReceived   <- outputRepo.sumAllByErgoTree(ergoTree, maxHeight)
         balance         <- outputRepo.sumUnspentByErgoTree(ergoTree, maxHeight)
         assets          <- assetRepo.aggregateUnspentByErgoTree(ergoTree, maxHeight)
