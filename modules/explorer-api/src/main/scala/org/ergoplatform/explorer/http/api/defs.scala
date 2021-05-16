@@ -11,15 +11,15 @@ object defs {
       .in(basePrefix)
       .errorOut(
         oneOf(
-          statusMapping(
+          oneOfMapping(
             StatusCode.NotFound,
             jsonBody[ApiErr.NotFound].description("Not found")
           ),
-          statusMapping(
+          oneOfMapping(
             StatusCode.BadRequest,
             jsonBody[ApiErr.BadRequest].description("Bad request")
           ),
-          statusDefaultMapping(jsonBody[ApiErr.UnknownErr].description("Unknown error"))
+          oneOfDefaultMapping(jsonBody[ApiErr.UnknownErr].description("Unknown error"))
         )
       )
       .asInstanceOf[Endpoint[Unit, ApiErr, Unit, Any]]
