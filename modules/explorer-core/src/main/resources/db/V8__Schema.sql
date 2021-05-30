@@ -162,7 +162,7 @@ CREATE TABLE node_assets
     header_id VARCHAR(64) NOT NULL,
     index     INTEGER     NOT NULL,
     value     BIGINT      NOT NULL,
-    PRIMARY KEY (token_id, box_id, header_id)
+    PRIMARY KEY (index, token_id, box_id, header_id)
 );
 
 CREATE INDEX "node_assets__box_id" ON node_assets (box_id);
