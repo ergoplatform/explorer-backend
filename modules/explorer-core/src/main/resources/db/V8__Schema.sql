@@ -162,7 +162,7 @@ CREATE TABLE node_assets
     header_id VARCHAR(64) NOT NULL,
     index     INTEGER     NOT NULL,
     value     BIGINT      NOT NULL,
-    PRIMARY KEY (token_id, box_id, header_id)
+    PRIMARY KEY (index, token_id, box_id, header_id)
 );
 
 CREATE INDEX "node_assets__box_id" ON node_assets (box_id);
@@ -260,7 +260,7 @@ CREATE TABLE node_u_assets
     box_id   VARCHAR(64) NOT NULL REFERENCES node_u_outputs (box_id) ON DELETE CASCADE,
     index    INTEGER     NOT NULL,
     value    BIGINT      NOT NULL,
-    PRIMARY KEY (token_id, box_id)
+    PRIMARY KEY (index, token_id, box_id)
 );
 
 CREATE INDEX "node_u_assets__box_id" ON node_u_assets (box_id);

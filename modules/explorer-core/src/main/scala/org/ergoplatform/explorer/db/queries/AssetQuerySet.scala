@@ -26,7 +26,7 @@ object AssetQuerySet extends QuerySet {
 
   def getAllByBoxId(boxId: BoxId)(implicit lh: LogHandler): Query0[ExtendedAsset] =
     sql"""
-         |select distinct on (a.token_id, a.box_id)
+         |select distinct on (a.index, a.token_id, a.box_id)
          |  a.token_id,
          |  a.box_id,
          |  a.header_id,
@@ -42,7 +42,7 @@ object AssetQuerySet extends QuerySet {
 
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[ExtendedAsset] =
     (sql"""
-           |select distinct on (a.token_id, a.box_id)
+           |select distinct on (a.index, a.token_id, a.box_id)
            |  a.token_id,
            |  a.box_id,
            |  a.header_id,
@@ -59,7 +59,7 @@ object AssetQuerySet extends QuerySet {
 
   def getAllMainUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[ExtendedAsset] =
     sql"""
-         |select distinct on (a.token_id, a.box_id)
+         |select distinct on (a.index, a.token_id, a.box_id)
          |  a.token_id,
          |  a.box_id,
          |  a.header_id,
@@ -85,7 +85,7 @@ object AssetQuerySet extends QuerySet {
     sql"""
          |select agg.token_id, agg.total, t.name, t.decimals from (
          |  select ia.token_id, sum(ia.value) as total from (
-         |    select distinct on (a.token_id, a.box_id)
+         |    select distinct on (a.index, a.token_id, a.box_id)
          |      a.token_id,
          |      a.box_id,
          |      a.value
