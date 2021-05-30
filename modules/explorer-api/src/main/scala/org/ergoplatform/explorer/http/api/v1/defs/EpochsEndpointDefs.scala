@@ -1,6 +1,5 @@
 package org.ergoplatform.explorer.http.api.v1.defs
 
-import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.explorer.db.models.EpochParameters
 import org.ergoplatform.explorer.http.api.ApiErr
 import sttp.tapir.{Endpoint, _}
