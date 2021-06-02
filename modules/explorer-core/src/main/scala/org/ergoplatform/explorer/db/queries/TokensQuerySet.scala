@@ -33,21 +33,23 @@ object TokensQuerySet extends QuerySet {
   def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean)(implicit
     lh: LogHandler
   ): Query0[Token] = {
-    val query =
+    val q =
       sql"""
          |select t.token_id, t.box_id, t.emission_amount, t.name, t.description, t.type, t.decimals from tokens t
          |left join node_outputs o on o.box_id = t.box_id
+         |where o.main_chain = true
          |""".stripMargin
     val nonNft        = Fragment.const(s"and t.emission_amount > 1")
-    val cond          = if (hideNfts) nonNft else Fragment.empty
     val orderingFr    = Fragment.const(s"order by o.creation_height $ordering")
     val offsetLimitFr = Fragment.const(s"offset $offset limit $limit")
-    (query ++ cond ++ orderingFr ++ offsetLimitFr).query[Token]
+    ((if (hideNfts) q ++ nonNft else q) ++ orderingFr ++ offsetLimitFr).query[Token]
   }
 
-  def countAll(implicit lh: LogHandler): Query0[Int] =
-    sql"select count(*) from tokens t left join node_outputs o on o.box_id = t.box_id where o.main_chain = true"
-      .query[Int]
+  def countAll(hideNfts: Boolean)(implicit lh: LogHandler): Query0[Int] = {
+    val q      = sql"select count(*) from tokens t left join node_outputs o on o.box_id = t.box_id where o.main_chain = true"
+    val nonNft = Fragment.const(s"and t.emission_amount > 1")
+    (if (hideNfts) q ++ nonNft else q).query[Int]
+  }
 
   def getAllLike(q: String, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Token] =
     sql"""
