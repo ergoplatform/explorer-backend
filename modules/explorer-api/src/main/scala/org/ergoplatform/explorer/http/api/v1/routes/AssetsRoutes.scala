@@ -14,21 +14,15 @@ import sttp.tapir.server.http4s._
 
 final class AssetsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](settings: RequestsSettings, assets: Assets[F], tokens: Tokens[F])(implicit opts: Http4sServerOptions[F, F]) {
+](settings: RequestsSettings, assets: Assets[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   val defs = new AssetsEndpointDefs(settings)
 
-  val routes: HttpRoutes[F] =
-    listTokensR <+> searchByTokenIdR
+  val routes: HttpRoutes[F] = searchByTokenIdR
 
   private def searchByTokenIdR: HttpRoutes[F] =
     Http4sServerInterpreter.toRoutes(defs.searchByTokenIdDef) { case (q, paging) =>
       assets.getAllLike(q, paging).adaptThrowable.value
-    }
-
-  private def listTokensR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.listTokensDef) { case (paging, ordering) =>
-      tokens.getAll(paging, ordering).adaptThrowable.value
     }
 }
 
@@ -36,8 +30,7 @@ object AssetsRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     settings: RequestsSettings,
-    assets: Assets[F],
-    tokens: Tokens[F]
+    assets: Assets[F]
   )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
-    new AssetsRoutes(settings, assets, tokens).routes
+    new AssetsRoutes(settings, assets).routes
 }

@@ -37,8 +37,8 @@ final class TokensRoutes[
     }
 
   private def listR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.listDef) { case (paging, ordering) =>
-      tokens.getAll(paging, ordering).adaptThrowable.value
+    Http4sServerInterpreter.toRoutes(defs.listDef) { case (paging, ordering, hideNfts) =>
+      tokens.getAll(paging, ordering, hideNfts).adaptThrowable.value
     }
 }
 

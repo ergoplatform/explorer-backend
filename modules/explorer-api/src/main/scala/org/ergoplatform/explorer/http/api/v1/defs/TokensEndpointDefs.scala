@@ -32,10 +32,11 @@ final class TokensEndpointDefs(settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[TokenInfo]])
 
-  def listDef: Endpoint[(Paging, SortOrder), ApiErr, Items[TokenInfo], Any] =
+  def listDef: Endpoint[(Paging, SortOrder, Boolean), ApiErr, Items[TokenInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix)
       .in(paging(settings.maxEntitiesPerRequest))
       .in(ordering)
+      .in(hideNfts)
       .out(jsonBody[Items[TokenInfo]])
 }

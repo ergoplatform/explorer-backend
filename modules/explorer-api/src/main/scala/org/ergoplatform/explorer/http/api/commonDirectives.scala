@@ -1,15 +1,14 @@
 package org.ergoplatform.explorer.http.api
 
-import java.util.concurrent.TimeUnit
-
 import cats.data.NonEmptyMap
 import cats.instances.option._
 import cats.syntax.flatMap._
 import cats.syntax.option._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Epochs, Paging, Sorting}
-import sttp.tapir.{EndpointInput, ValidationError, Validator, query}
+import sttp.tapir.{query, EndpointInput, ValidationError, Validator}
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
 object commonDirectives {
@@ -55,6 +54,11 @@ object commonDirectives {
       .map(_ getOrElse Sorting.Desc) { ordering =>
         ordering.some
       }
+
+  def hideNfts: EndpointInput.Query[Boolean] =
+    query[Boolean]("hideNfts")
+      .default(false)
+      .description("Exclude NFTs from result set")
 
   def epochSlicing(maxEpochs: Int): EndpointInput[Epochs] =
     (query[Int]("minHeight").validate(Validator.min(0)) and

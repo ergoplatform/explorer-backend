@@ -23,7 +23,7 @@ trait TokenRepo[D[_]] {
 
   def get(id: TokenId): D[Option[Token]]
 
-  def getAll(offset: Int, limit: Int, ordering: OrderingString): D[List[Token]]
+  def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean): D[List[Token]]
 
   def countAll: D[Int]
 
@@ -53,8 +53,8 @@ object TokenRepo {
 
     def get(id: TokenId): ConnectionIO[Option[Token]] = QS.get(id).option
 
-    def getAll(offset: Int, limit: Int, ordering: OrderingString): ConnectionIO[List[Token]] =
-      QS.getAll(offset, limit, ordering).to[List]
+    def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean): ConnectionIO[List[Token]] =
+      QS.getAll(offset, limit, ordering, hideNfts).to[List]
 
     def countAll: ConnectionIO[Int] = QS.countAll.unique
 
