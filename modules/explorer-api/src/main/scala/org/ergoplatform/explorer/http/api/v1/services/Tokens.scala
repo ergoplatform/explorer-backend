@@ -27,7 +27,7 @@ trait Tokens[F[_]] {
 
   /** Get all issued tokens.
     */
-  def getAll(paging: Paging, ordering: SortOrder): F[Items[TokenInfo]]
+  def getAll(paging: Paging, ordering: SortOrder, hideNfts: Boolean): F[Items[TokenInfo]]
 }
 
 object Tokens {
@@ -58,11 +58,11 @@ object Tokens {
         }
         .thrushK(trans.xa)
 
-    def getAll(paging: Paging, ordering: SortOrder): F[Items[TokenInfo]] =
-      tokenRepo.countAll
+    def getAll(paging: Paging, ordering: SortOrder, hideNfts: Boolean): F[Items[TokenInfo]] =
+      tokenRepo.countAll(hideNfts)
         .flatMap { total =>
           tokenRepo
-            .getAll(paging.offset, paging.limit, ordering.value)
+            .getAll(paging.offset, paging.limit, ordering.value, hideNfts)
             .map(_.map(TokenInfo(_)))
             .map(Items(_, total))
         }
