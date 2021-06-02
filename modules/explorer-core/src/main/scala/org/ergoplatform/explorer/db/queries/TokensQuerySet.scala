@@ -39,7 +39,7 @@ object TokensQuerySet extends QuerySet {
          |left join node_outputs o on o.box_id = t.box_id
          |where o.main_chain = true
          |""".stripMargin
-    val nonNft        = Fragment.const(s"and t.emission_amount > 1")
+    val nonNft        = Fragment.const(s" and t.emission_amount > 1")
     val orderingFr    = Fragment.const(s"order by o.creation_height $ordering")
     val offsetLimitFr = Fragment.const(s"offset $offset limit $limit")
     ((if (hideNfts) q ++ nonNft else q) ++ orderingFr ++ offsetLimitFr).query[Token]
@@ -47,7 +47,7 @@ object TokensQuerySet extends QuerySet {
 
   def countAll(hideNfts: Boolean)(implicit lh: LogHandler): Query0[Int] = {
     val q      = sql"select count(*) from tokens t left join node_outputs o on o.box_id = t.box_id where o.main_chain = true"
-    val nonNft = Fragment.const(s"and t.emission_amount > 1")
+    val nonNft = Fragment.const(s" and t.emission_amount > 1")
     (if (hideNfts) q ++ nonNft else q).query[Int]
   }
 
