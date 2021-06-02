@@ -25,7 +25,7 @@ trait TokenRepo[D[_]] {
 
   def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean): D[List[Token]]
 
-  def countAll: D[Int]
+  def countAll(hideNfts: Boolean): D[Int]
 
   /** Get all tokens matching a given `idSubstring`.
     */
@@ -56,7 +56,7 @@ object TokenRepo {
     def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean): ConnectionIO[List[Token]] =
       QS.getAll(offset, limit, ordering, hideNfts).to[List]
 
-    def countAll: ConnectionIO[Int] = QS.countAll.unique
+    def countAll(hideNfts: Boolean): ConnectionIO[Int] = QS.countAll(hideNfts).unique
 
     def getAllLike(q: String, offset: Int, limit: Int): ConnectionIO[List[Token]] =
       QS.getAllLike(q, offset, limit).to[List]

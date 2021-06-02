@@ -59,7 +59,7 @@ object Tokens {
         .thrushK(trans.xa)
 
     def getAll(paging: Paging, ordering: SortOrder, hideNfts: Boolean): F[Items[TokenInfo]] =
-      tokenRepo.countAll
+      tokenRepo.countAll(hideNfts)
         .flatMap { total =>
           tokenRepo
             .getAll(paging.offset, paging.limit, ordering.value, hideNfts)
