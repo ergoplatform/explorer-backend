@@ -4,6 +4,7 @@ import io.circe.Codec
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.Header
+import org.ergoplatform.explorer.protocol.blocks
 import org.ergoplatform.explorer.{HexString, Id}
 import scorex.util.encode.Base16
 import sttp.tapir.{Schema, Validator}
@@ -14,6 +15,7 @@ final case class HeaderInfo(
   parentId: Id,
   version: Short,
   height: Int,
+  epoch: Int,
   difficulty: BigDecimal,
   adProofsRoot: HexString,
   stateRoot: HexString,
@@ -39,6 +41,7 @@ object HeaderInfo {
       .modify(_.parentId)(_.description("ID of the parental block/header"))
       .modify(_.version)(_.description("Version of the header"))
       .modify(_.height)(_.description("Block/header height"))
+      .modify(_.epoch)(_.description("Block/header epoch (Epochs are enumerated from 0)"))
       .modify(_.difficulty)(_.description("Block/header difficulty"))
       .modify(_.adProofsRoot)(_.description("Hex-encoded root of the corresponding AD proofs"))
       .modify(_.stateRoot)(_.description("Hex-encoded root of the corresponding state"))
@@ -60,6 +63,7 @@ object HeaderInfo {
       h.parentId,
       h.version.toShort,
       h.height,
+      blocks.epochOf(h.height),
       h.difficulty,
       h.adProofsRoot,
       h.stateRoot,
@@ -69,19 +73,7 @@ object HeaderInfo {
       size,
       h.extensionHash,
       powSolutions,
-      expandVotes(h.votes)
+      blocks.expandVotes(h.votes)
     )
-  }
-
-  private def expandVotes(votesHex: String) = {
-    val defaultVotes = (0: Byte, 0: Byte, 0: Byte)
-    val paramsQty    = 3
-    Base16
-      .decode(votesHex)
-      .map {
-        case votes if votes.length == paramsQty => (votes(0): Byte, votes(1): Byte, votes(2): Byte)
-        case _                                  => defaultVotes
-      }
-      .getOrElse(defaultVotes)
   }
 }
