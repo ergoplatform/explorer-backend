@@ -43,7 +43,7 @@ object RoutesV1Bundle {
       epochsRoutes    = EpochsRoutes(epochs)
       blocksRoutes    = BlocksRoutes(requestsSettings, blocks)
       tokensRoutes    = TokensRoutes(requestsSettings, tokens)
-      assetsRoutes    = AssetsRoutes(requestsSettings, assets)
+      assetsRoutes    = AssetsRoutes(requestsSettings, assets, tokens)
       txsRoutes       = TransactionsRoutes(requestsSettings, transactions)
       addressesRoutes = AddressesRoutes(requestsSettings, transactions, addresses)
       docs            = DocsRoutes(requestsSettings)
