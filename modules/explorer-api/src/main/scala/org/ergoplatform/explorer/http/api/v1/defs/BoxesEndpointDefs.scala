@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.defs
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
-import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.{BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.capabilities.fs2.Fs2Streams
@@ -31,7 +31,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     searchOutputsDef ::
     Nil
 
-  def streamUnspentOutputsDef: Endpoint[Epochs, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+  def streamUnspentOutputsDef: Endpoint[HeightRange, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "stream")
       .in(epochSlicing(settings.maxEpochsPerRequest))
@@ -44,14 +44,14 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def streamOutputsByErgoTreeTemplateHashDef
-    : Endpoint[(ErgoTreeTemplateHash, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    : Endpoint[(ErgoTreeTemplateHash, HeightRange), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
       .in(epochSlicing(settings.maxEpochsPerRequest))
       .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def streamUnspentOutputsByErgoTreeTemplateHashDef
-    : Endpoint[(ErgoTreeTemplateHash, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    : Endpoint[(ErgoTreeTemplateHash, HeightRange), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
       .in(epochSlicing(settings.maxEpochsPerRequest))
