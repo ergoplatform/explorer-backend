@@ -21,6 +21,7 @@ final class BoxesRoutes[
 
   val routes: HttpRoutes[F] =
     streamUnspentOutputsByEpochsR <+>
+    streamUnspentOutputsByGixR <+>
     streamUnspentOutputsR <+>
     streamOutputsByErgoTreeTemplateHashR <+>
     streamUnspentOutputsByErgoTreeTemplateHashR <+>
@@ -45,6 +46,11 @@ final class BoxesRoutes[
       streaming.bytesStream(service.streamUnspentOutputs(lastEpochs))
     }
 
+  private def streamUnspentOutputsByGixR: HttpRoutes[F] =
+    Http4sServerInterpreter.toRoutes(defs.streamUnspentOutputsByGixDef) { case (minGix, limit) =>
+      streaming.bytesStream(service.streamUnspentOutputs(minGix, limit))
+    }
+
   private def streamOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
     Http4sServerInterpreter.toRoutes(defs.streamOutputsByErgoTreeTemplateHashDef) { case (template, epochs) =>
       streaming.bytesStream(service.streamOutputsByErgoTreeTemplateHash(template, epochs))
@@ -56,7 +62,7 @@ final class BoxesRoutes[
     }
 
   private def outputsByTokenIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.outputsByTokenIdDef){ case (tokenId, paging) =>
+    Http4sServerInterpreter.toRoutes(defs.outputsByTokenIdDef) { case (tokenId, paging) =>
       service.getOutputsByTokenId(tokenId, paging).adaptThrowable.value
     }
 

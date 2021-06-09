@@ -60,14 +60,17 @@ object commonDirectives {
       .default(false)
       .description("Exclude NFTs from result set")
 
-  def epochSlicing(maxEpochs: Int): EndpointInput[HeightRange] =
+  def blocksSlicing(maxBlocks: Int): EndpointInput[HeightRange] =
     (query[Int]("minHeight").validate(Validator.min(0)) and
       query[Int]("maxHeight").validate(Validator.min(1)))
-      .validate(Validator.custom(validateBounds(_, maxEpochs)))
+      .validate(Validator.custom(validateBounds(_, maxBlocks)))
       .map(in => HeightRange(in._1, in._2))(epochs => epochs.minHeight -> epochs.maxHeight)
 
-  def lastEpochs(maxEpochs: Int): EndpointInput.Query[Int] =
-    query[Int]("lastEpochs").validate(Validator.max(maxEpochs))
+  def lastBlocks(maxBlocks: Int): EndpointInput.Query[Int] =
+    query[Int]("lastEpochs").validate(Validator.max(maxBlocks))
+
+  def limit(maxEntities: Int): EndpointInput.Query[Int] =
+    query[Int]("limit").validate(Validator.max(maxEntities))
 
   private def validateBounds(bounds: (Int, Int), max: Int): List[ValidationError[_]] =
     bounds match {

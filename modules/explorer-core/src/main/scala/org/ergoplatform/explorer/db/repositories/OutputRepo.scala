@@ -144,7 +144,11 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all unspent outputs appeared in the main chain after `minHeight`.
     */
-  def getAllMainUnspent(minHeight: Int, maxHeight: Int): S[D, Output]
+  def getAllUnspent(minHeight: Int, maxHeight: Int): S[D, Output]
+
+  /** Get all unspent outputs appeared in the blockchain after an output at a given global index `minGix` (inclusively).
+    */
+  def getAllUnspent(minGix: Long, limit: Int): S[D, Output]
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, ExtendedOutput]
 
@@ -301,8 +305,11 @@ object OutputRepo {
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
 
-    def getAllMainUnspent(minHeight: Int, maxHeight: Int): Stream[D, Output] =
+    def getAllUnspent(minHeight: Int, maxHeight: Int): Stream[D, Output] =
       QS.getUnspent(minHeight, maxHeight).stream.translate(liftK)
+
+    def getAllUnspent(minGix: Long, limit: Int): Stream[D, Output] =
+      QS.getUnspent(minGix, limit).stream.translate(liftK)
 
     def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, ExtendedOutput] =
       QS.getAllByTokenId(tokenId, offset, limit).stream.translate(liftK)

@@ -14,7 +14,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputRepo}
-import org.ergoplatform.explorer.http.api.models.{Items, Paging, HeightRange}
+import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.{BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.protocol.sigma._
@@ -61,7 +61,10 @@ trait Boxes[F[_]] {
 
   /** Get all unspent outputs containing a given `tokenId`.
     */
-  def streamUnspentOutputsByErgoTreeTemplateHash(template: ErgoTreeTemplateHash, range: HeightRange): Stream[F, OutputInfo]
+  def streamUnspentOutputsByErgoTreeTemplateHash(
+    template: ErgoTreeTemplateHash,
+    range: HeightRange
+  ): Stream[F, OutputInfo]
 
   /** Get all unspent outputs appeared in the blockchain after `minHeight`.
     */
@@ -70,6 +73,10 @@ trait Boxes[F[_]] {
   /** Get all unspent outputs appeared in the blockchain within a suffix of `suffixLen`.
     */
   def streamUnspentOutputs(suffixLen: Int): Stream[F, OutputInfo]
+
+  /** Get all unspent outputs appeared in the blockchain after an output at a given global index `minGix` (inclusively).
+    */
+  def streamUnspentOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo]
 
   /** Get all outputs containing a given `tokenId`.
     */
@@ -198,7 +205,10 @@ object Boxes {
         .through(toOutputInfo)
         .thrushK(trans.xas)
 
-    def streamUnspentOutputsByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash, range: HeightRange): Stream[F, OutputInfo] =
+    def streamUnspentOutputsByErgoTreeTemplateHash(
+      hash: ErgoTreeTemplateHash,
+      range: HeightRange
+    ): Stream[F, OutputInfo] =
       outputs
         .streamUnspentByErgoTreeTemplateHashByEpochs(hash, range.minHeight, range.maxHeight)
         .chunkN(serviceSettings.chunkSize)
@@ -207,7 +217,7 @@ object Boxes {
 
     def streamUnspentOutputs(range: HeightRange): Stream[F, OutputInfo] =
       outputs
-        .getAllMainUnspent(range.minHeight, range.maxHeight)
+        .getAllUnspent(range.minHeight, range.maxHeight)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)
@@ -216,8 +226,15 @@ object Boxes {
       Stream
         .eval(headers.getBestHeight)
         .flatMap { bestHeight =>
-          outputs.getAllMainUnspent(bestHeight - suffixLen, bestHeight)
+          outputs.getAllUnspent(bestHeight - suffixLen, bestHeight)
         }
+        .chunkN(serviceSettings.chunkSize)
+        .through(toUnspentOutputInfo)
+        .thrushK(trans.xas)
+
+    def streamUnspentOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo] =
+      outputs
+        .getAllUnspent(minGix, limit)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)
