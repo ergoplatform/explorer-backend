@@ -327,11 +327,12 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_headers h on h.id = o.header_id
+         |left join node_transactions tx on tx.id = o.tx_id
          |where o.main_chain = true
          |  and i.box_id is null
          |  and h.height >= $minHeight
          |  and h.height <= $maxHeight
-         |order by h.height asc
+         |order by h.height, tx.index, o.index asc
          |""".stripMargin.query[Output]
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedOutput] =
