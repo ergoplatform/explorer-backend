@@ -63,6 +63,8 @@ CREATE TABLE blocks_info
     total_fees             BIGINT  NOT NULL,
     total_miners_reward    BIGINT  NOT NULL,
     total_coins_in_txs     BIGINT  NOT NULL,
+    max_tx_gix             BIGINT  NOT NULL,
+    max_box_gix            BIGINT  NOT NULL,
     main_chain             BOOLEAN NOT NULL
 );
 
@@ -81,6 +83,7 @@ CREATE TABLE node_transactions
     timestamp        BIGINT      NOT NULL,
     size             INTEGER     NOT NULL,
     index            INTEGER     NOT NULL,
+    global_index     BIGINT      NOT NULL,
     main_chain       BOOLEAN     NOT NULL,
     PRIMARY KEY (id, header_id)
 );
@@ -137,6 +140,7 @@ CREATE TABLE node_outputs
     creation_height         INTEGER     NOT NULL,
     settlement_height       INTEGER     NOT NULL,
     index                   INTEGER     NOT NULL,
+    global_index            BIGINT      NOT NULL,
     ergo_tree               VARCHAR     NOT NULL,
     ergo_tree_template_hash VARCHAR(64) NOT NULL,
     address                 VARCHAR     NOT NULL,

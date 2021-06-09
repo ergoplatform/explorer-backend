@@ -86,7 +86,8 @@ object generators {
       ts       <- Gen.posNum[Long]
       size     <- Gen.posNum[Int]
       index    <- Gen.posNum[Int]
-    } yield Transaction(id, headerId, height, coinbase, ts, size, index, mainChain)
+      gix      <- Gen.posNum[Long]
+    } yield Transaction(id, headerId, height, coinbase, ts, size, index, gix, mainChain)
 
   def headerWithTxsGen(mainChain: Boolean): Gen[(Header, List[Transaction])] =
     for {
@@ -104,6 +105,7 @@ object generators {
       value    <- Gen.posNum[Long]
       height   <- Gen.posNum[Int]
       idx      <- Gen.posNum[Int]
+      gix      <- Gen.posNum[Long]
       tree     <- ergoTreeGen
       template = sigma.deriveErgoTreeTemplateHash[Try](tree).get
       address <- addressGen
@@ -117,6 +119,7 @@ object generators {
       height,
       height,
       idx,
+      gix,
       tree,
       template,
       address,

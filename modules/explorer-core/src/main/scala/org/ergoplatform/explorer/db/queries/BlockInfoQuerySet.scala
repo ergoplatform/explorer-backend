@@ -36,6 +36,8 @@ object BlockInfoQuerySet extends QuerySet {
     "total_fees",
     "total_miners_reward",
     "total_coins_in_txs",
+    "max_tx_gix",
+    "max_box_gix",
     "main_chain"
   )
 
@@ -76,6 +78,8 @@ object BlockInfoQuerySet extends QuerySet {
          |  bi.total_fees,
          |  bi.total_miners_reward,
          |  bi.total_coins_in_txs,
+         |  bi.max_tx_gix,
+         |  bi.max_box_gix,
          |  bi.main_chain,
          |  mi.miner_name
          |from blocks_info bi
@@ -113,6 +117,8 @@ object BlockInfoQuerySet extends QuerySet {
          |  bi.total_fees,
          |  bi.total_miners_reward,
          |  bi.total_coins_in_txs,
+         |  bi.max_tx_gix,
+         |  bi.max_box_gix,
          |  bi.main_chain,
          |  mi.miner_name
          |from blocks_info bi

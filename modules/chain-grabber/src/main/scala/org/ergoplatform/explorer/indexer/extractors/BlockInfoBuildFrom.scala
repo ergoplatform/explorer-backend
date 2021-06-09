@@ -38,6 +38,11 @@ final class BlockInfoBuildFrom[
           .map(_.timestamp)
           .getOrElse(0L)
 
+        val lastGlobalTxIndex  = prevBlockInfo.map(_.maxTxGix).getOrElse(-1L)
+        val lastGlobalBoxIndex = prevBlockInfo.map(_.maxBoxGix).getOrElse(-1L)
+        val maxGlobalTxIndex   = lastGlobalTxIndex + apiBlock.transactions.transactions.size
+        val maxGlobalBoxIndex  = lastGlobalBoxIndex + apiBlock.transactions.transactions.flatMap(_.outputs.toList).size
+
         BlockStats(
           headerId        = apiBlock.header.id,
           timestamp       = apiBlock.header.timestamp,
@@ -66,8 +71,10 @@ final class BlockInfoBuildFrom[
           totalMinersReward = prevBlockInfo
             .map(_.totalMinersReward)
             .getOrElse(0L) + reward,
-          totalCoinsInTxs = prevBlockInfo.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins,
-          mainChain       = false
+          totalCoinsInTxs    = prevBlockInfo.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins,
+          maxTxGix = maxGlobalTxIndex,
+          maxBoxGix         = maxGlobalBoxIndex,
+          mainChain          = false
         )
       }
     }

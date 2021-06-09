@@ -69,20 +69,19 @@ package object extractors {
     }
 
   implicit def txsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Transaction]] =
-    BuildFrom.pure { case SlotData(apiBlock, _) =>
-      val headerId = apiBlock.header.id
-      val height   = apiBlock.header.height
-      val ts       = apiBlock.header.timestamp
-      val txs      = apiBlock.transactions.transactions.zipWithIndex
-      val coinbaseTxOpt = txs.lastOption
-        .map { case (tx, i) =>
-          Transaction(tx.id, headerId, height, isCoinbase = true, ts, tx.size, i, mainChain = false)
-        }
-      val restTxs = txs.init
-        .map { case (tx, i) =>
-          Transaction(tx.id, headerId, height, isCoinbase = false, ts, tx.size, i, mainChain = false)
-        }
-      restTxs ++ coinbaseTxOpt
+    BuildFrom.pure { case SlotData(apiBlock, parentOpt) =>
+      val lastTxGlobalIndex = parentOpt.map(_.maxTxGix).getOrElse(-1L)
+      val headerId          = apiBlock.header.id
+      val height            = apiBlock.header.height
+      val ts                = apiBlock.header.timestamp
+      val txs =
+        apiBlock.transactions.transactions.zipWithIndex
+          .map { case (tx, i) =>
+            val globalIndex = lastTxGlobalIndex + i
+            Transaction(tx.id, headerId, height, isCoinbase = false, ts, tx.size, i, globalIndex, mainChain = false)
+          }
+      val (init, coinbase) = txs.init -> txs.lastOption
+      init ++ coinbase.map(_.copy(isCoinbase = true))
     }
 
   implicit def inputsBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Input]] =
@@ -119,36 +118,44 @@ package object extractors {
 
   implicit def outputsBuildFrom[F[_]: Monad: Throws: WithContext[*[_], ProtocolSettings]]
     : BuildFrom[F, SlotData, List[Output]] =
-    BuildFrom.instance { case SlotData(ApiFullBlock(header, apiTxs, _, _, _), _) =>
+    BuildFrom.instance { case SlotData(ApiFullBlock(header, apiTxs, _, _, _), parentOpt) =>
+      val lastOutputGlobalIndex = parentOpt.map(_.maxBoxGix).getOrElse(-1L)
       context.flatMap { protocolSettings =>
         implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
-        apiTxs.transactions.flatTraverse { apiTx =>
-          apiTx.outputs.toList.zipWithIndex
-            .traverse { case (o, index) =>
-              for {
-                address <- sigma
-                             .ergoTreeToAddress[F](o.ergoTree)
-                             .map(_.toString)
-                             .flatMap(Address.fromString[F])
-                scriptTemplateHash <- sigma.deriveErgoTreeTemplateHash[F](o.ergoTree)
-                registersJson = registers.expand(o.additionalRegisters).asJson
-              } yield Output(
-                o.boxId,
-                apiTx.id,
-                apiTxs.headerId,
-                o.value,
-                o.creationHeight,
-                header.height,
-                index,
-                o.ergoTree,
-                scriptTemplateHash,
-                address,
-                registersJson,
-                header.timestamp,
-                mainChain = false
-              )
-            }
-        }
+        apiTxs.transactions.zipWithIndex
+          .flatMap { case (tx, tix) =>
+            tx.outputs.toList.zipWithIndex
+              .map { case (o, oix) => ((o, tx.id), oix, tix) }
+          }
+          .sortBy { case (_, oix, tix) => (tix, oix) }
+          .map { case ((o, txId), oix, _) => (o, oix, txId) }
+          .zipWithIndex
+          .traverse { case ((o, outIndex, txId), blockIndex) =>
+            for {
+              address <- sigma
+                           .ergoTreeToAddress[F](o.ergoTree)
+                           .map(_.toString)
+                           .flatMap(Address.fromString[F])
+              scriptTemplateHash <- sigma.deriveErgoTreeTemplateHash[F](o.ergoTree)
+              registersJson = registers.expand(o.additionalRegisters).asJson
+              globalIndex   = lastOutputGlobalIndex + blockIndex + 1
+            } yield Output(
+              o.boxId,
+              txId,
+              apiTxs.headerId,
+              o.value,
+              o.creationHeight,
+              header.height,
+              outIndex,
+              globalIndex,
+              o.ergoTree,
+              scriptTemplateHash,
+              address,
+              registersJson,
+              header.timestamp,
+              mainChain = false
+            )
+          }
       }
     }
 
