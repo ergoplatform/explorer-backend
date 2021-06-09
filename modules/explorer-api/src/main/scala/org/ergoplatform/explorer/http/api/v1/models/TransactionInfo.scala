@@ -15,6 +15,7 @@ final case class TransactionInfo(
   inclusionHeight: Int,
   timestamp: Long,
   index: Int,
+  globalIndex: Long,
   numConfirmations: Int,
   inputs: List[InputInfo],
   dataInputs: List[DataInputInfo],
@@ -32,6 +33,7 @@ object TransactionInfo {
       .modify(_.inclusionHeight)(_.description("Height of the block the transaction was included in"))
       .modify(_.timestamp)(_.description("Timestamp the transaction got into the network"))
       .modify(_.index)(_.description("Index of a transaction inside a block"))
+      .modify(_.globalIndex)(_.description("global index of a transaction in the blockchain"))
       .modify(_.numConfirmations)(_.description("Number of transaction confirmations"))
       .modify(_.size)(_.description("Transaction size in bytes"))
 
@@ -102,6 +104,7 @@ object TransactionInfo {
       tx.inclusionHeight,
       tx.timestamp,
       tx.index,
+      tx.globalIndex,
       numConfirmations,
       relatedInputs,
       relatedDataInputs,
