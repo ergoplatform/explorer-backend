@@ -77,7 +77,7 @@ package object extractors {
       val txs =
         apiBlock.transactions.transactions.zipWithIndex
           .map { case (tx, i) =>
-            val globalIndex = lastTxGlobalIndex + i
+            val globalIndex = lastTxGlobalIndex + i + 1
             Transaction(tx.id, headerId, height, isCoinbase = false, ts, tx.size, i, globalIndex, mainChain = false)
           }
       val (init, coinbase) = txs.init -> txs.lastOption
