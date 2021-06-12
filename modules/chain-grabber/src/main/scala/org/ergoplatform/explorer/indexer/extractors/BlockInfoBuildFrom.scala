@@ -71,10 +71,10 @@ final class BlockInfoBuildFrom[
           totalMinersReward = prevBlockInfo
             .map(_.totalMinersReward)
             .getOrElse(0L) + reward,
-          totalCoinsInTxs    = prevBlockInfo.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins,
-          maxTxGix = maxGlobalTxIndex,
-          maxBoxGix         = maxGlobalBoxIndex,
-          mainChain          = false
+          totalCoinsInTxs = prevBlockInfo.map(_.totalCoinsInTxs).getOrElse(0L) + blockCoins,
+          maxTxGix        = maxGlobalTxIndex,
+          maxBoxGix       = maxGlobalBoxIndex,
+          mainChain       = false
         )
       }
     }
