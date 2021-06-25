@@ -173,6 +173,22 @@ trait OutputRepo[D[_], S[_[_], _]] {
     constants: Option[NonEmptyList[(Int, String)]],
     assets: Option[NonEmptyList[TokenId]]
   ): D[Int]
+
+  def searchUnspent(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]],
+    offset: Int,
+    limit: Int
+  ): S[D, Output]
+
+  def countUnspent(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]]
+  ): D[Int]
 }
 
 object OutputRepo {
@@ -340,5 +356,23 @@ object OutputRepo {
       assets: Option[NonEmptyList[TokenId]]
     ): D[Int] =
       QS.countAll(templateHash, registers, constants, assets).unique.liftConnectionIO
+
+    def searchUnspent(
+      templateHash: ErgoTreeTemplateHash,
+      registers: Option[NonEmptyList[(RegisterId, String)]],
+      constants: Option[NonEmptyList[(Int, String)]],
+      assets: Option[NonEmptyList[TokenId]],
+      offset: Int,
+      limit: Int
+    ): Stream[D, Output] =
+      QS.searchUnspent(templateHash, registers, constants, assets, offset, limit).stream.translate(liftK)
+
+    def countUnspent(
+      templateHash: ErgoTreeTemplateHash,
+      registers: Option[NonEmptyList[(RegisterId, String)]],
+      constants: Option[NonEmptyList[(Int, String)]],
+      assets: Option[NonEmptyList[TokenId]]
+    ): D[Int] =
+      QS.countUnspent(templateHash, registers, constants, assets).unique.liftConnectionIO
   }
 }

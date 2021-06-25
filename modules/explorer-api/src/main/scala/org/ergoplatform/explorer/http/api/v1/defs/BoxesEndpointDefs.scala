@@ -29,6 +29,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     getUnspentOutputsByErgoTreeTemplateHashDef ::
     getOutputsByAddressDef ::
     getUnspentOutputsByAddressDef ::
+    searchUnspentOutputsDef ::
     searchOutputsDef ::
     Nil
 
@@ -127,4 +128,13 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(jsonBody[BoxQuery])
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
+      .description("Detailed search among all boxes in the chain")
+
+  def searchUnspentOutputsDef: Endpoint[(BoxQuery, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.post
+      .in(PathPrefix / "unspent" / "search")
+      .in(jsonBody[BoxQuery])
+      .in(paging(settings.maxEntitiesPerRequest))
+      .out(jsonBody[Items[OutputInfo]])
+      .description("Detailed search among UTXO set")
 }

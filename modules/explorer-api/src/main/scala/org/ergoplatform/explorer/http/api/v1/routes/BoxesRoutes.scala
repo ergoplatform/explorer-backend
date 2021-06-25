@@ -27,6 +27,7 @@ final class BoxesRoutes[
     streamUnspentOutputsByErgoTreeTemplateHashR <+>
     unspentOutputsByTokenIdR <+>
     outputsByTokenIdR <+>
+    searchUnspentOutputsR <+>
     searchOutputsR <+>
     getOutputsByErgoTreeR <+>
     getUnspentOutputsByErgoTreeR <+>
@@ -113,6 +114,11 @@ final class BoxesRoutes[
   private def searchOutputsR: HttpRoutes[F] =
     Http4sServerInterpreter.toRoutes(defs.searchOutputsDef) { case (query, paging) =>
       service.searchAll(query, paging).adaptThrowable.value
+    }
+
+  private def searchUnspentOutputsR: HttpRoutes[F] =
+    Http4sServerInterpreter.toRoutes(defs.searchUnspentOutputsDef) { case (query, paging) =>
+      service.searchUnspent(query, paging).adaptThrowable.value
     }
 }
 

@@ -89,6 +89,10 @@ trait Boxes[F[_]] {
   /** Get all outputs matching a given `boxQuery`.
     */
   def searchAll(boxQuery: BoxQuery, paging: Paging): F[Items[OutputInfo]]
+
+  /** Get unspent outputs matching a given `boxQuery`.
+    */
+  def searchUnspent(boxQuery: BoxQuery, paging: Paging): F[Items[OutputInfo]]
 }
 
 object Boxes {
@@ -276,6 +280,23 @@ object Boxes {
             .searchAll(boxQuery.ergoTreeTemplateHash, registers, constants, assets, paging.offset, paging.limit)
             .chunkN(serviceSettings.chunkSize)
             .through(toOutputInfo)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
+    }
+
+    def searchUnspent(boxQuery: BoxQuery, paging: Paging): F[Items[OutputInfo]] = {
+      val registers = boxQuery.registers.flatMap(rs => NonEmptyList.fromList(rs.toList))
+      val constants = boxQuery.constants.flatMap(cs => NonEmptyList.fromList(cs.toList))
+      val assets    = boxQuery.assets.flatMap(NonEmptyList.fromList)
+      outputs
+        .countUnspent(boxQuery.ergoTreeTemplateHash, registers, constants, assets)
+        .flatMap { total =>
+          outputs
+            .searchUnspent(boxQuery.ergoTreeTemplateHash, registers, constants, assets, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toUnspentOutputInfo)
             .to[List]
             .map(Items(_, total))
         }
