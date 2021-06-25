@@ -571,7 +571,7 @@ object OutputQuerySet extends QuerySet {
            |${registers.map(innerJoinAllOfRegisters(as = "rs", tableAlias = "o", _)).getOrElse("")}
            |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
            |${assets.map(innerJoinAllOfAssets(as = "ts", tableAlias = "o", _)).getOrElse("")}
-           |where o.ergo_tree_template_hash = '$templateHash' and o.main_chain = true and i.tx_id = null
+           |where o.ergo_tree_template_hash = '$templateHash' and o.main_chain = true and i.tx_id is null
            |order by o.creation_height asc
            |offset $offset limit $limit
            |""".stripMargin
@@ -594,7 +594,7 @@ object OutputQuerySet extends QuerySet {
            |${registers.map(innerJoinAllOfRegisters(as = "rs", tableAlias = "o", _)).getOrElse("")}
            |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
            |${assets.map(innerJoinAllOfAssets(as = "ts", tableAlias = "o", _)).getOrElse("")}
-           |where o.ergo_tree_template_hash = '$templateHash' and o.main_chain = true and i.tx_id = null
+           |where o.ergo_tree_template_hash = '$templateHash' and o.main_chain = true and i.tx_id is null
            |""".stripMargin
       )
       .query[Int]
