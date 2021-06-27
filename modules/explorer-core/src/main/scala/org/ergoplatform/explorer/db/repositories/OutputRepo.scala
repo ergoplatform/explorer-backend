@@ -189,6 +189,18 @@ trait OutputRepo[D[_], S[_[_], _]] {
     constants: Option[NonEmptyList[(Int, String)]],
     assets: Option[NonEmptyList[TokenId]]
   ): D[Int]
+
+  def searchUnspentByAssetsUnion(
+    templateHash: ErgoTreeTemplateHash,
+    assets: List[TokenId],
+    offset: Int,
+    limit: Int
+  ): S[D, Output]
+
+  def countUnspentByAssetsUnion(
+    templateHash: ErgoTreeTemplateHash,
+    assets: List[TokenId]
+  ): D[Int]
 }
 
 object OutputRepo {
@@ -374,5 +386,16 @@ object OutputRepo {
       assets: Option[NonEmptyList[TokenId]]
     ): D[Int] =
       QS.countUnspent(templateHash, registers, constants, assets).unique.liftConnectionIO
+
+    def searchUnspentByAssetsUnion(
+      templateHash: ErgoTreeTemplateHash,
+      assets: List[TokenId],
+      offset: Int,
+      limit: Int
+    ): Stream[D, Output] =
+      QS.searchUnspentByAssetsUnion(templateHash, assets, offset, limit).stream.translate(liftK)
+
+    def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): D[Int] =
+      QS.countUnspentByAssetsUnion(templateHash, assets).unique.liftConnectionIO
   }
 }

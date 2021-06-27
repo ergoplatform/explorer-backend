@@ -37,7 +37,7 @@ object BoxQuery {
       .modify(_.ergoTreeTemplateHash)(_.description("SHA-256 hash of ErgoTree template this box script should have"))
       .modify(_.registers)(_.description("Pairs of (register ID, register value) this box should contain"))
       .modify(_.constants)(_.description("Pairs of (constant index, constant value) this box should contain"))
-      .modify(_.assets)(_.description("IDs of tokens this box should contain"))
+      .modify(_.assets)(_.description("IDs of tokens returned boxes should contain"))
 
   implicit val validator: Validator[BoxQuery] = Validator.pass
 }

@@ -4,7 +4,7 @@ import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{BoxQuery, OutputInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
@@ -29,6 +29,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     getUnspentOutputsByErgoTreeTemplateHashDef ::
     getOutputsByAddressDef ::
     getUnspentOutputsByAddressDef ::
+    searchUnspentOutputsByTokensUnionDef ::
     searchUnspentOutputsDef ::
     searchOutputsDef ::
     Nil
@@ -137,4 +138,15 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
       .description("Detailed search among UTXO set")
+
+  def searchUnspentOutputsByTokensUnionDef: Endpoint[(BoxAssetsQuery, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.post
+      .in(PathPrefix / "unspent" / "search" / "union")
+      .in(jsonBody[BoxAssetsQuery])
+      .in(paging(settings.maxEntitiesPerRequest))
+      .out(jsonBody[Items[OutputInfo]])
+      .description(
+        "Search among UTXO set by ergoTreeTemplateHash and tokens. " +
+        "The resulted UTXOs will contain at lest one of the given tokens."
+      )
 }

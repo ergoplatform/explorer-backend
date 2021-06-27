@@ -16,7 +16,7 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputRepo}
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.{BoxQuery, OutputInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.protocol.sigma._
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
@@ -93,6 +93,10 @@ trait Boxes[F[_]] {
   /** Get unspent outputs matching a given `boxQuery`.
     */
   def searchUnspent(boxQuery: BoxQuery, paging: Paging): F[Items[OutputInfo]]
+
+  /** Get unspent outputs matching a given `boxQuery`.
+    */
+  def searchUnspentByAssetsUnion(boxQuery: BoxAssetsQuery, paging: Paging): F[Items[OutputInfo]]
 }
 
 object Boxes {
@@ -295,6 +299,21 @@ object Boxes {
         .flatMap { total =>
           outputs
             .searchUnspent(boxQuery.ergoTreeTemplateHash, registers, constants, assets, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toUnspentOutputInfo)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
+    }
+
+    def searchUnspentByAssetsUnion(boxQuery: BoxAssetsQuery, paging: Paging): F[Items[OutputInfo]] = {
+      val assets = boxQuery.assets
+      outputs
+        .countUnspentByAssetsUnion(boxQuery.ergoTreeTemplateHash, assets)
+        .flatMap { total =>
+          outputs
+            .searchUnspentByAssetsUnion(boxQuery.ergoTreeTemplateHash, assets, paging.offset, paging.limit)
             .chunkN(serviceSettings.chunkSize)
             .through(toUnspentOutputInfo)
             .to[List]

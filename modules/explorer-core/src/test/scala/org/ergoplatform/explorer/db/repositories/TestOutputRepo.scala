@@ -125,6 +125,10 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
   def searchUnspent(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]], offset: Int, limit: Int): fs2.Stream[F, Output] = ???
 
   def countUnspent(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]]): F[Int] = ???
+
+  def searchUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId], offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+
+  def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): F[Int] = ???
 }
 
 object TestOutputRepo {
