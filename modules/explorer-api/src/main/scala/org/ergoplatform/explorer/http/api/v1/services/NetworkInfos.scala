@@ -34,7 +34,7 @@ object NetworkInfos {
         for {
           block <- OptionT(blocks.getLastStats)
           epoch <- OptionT(epochs.getLastEpoch)
-        } yield NetworkInfo(block.headerId, block.height, block.maxTxGix, block.maxBoxGix, epoch)
+        } yield NetworkInfo(block.headerId, block.height, block.maxBoxGix, block.maxTxGix, epoch)
       queryT.value ||> trans.xa
     }
   }
