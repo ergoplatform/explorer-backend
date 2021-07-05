@@ -408,7 +408,7 @@ object OutputQuerySet extends QuerySet {
     lh: LogHandler
   ): Query0[Output] =
     (sql"""
-         |select distinct on (o.box_id, o.creation_height)
+         |select distinct on (o.box_id, o.global_index)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
