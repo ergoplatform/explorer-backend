@@ -8,6 +8,7 @@ import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.doobieInstances._
@@ -144,13 +145,17 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all unspent outputs appeared in the main chain after `minHeight`.
     */
-  def getAllMainUnspent(minHeight: Int, maxHeight: Int): S[D, Output]
+  def getAllUnspent(minHeight: Int, maxHeight: Int): S[D, Output]
+
+  /** Get all unspent outputs appeared in the blockchain after an output at a given global index `minGix` (inclusively).
+    */
+  def getAllUnspent(minGix: Long, limit: Int): S[D, Output]
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, ExtendedOutput]
 
   def countAllByTokenId(tokenId: TokenId): D[Int]
 
-  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, Output]
+  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString): S[D, Output]
 
   def countUnspentByTokenId(tokenId: TokenId): D[Int]
 
@@ -168,6 +173,34 @@ trait OutputRepo[D[_], S[_[_], _]] {
     registers: Option[NonEmptyList[(RegisterId, String)]],
     constants: Option[NonEmptyList[(Int, String)]],
     assets: Option[NonEmptyList[TokenId]]
+  ): D[Int]
+
+  def searchUnspent(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]],
+    offset: Int,
+    limit: Int
+  ): S[D, Output]
+
+  def countUnspent(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]]
+  ): D[Int]
+
+  def searchUnspentByAssetsUnion(
+    templateHash: ErgoTreeTemplateHash,
+    assets: List[TokenId],
+    offset: Int,
+    limit: Int
+  ): S[D, Output]
+
+  def countUnspentByAssetsUnion(
+    templateHash: ErgoTreeTemplateHash,
+    assets: List[TokenId]
   ): D[Int]
 }
 
@@ -301,8 +334,11 @@ object OutputRepo {
     def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
 
-    def getAllMainUnspent(minHeight: Int, maxHeight: Int): Stream[D, Output] =
+    def getAllUnspent(minHeight: Int, maxHeight: Int): Stream[D, Output] =
       QS.getUnspent(minHeight, maxHeight).stream.translate(liftK)
+
+    def getAllUnspent(minGix: Long, limit: Int): Stream[D, Output] =
+      QS.getUnspent(minGix, limit).stream.translate(liftK)
 
     def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, ExtendedOutput] =
       QS.getAllByTokenId(tokenId, offset, limit).stream.translate(liftK)
@@ -310,8 +346,8 @@ object OutputRepo {
     def countAllByTokenId(tokenId: TokenId): D[Int] =
       QS.countAllByTokenId(tokenId).unique.liftConnectionIO
 
-    def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, Output] =
-      QS.getUnspentByTokenId(tokenId, offset, limit).stream.translate(liftK)
+    def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString): Stream[D, Output] =
+      QS.getUnspentByTokenId(tokenId, offset, limit, ordering).stream.translate(liftK)
 
     def countUnspentByTokenId(tokenId: TokenId): D[Int] =
       QS.countUnspentByTokenId(tokenId).unique.liftConnectionIO
@@ -333,5 +369,34 @@ object OutputRepo {
       assets: Option[NonEmptyList[TokenId]]
     ): D[Int] =
       QS.countAll(templateHash, registers, constants, assets).unique.liftConnectionIO
+
+    def searchUnspent(
+      templateHash: ErgoTreeTemplateHash,
+      registers: Option[NonEmptyList[(RegisterId, String)]],
+      constants: Option[NonEmptyList[(Int, String)]],
+      assets: Option[NonEmptyList[TokenId]],
+      offset: Int,
+      limit: Int
+    ): Stream[D, Output] =
+      QS.searchUnspent(templateHash, registers, constants, assets, offset, limit).stream.translate(liftK)
+
+    def countUnspent(
+      templateHash: ErgoTreeTemplateHash,
+      registers: Option[NonEmptyList[(RegisterId, String)]],
+      constants: Option[NonEmptyList[(Int, String)]],
+      assets: Option[NonEmptyList[TokenId]]
+    ): D[Int] =
+      QS.countUnspent(templateHash, registers, constants, assets).unique.liftConnectionIO
+
+    def searchUnspentByAssetsUnion(
+      templateHash: ErgoTreeTemplateHash,
+      assets: List[TokenId],
+      offset: Int,
+      limit: Int
+    ): Stream[D, Output] =
+      QS.searchUnspentByAssetsUnion(templateHash, assets, offset, limit).stream.translate(liftK)
+
+    def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): D[Int] =
+      QS.countUnspentByAssetsUnion(templateHash, assets).unique.liftConnectionIO
   }
 }

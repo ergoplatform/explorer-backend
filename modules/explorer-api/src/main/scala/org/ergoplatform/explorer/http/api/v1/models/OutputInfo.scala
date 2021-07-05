@@ -16,6 +16,7 @@ final case class OutputInfo(
   blockId: Id,
   value: Long,
   index: Int,
+  globalIndex: Long,
   creationHeight: Int,
   settlementHeight: Int,
   ergoTree: HexString,
@@ -36,6 +37,7 @@ object OutputInfo {
       .modify(_.blockId)(_.description("Id of the block a box included in"))
       .modify(_.value)(_.description("Value of the box in nanoERG"))
       .modify(_.index)(_.description("Index of the output in a transaction"))
+      .modify(_.globalIndex)(_.description("Global index of the output in the blockchain"))
       .modify(_.creationHeight)(_.description("Height at which the box was created"))
       .modify(_.settlementHeight)(_.description("Height at which the box got fixed in blockchain"))
       .modify(_.ergoTree)(_.description("Serialized ergo tree"))
@@ -62,6 +64,7 @@ object OutputInfo {
       o.output.headerId,
       o.output.value,
       o.output.index,
+      o.output.globalIndex,
       o.output.creationHeight,
       o.output.settlementHeight,
       o.output.ergoTree,
@@ -82,6 +85,7 @@ object OutputInfo {
       o.headerId,
       o.value,
       o.index,
+      o.globalIndex,
       o.creationHeight,
       o.settlementHeight,
       o.ergoTree,

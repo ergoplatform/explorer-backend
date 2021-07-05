@@ -3,8 +3,9 @@ package org.ergoplatform.explorer.http.api.v1.defs
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
-import org.ergoplatform.explorer.http.api.models.{Epochs, Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{BoxQuery, OutputInfo}
+import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
+import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
+import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
@@ -16,6 +17,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
 
   def endpoints: List[Endpoint[_, _, _, _]] =
     streamUnspentOutputsByEpochsDef ::
+    streamUnspentOutputsByGixDef ::
     streamUnspentOutputsDef ::
     streamOutputsByErgoTreeTemplateHashDef ::
     streamUnspentOutputsByErgoTreeTemplateHashDef ::
@@ -28,33 +30,44 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     getUnspentOutputsByErgoTreeTemplateHashDef ::
     getOutputsByAddressDef ::
     getUnspentOutputsByAddressDef ::
+    searchUnspentOutputsByTokensUnionDef ::
+    searchUnspentOutputsDef ::
     searchOutputsDef ::
     Nil
 
-  def streamUnspentOutputsDef: Endpoint[Epochs, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+  def streamUnspentOutputsDef: Endpoint[HeightRange, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "stream")
-      .in(epochSlicing(settings.maxEpochsPerRequest))
+      .in(blocksSlicing(settings.maxBlocksPerRequest))
       .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def streamUnspentOutputsByEpochsDef: Endpoint[Int, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byLastEpochs" / "stream")
-      .in(lastEpochs(settings.maxEpochsPerRequest))
+      .in(lastBlocks(settings.maxBlocksPerRequest))
       .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+
+  def streamUnspentOutputsByGixDef: Endpoint[(Long, Int), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    baseEndpointDef.get
+      .in(PathPrefix / "unspent" / "byGlobalIndex" / "stream")
+      .in(query[Long]("minGix").validate(Validator.min(0L)).description("Min global index (in blockchain) of a box"))
+      .in(limit(settings.maxEntitiesPerRequest))
+      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+      .description("Get a stream of unspent outputs ordered by global index")
 
   def streamOutputsByErgoTreeTemplateHashDef
-    : Endpoint[(ErgoTreeTemplateHash, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    : Endpoint[(ErgoTreeTemplateHash, HeightRange), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
-      .in(epochSlicing(settings.maxEpochsPerRequest))
+      .in(blocksSlicing(settings.maxBlocksPerRequest))
       .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+      .description("Get a stream of unspent outputs by a hash of the given ErgoTreeTemplate")
 
   def streamUnspentOutputsByErgoTreeTemplateHashDef
-    : Endpoint[(ErgoTreeTemplateHash, Epochs), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    : Endpoint[(ErgoTreeTemplateHash, HeightRange), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
-      .in(epochSlicing(settings.maxEpochsPerRequest))
+      .in(blocksSlicing(settings.maxBlocksPerRequest))
       .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def outputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Any] =
@@ -63,10 +76,11 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerHeavyRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def unspentOutputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Any] =
+  def unspentOutputsByTokenIdDef: Endpoint[(TokenId, Paging, SortOrder), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byTokenId" / path[TokenId])
       .in(paging(settings.maxEntitiesPerHeavyRequest))
+      .in(ordering)
       .out(jsonBody[Items[OutputInfo]])
 
   def getOutputByIdDef: Endpoint[BoxId, ApiErr, OutputInfo, Any] =
@@ -117,4 +131,24 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(jsonBody[BoxQuery])
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
+      .description("Detailed search among all boxes in the chain")
+
+  def searchUnspentOutputsDef: Endpoint[(BoxQuery, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.post
+      .in(PathPrefix / "unspent" / "search")
+      .in(jsonBody[BoxQuery])
+      .in(paging(settings.maxEntitiesPerRequest))
+      .out(jsonBody[Items[OutputInfo]])
+      .description("Detailed search among UTXO set")
+
+  def searchUnspentOutputsByTokensUnionDef: Endpoint[(BoxAssetsQuery, Paging), ApiErr, Items[OutputInfo], Any] =
+    baseEndpointDef.post
+      .in(PathPrefix / "unspent" / "search" / "union")
+      .in(jsonBody[BoxAssetsQuery])
+      .in(paging(settings.maxEntitiesPerRequest))
+      .out(jsonBody[Items[OutputInfo]])
+      .description(
+        "Search among UTXO set by ergoTreeTemplateHash and tokens. " +
+        "The resulted UTXOs will contain at lest one of the given tokens."
+      )
 }

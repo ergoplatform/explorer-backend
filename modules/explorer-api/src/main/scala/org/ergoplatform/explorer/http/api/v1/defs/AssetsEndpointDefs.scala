@@ -14,6 +14,7 @@ final class AssetsEndpointDefs(settings: RequestsSettings) {
   private val PathPrefix = "assets"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
+    listTokensDef ::
     searchByTokenIdDef ::
     Nil
 
@@ -23,4 +24,14 @@ final class AssetsEndpointDefs(settings: RequestsSettings) {
       .in(query[String]("query").validate(Validator.minLength(5)))
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[AssetInfo]])
+
+  def listTokensDef: Endpoint[(Paging, SortOrder, Boolean), ApiErr, Items[TokenInfo], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix)
+      .in(paging(settings.maxEntitiesPerRequest))
+      .in(ordering)
+      .in(hideNfts)
+      .out(jsonBody[Items[TokenInfo]])
+      .description("Use '/tokens' instead")
+      .deprecated()
 }

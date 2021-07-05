@@ -6,6 +6,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 
@@ -25,6 +26,7 @@ object OutputQuerySet extends QuerySet {
     "creation_height",
     "settlement_height",
     "index",
+    "global_index",
     "ergo_tree",
     "ergo_tree_template_hash",
     "address",
@@ -43,6 +45,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -70,6 +73,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -107,6 +111,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -198,6 +203,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -236,6 +242,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -262,6 +269,7 @@ object OutputQuerySet extends QuerySet {
            |  o.creation_height,
            |  o.settlement_height,
            |  o.index,
+           |  o.global_index,
            |  o.ergo_tree,
            |  o.ergo_tree_template_hash,
            |  o.address,
@@ -318,6 +326,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -331,7 +340,34 @@ object OutputQuerySet extends QuerySet {
          |  and i.box_id is null
          |  and h.height >= $minHeight
          |  and h.height <= $maxHeight
-         |order by h.height asc
+         |order by o.global_index asc
+         |""".stripMargin.query[Output]
+
+  def getUnspent(minGix: Long, limit: Int)(implicit lh: LogHandler): Query0[Output] =
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.settlement_height,
+         |  o.index,
+         |  o.global_index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |left join node_headers h on h.id = o.header_id
+         |where o.main_chain = true
+         |  and i.box_id is null
+         |  and o.global_index >= $minGix
+         |  and o.global_index < ${minGix + limit}
+         |order by o.global_index asc
          |""".stripMargin.query[Output]
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedOutput] =
@@ -344,6 +380,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -367,9 +404,11 @@ object OutputQuerySet extends QuerySet {
          |where a.token_id = $tokenId and o.main_chain = true
          |""".stripMargin.query[Int]
 
-  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Output] =
-    sql"""
-         |select distinct on (o.box_id, o.creation_height)
+  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString)(implicit
+    lh: LogHandler
+  ): Query0[Output] =
+    (sql"""
+         |select distinct on (o.box_id, o.global_index)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -377,6 +416,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -389,9 +429,8 @@ object OutputQuerySet extends QuerySet {
          |where a.token_id = $tokenId
          |  and i.box_id is null
          |  and o.main_chain = true
-         |order by o.creation_height asc
-         |offset $offset limit $limit
-         |""".stripMargin.query[Output]
+         |""".stripMargin ++
+      Fragment.const(s"order by o.global_index $ordering offset $offset limit $limit")).query[Output]
 
   def countUnspentByTokenId(tokenId: TokenId)(implicit lh: LogHandler): Query0[Int] =
     sql"""
@@ -415,6 +454,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -460,6 +500,7 @@ object OutputQuerySet extends QuerySet {
            |  o.creation_height,
            |  o.settlement_height,
            |  o.index,
+           |  o.global_index,
            |  o.ergo_tree,
            |  o.ergo_tree_template_hash,
            |  o.address,
@@ -499,6 +540,128 @@ object OutputQuerySet extends QuerySet {
       )
       .query[Int]
 
+  def searchUnspent(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]],
+    offset: Int,
+    limit: Int
+  )(implicit
+    lh: LogHandler
+  ): Query0[Output] =
+    Fragment
+      .const(
+        s"""
+           |select distinct on (o.box_id, o.creation_height)
+           |  o.box_id,
+           |  o.tx_id,
+           |  o.header_id,
+           |  o.value,
+           |  o.creation_height,
+           |  o.settlement_height,
+           |  o.index,
+           |  o.global_index,
+           |  o.ergo_tree,
+           |  o.ergo_tree_template_hash,
+           |  o.address,
+           |  o.additional_registers,
+           |  o.timestamp,
+           |  o.main_chain
+           |from node_outputs o
+           |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+           |${registers.map(innerJoinAllOfRegisters(as = "rs", tableAlias = "o", _)).getOrElse("")}
+           |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
+           |${assets.map(innerJoinAllOfAssets(as = "ts", tableAlias = "o", _)).getOrElse("")}
+           |where o.ergo_tree_template_hash = '$templateHash' and o.main_chain = true and i.tx_id is null
+           |order by o.creation_height asc
+           |offset $offset limit $limit
+           |""".stripMargin
+      )
+      .query[Output]
+
+  def countUnspent(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]]
+  )(implicit
+    lh: LogHandler
+  ): Query0[Int] =
+    Fragment
+      .const(
+        s"""
+           |select count(distinct o.box_id) from node_outputs o
+           |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+           |${registers.map(innerJoinAllOfRegisters(as = "rs", tableAlias = "o", _)).getOrElse("")}
+           |${constants.map(innerJoinAllOfConstants(as = "sc", tableAlias = "o", _)).getOrElse("")}
+           |${assets.map(innerJoinAllOfAssets(as = "ts", tableAlias = "o", _)).getOrElse("")}
+           |where o.ergo_tree_template_hash = '$templateHash' and o.main_chain = true and i.tx_id is null
+           |""".stripMargin
+      )
+      .query[Int]
+
+  def searchUnspentByAssetsUnion(
+    templateHash: ErgoTreeTemplateHash,
+    assets: List[TokenId],
+    offset: Int,
+    limit: Int
+  )(implicit
+    lh: LogHandler
+  ): Query0[Output] =
+    Fragment
+      .const(
+        s"""
+           |select distinct on (o.box_id, o.creation_height)
+           |  o.box_id,
+           |  o.tx_id,
+           |  o.header_id,
+           |  o.value,
+           |  o.creation_height,
+           |  o.settlement_height,
+           |  o.index,
+           |  o.global_index,
+           |  o.ergo_tree,
+           |  o.ergo_tree_template_hash,
+           |  o.address,
+           |  o.additional_registers,
+           |  o.timestamp,
+           |  o.main_chain
+           |from node_outputs o
+           |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+           |left join node_assets ts on o.box_id = ts.box_id
+           |where
+           |  o.ergo_tree_template_hash = '$templateHash' and
+           |  o.main_chain = true and
+           |  i.tx_id is null and
+           |  ts.token_id in (${assets.map(s => s"'$s'").mkString(", ")})
+           |order by o.creation_height asc
+           |offset $offset limit $limit
+           |""".stripMargin
+      )
+      .query[Output]
+
+  def countUnspentByAssetsUnion(
+    templateHash: ErgoTreeTemplateHash,
+    assets: List[TokenId]
+  )(implicit
+    lh: LogHandler
+  ): Query0[Int] =
+    Fragment
+      .const(
+        s"""
+           |select count(distinct o.box_id) from node_outputs o
+           |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+           |left join node_assets ts on o.box_id = ts.box_id
+           |where
+           |  o.ergo_tree_template_hash = '$templateHash' and
+           |  o.main_chain = true and
+           |  i.tx_id is null and
+           |  ts.token_id in (${assets.map(s => s"'$s'").mkString(", ")})
+           |""".stripMargin
+      )
+      .query[Int]
+
   def getUnspentByErgoTreeTemplateHash(templateHash: ErgoTreeTemplateHash, offset: Int, limit: Int)(implicit
     lh: LogHandler
   ): Query0[Output] =
@@ -511,6 +674,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -555,6 +719,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -585,6 +750,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,
@@ -613,6 +779,7 @@ object OutputQuerySet extends QuerySet {
          |  o.creation_height,
          |  o.settlement_height,
          |  o.index,
+         |  o.global_index,
          |  o.ergo_tree,
          |  o.ergo_tree_template_hash,
          |  o.address,

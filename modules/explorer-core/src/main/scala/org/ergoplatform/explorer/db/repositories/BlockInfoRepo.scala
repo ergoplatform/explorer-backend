@@ -45,6 +45,8 @@ trait BlockInfoRepo[D[_]] {
     */
   def getBlockSize(id: Id): D[Option[Int]]
 
+  def getLastStats: D[Option[BlockStats]]
+
   def totalDifficultySince(ts: Long): D[Long]
 
   def circulatingSupplySince(ts: Long): D[Long]
@@ -115,6 +117,9 @@ object BlockInfoRepo {
 
     def getBlockSize(id: Id): D[Option[Int]] =
       QS.getBlockSize(id).option.liftConnectionIO
+
+    def getLastStats: D[Option[BlockStats]] =
+      QS.getLastStats.option.liftConnectionIO
 
     def totalDifficultySince(ts: Long): D[Long] =
       QS.totalDifficultySince(ts).unique.liftConnectionIO

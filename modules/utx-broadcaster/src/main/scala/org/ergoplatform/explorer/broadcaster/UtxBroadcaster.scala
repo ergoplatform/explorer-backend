@@ -2,9 +2,9 @@ package org.ergoplatform.explorer.broadcaster
 
 import cats.effect.concurrent.Ref
 import cats.effect.{Concurrent, Sync, Timer}
+import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import cats.syntax.applicativeError._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
@@ -17,9 +17,9 @@ import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
 /** Broadcasts new transactions to the network.
   */
 final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
-                                                       settings: UtxBroadcasterSettings,
-                                                       network: ErgoNetwork[F],
-                                                       repo: ErgoLikeTransactionRepo[F, Stream]
+  settings: UtxBroadcasterSettings,
+  network: ErgoNetwork[F],
+  repo: ErgoLikeTransactionRepo[F, Stream]
 ) {
 
   private val log = Logger[F]
@@ -42,8 +42,8 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
           count.update(_ + 1) >>
           network
             .submitTransaction(tx)
-            .recoverWith {
-              case _: InvalidTransaction => log.info(s"Transaction ${tx.id} was invalidated")
+            .recoverWith { case _: InvalidTransaction =>
+              log.info(s"Transaction ${tx.id} was invalidated")
             } >>
           repo.delete(tx.id)
         }
@@ -56,9 +56,9 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
 object UtxBroadcaster {
 
   def apply[F[_]: Timer: Concurrent](
-                                      settings: UtxBroadcasterSettings,
-                                      network: ErgoNetwork[F],
-                                      redis: RedisCommands[F, String, String]
+    settings: UtxBroadcasterSettings,
+    network: ErgoNetwork[F],
+    redis: RedisCommands[F, String, String]
   ): F[UtxBroadcaster[F]] =
     Slf4jLogger.create.flatMap { implicit logger =>
       ErgoLikeTransactionRepo[F](settings.utxCache, redis)

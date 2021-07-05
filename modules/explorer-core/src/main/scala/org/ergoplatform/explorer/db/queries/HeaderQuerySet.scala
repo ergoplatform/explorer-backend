@@ -35,16 +35,96 @@ object HeaderQuerySet extends QuerySet {
   )
 
   def get(id: Id)(implicit lh: LogHandler): Query0[Header] =
-    sql"select * from node_headers where id = $id".query[Header]
+    sql"""
+         |select
+         |  id,
+         |  parent_id,
+         |  version,
+         |  height,
+         |  n_bits,
+         |  difficulty,
+         |  timestamp,
+         |  state_root,
+         |  ad_proofs_root,
+         |  transactions_root,
+         |  extension_hash,
+         |  miner_pk,
+         |  w,
+         |  n,
+         |  d,
+         |  votes,
+         |  main_chain
+         |from node_headers where id = $id
+         |""".stripMargin.query[Header]
 
   def getLast(implicit lh: LogHandler): Query0[Header] =
-    sql"select * from node_headers where main_chain = true order by height desc limit 1".query[Header]
+    sql"""
+         |select
+         |  id,
+         |  parent_id,
+         |  version,
+         |  height,
+         |  n_bits,
+         |  difficulty,
+         |  timestamp,
+         |  state_root,
+         |  ad_proofs_root,
+         |  transactions_root,
+         |  extension_hash,
+         |  miner_pk,
+         |  w,
+         |  n,
+         |  d,
+         |  votes,
+         |  main_chain
+         |from node_headers where main_chain = true order by height desc limit 1
+         |""".stripMargin.query[Header]
 
   def getByParentId(parentId: Id)(implicit lh: LogHandler): Query0[Header] =
-    sql"select * from node_headers where parent_id = $parentId and main_chain = true".query[Header]
+    sql"""
+         |select
+         |  id,
+         |  parent_id,
+         |  version,
+         |  height,
+         |  n_bits,
+         |  difficulty,
+         |  timestamp,
+         |  state_root,
+         |  ad_proofs_root,
+         |  transactions_root,
+         |  extension_hash,
+         |  miner_pk,
+         |  w,
+         |  n,
+         |  d,
+         |  votes,
+         |  main_chain
+         |from node_headers where parent_id = $parentId and main_chain = true
+         |""".stripMargin.query[Header]
 
   def getAllByHeight(height: Int)(implicit lh: LogHandler): Query0[Header] =
-    sql"select * from node_headers where height = $height order by main_chain desc".query[Header]
+    sql"""
+         |select
+         |  id,
+         |  parent_id,
+         |  version,
+         |  height,
+         |  n_bits,
+         |  difficulty,
+         |  timestamp,
+         |  state_root,
+         |  ad_proofs_root,
+         |  transactions_root,
+         |  extension_hash,
+         |  miner_pk,
+         |  w,
+         |  n,
+         |  d,
+         |  votes,
+         |  main_chain
+         |from node_headers where height = $height order by main_chain desc
+         |""".stripMargin.query[Header]
 
   def getHeightOf(id: Id)(implicit lh: LogHandler): Query0[Int] =
     sql"select height from node_headers where id = $id".query[Int]

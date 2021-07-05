@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.db.repositories
 import cats.Applicative
 import cats.data.NonEmptyList
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.TestOutputRepo.Source
@@ -22,6 +23,8 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
   override def insertMany(outputs: scala.List[Output]): F[Unit] = ???
 
   override def getByBoxId(boxId: BoxId): F[Option[ExtendedOutput]] = ???
+
+  def getAllUnspent(minGix: Long, limit: Int): fs2.Stream[F, Output] = ???
 
   override def getAllByErgoTree(
     ergoTree: HexString,
@@ -105,11 +108,11 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   override def totalAddressesMain: F[Int] = ???
 
-  override def getAllMainUnspent(minHeight: Int, maxHeight: Int): fs2.Stream[F, Output] = ???
+  override def getAllUnspent(minHeight: Int, maxHeight: Int): fs2.Stream[F, Output] = ???
 
   override def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] = ???
 
-  override def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+  override def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString): fs2.Stream[F, Output] = ???
 
   override def searchAll(
     templateHash: ErgoTreeTemplateHash,
@@ -119,6 +122,14 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
     offset: Int,
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
+
+  def searchUnspent(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]], offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+
+  def countUnspent(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]]): F[Int] = ???
+
+  def searchUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId], offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+
+  def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): F[Int] = ???
 }
 
 object TestOutputRepo {

@@ -24,26 +24,27 @@ object TransactionQuerySet extends QuerySet {
     "timestamp",
     "size",
     "index",
+    "global_index",
     "main_chain"
   )
 
   def getMain(id: TxId)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
-         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.main_chain from node_transactions t
+         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain from node_transactions t
          |left join node_headers h on h.id = t.header_id
          |where h.main_chain = true and t.id = $id
          |""".stripMargin.query[Transaction]
 
   def getAllMainByIdSubstring(idSubstr: String)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
-         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.main_chain from node_transactions t
+         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain from node_transactions t
          |left join node_headers h on h.id = t.header_id
          |where t.id like ${s"%$idSubstr%"} and h.main_chain = true
          |""".stripMargin.query[Transaction]
 
   def getAllByBlockId(id: Id)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
-         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.main_chain from node_transactions t
+         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain from node_transactions t
          |where t.header_id = $id
          |order by t.index asc
          |""".stripMargin.query[Transaction]
@@ -62,7 +63,7 @@ object TransactionQuerySet extends QuerySet {
     limit: Int
   )(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
-         |select distinct t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.main_chain
+         |select distinct t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain
          |from node_transactions t
          |inner join (
          |  select os.tx_id from node_outputs os
@@ -100,7 +101,7 @@ object TransactionQuerySet extends QuerySet {
     limit: Int
   )(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
-         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.main_chain from node_transactions t
+         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain from node_transactions t
          |left join node_headers h on h.id = t.header_id
          |where h.height >= $height and h.main_chain = true
          |order by t.timestamp desc
@@ -123,6 +124,7 @@ object TransactionQuerySet extends QuerySet {
          |  t.timestamp,
          |  t.size,
          |  t.index,
+         |  t.global_index,
          |  t.main_chain
          |from node_transactions t
          |inner join node_inputs i on i.tx_id = t.id and i.header_id = t.header_id

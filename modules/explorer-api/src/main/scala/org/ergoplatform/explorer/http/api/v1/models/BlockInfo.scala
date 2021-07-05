@@ -4,11 +4,13 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.Id
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
+import org.ergoplatform.explorer.protocol.blocks
 import sttp.tapir.{Schema, Validator}
 
 final case class BlockInfo(
   id: Id,
   height: Int,
+  epoch: Int,
   version: Byte,
   timestamp: Long,
   transactionsCount: Int,
@@ -27,6 +29,7 @@ object BlockInfo {
       .derived[BlockInfo]
       .modify(_.id)(_.description("Block ID"))
       .modify(_.height)(_.description("Block height"))
+      .modify(_.epoch)(_.description("Block epoch (Epochs are enumerated from 0)"))
       .modify(_.version)(_.description("Block version"))
       .modify(_.timestamp)(_.description("Timestamp the block was created (UNIX timestamp in millis)"))
       .modify(_.transactionsCount)(
@@ -40,20 +43,21 @@ object BlockInfo {
 
   implicit val validator: Validator[BlockInfo] = schema.validator
 
-  def apply(extBlockInfo: ExtendedBlockInfo): BlockInfo = {
-    val minerName = extBlockInfo.minerNameOpt.getOrElse(
-      extBlockInfo.blockInfo.minerAddress.unwrapped.takeRight(8)
+  def apply(block: ExtendedBlockInfo): BlockInfo = {
+    val minerName = block.minerNameOpt.getOrElse(
+      block.blockInfo.minerAddress.unwrapped.takeRight(8)
     )
     new BlockInfo(
-      id                = extBlockInfo.blockInfo.headerId,
-      height            = extBlockInfo.blockInfo.height,
-      version           = extBlockInfo.blockVersion,
-      timestamp         = extBlockInfo.blockInfo.timestamp,
-      transactionsCount = extBlockInfo.blockInfo.txsCount,
-      miner             = MinerInfo(extBlockInfo.blockInfo.minerAddress, minerName),
-      size              = extBlockInfo.blockInfo.blockSize,
-      difficulty        = extBlockInfo.blockInfo.difficulty,
-      minerReward       = extBlockInfo.blockInfo.minerReward
+      id                = block.blockInfo.headerId,
+      height            = block.blockInfo.height,
+      epoch             = blocks.epochOf(block.blockInfo.height),
+      version           = block.blockVersion,
+      timestamp         = block.blockInfo.timestamp,
+      transactionsCount = block.blockInfo.txsCount,
+      miner             = MinerInfo(block.blockInfo.minerAddress, minerName),
+      size              = block.blockInfo.blockSize,
+      difficulty        = block.blockInfo.difficulty,
+      minerReward       = block.blockInfo.minerReward
     )
   }
 }

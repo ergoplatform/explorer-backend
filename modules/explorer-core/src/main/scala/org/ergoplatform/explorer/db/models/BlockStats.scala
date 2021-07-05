@@ -26,5 +26,7 @@ final case class BlockStats(
   totalFees: Long, // total amount of nERGs all miners received as a fee
   totalMinersReward: Long, // total amount of nERGs all miners received as a reward for all time
   totalCoinsInTxs: Long, // total amount of nERGs in all blocks
+  maxTxGix: Long, // Global index of the last transaction in the block
+  maxBoxGix: Long, // Global index of the last output in the last transaction in the block
   mainChain: Boolean
 )

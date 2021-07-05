@@ -36,11 +36,39 @@ object BlockInfoQuerySet extends QuerySet {
     "total_fees",
     "total_miners_reward",
     "total_coins_in_txs",
+    "max_tx_gix",
+    "max_box_gix",
     "main_chain"
   )
 
   def getBlockInfo(headerId: Id)(implicit lh: LogHandler): Query0[BlockStats] =
-    sql"select * from blocks_info where header_id = $headerId".query[BlockStats]
+    sql"""
+         |select
+         |  bi.header_id,
+         |  bi.timestamp,
+         |  bi.height,
+         |  bi.difficulty,
+         |  bi.block_size,
+         |  bi.block_coins,
+         |  bi.block_mining_time,
+         |  bi.txs_count,
+         |  bi.txs_size,
+         |  bi.miner_address,
+         |  bi.miner_reward,
+         |  bi.miner_revenue,
+         |  bi.block_fee,
+         |  bi.block_chain_total_size,
+         |  bi.total_txs_count,
+         |  bi.total_coins_issued,
+         |  bi.total_mining_time,
+         |  bi.total_fees,
+         |  bi.total_miners_reward,
+         |  bi.total_coins_in_txs,
+         |  bi.max_tx_gix,
+         |  bi.max_box_gix,
+         |  bi.main_chain
+         |from blocks_info bi where bi.header_id = $headerId
+         |""".stripMargin.query[BlockStats]
 
   def getManyExtendedMain(
     offset: Int,
@@ -76,6 +104,8 @@ object BlockInfoQuerySet extends QuerySet {
          |  bi.total_fees,
          |  bi.total_miners_reward,
          |  bi.total_coins_in_txs,
+         |  bi.max_tx_gix,
+         |  bi.max_box_gix,
          |  bi.main_chain,
          |  mi.miner_name
          |from blocks_info bi
@@ -87,7 +117,63 @@ object BlockInfoQuerySet extends QuerySet {
   }
 
   def getManySince(ts: Long)(implicit lh: LogHandler): Query0[BlockStats] =
-    sql"select * from blocks_info where timestamp >= $ts".query[BlockStats]
+    sql"""
+         |select
+         |  bi.header_id,
+         |  bi.timestamp,
+         |  bi.height,
+         |  bi.difficulty,
+         |  bi.block_size,
+         |  bi.block_coins,
+         |  bi.block_mining_time,
+         |  bi.txs_count,
+         |  bi.txs_size,
+         |  bi.miner_address,
+         |  bi.miner_reward,
+         |  bi.miner_revenue,
+         |  bi.block_fee,
+         |  bi.block_chain_total_size,
+         |  bi.total_txs_count,
+         |  bi.total_coins_issued,
+         |  bi.total_mining_time,
+         |  bi.total_fees,
+         |  bi.total_miners_reward,
+         |  bi.total_coins_in_txs,
+         |  bi.max_tx_gix,
+         |  bi.max_box_gix,
+         |  bi.main_chain
+         |from blocks_info bi where bi.timestamp >= $ts
+         |""".stripMargin.query[BlockStats]
+
+  def getLastStats(implicit lh: LogHandler): Query0[BlockStats] =
+    sql"""
+         |select
+         |  bi.header_id,
+         |  bi.timestamp,
+         |  bi.height,
+         |  bi.difficulty,
+         |  bi.block_size,
+         |  bi.block_coins,
+         |  bi.block_mining_time,
+         |  bi.txs_count,
+         |  bi.txs_size,
+         |  bi.miner_address,
+         |  bi.miner_reward,
+         |  bi.miner_revenue,
+         |  bi.block_fee,
+         |  bi.block_chain_total_size,
+         |  bi.total_txs_count,
+         |  bi.total_coins_issued,
+         |  bi.total_mining_time,
+         |  bi.total_fees,
+         |  bi.total_miners_reward,
+         |  bi.total_coins_in_txs,
+         |  bi.max_tx_gix,
+         |  bi.max_box_gix,
+         |  bi.main_chain
+         |from blocks_info bi where bi.main_chain = true
+         |order by bi.height desc limit 1
+         |""".stripMargin.query[BlockStats]
 
   def getManyExtendedByIdLike(q: String)(implicit lh: LogHandler): Query0[ExtendedBlockInfo] =
     sql"""
@@ -113,6 +199,8 @@ object BlockInfoQuerySet extends QuerySet {
          |  bi.total_fees,
          |  bi.total_miners_reward,
          |  bi.total_coins_in_txs,
+         |  bi.max_tx_gix,
+         |  bi.max_box_gix,
          |  bi.main_chain,
          |  mi.miner_name
          |from blocks_info bi

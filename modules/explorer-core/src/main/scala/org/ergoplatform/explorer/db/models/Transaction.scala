@@ -12,6 +12,7 @@ final case class Transaction(
   timestamp: Long, // approx time output appeared in the blockchain
   size: Int, // transaction size in bytes
   index: Int, // index of a transaction inside a block
+  globalIndex: Long,
   mainChain: Boolean
 ) {
 
