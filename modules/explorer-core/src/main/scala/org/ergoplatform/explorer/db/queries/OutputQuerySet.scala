@@ -6,6 +6,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 
@@ -403,8 +404,10 @@ object OutputQuerySet extends QuerySet {
          |where a.token_id = $tokenId and o.main_chain = true
          |""".stripMargin.query[Int]
 
-  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[Output] =
-    sql"""
+  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString)(implicit
+    lh: LogHandler
+  ): Query0[Output] =
+    (sql"""
          |select distinct on (o.box_id, o.creation_height)
          |  o.box_id,
          |  o.tx_id,
@@ -426,9 +429,8 @@ object OutputQuerySet extends QuerySet {
          |where a.token_id = $tokenId
          |  and i.box_id is null
          |  and o.main_chain = true
-         |order by o.creation_height asc
-         |offset $offset limit $limit
-         |""".stripMargin.query[Output]
+         |""".stripMargin ++
+      Fragment.const(s"order by o.global_index $ordering offset $offset limit $limit")).query[Output]
 
   def countUnspentByTokenId(tokenId: TokenId)(implicit lh: LogHandler): Query0[Int] =
     sql"""

@@ -14,6 +14,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputRepo}
+import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo}
@@ -84,7 +85,7 @@ trait Boxes[F[_]] {
 
   /** Get all unspent outputs containing a given `tokenId`.
     */
-  def getUnspentOutputsByTokenId(tokenId: TokenId, paging: Paging): F[Items[OutputInfo]]
+  def getUnspentOutputsByTokenId(tokenId: TokenId, paging: Paging, ord: SortOrder): F[Items[OutputInfo]]
 
   /** Get all outputs matching a given `boxQuery`.
     */
@@ -260,12 +261,12 @@ object Boxes {
         }
         .thrushK(trans.xa)
 
-    def getUnspentOutputsByTokenId(tokenId: TokenId, paging: Paging): F[Items[OutputInfo]] =
+    def getUnspentOutputsByTokenId(tokenId: TokenId, paging: Paging, ord: SortOrder): F[Items[OutputInfo]] =
       outputs
         .countUnspentByTokenId(tokenId)
         .flatMap { total =>
           outputs
-            .getUnspentByTokenId(tokenId, paging.offset, paging.limit)
+            .getUnspentByTokenId(tokenId, paging.offset, paging.limit, ord.value)
             .chunkN(serviceSettings.chunkSize)
             .through(toUnspentOutputInfo)
             .to[List]

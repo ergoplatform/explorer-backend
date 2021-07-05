@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.db.repositories
 import cats.Applicative
 import cats.data.NonEmptyList
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.TestOutputRepo.Source
@@ -111,7 +112,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   override def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] = ???
 
-  override def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+  override def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString): fs2.Stream[F, Output] = ???
 
   override def searchAll(
     templateHash: ErgoTreeTemplateHash,

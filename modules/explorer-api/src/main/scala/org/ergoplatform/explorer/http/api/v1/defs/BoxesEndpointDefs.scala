@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.defs
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
+import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
@@ -75,10 +76,11 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerHeavyRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def unspentOutputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Any] =
+  def unspentOutputsByTokenIdDef: Endpoint[(TokenId, Paging, SortOrder), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byTokenId" / path[TokenId])
       .in(paging(settings.maxEntitiesPerHeavyRequest))
+      .in(ordering)
       .out(jsonBody[Items[OutputInfo]])
 
   def getOutputByIdDef: Endpoint[BoxId, ApiErr, OutputInfo, Any] =

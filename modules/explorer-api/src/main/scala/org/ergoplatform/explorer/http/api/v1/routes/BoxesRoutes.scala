@@ -69,8 +69,8 @@ final class BoxesRoutes[
     }
 
   private def unspentOutputsByTokenIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.unspentOutputsByTokenIdDef) { case (tokenId, paging) =>
-      service.getUnspentOutputsByTokenId(tokenId, paging).adaptThrowable.value
+    Http4sServerInterpreter.toRoutes(defs.unspentOutputsByTokenIdDef) { case (tokenId, paging, ord) =>
+      service.getUnspentOutputsByTokenId(tokenId, paging, ord).adaptThrowable.value
     }
 
   private def getOutputByIdR: HttpRoutes[F] =

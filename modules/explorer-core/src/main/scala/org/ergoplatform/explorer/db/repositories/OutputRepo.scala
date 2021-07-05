@@ -8,6 +8,7 @@ import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import fs2.Stream
 import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.doobieInstances._
@@ -154,7 +155,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   def countAllByTokenId(tokenId: TokenId): D[Int]
 
-  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, Output]
+  def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString): S[D, Output]
 
   def countUnspentByTokenId(tokenId: TokenId): D[Int]
 
@@ -345,8 +346,8 @@ object OutputRepo {
     def countAllByTokenId(tokenId: TokenId): D[Int] =
       QS.countAllByTokenId(tokenId).unique.liftConnectionIO
 
-    def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, Output] =
-      QS.getUnspentByTokenId(tokenId, offset, limit).stream.translate(liftK)
+    def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString): Stream[D, Output] =
+      QS.getUnspentByTokenId(tokenId, offset, limit, ordering).stream.translate(liftK)
 
     def countUnspentByTokenId(tokenId: TokenId): D[Int] =
       QS.countUnspentByTokenId(tokenId).unique.liftConnectionIO
