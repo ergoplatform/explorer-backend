@@ -4,30 +4,30 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import org.ergoplatform.explorer
 import org.ergoplatform.explorer.db.models.Transaction
-import org.ergoplatform.explorer.db.models.aggregates._
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput, FullDataInput, FullInput}
 import org.ergoplatform.explorer.{BlockId, TxId}
 import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
-final case class TransactionInfo(
-  id: TxId,
-  blockId: BlockId,
-  inclusionHeight: Int,
-  timestamp: Long,
-  index: Int,
-  globalIndex: Long,
-  numConfirmations: Int,
-  inputs: List[InputInfo],
-  dataInputs: List[DataInputInfo],
-  outputs: List[OutputInfo],
-  size: Int
+final case class UTransactionInfo(
+                                   id: TxId,
+                                   blockId: BlockId,
+                                   inclusionHeight: Int,
+                                   timestamp: Long,
+                                   index: Int,
+                                   globalIndex: Long,
+                                   numConfirmations: Int,
+                                   inputs: List[UInputInfo],
+                                   dataInputs: List[DataInputInfo],
+                                   outputs: List[OutputInfo],
+                                   size: Int
 )
 
-object TransactionInfo {
+object UTransactionInfo {
 
-  implicit val schema: Schema[TransactionInfo] =
+  implicit val schema: Schema[UTransactionInfo] =
     Schema
-      .derived[TransactionInfo]
+      .derived[UTransactionInfo]
       .modify(_.id)(_.description("Transaction ID"))
       .modify(_.blockId)(_.description("ID of the corresponding header"))
       .modify(_.inclusionHeight)(_.description("Height of the block the transaction was included in"))
@@ -37,7 +37,7 @@ object TransactionInfo {
       .modify(_.numConfirmations)(_.description("Number of transaction confirmations"))
       .modify(_.size)(_.description("Transaction size in bytes"))
 
-  implicit val validator: Validator[TransactionInfo] = schema.validator
+  implicit val validator: Validator[UTransactionInfo] = schema.validator
 
   def unFlatten(
     tx: Transaction,
@@ -47,7 +47,7 @@ object TransactionInfo {
     outputs: List[ExtendedOutput],
     inAssets: List[ExtendedAsset],
     outAssets: List[ExtendedAsset]
-  ): TransactionInfo = {
+  ): UTransactionInfo = {
     val groupedInAssets  = inAssets.groupBy(_.boxId)
     val groupedOutAssets = outAssets.groupBy(_.boxId)
     unFlattenIn(tx, numConfirmations, inputs, dataInputs, outputs, groupedInAssets, groupedOutAssets)
@@ -60,7 +60,7 @@ object TransactionInfo {
     outputs: List[ExtendedOutput],
     inAssets: List[ExtendedAsset],
     outAssets: List[ExtendedAsset]
-  ): List[TransactionInfo] = {
+  ): List[UTransactionInfo] = {
     val groupedInAssets  = inAssets.groupBy(_.boxId)
     val groupedOutAssets = outAssets.groupBy(_.boxId)
     txs.map { case (tx, numConfirmations) =>
@@ -76,7 +76,7 @@ object TransactionInfo {
     outputs: List[ExtendedOutput],
     groupedInAssets: Map[explorer.BoxId, List[ExtendedAsset]],
     groupedOutAssets: Map[explorer.BoxId, List[ExtendedAsset]]
-  ): TransactionInfo = {
+  ): UTransactionInfo = {
     val relatedInputs = inputs
       .filter(_.input.txId == tx.id)
       .sortBy(_.input.index)

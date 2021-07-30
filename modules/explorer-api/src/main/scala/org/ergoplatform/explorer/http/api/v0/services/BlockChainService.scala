@@ -22,7 +22,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.v0.models.{BlockInfo, BlockReferencesInfo, BlockSummary, FullBlockInfo}
 import org.ergoplatform.explorer.syntax.stream._
-import org.ergoplatform.explorer.{CRaise, Id}
+import org.ergoplatform.explorer.{CRaise, BlockId}
 import tofu.syntax.raise._
 
 /** A service providing an access to the blockchain data.
@@ -35,7 +35,7 @@ trait BlockChainService[F[_]] {
 
   /** Get summary for a block with a given `id`.
     */
-  def getBlockSummaryById(id: Id): F[Option[BlockSummary]]
+  def getBlockSummaryById(id: BlockId): F[Option[BlockSummary]]
 
   /** Get a slice of block info items.
     */
@@ -47,7 +47,7 @@ trait BlockChainService[F[_]] {
 
   /** Get ids of all blocks at the given `height`.
     */
-  def getBlockIdsAtHeight(height: Int): F[List[Id]]
+  def getBlockIdsAtHeight(height: Int): F[List[BlockId]]
 }
 
 object BlockChainService {
@@ -92,7 +92,7 @@ object BlockChainService {
       (headerRepo.getBestHeight ||> trans.xa)
         .flatTap(h => Logger[F].trace(s"Reading best height from db: $h"))
 
-    def getBlockSummaryById(id: Id): F[Option[BlockSummary]] = {
+    def getBlockSummaryById(id: BlockId): F[Option[BlockSummary]] = {
       val summary =
         for {
           blockInfoOpt <- getFullBlockInfo(id)
@@ -121,12 +121,12 @@ object BlockChainService {
         .getManyByIdLike(query)
         .map(_.map(BlockInfo(_))) ||> trans.xa
 
-    def getBlockIdsAtHeight(height: Height): F[List[Id]] =
+    def getBlockIdsAtHeight(height: Height): F[List[BlockId]] =
       headerRepo
         .getAllByHeight(height)
         .map(_.map(_.id)) ||> trans.xa
 
-    private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
+    private def getFullBlockInfo(id: BlockId): Stream[D, Option[FullBlockInfo]] =
       for {
         header       <- headerRepo.get(id).asStream.unNone
         txs          <- transactionRepo.getAllByBlockId(id).fold(Array.empty[Transaction])(_ :+ _).map(_.toList)

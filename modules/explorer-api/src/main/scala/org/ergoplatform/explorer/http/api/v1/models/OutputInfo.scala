@@ -13,7 +13,7 @@ import sttp.tapir.{Schema, SchemaType, Validator}
 final case class OutputInfo(
   boxId: BoxId,
   transactionId: TxId,
-  blockId: Id,
+  blockId: BlockId,
   value: Long,
   index: Int,
   globalIndex: Long,

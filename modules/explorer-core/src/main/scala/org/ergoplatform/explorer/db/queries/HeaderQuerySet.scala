@@ -34,7 +34,7 @@ object HeaderQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def get(id: Id)(implicit lh: LogHandler): Query0[Header] =
+  def get(id: BlockId)(implicit lh: LogHandler): Query0[Header] =
     sql"""
          |select
          |  id,
@@ -80,7 +80,7 @@ object HeaderQuerySet extends QuerySet {
          |from node_headers where main_chain = true order by height desc limit 1
          |""".stripMargin.query[Header]
 
-  def getByParentId(parentId: Id)(implicit lh: LogHandler): Query0[Header] =
+  def getByParentId(parentId: BlockId)(implicit lh: LogHandler): Query0[Header] =
     sql"""
          |select
          |  id,
@@ -126,10 +126,10 @@ object HeaderQuerySet extends QuerySet {
          |from node_headers where height = $height order by main_chain desc
          |""".stripMargin.query[Header]
 
-  def getHeightOf(id: Id)(implicit lh: LogHandler): Query0[Int] =
+  def getHeightOf(id: BlockId)(implicit lh: LogHandler): Query0[Int] =
     sql"select height from node_headers where id = $id".query[Int]
 
-  def updateChainStatusById(id: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+  def updateChainStatusById(id: BlockId, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
          |update node_headers set main_chain = $newChainStatus
          |where id = $id

@@ -5,7 +5,7 @@ import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
@@ -22,7 +22,7 @@ trait HeaderRepo[D[_]] {
 
   /** Get header with a given `id`.
     */
-  def get(id: Id): D[Option[Header]]
+  def get(id: BlockId): D[Option[Header]]
 
   /** Get last header in the chain.
     */
@@ -30,7 +30,7 @@ trait HeaderRepo[D[_]] {
 
   /** Get header with a given `parentId`.
     */
-  def getByParentId(parentId: Id): D[Option[Header]]
+  def getByParentId(parentId: BlockId): D[Option[Header]]
 
   /** Get all headers at the given `height`.
     */
@@ -38,7 +38,7 @@ trait HeaderRepo[D[_]] {
 
   /** Get height of a header with a given `id`.
     */
-  def getHeightOf(id: Id): D[Option[Int]]
+  def getHeightOf(id: BlockId): D[Option[Int]]
 
   /** Get height of the best known header.
     */
@@ -47,7 +47,7 @@ trait HeaderRepo[D[_]] {
   /** Update main chain flag with a given `newChainStatus`
     * for a header with a given `id`.
     */
-  def updateChainStatusById(id: Id, newChainStatus: Boolean): D[Unit]
+  def updateChainStatusById(id: BlockId, newChainStatus: Boolean): D[Unit]
 }
 
 object HeaderRepo {
@@ -65,19 +65,19 @@ object HeaderRepo {
     def insert(h: Header): D[Unit] =
       QS.insertNoConflict(h).void.liftConnectionIO
 
-    def get(id: Id): D[Option[Header]] =
+    def get(id: BlockId): D[Option[Header]] =
       QS.get(id).option.liftConnectionIO
 
     def getLast: D[Option[Header]] =
       QS.getLast.option.liftConnectionIO
 
-    def getByParentId(parentId: Id): D[Option[Header]] =
+    def getByParentId(parentId: BlockId): D[Option[Header]] =
       QS.getByParentId(parentId).option.liftConnectionIO
 
     def getAllByHeight(height: Int): D[List[Header]] =
       QS.getAllByHeight(height).to[List].liftConnectionIO
 
-    def getHeightOf(id: Id): D[Option[Int]] =
+    def getHeightOf(id: BlockId): D[Option[Int]] =
       QS.getHeightOf(id).option.liftConnectionIO
 
     def getBestHeight: D[Int] =
@@ -85,7 +85,7 @@ object HeaderRepo {
         .map(_.getOrElse(constants.PreGenesisHeight))
         .liftConnectionIO
 
-    def updateChainStatusById(id: Id, newChainStatus: Boolean): D[Unit] =
+    def updateChainStatusById(id: BlockId, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusById(id, newChainStatus).run.void.liftConnectionIO
   }
 }

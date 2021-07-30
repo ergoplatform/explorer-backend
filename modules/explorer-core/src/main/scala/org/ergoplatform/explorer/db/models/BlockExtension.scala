@@ -5,15 +5,15 @@ import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
-import org.ergoplatform.explorer.{HexString, Id}
+import org.ergoplatform.explorer.{HexString, BlockId}
 import sttp.tapir.{Schema, SchemaType}
 
 /** Represents `node_extensions` table.
  */
 final case class BlockExtension(
-  headerId: Id,
-  digest: HexString,
-  fields: Json       // arbitrary key->value dictionary
+                                 headerId: BlockId,
+                                 digest: HexString,
+                                 fields: Json // arbitrary key->value dictionary
 )
 
 object BlockExtension {

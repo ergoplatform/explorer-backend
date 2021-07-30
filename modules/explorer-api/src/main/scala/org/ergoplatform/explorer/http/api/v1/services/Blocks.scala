@@ -21,7 +21,7 @@ import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.{BlockReferencesInfo, BlockSummary, FullBlockInfo}
 import org.ergoplatform.explorer.http.api.v1.models.BlockInfo
 import org.ergoplatform.explorer.syntax.stream._
-import org.ergoplatform.explorer.{CRaise, Id}
+import org.ergoplatform.explorer.{CRaise, BlockId}
 import tofu.data.Identity
 import tofu.syntax.raise._
 import tofu.fs2Instances._
@@ -35,7 +35,7 @@ trait Blocks[F[_]] {
 
   /** Get summary for a block with a given `id`.
     */
-  def getBlockSummaryById(id: Id): F[Option[BlockSummary]]
+  def getBlockSummaryById(id: BlockId): F[Option[BlockSummary]]
 }
 
 object Blocks {
@@ -84,7 +84,7 @@ object Blocks {
           .map(Items(_, total))
       } ||> trans.xa
 
-    def getBlockSummaryById(id: Id): F[Option[BlockSummary]] = {
+    def getBlockSummaryById(id: BlockId): F[Option[BlockSummary]] = {
       val summary =
         for {
           blockInfoOpt <- getFullBlockInfo(id)
@@ -100,7 +100,7 @@ object Blocks {
       summary.to[List].map(_.headOption.flatten).thrushK(trans.xa)
     }
 
-    private def getFullBlockInfo(id: Id): Stream[D, Option[FullBlockInfo]] =
+    private def getFullBlockInfo(id: BlockId): Stream[D, Option[FullBlockInfo]] =
       for {
         header       <- headerRepo.get(id).asStream.unNone
         txs          <- transactionRepo.getAllByBlockId(id).fold[List[Transaction]](List.empty[Transaction])(_ :+ _)

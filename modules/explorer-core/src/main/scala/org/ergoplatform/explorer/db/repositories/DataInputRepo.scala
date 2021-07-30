@@ -12,7 +12,7 @@ import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.DataInput
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedDataInput, FullDataInput, FullInput}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
-import org.ergoplatform.explorer.{Id, TxId}
+import org.ergoplatform.explorer.{BlockId, TxId}
 
 /** [[DataInput]] and [[ExtendedDataInput]] data access operations.
   */
@@ -44,7 +44,7 @@ trait DataInputRepo[D[_]] {
 
   /** Update main_chain status for all inputs related to given `headerId`.
     */
-  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
+  def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit]
 }
 
 object DataInputRepo {
@@ -76,7 +76,7 @@ object DataInputRepo {
     def getFullByTxIds(txIds: NonEmptyList[TxId]): D[List[FullDataInput]] =
       QS.getFullByTxIds(txIds).to[List].liftConnectionIO
 
-    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+    def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }

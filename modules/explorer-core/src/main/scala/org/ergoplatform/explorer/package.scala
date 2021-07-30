@@ -13,7 +13,7 @@ import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.{Id, TokenId}
+import org.ergoplatform.explorer.{BlockId, TokenId}
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
@@ -55,35 +55,35 @@ package object explorer {
 
   /** Persistent modifier id (header, block_transaction, etc.)
     */
-  @newtype case class Id(value: HexString)
+  @newtype case class BlockId(value: HexString)
 
-  object Id {
+  object BlockId {
     // doobie instances
-    implicit def get: Get[Id] = deriving
-    implicit def put: Put[Id] = deriving
+    implicit def get: Get[BlockId] = deriving
+    implicit def put: Put[BlockId] = deriving
 
     // circe instances
-    implicit def encoder: Encoder[Id] = deriving
-    implicit def decoder: Decoder[Id] = deriving
+    implicit def encoder: Encoder[BlockId] = deriving
+    implicit def decoder: Decoder[BlockId] = deriving
 
     // tapir instances
-    implicit def plainCodec: Codec.PlainCodec[Id] = deriving
+    implicit def plainCodec: Codec.PlainCodec[BlockId] = deriving
 
-    implicit def jsonCodec: Codec.JsonCodec[Id] =
-      HexString.jsonCodec.map(Id(_))(_.value)
+    implicit def jsonCodec: Codec.JsonCodec[BlockId] =
+      HexString.jsonCodec.map(BlockId(_))(_.value)
 
-    implicit def schema: Schema[Id] =
-      Schema.schemaForString.description("Modifier ID").asInstanceOf[Schema[Id]]
+    implicit def schema: Schema[BlockId] =
+      Schema.schemaForString.description("Modifier ID").asInstanceOf[Schema[BlockId]]
 
-    implicit def validator: Validator[Id] =
-      implicitly[Validator[HexString]].contramap[Id](_.value)
+    implicit def validator: Validator[BlockId] =
+      implicitly[Validator[HexString]].contramap[BlockId](_.value)
 
-    implicit def loggable: Loggable[Id] = deriving
+    implicit def loggable: Loggable[BlockId] = deriving
 
     def fromString[
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
-    ](s: String): F[Id] =
-      HexString.fromString(s).map(Id.apply)
+    ](s: String): F[BlockId] =
+      HexString.fromString(s).map(BlockId.apply)
   }
 
   @newtype case class TxId(value: String)

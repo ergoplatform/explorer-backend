@@ -5,7 +5,7 @@ import cats.syntax.functor._
 import doobie.LogHandler
 import doobie.free.implicits._
 import doobie.refined.implicits._
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.AdProof
@@ -21,7 +21,7 @@ trait AdProofRepo[D[_]] {
 
   /** Get proof related to a header with a given `headerId`.
     */
-  def getByHeaderId(headerId: Id): D[Option[AdProof]]
+  def getByHeaderId(headerId: BlockId): D[Option[AdProof]]
 }
 
 object AdProofRepo {
@@ -38,7 +38,7 @@ object AdProofRepo {
     def insert(proof: AdProof): D[Unit] =
       QS.insertNoConflict(proof).void.liftConnectionIO
 
-    def getByHeaderId(headerId: Id): D[Option[AdProof]] =
+    def getByHeaderId(headerId: BlockId): D[Option[AdProof]] =
       QS.getByHeaderId(headerId).option.liftConnectionIO
   }
 }

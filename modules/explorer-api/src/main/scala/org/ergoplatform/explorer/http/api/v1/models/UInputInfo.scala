@@ -4,30 +4,30 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.Json
 import org.ergoplatform.explorer._
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, FullInput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUInput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 @derive(encoder, decoder)
-final case class InputInfo(
+final case class UInputInfo(
   boxId: BoxId,
   value: Long,
   index: Int,
   spendingProof: Option[HexString],
-  outputBlockId: BlockId,
+  outputBlockId: Option[BlockId],
   outputTransactionId: TxId,
   outputIndex: Int,
-  ergoTree: HexString,
+  ergoTree: ErgoTree,
   address: Address,
   assets: List[AssetInstanceInfo],
   additionalRegisters: Json
 )
 
-object InputInfo {
+object UInputInfo {
 
-  implicit val schema: Schema[InputInfo] =
+  implicit val schema: Schema[UInputInfo] =
     Schema
-      .derived[InputInfo]
+      .derived[UInputInfo]
       .modify(_.boxId)(_.description("ID of the corresponding box"))
       .modify(_.spendingProof)(_.description("Hex-encoded serialized sigma proof"))
       .modify(_.value)(_.description("Number of nanoErgs in the corresponding box"))
@@ -38,7 +38,7 @@ object InputInfo {
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
 
-  implicit val validator: Validator[InputInfo] = schema.validator
+  implicit val validator: Validator[UInputInfo] = schema.validator
 
   implicit private def registersSchema: Schema[Json] =
     Schema(
@@ -48,13 +48,13 @@ object InputInfo {
       )(_ => Map.empty)
     )
 
-  def apply(i: FullInput, assets: List[ExtendedAsset]): InputInfo =
-    InputInfo(
+  def apply(i: ExtendedUInput, assets: List[ExtendedUAsset]): UInputInfo =
+    UInputInfo(
       i.input.boxId,
       i.value,
       i.input.index,
       i.input.proofBytes,
-      i.outputHeaderId,
+      i.outputBlockId,
       i.outputTxId,
       i.outputIndex,
       i.ergoTree,
@@ -63,8 +63,8 @@ object InputInfo {
       i.additionalRegisters
     )
 
-  def batch(ins: List[FullInput], assets: List[ExtendedAsset]): List[InputInfo] = {
+  def batch(ins: List[ExtendedUInput], assets: List[ExtendedUAsset]): List[UInputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)
-    ins.sortBy(_.input.index).map(i => InputInfo(i, groupedAssets.getOrElse(i.input.boxId, List.empty)))
+    ins.sortBy(_.input.index).map(i => UInputInfo(i, groupedAssets.getOrElse(i.input.boxId, List.empty)))
   }
 }

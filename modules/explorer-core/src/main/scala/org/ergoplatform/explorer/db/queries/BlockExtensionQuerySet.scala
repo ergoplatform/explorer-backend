@@ -4,7 +4,7 @@ import doobie.LogHandler
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.models.BlockExtension
 
 /** A set of queries for doobie implementation of [BlockExtensionRepo].
@@ -21,7 +21,7 @@ object BlockExtensionQuerySet extends QuerySet {
     "fields"
   )
 
-  def getByHeaderId(headerId: Id)(implicit lh: LogHandler): Query0[BlockExtension] =
+  def getByHeaderId(headerId: BlockId)(implicit lh: LogHandler): Query0[BlockExtension] =
     sql"select * from node_extensions where header_id = $headerId"
       .query[BlockExtension]
 }

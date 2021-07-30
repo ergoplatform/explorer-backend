@@ -141,7 +141,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Update main_chain status for all outputs related to given `headerId`.
     */
-  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
+  def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit]
 
   /** Get all unspent outputs appeared in the main chain after `minHeight`.
     */
@@ -331,7 +331,7 @@ object OutputRepo {
     def estimatedOutputsSince(ts: Long)(genesisAddress: Address): D[BigDecimal] =
       QS.estimatedOutputsSince(ts)(genesisAddress).unique.liftConnectionIO
 
-    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+    def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
 
     def getAllUnspent(minHeight: Int, maxHeight: Int): Stream[D, Output] =

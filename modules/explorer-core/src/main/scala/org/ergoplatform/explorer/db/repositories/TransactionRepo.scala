@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
-import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, Id, TxId}
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, BlockId, TxId}
 
 /** [[Transaction]] data access operations.
   */
@@ -34,7 +34,7 @@ trait TransactionRepo[D[_], S[_[_], _]] {
 
   /** Get all transactions from block with a given `id`.
     */
-  def getAllByBlockId(id: Id): S[D, Transaction]
+  def getAllByBlockId(id: BlockId): S[D, Transaction]
 
   /** Get transaction ids from latest block from main-chain.
     */
@@ -91,7 +91,7 @@ trait TransactionRepo[D[_], S[_[_], _]] {
 
   /** Update main_chain flag with a given `newChainStatus` for all txs related to given `headerId`.
     */
-  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
+  def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit]
 }
 
 object TransactionRepo {
@@ -119,7 +119,7 @@ object TransactionRepo {
     def getAllMainByIdSubstring(idStr: String): D[List[Transaction]] =
       QS.getAllMainByIdSubstring(idStr).to[List].liftConnectionIO
 
-    def getAllByBlockId(id: Id): Stream[D, Transaction] =
+    def getAllByBlockId(id: BlockId): Stream[D, Transaction] =
       QS.getAllByBlockId(id).stream.translate(liftK)
 
     def getRecentIds: D[List[TxId]] =
@@ -166,7 +166,7 @@ object TransactionRepo {
     def countByInputsScriptTemplate(template: ErgoTreeTemplateHash): D[Int] =
       QS.countByInputsScriptTemplate(template).unique.liftConnectionIO
 
-    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+    def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
   }
 }

@@ -5,7 +5,7 @@ import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockExtension
@@ -22,7 +22,7 @@ trait BlockExtensionRepo[D[_]] {
 
   /** Get extension related to a given `headerId`.
     */
-  def getByHeaderId(headerId: Id): D[Option[BlockExtension]]
+  def getByHeaderId(headerId: BlockId): D[Option[BlockExtension]]
 }
 
 object BlockExtensionRepo {
@@ -40,7 +40,7 @@ object BlockExtensionRepo {
     def insert(extension: BlockExtension): D[Unit] =
       QS.insertNoConflict(extension).void.liftConnectionIO
 
-    def getByHeaderId(headerId: Id): D[Option[BlockExtension]] =
+    def getByHeaderId(headerId: BlockId): D[Option[BlockExtension]] =
       QS.getByHeaderId(headerId).option.liftConnectionIO
   }
 }

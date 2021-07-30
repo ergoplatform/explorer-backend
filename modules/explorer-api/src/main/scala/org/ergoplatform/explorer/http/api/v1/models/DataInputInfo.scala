@@ -8,16 +8,16 @@ import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class DataInputInfo(
-  boxId: BoxId,
-  value: Long,
-  index: Int,
-  outputBlockId: Id,
-  outputTransactionId: TxId,
-  outputIndex: Int,
-  ergoTree: HexString,
-  address: Address,
-  assets: List[AssetInstanceInfo],
-  additionalRegisters: Json
+                                boxId: BoxId,
+                                value: Long,
+                                index: Int,
+                                outputBlockId: BlockId,
+                                outputTransactionId: TxId,
+                                outputIndex: Int,
+                                ergoTree: HexString,
+                                address: Address,
+                                assets: List[AssetInstanceInfo],
+                                additionalRegisters: Json
 )
 
 object DataInputInfo {

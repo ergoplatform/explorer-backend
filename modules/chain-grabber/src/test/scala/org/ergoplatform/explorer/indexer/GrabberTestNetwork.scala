@@ -13,10 +13,10 @@ final class GrabberTestNetwork[F[_]: Applicative](val source: Source)
   def getBestHeight: F[Int] =
     source.blocksStorage.maxBy(_._1)._1.pure[F]
 
-  def getBlockIdsAtHeight(height: Int): F[List[explorer.Id]] =
+  def getBlockIdsAtHeight(height: Int): F[List[explorer.BlockId]] =
     source.blocksStorage.get(height).toList.flatten.map(_.header.id).pure[F]
 
-  def getFullBlockById(id: explorer.Id): F[Option[ApiFullBlock]] =
+  def getFullBlockById(id: explorer.BlockId): F[Option[ApiFullBlock]] =
     source.blocksStorage.values.flatten.find(_.header.id == id).pure[F]
 
   def getUnconfirmedTransactions: F[List[ApiTransaction]] = ???

@@ -10,7 +10,7 @@ import org.ergoplatform.ErgoLikeTransaction
 import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.{InvalidTransaction, TransactionSubmissionFailed}
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
 import org.ergoplatform.explorer.settings.NetworkSettings
-import org.ergoplatform.explorer.{Id, UrlString}
+import org.ergoplatform.explorer.{BlockId, UrlString}
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}
@@ -33,11 +33,11 @@ trait ErgoNetwork[F[_]] {
 
   /** Get block ids at the given `height`.
     */
-  def getBlockIdsAtHeight(height: Int): F[List[Id]]
+  def getBlockIdsAtHeight(height: Int): F[List[BlockId]]
 
   /** Get full block by its `id`.
     */
-  def getFullBlockById(id: Id): F[Option[ApiFullBlock]]
+  def getFullBlockById(id: BlockId): F[Option[ApiFullBlock]]
 
   /** Get unconfirmed transactions from UTX pool.
     */
@@ -82,14 +82,14 @@ object ErgoNetwork {
         client.expect[ApiNodeInfo](makeGetRequest(s"$url/info"))
       }
 
-    def getBlockIdsAtHeight(height: Int): F[List[Id]] =
+    def getBlockIdsAtHeight(height: Int): F[List[BlockId]] =
       run { url =>
-        client.expect[List[Id]](
+        client.expect[List[BlockId]](
           makeGetRequest(s"$url/blocks/at/$height")
         )
       }
 
-    def getFullBlockById(id: Id): F[Option[ApiFullBlock]] =
+    def getFullBlockById(id: BlockId): F[Option[ApiFullBlock]] =
       run { url =>
         client.expectOption[ApiFullBlock](
           makeGetRequest(s"$url/blocks/$id")
