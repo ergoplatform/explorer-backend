@@ -26,7 +26,8 @@ import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
-import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
+import org.ergoplatform.explorer.protocol.{sigma, TxValidation}
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import tofu.syntax.raise._
@@ -68,6 +69,7 @@ object OffChainService {
     trans: D Trans F
   )(implicit e: ErgoAddressEncoder): F[OffChainService[F]] =
     Slf4jLogger.create[F].flatMap { implicit logger =>
+      val validation = PartialSemanticValidation
       redis.map(ErgoLikeTransactionRepo[F](utxCacheSettings, _)).sequence.flatMap { etxRepo =>
         (
           TransactionRepo[F, D],
@@ -76,7 +78,7 @@ object OffChainService {
           UDataInputRepo[F, D],
           UOutputRepo[F, D],
           UAssetRepo[F, D]
-        ).mapN(new Live(_, _, _, _, _, _, etxRepo)(trans))
+        ).mapN(new Live(_, _, _, _, _, _, etxRepo, validation)(trans))
       }
     }
 
@@ -90,7 +92,8 @@ object OffChainService {
     dataInRepo: UDataInputRepo[D, Stream],
     outRepo: UOutputRepo[D, Stream],
     assetRepo: UAssetRepo[D],
-    ergoLikeTxRepo: Option[ErgoLikeTransactionRepo[F, Stream]]
+    ergoLikeTxRepo: Option[ErgoLikeTransactionRepo[F, Stream]],
+    validation: TxValidation
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends OffChainService[F] {
 
@@ -140,8 +143,13 @@ object OffChainService {
     def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse] =
       ergoLikeTxRepo match {
         case Some(repo) =>
-          Logger[F].info(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
+          val errors = validation.validate(tx)
+          if (errors.isEmpty)
+            Logger[F].info(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
             repo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
+          else
+            Logger[F].info(s"Rejecting ErgoLikeTransaction with id '${tx.id}'") >>
+            IllegalRequest(s"Transaction is invalid. ${errors.mkString("; ")}").raise
         case None =>
           IllegalRequest("Transaction broadcasting is disabled").raise
       }
