@@ -8,11 +8,11 @@ import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
 final case class NetworkInfo(
-                              lastBlockId: BlockId,
-                              height: Int,
-                              maxBoxGix: Long,
-                              maxTxGix: Long,
-                              params: EpochParameters
+  lastBlockId: BlockId,
+  height: Int,
+  maxBoxGix: Long,
+  maxTxGix: Long,
+  params: EpochParameters
 )
 
 object NetworkInfo {

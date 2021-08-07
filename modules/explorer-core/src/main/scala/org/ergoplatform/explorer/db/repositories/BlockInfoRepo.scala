@@ -47,6 +47,8 @@ trait BlockInfoRepo[D[_]] {
 
   def getLastStats: D[Option[BlockStats]]
 
+  def getLastStats: D[Option[BlockStats]]
+
   def totalDifficultySince(ts: Long): D[Long]
 
   def circulatingSupplySince(ts: Long): D[Long]

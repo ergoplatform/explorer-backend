@@ -8,16 +8,16 @@ import org.ergoplatform.explorer.protocol.blocks
 import sttp.tapir.{Schema, Validator}
 
 final case class BlockInfo(
-                            id: BlockId,
-                            height: Int,
-                            epoch: Int,
-                            version: Byte,
-                            timestamp: Long,
-                            transactionsCount: Int,
-                            miner: MinerInfo,
-                            size: Int,
-                            difficulty: Long,
-                            minerReward: Long
+  id: BlockId,
+  height: Int,
+  epoch: Int,
+  version: Byte,
+  timestamp: Long,
+  transactionsCount: Int,
+  miner: MinerInfo,
+  size: Int,
+  difficulty: Long,
+  minerReward: Long
 )
 
 object BlockInfo {
