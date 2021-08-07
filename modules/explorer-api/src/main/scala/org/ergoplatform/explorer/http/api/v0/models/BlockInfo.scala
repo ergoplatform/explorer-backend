@@ -8,14 +8,14 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
 import sttp.tapir.{Schema, Validator}
 
 final case class BlockInfo(
-                            id: BlockId,
-                            height: Int,
-                            timestamp: Long,
-                            transactionsCount: Int,
-                            miner: MinerInfo,
-                            size: Int,
-                            difficulty: Long,
-                            minerReward: Long
+  id: BlockId,
+  height: Int,
+  timestamp: Long,
+  transactionsCount: Int,
+  miner: MinerInfo,
+  size: Int,
+  difficulty: Long,
+  minerReward: Long
 )
 
 object BlockInfo {

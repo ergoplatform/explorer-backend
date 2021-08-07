@@ -2,18 +2,16 @@ package org.ergoplatform.explorer.db.models
 
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
-import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
-import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
-import org.ergoplatform.explorer.{HexString, BlockId}
+import org.ergoplatform.explorer.{BlockId, HexString}
 import sttp.tapir.{Schema, SchemaType}
 
 /** Represents `node_extensions` table.
- */
+  */
 final case class BlockExtension(
-                                 headerId: BlockId,
-                                 digest: HexString,
-                                 fields: Json // arbitrary key->value dictionary
+  headerId: BlockId,
+  digest: HexString,
+  fields: Json // arbitrary key->value dictionary
 )
 
 object BlockExtension {

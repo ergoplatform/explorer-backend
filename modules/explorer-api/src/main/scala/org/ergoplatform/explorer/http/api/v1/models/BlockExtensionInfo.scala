@@ -1,16 +1,15 @@
 package org.ergoplatform.explorer.http.api.v1.models
 
-import io.circe.{Codec, Json}
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.{HexString, BlockId}
+import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.BlockExtension
+import org.ergoplatform.explorer.{BlockId, HexString}
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.json.circe._
 
 final case class BlockExtensionInfo(
-                                     headerId: BlockId,
-                                     digest: HexString,
-                                     fields: Json
+  headerId: BlockId,
+  digest: HexString,
+  fields: Json
 )
 
 object BlockExtensionInfo {

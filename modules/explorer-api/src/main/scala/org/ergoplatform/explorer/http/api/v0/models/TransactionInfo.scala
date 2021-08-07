@@ -9,15 +9,15 @@ import org.ergoplatform.explorer.{BlockId, TxId}
 import sttp.tapir.{Schema, Validator}
 
 final case class TransactionInfo(
-                                  id: TxId,
-                                  headerId: BlockId,
-                                  inclusionHeight: Int,
-                                  timestamp: Long,
-                                  index: Int,
-                                  confirmationsCount: Int,
-                                  inputs: List[InputInfo],
-                                  dataInputs: List[DataInputInfo],
-                                  outputs: List[OutputInfo]
+  id: TxId,
+  headerId: BlockId,
+  inclusionHeight: Int,
+  timestamp: Long,
+  index: Int,
+  confirmationsCount: Int,
+  inputs: List[InputInfo],
+  dataInputs: List[DataInputInfo],
+  outputs: List[OutputInfo]
 )
 
 object TransactionInfo {
