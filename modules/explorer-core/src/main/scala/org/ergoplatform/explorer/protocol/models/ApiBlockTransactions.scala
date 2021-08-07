@@ -9,6 +9,6 @@ import org.ergoplatform.explorer.BlockId
   */
 @derive(decoder)
 final case class ApiBlockTransactions(
-                                       headerId: BlockId,
-                                       transactions: List[ApiTransaction]
+  headerId: BlockId,
+  transactions: List[ApiTransaction]
 )
