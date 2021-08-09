@@ -16,7 +16,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.estatico.newtype.ops._
 import mouse.any._
 import mouse.anyf._
-import org.ergoplatform.explorer.Err.RequestProcessingErr.IllegalRequest
+import org.ergoplatform.explorer.Err.RequestProcessingErr.BadRequest
 import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
@@ -149,9 +149,9 @@ object OffChainService {
             repo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
           else
             Logger[F].info(s"Rejecting ErgoLikeTransaction with id '${tx.id}'") >>
-            IllegalRequest(s"Transaction is invalid. ${errors.mkString("; ")}").raise
+            BadRequest(s"Transaction is invalid. ${errors.mkString("; ")}").raise
         case None =>
-          IllegalRequest("Transaction broadcasting is disabled").raise
+          BadRequest("Transaction broadcasting is disabled").raise
       }
 
     private def assembleUInfo: List[UTransaction] => D[List[UTransactionInfo]] =

@@ -8,7 +8,7 @@ import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.{HexString, TxId}
+import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.doobieInstances._
@@ -26,6 +26,10 @@ trait UOutputRepo[D[_], S[_[_], _]] {
   /** Put a given list of unconfirmed outputs to persistence.
     */
   def insertMany(outputs: List[UOutput]): D[Unit]
+
+  /** Get a box by `boxId`.
+    */
+  def getByBoxId(boxId: BoxId): D[Option[ExtendedUOutput]]
 
   /** Get all outputs containing in unconfirmed transactions.
     */
@@ -69,6 +73,9 @@ object UOutputRepo {
 
     def insertMany(outputs: List[UOutput]): D[Unit] =
       QS.insertManyNoConflict(outputs).void.liftConnectionIO
+
+    def getByBoxId(boxId: BoxId): D[Option[ExtendedUOutput]] =
+      QS.get(boxId).option.liftConnectionIO
 
     def getAll(offset: Int, limit: Int): Stream[D, ExtendedUOutput] =
       QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)

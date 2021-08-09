@@ -132,6 +132,9 @@ package object explorer {
 
     implicit def validator: Validator[BoxId] =
       Schema.schemaForString.validator.contramap[BoxId](_.value)
+
+    def fromErgo(boxId: org.ergoplatform.ErgoBox.BoxId): BoxId =
+      BoxId(Base16.encode(boxId))
   }
 
   @newtype case class TokenId(value: HexString)

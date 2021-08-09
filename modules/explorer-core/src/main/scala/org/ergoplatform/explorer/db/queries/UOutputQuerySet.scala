@@ -7,7 +7,7 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUOutput
-import org.ergoplatform.explorer.{HexString, TxId}
+import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 
 object UOutputQuerySet extends QuerySet {
 
@@ -26,6 +26,24 @@ object UOutputQuerySet extends QuerySet {
     "address",
     "additional_registers"
   )
+
+  def get(boxId: BoxId)(implicit lh: LogHandler): Query0[ExtendedUOutput] =
+    sql"""
+         |select distinct on (o.box_id)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  i.tx_id
+         |from node_u_outputs o
+         |left join node_u_inputs i on i.box_id = o.box_id
+         |where o.box_id = $boxId
+         |""".stripMargin.query[ExtendedUOutput]
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedUOutput] =
     sql"""

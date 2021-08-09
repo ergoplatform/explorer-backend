@@ -2,8 +2,11 @@ package org.ergoplatform.explorer.http.api.v1.services
 
 import cats.Monad
 import cats.syntax.list._
+import cats.syntax.traverse._
 import fs2.{Chunk, Pipe, Stream}
+import io.estatico.newtype.ops.toCoercibleIdOps
 import mouse.anyf._
+import org.ergoplatform.explorer.Err.RequestProcessingErr.{BadRequest, FeatureNotSupported}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
@@ -11,11 +14,14 @@ import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
 import org.ergoplatform.explorer.http.api.v1.models.UTransactionInfo
+import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
 import org.ergoplatform.explorer.settings.ServiceSettings
-import org.ergoplatform.explorer.{Address, ErgoTree}
+import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
+import tofu.Throws
 import tofu.syntax.monadic._
+import tofu.syntax.raise._
 import tofu.syntax.streams.compile._
 
 trait UnconfirmedTransactions[F[_]] {
@@ -35,9 +41,10 @@ trait UnconfirmedTransactions[F[_]] {
 
 object UnconfirmedTransactions {
 
-  final class Live[F[_]: Monad, D[_]: Monad: CompileStream](
+  final class Live[F[_]: Monad: Throws, D[_]: Monad: CompileStream](
     settings: ServiceSettings,
-    repo: UtxRepoBundle[D, Stream]
+    repo: UtxRepoBundle[F, D, Stream],
+    semanticValidation: TxValidation
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends UnconfirmedTransactions[F] {
 
@@ -62,7 +69,32 @@ object UnconfirmedTransactions {
     ): F[Items[UTransactionInfo]] =
       getByErgoTree(addressToErgoTreeNewtype(address), paging)
 
-    def submit(tx: ErgoLikeTransaction): F[TxIdResponse] = ???
+    def submit(tx: ErgoLikeTransaction): F[TxIdResponse] =
+      ergoTxRepo match {
+        case Some(etx) =>
+          val inputErrors = tx.inputs
+            .map(i => BoxId.fromErgo(i.boxId))
+            .toList
+            .zipWithIndex
+            .flatTraverse { case (id, idx) =>
+              for {
+                confirmed   <- confirmedOutputs.getByBoxId(id)
+                unconfirmed <- outputs.getByBoxId(id)
+                inputNotFound = if (confirmed.isEmpty && unconfirmed.isEmpty) List(s"Input $idx:$id not found")
+                                else List.empty
+                inputWasSpent = if (confirmed.flatMap(_.spentByOpt).isDefined && confirmed.exists(_.output.mainChain))
+                                  List(s"Input $idx:$id was spent")
+                                else List.empty
+              } yield inputNotFound ++ inputWasSpent
+            }
+          val semanticErrors = semanticValidation.validate(tx)
+          inputErrors.map(_ ++ semanticErrors).thrushK(trans.xa).flatMap {
+            case Nil => etx.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
+            case errors =>
+              BadRequest(s"Transaction is invalid. ${errors.mkString("; ")}").raise
+          }
+        case None => FeatureNotSupported("Tx broadcasting").raise
+      }
 
     private def makeTransaction: Pipe[D, Chunk[UTransaction], UTransactionInfo] =
       for {
