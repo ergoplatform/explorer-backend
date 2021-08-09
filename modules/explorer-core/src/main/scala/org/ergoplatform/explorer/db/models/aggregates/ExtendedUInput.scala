@@ -10,8 +10,8 @@ final case class ExtendedUInput(
   input: UInput,
   value: Long,
   outputTxId: TxId,
-  outputIndex: Int,
   outputBlockId: Option[BlockId],
+  outputIndex: Int,
   ergoTree: ErgoTree,
   address: Address,
   additionalRegisters: Json
