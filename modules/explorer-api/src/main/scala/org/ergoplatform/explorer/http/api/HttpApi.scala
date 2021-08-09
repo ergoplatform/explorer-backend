@@ -39,7 +39,7 @@ object HttpApi {
   ): Resource[F, Server[F]] =
     for {
       v0 <- Resource.eval(RoutesV0Bundle(settings.protocol, settings.utxCache, redis)(trans))
-      v1 <- Resource.eval(RoutesV1Bundle(settings.service, settings.requests)(trans))
+      v1 <- Resource.eval(RoutesV1Bundle(settings.service, settings.requests, settings.utxCache, redis)(trans))
       routes     = v0.routes <+> v1.routes
       corsRoutes = CORS(routes)
       http <- BlazeServerBuilder[F](ec)

@@ -31,6 +31,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
     new EpochsEndpointDefs().endpoints ++
     new AddressesEndpointDefs(settings).endpoints ++
     new BlocksEndpointDefs(settings).endpoints ++
+    new MempoolEndpointDefs().endpoints ++
     new InfoEndpointsDefs().endpoints
 
   private def tags =

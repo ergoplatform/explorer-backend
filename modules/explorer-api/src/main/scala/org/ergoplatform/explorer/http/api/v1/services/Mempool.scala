@@ -1,13 +1,16 @@
 package org.ergoplatform.explorer.http.api.v1.services
 
 import cats.Monad
+import cats.effect.Concurrent
 import cats.syntax.list._
 import cats.syntax.traverse._
+import dev.profunktor.redis4cats.algebra.RedisCommands
 import fs2.{Chunk, Pipe, Stream}
 import io.estatico.newtype.ops.toCoercibleIdOps
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.{BadRequest, FeatureNotSupported}
 import org.ergoplatform.explorer.db.Trans
+import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
@@ -15,8 +18,9 @@ import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
 import org.ergoplatform.explorer.http.api.v1.models.UTransactionInfo
 import org.ergoplatform.explorer.protocol.TxValidation
+import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
 import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
-import org.ergoplatform.explorer.settings.ServiceSettings
+import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import tofu.Throws
@@ -24,7 +28,7 @@ import tofu.syntax.monadic._
 import tofu.syntax.raise._
 import tofu.syntax.streams.compile._
 
-trait UnconfirmedTransactions[F[_]] {
+trait Mempool[F[_]] {
 
   def getByErgoTree(
     ergoTree: ErgoTree,
@@ -39,14 +43,24 @@ trait UnconfirmedTransactions[F[_]] {
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 }
 
-object UnconfirmedTransactions {
+object Mempool {
+
+  def apply[F[_]: Concurrent, D[_]: Monad: CompileStream: LiftConnectionIO](
+    settings: ServiceSettings,
+    utxCacheSettings: UtxCacheSettings,
+    redis: Option[RedisCommands[F, String, String]]
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[Mempool[F]] = {
+    val validation = PartialSemanticValidation
+    UtxRepoBundle[F, D](utxCacheSettings, redis)
+      .map(bundle => new Live(settings, bundle, validation)(trans))
+  }
 
   final class Live[F[_]: Monad: Throws, D[_]: Monad: CompileStream](
     settings: ServiceSettings,
     repo: UtxRepoBundle[F, D, Stream],
     semanticValidation: TxValidation
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
-    extends UnconfirmedTransactions[F] {
+    extends Mempool[F] {
 
     import repo._
 
