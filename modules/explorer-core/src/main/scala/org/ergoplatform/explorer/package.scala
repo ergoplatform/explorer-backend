@@ -198,6 +198,9 @@ package object explorer {
     implicit def get: Get[ErgoTree] = deriving
     implicit def put: Put[ErgoTree] = deriving
 
+    implicit val encoder: io.circe.Encoder[ErgoTree] = deriving
+    implicit val decoder: io.circe.Decoder[ErgoTree] = deriving
+
     // tapir instances
     implicit def plainCodec: Codec.PlainCodec[ErgoTree] = deriving
 

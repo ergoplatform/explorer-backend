@@ -7,8 +7,8 @@ import io.circe.Codec
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.TxId
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUDataInput, ExtendedUInput}
-import org.ergoplatform.explorer.db.models.{UOutput, UTransaction}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUDataInput, ExtendedUInput, ExtendedUOutput}
+import org.ergoplatform.explorer.db.models.UTransaction
 import sttp.tapir.{Schema, Validator}
 
 final case class UTransactionInfo(
@@ -38,11 +38,11 @@ object UTransactionInfo {
   implicit val validator: Validator[UTransactionInfo] = schema.validator
 
   def apply(
-    tx: UTransaction,
-    ins: List[ExtendedUInput],
-    dataIns: List[ExtendedUDataInput],
-    outs: List[UOutput],
-    assets: List[ExtendedUAsset]
+             tx: UTransaction,
+             ins: List[ExtendedUInput],
+             dataIns: List[ExtendedUDataInput],
+             outs: List[ExtendedUOutput],
+             assets: List[ExtendedUAsset]
   ): UTransactionInfo = {
     val inputsInfo     = UInputInfo.batch(ins)
     val dataInputsInfo = UDataInputInfo.batch(dataIns)
@@ -51,11 +51,11 @@ object UTransactionInfo {
   }
 
   def batch(
-    txs: List[UTransaction],
-    ins: List[ExtendedUInput],
-    dataIns: List[ExtendedUDataInput],
-    outs: List[UOutput],
-    assets: List[ExtendedUAsset]
+             txs: List[UTransaction],
+             ins: List[ExtendedUInput],
+             dataIns: List[ExtendedUDataInput],
+             outs: List[ExtendedUOutput],
+             assets: List[ExtendedUAsset]
   ): List[UTransactionInfo] = {
     val assetsByBox    = assets.groupBy(_.boxId)
     val inputsByTx     = ins.groupBy(_.input.txId)

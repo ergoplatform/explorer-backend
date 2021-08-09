@@ -1,7 +1,6 @@
 package org.ergoplatform.explorer.tracker
 
 import java.util.concurrent.TimeUnit
-
 import cats.effect.Clock
 import cats.instances.list._
 import cats.syntax.traverse._

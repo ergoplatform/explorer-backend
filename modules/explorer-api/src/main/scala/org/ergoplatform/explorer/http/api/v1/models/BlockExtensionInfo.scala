@@ -4,7 +4,7 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.BlockExtension
 import org.ergoplatform.explorer.{BlockId, HexString}
-import sttp.tapir.{Schema, Validator}
+import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class BlockExtensionInfo(
   headerId: BlockId,
@@ -13,6 +13,14 @@ final case class BlockExtensionInfo(
 )
 
 object BlockExtensionInfo {
+
+  implicit private def fieldsSchema: Schema[Json] =
+    Schema(
+      SchemaType.SOpenProduct(
+        SchemaType.SObjectInfo("ExtensionFields"),
+        Schema(SchemaType.SString[Json]())
+      )(_ => Map.empty)
+    )
 
   implicit val codec: Codec[BlockExtensionInfo] = deriveCodec
 

@@ -4,8 +4,7 @@ import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
 import cats.syntax.option._
-import org.ergoplatform.explorer.db.models.UOutput
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedUAsset
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUOutput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.protocol.registers
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
@@ -48,7 +47,7 @@ object UOutputInfo {
       )(_ => Map.empty)
     )
 
-  def apply(out: UOutput, assets: List[ExtendedUAsset]): UOutputInfo =
+  def apply(out: ExtendedUOutput, assets: List[ExtendedUAsset]): UOutputInfo =
     UOutputInfo(
       out.boxId,
       out.txId,
@@ -61,7 +60,7 @@ object UOutputInfo {
       registers.convolveJson(out.additionalRegisters)
     )
 
-  def batch(outputs: List[UOutput], assets: List[ExtendedUAsset]): List[UOutputInfo] = {
+  def batch(outputs: List[ExtendedUOutput], assets: List[ExtendedUAsset]): List[UOutputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)
     outputs.map(out => apply(out, groupedAssets.get(out.boxId).toList.flatten))
   }

@@ -68,6 +68,9 @@ object sigma {
   @inline def addressToErgoTreeHex(address: Address)(implicit enc: ErgoAddressEncoder): HexString =
     addressToErgoTree(address) |> (tree => HexString.fromStringUnsafe(Base16.encode(tree.bytes)))
 
+  @inline def addressToErgoTreeNewtype(address: Address)(implicit enc: ErgoAddressEncoder): org.ergoplatform.explorer.ErgoTree =
+    addressToErgoTreeHex(address) |> (tree => org.ergoplatform.explorer.ErgoTree(tree))
+
   @inline def hexStringToBytes[
     F[_]: CRaise[*[_], Base16DecodingFailed]: Applicative
   ](s: HexString): F[Array[Byte]] =

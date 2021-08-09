@@ -4,8 +4,8 @@ import io.circe.Codec
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.TxId
-import org.ergoplatform.explorer.db.models.{UAsset, UOutput, UTransaction}
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUDataInput, ExtendedUInput}
+import org.ergoplatform.explorer.db.models.{UAsset, UTransaction}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUDataInput, ExtendedUInput, ExtendedUOutput}
 import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
 
@@ -37,11 +37,11 @@ object UTransactionSummary {
   implicit val validator: Validator[UTransactionSummary] = schema.validator
 
   def apply(
-    tx: UTransaction,
-    ins: List[ExtendedUInput],
-    dataIns: List[ExtendedUDataInput],
-    outs: List[UOutput],
-    assets: List[ExtendedUAsset]
+             tx: UTransaction,
+             ins: List[ExtendedUInput],
+             dataIns: List[ExtendedUDataInput],
+             outs: List[ExtendedUOutput],
+             assets: List[ExtendedUAsset]
   ): UTransactionSummary = {
     val inputsInfo     = ins.map(UInputInfo.apply)
     val dataInputsInfo = dataIns.map(UDataInputInfo.apply)

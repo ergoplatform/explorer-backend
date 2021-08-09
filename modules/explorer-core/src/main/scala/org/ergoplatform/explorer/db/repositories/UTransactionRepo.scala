@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
-import org.ergoplatform.explorer.{HexString, TxId}
+import org.ergoplatform.explorer.{ErgoTree, HexString, TxId}
 
 trait UTransactionRepo[D[_], S[_[_], _]] {
 
@@ -38,6 +38,12 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
     limit: Int
   ): D[List[UTransaction]]
 
+  def streamRelatedToErgoTree(
+    ergoTree: ErgoTree,
+    offset: Int,
+    limit: Int
+  ): S[D, UTransaction]
+
   /** Get all unconfirmed transactions.
     */
   def getAll(offset: Int, limit: Int): D[List[UTransaction]]
@@ -62,10 +68,11 @@ object UTransactionRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends UTransactionRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends UTransactionRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{UTransactionQuerySet => QS}
+
+    val liftK = LiftConnectionIO[D].liftConnectionIOK
 
     def insert(tx: UTransaction): D[Unit] =
       QS.insertNoConflict(tx).void.liftConnectionIO
@@ -87,6 +94,9 @@ object UTransactionRepo {
       QS.getAllRelatedToErgoTree(ergoTree, offset, limit)
         .to[List]
         .liftConnectionIO
+
+    def streamRelatedToErgoTree(ergoTree: ErgoTree, offset: Int, limit: Int): Stream[D, UTransaction] =
+      QS.getAllRelatedToErgoTree(ergoTree.value, offset, limit).stream.translate(liftK)
 
     def getAll(offset: Int, limit: Int): D[List[UTransaction]] =
       QS.getAll(offset, limit).to[List].liftConnectionIO
