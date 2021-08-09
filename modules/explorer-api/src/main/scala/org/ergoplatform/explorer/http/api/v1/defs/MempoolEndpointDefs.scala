@@ -20,13 +20,13 @@ class MempoolEndpointDefs {
 
   def sendTransactionDef: Endpoint[ErgoLikeTransaction, ApiErr, TxIdResponse, Any] =
     baseEndpointDef.post
-      .in(PathPrefix / "submit")
+      .in(PathPrefix / "transactions" / "submit")
       .in(jsonBody[ErgoLikeTransaction])
       .out(jsonBody[TxIdResponse])
 
   def getTransactionsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[UTransactionInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "transactions" / path[Address])
+      .in(PathPrefix / "transactions" / "byAddress" / path[Address])
       .in(paging)
       .out(jsonBody[Items[UTransactionInfo]])
 }

@@ -7,6 +7,7 @@ import io.chrisdavenport.log4cats.Logger
 import io.circe.Codec
 import io.circe.magnolia.derivation.decoder.semiauto._
 import io.circe.magnolia.derivation.encoder.semiauto._
+import org.ergoplatform.explorer.Err.RequestProcessingErr
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import sttp.tapir.{Schema, Validator}
@@ -59,6 +60,8 @@ object ApiErr {
       final def adapter: Throwable => F[ApiErr] = {
         case AddressDecodingFailed(address, _) =>
           (badRequest(s"Failed to decode address '$address'"): ApiErr).pure[F]
+        case RequestProcessingErr.BadRequest(err) =>
+          (badRequest(err): ApiErr).pure[F]
         case e =>
           Logger[F].error(s"Unknown error: $e: ${e.getMessage}") as unknownErr(e.getMessage)
       }
