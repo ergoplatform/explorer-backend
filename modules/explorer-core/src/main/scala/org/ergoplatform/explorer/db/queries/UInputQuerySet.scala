@@ -33,13 +33,13 @@ object UInputQuerySet extends QuerySet {
          |  i.index,
          |  i.proof_bytes,
          |  i.extension,
-         |  case o.value                when null then ou.value                  else o.value end,
-         |  case o.tx_id                when null then ou.tx_id                  else o.tx_id end,
-         |  case o.header_id            when null then null                      else o.header_id end,
-         |  case o.index                when null then ou.index                  else o.index end,
-         |  case o.ergo_tree            when null then ou.ergo_tree              else o.ergo_tree end,
-         |  case o.address              when null then ou.address                else o.address end,
-         |  case o.box_id               when null then ou.additional_registers   else o.additional_registers end
+         |  case when (o.value is null)     then ou.value                else o.value end,
+         |  case when (o.tx_id is null)     then ou.tx_id                else o.tx_id end,
+         |  case when (o.header_id is null) then null                    else o.header_id end,
+         |  case when (o.index is null)     then ou.index                else o.index end,
+         |  case when (o.ergo_tree is null) then ou.ergo_tree            else o.ergo_tree end,
+         |  case when (o.address is null)   then ou.address              else o.address end,
+         |  case when (o.box_id is null)    then ou.additional_registers else o.additional_registers end
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
@@ -55,13 +55,13 @@ object UInputQuerySet extends QuerySet {
          |  i.index,
          |  i.proof_bytes,
          |  i.extension,
-         |  case o.value                when null then ou.value                  else o.value end,
-         |  case o.tx_id                when null then ou.tx_id                  else o.tx_id end,
-         |  case o.header_id            when null then null                      else o.header_id end,
-         |  case o.index                when null then ou.index                  else o.index end,
-         |  case o.ergo_tree            when null then ou.ergo_tree              else o.ergo_tree end,
-         |  case o.address              when null then ou.address                else o.address end,
-         |  case o.box_id               when null then ou.additional_registers   else o.additional_registers end
+         |  case when (o.value is null)     then ou.value                else o.value end,
+         |  case when (o.tx_id is null)     then ou.tx_id                else o.tx_id end,
+         |  case when (o.header_id is null) then null                    else o.header_id end,
+         |  case when (o.index is null)     then ou.index                else o.index end,
+         |  case when (o.ergo_tree is null) then ou.ergo_tree            else o.ergo_tree end,
+         |  case when (o.address is null)   then ou.address              else o.address end,
+         |  case when (o.box_id is null)    then ou.additional_registers else o.additional_registers end
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
@@ -78,13 +78,13 @@ object UInputQuerySet extends QuerySet {
           |  i.index,
           |  i.proof_bytes,
           |  i.extension,
-          |  case o.value                when null then ou.value                  else o.value end,
-          |  case o.tx_id                when null then ou.tx_id                  else o.tx_id end,
-          |  case o.header_id            when null then null                      else o.header_id end,
-          |  case o.index                when null then ou.index                  else o.index end,
-          |  case o.ergo_tree            when null then ou.ergo_tree              else o.ergo_tree end,
-          |  case o.address              when null then ou.address                else o.address end,
-          |  case o.box_id               when null then ou.additional_registers   else o.additional_registers end
+          |  case when (o.value is null)     then ou.value                else o.value end,
+          |  case when (o.tx_id is null)     then ou.tx_id                else o.tx_id end,
+          |  case when (o.header_id is null) then null                    else o.header_id end,
+          |  case when (o.index is null)     then ou.index                else o.index end,
+          |  case when (o.ergo_tree is null) then ou.ergo_tree            else o.ergo_tree end,
+          |  case when (o.address is null)   then ou.address              else o.address end,
+          |  case when (o.box_id is null)    then ou.additional_registers else o.additional_registers end
           |from node_u_inputs i
           |left join node_outputs o on i.box_id = o.box_id
           |left join node_u_outputs ou on i.box_id = ou.box_id
