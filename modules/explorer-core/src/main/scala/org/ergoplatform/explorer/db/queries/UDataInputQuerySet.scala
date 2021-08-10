@@ -33,7 +33,7 @@ object UDataInputQuerySet extends QuerySet {
          |  case o.index                when null then ou.index                  else o.index end,
          |  case o.ergo_tree            when null then ou.ergo_tree              else o.ergo_tree end,
          |  case o.address              when null then ou.address                else o.address end,
-         |  case o.additional_registers when null then ou.additional_registers   else o.additional_registers end
+         |  case o.box_id               when null then ou.additional_registers   else o.additional_registers end
          |from node_u_data_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
@@ -52,7 +52,7 @@ object UDataInputQuerySet extends QuerySet {
          |  case o.index                when null then ou.index                  else o.index end,
          |  case o.ergo_tree            when null then ou.ergo_tree              else o.ergo_tree end,
          |  case o.address              when null then ou.address                else o.address end,
-         |  case o.additional_registers when null then ou.additional_registers   else o.additional_registers end
+         |  case o.box_id               when null then ou.additional_registers   else o.additional_registers end
          |from node_u_data_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
@@ -72,7 +72,7 @@ object UDataInputQuerySet extends QuerySet {
           |  case o.index                when null then ou.index                  else o.index end,
           |  case o.ergo_tree            when null then ou.ergo_tree              else o.ergo_tree end,
           |  case o.address              when null then ou.address                else o.address end,
-          |  case o.additional_registers when null then ou.additional_registers   else o.additional_registers end
+          |  case o.box_id               when null then ou.additional_registers   else o.additional_registers end
           |from node_u_data_inputs i
           |left join node_outputs o on i.box_id = o.box_id
           |left join node_u_outputs ou on i.box_id = ou.box_id
