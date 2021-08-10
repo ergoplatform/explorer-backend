@@ -43,6 +43,7 @@ object UInputQuerySet extends QuerySet {
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
+         |where o.box_id is not null or ou.box_id is not null
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedUInput]
 
@@ -64,7 +65,7 @@ object UInputQuerySet extends QuerySet {
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
-         |where i.tx_id = $txId
+         |where i.tx_id = $txId and (o.box_id is not null or ou.box_id is not null)
          |order by i.index asc
          |""".stripMargin.query[ExtendedUInput]
 
@@ -87,7 +88,7 @@ object UInputQuerySet extends QuerySet {
           |from node_u_inputs i
           |left join node_outputs o on i.box_id = o.box_id
           |left join node_u_outputs ou on i.box_id = ou.box_id
-          |where i.tx_id
+          |where (o.box_id is not null or ou.box_id is not null) and i.tx_id
           |""".stripMargin
     in(queryFr, txIds).query[ExtendedUInput]
   }
