@@ -112,17 +112,20 @@ object Mempool {
 
     private def makeTransaction: Pipe[D, Chunk[UTransaction], UTransactionInfo] =
       for {
-        chunk     <- _
-        txIds     <- Stream.emit(chunk.map(_.id).toNel).unNone
-        ins       <- Stream.eval(inputs.getAllByTxIds(txIds))
-        inIds     <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets  <- Stream.eval(assets.getAllByBoxIds(inIds))
-        dataIns   <- Stream.eval(dataInputs.getAllByTxIds(txIds))
-        outs      <- Stream.eval(outputs.getAllByTxIds(txIds))
-        outIds    <- Stream.emit(outs.map(_.boxId).toNel).unNone
-        outAssets <- Stream.eval(assets.getAllByBoxIds(outIds))
+        chunk        <- _
+        txIds        <- Stream.emit(chunk.map(_.id).toNel).unNone
+        ins          <- Stream.eval(inputs.getAllByTxIds(txIds))
+        inIds        <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
+        inAssets     <- Stream.eval(assets.getAllByBoxIds(inIds))
+        confInAssets <- Stream.eval(confirmedAssets.getAllByBoxIds(inIds))
+        dataIns      <- Stream.eval(dataInputs.getAllByTxIds(txIds))
+        outs         <- Stream.eval(outputs.getAllByTxIds(txIds))
+        outIds       <- Stream.emit(outs.map(_.boxId).toNel).unNone
+        outAssets    <- Stream.eval(assets.getAllByBoxIds(outIds))
         txInfo <-
-          Stream.emits(UTransactionInfo.unFlattenBatch(chunk.toList, ins, dataIns, outs, inAssets, outAssets))
+          Stream.emits(
+            UTransactionInfo.unFlattenBatch(chunk.toList, ins, dataIns, outs, inAssets, confInAssets, outAssets)
+          )
       } yield txInfo
   }
 }

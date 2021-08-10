@@ -6,6 +6,7 @@ import cats.syntax.traverse._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.db.repositories
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import tofu.syntax.monadic._
@@ -17,6 +18,7 @@ final case class UtxRepoBundle[F[_], D[_], S[_[_], _]](
   outputs: UOutputRepo[D, S],
   confirmedOutputs: OutputRepo[D, S],
   assets: UAssetRepo[D],
+  confirmedAssets: AssetRepo[D, S],
   ergoTxRepo: Option[ErgoLikeTransactionRepo[F, S]]
 )
 
@@ -33,7 +35,8 @@ object UtxRepoBundle {
         UDataInputRepo[F, D],
         UOutputRepo[F, D],
         OutputRepo[F, D],
-        UAssetRepo[F, D]
-      ).mapN(UtxRepoBundle(_, _, _, _, _, _, etxRepo))
+        UAssetRepo[F, D],
+        AssetRepo[F, D]
+      ).mapN(UtxRepoBundle(_, _, _, _, _, _, _, etxRepo))
     }
 }

@@ -4,7 +4,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.Json
 import org.ergoplatform.explorer._
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUInput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedUAsset, ExtendedUInput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import sttp.tapir.{Schema, SchemaType, Validator}
 
@@ -48,7 +48,7 @@ object UInputInfo {
       )(_ => Map.empty)
     )
 
-  def apply(i: ExtendedUInput, assets: List[ExtendedUAsset]): UInputInfo =
+  def apply(i: ExtendedUInput, assets: List[ExtendedUAsset], confirmedAssets: List[ExtendedAsset]): UInputInfo =
     UInputInfo(
       i.input.boxId,
       i.value,
@@ -59,12 +59,25 @@ object UInputInfo {
       i.outputIndex,
       i.ergoTree,
       i.address,
-      assets.sortBy(_.index).map(AssetInstanceInfo(_)),
+      assets.sortBy(_.index).map(AssetInstanceInfo(_)) ++ confirmedAssets.sortBy(_.index).map(AssetInstanceInfo(_)),
       i.additionalRegisters
     )
 
-  def batch(ins: List[ExtendedUInput], assets: List[ExtendedUAsset]): List[UInputInfo] = {
-    val groupedAssets = assets.groupBy(_.boxId)
-    ins.sortBy(_.input.index).map(i => UInputInfo(i, groupedAssets.getOrElse(i.input.boxId, List.empty)))
+  def batch(
+    ins: List[ExtendedUInput],
+    assets: List[ExtendedUAsset],
+    confirmedAssets: List[ExtendedAsset]
+  ): List[UInputInfo] = {
+    val groupedAssets     = assets.groupBy(_.boxId)
+    val groupedConfAssets = confirmedAssets.groupBy(_.boxId)
+    ins
+      .sortBy(_.input.index)
+      .map { i =>
+        UInputInfo(
+          i,
+          groupedAssets.getOrElse(i.input.boxId, List.empty),
+          groupedConfAssets.getOrElse(i.input.boxId, List.empty)
+        )
+      }
   }
 }
