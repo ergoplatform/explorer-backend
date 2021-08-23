@@ -11,7 +11,7 @@ import org.ergoplatform.explorer.protocol.ergoInstances._
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody
 
-class MempoolEndpointDefs {
+final class MempoolEndpointDefs {
 
   private val PathPrefix = "mempool"
 
