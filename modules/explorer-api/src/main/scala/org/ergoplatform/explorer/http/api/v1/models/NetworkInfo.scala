@@ -2,13 +2,13 @@ package org.ergoplatform.explorer.http.api.v1.models
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.models.EpochParameters
 import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
 final case class NetworkInfo(
-  lastBlockId: Id,
+  lastBlockId: BlockId,
   height: Int,
   maxBoxGix: Long,
   maxTxGix: Long,

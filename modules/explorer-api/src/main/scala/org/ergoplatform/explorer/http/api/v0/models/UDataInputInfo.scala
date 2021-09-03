@@ -38,11 +38,11 @@ object UDataInputInfo {
     new UDataInputInfo(
       in.input.boxId,
       in.input.txId,
-      in.value,
+      Some(in.value),
       in.input.index,
-      in.outputTxId,
-      in.outputIndex,
-      in.address
+      Some(in.outputTxId),
+      Some(in.outputIndex),
+      Some(in.address)
     )
 
   def batch(ins: List[ExtendedUDataInput]): List[UDataInputInfo] =

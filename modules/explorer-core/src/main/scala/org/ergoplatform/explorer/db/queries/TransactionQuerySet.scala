@@ -7,7 +7,7 @@ import doobie.util.fragment.Fragment
 import doobie.util.query.Query0
 import doobie.util.update.Update0
 import org.ergoplatform.explorer.constraints.OrderingString
-import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, Id, TxId}
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, BlockId, TxId}
 import org.ergoplatform.explorer.db.models.Transaction
 
 /** A set of queries for doobie implementation of [TransactionRepo].
@@ -42,7 +42,7 @@ object TransactionQuerySet extends QuerySet {
          |where t.id like ${s"%$idSubstr%"} and h.main_chain = true
          |""".stripMargin.query[Transaction]
 
-  def getAllByBlockId(id: Id)(implicit lh: LogHandler): Query0[Transaction] =
+  def getAllByBlockId(id: BlockId)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
          |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain from node_transactions t
          |where t.header_id = $id
@@ -147,7 +147,7 @@ object TransactionQuerySet extends QuerySet {
          |where o.ergo_tree_template_hash = $template and t.main_chain = true
          |""".stripMargin.query[Int]
 
-  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+  def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
          |update node_transactions set main_chain = $newChainStatus
          |where header_id = $headerId

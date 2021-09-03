@@ -33,13 +33,17 @@ object UInputQuerySet extends QuerySet {
          |  i.index,
          |  i.proof_bytes,
          |  i.extension,
-         |  case when o.value   is null then ou.value   else o.value end,
-         |  case when o.tx_id   is null then ou.tx_id   else o.tx_id end,
-         |  case when o.index   is null then ou.index   else o.index end,
-         |  case when o.address is null then ou.address else o.address end
+         |  case when (o.value is null)     then ou.value                else o.value end,
+         |  case when (o.tx_id is null)     then ou.tx_id                else o.tx_id end,
+         |  case when (o.header_id is null) then null                    else o.header_id end,
+         |  case when (o.index is null)     then ou.index                else o.index end,
+         |  case when (o.ergo_tree is null) then ou.ergo_tree            else o.ergo_tree end,
+         |  case when (o.address is null)   then ou.address              else o.address end,
+         |  case when (o.box_id is null)    then ou.additional_registers else o.additional_registers end
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
+         |where o.box_id is not null or ou.box_id is not null
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedUInput]
 
@@ -51,14 +55,17 @@ object UInputQuerySet extends QuerySet {
          |  i.index,
          |  i.proof_bytes,
          |  i.extension,
-         |  case when o.value   is null then ou.value   else o.value end,
-         |  case when o.tx_id   is null then ou.tx_id   else o.tx_id end,
-         |  case when o.index   is null then ou.index   else o.index end,
-         |  case when o.address is null then ou.address else o.address end
+         |  case when (o.value is null)     then ou.value                else o.value end,
+         |  case when (o.tx_id is null)     then ou.tx_id                else o.tx_id end,
+         |  case when (o.header_id is null) then null                    else o.header_id end,
+         |  case when (o.index is null)     then ou.index                else o.index end,
+         |  case when (o.ergo_tree is null) then ou.ergo_tree            else o.ergo_tree end,
+         |  case when (o.address is null)   then ou.address              else o.address end,
+         |  case when (o.box_id is null)    then ou.additional_registers else o.additional_registers end
          |from node_u_inputs i
          |left join node_outputs o on i.box_id = o.box_id
          |left join node_u_outputs ou on i.box_id = ou.box_id
-         |where i.tx_id = $txId
+         |where i.tx_id = $txId and (o.box_id is not null or ou.box_id is not null)
          |order by i.index asc
          |""".stripMargin.query[ExtendedUInput]
 
@@ -71,14 +78,17 @@ object UInputQuerySet extends QuerySet {
           |  i.index,
           |  i.proof_bytes,
           |  i.extension,
-          |  case when o.value   is null then ou.value   else o.value end,
-          |  case when o.tx_id   is null then ou.tx_id   else o.tx_id end,
-          |  case when o.index   is null then ou.index   else o.index end,
-          |  case when o.address is null then ou.address else o.address end
+          |  case when (o.value is null)     then ou.value                else o.value end,
+          |  case when (o.tx_id is null)     then ou.tx_id                else o.tx_id end,
+          |  case when (o.header_id is null) then null                    else o.header_id end,
+          |  case when (o.index is null)     then ou.index                else o.index end,
+          |  case when (o.ergo_tree is null) then ou.ergo_tree            else o.ergo_tree end,
+          |  case when (o.address is null)   then ou.address              else o.address end,
+          |  case when (o.box_id is null)    then ou.additional_registers else o.additional_registers end
           |from node_u_inputs i
           |left join node_outputs o on i.box_id = o.box_id
           |left join node_u_outputs ou on i.box_id = ou.box_id
-          |where i.tx_id
+          |where (o.box_id is not null or ou.box_id is not null) and i.tx_id
           |""".stripMargin
     in(queryFr, txIds).query[ExtendedUInput]
   }

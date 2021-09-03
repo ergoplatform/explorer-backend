@@ -8,13 +8,14 @@ import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
-import org.ergoplatform.explorer.{HexString, TxId}
+import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
-import org.ergoplatform.explorer.db.models.UOutput
 import org.ergoplatform.explorer.db.doobieInstances._
+import org.ergoplatform.explorer.db.models.UOutput
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedUOutput
 
-/** [[UOutput]] data access operations.
+/** [[ExtendedUOutput]] data access operations.
   */
 trait UOutputRepo[D[_], S[_[_], _]] {
 
@@ -26,25 +27,29 @@ trait UOutputRepo[D[_], S[_[_], _]] {
     */
   def insertMany(outputs: List[UOutput]): D[Unit]
 
+  /** Get a box by `boxId`.
+    */
+  def getByBoxId(boxId: BoxId): D[Option[ExtendedUOutput]]
+
   /** Get all outputs containing in unconfirmed transactions.
     */
-  def getAll(offset: Int, limit: Int): S[D, UOutput]
+  def getAll(offset: Int, limit: Int): S[D, ExtendedUOutput]
 
   /** Get all unconfirmed outputs related to transaction with a given `txId`.
     */
-  def getAllByTxId(txId: TxId): D[List[UOutput]]
+  def getAllByTxId(txId: TxId): D[List[ExtendedUOutput]]
 
   /** Get all unconfirmed outputs related to transaction with a given list of `txId`.
     */
-  def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UOutput]]
+  def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedUOutput]]
 
   /** Get all unconfirmed outputs belonging to the given `ergoTree`.
     */
-  def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]]
+  def getAllByErgoTree(ergoTree: HexString): D[List[ExtendedUOutput]]
 
   /** Get all unspent unconfirmed outputs belonging to the given `ergoTree`.
     */
-  def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]]
+  def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUOutput]]
 
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
@@ -69,19 +74,22 @@ object UOutputRepo {
     def insertMany(outputs: List[UOutput]): D[Unit] =
       QS.insertManyNoConflict(outputs).void.liftConnectionIO
 
-    def getAll(offset: Int, limit: Int): Stream[D, UOutput] =
+    def getByBoxId(boxId: BoxId): D[Option[ExtendedUOutput]] =
+      QS.get(boxId).option.liftConnectionIO
+
+    def getAll(offset: Int, limit: Int): Stream[D, ExtendedUOutput] =
       QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
-    def getAllByTxId(txId: TxId): D[List[UOutput]] =
+    def getAllByTxId(txId: TxId): D[List[ExtendedUOutput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO
 
-    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[UOutput]] =
+    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedUOutput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
 
-    def getAllByErgoTree(ergoTree: HexString): D[List[UOutput]] =
+    def getAllByErgoTree(ergoTree: HexString): D[List[ExtendedUOutput]] =
       QS.getAllByErgoTree(ergoTree).to[List].liftConnectionIO
 
-    def getAllUnspentByErgoTree(ergoTree: HexString): D[List[UOutput]] =
+    def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUOutput]] =
       QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
 
     def sumUnspentByErgoTree(ergoTree: HexString): D[Long] =

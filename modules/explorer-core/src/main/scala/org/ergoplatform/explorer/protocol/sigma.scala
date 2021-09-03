@@ -5,15 +5,12 @@ import cats.syntax.either._
 import cats.{Applicative, Eval, Monad}
 import mouse.any._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.ErgoTreeSerializationErr.ErgoTreeDeserializationFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.{
-  Base16DecodingFailed,
-  ErgoTreeSerializationErr
-}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.{Base16DecodingFailed, ErgoTreeSerializationErr}
 import org.ergoplatform.explorer._
-import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder}
+import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder, Pay2SAddress}
 import scorex.crypto.hash.Sha256
 import scorex.util.encode.Base16
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, SigmaPropConstant}
+import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, FalseLeaf, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlogProp
 import sigmastate.lang.DeserializationSigmaBuilder
@@ -50,7 +47,7 @@ object sigma {
       ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(Sha256.hash(tree.template)))
     }
 
-  @inline def ergoTreeToAddress[F[_]: Applicative: Throws](
+  @inline def ergoTreeToAddress[F[_]: Applicative](
     ergoTree: HexString
   )(implicit enc: ErgoAddressEncoder): F[ErgoAddress] =
     Base16
@@ -58,7 +55,7 @@ object sigma {
       .flatMap { bytes =>
         enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
       }
-      .fold(_.raise, _.pure)
+      .fold(_ => (Pay2SAddress(FalseLeaf.toSigmaProp): ErgoAddress).pure, _.pure)
 
   @inline def addressToErgoTree(
     address: Address
@@ -70,6 +67,9 @@ object sigma {
 
   @inline def addressToErgoTreeHex(address: Address)(implicit enc: ErgoAddressEncoder): HexString =
     addressToErgoTree(address) |> (tree => HexString.fromStringUnsafe(Base16.encode(tree.bytes)))
+
+  @inline def addressToErgoTreeNewtype(address: Address)(implicit enc: ErgoAddressEncoder): org.ergoplatform.explorer.ErgoTree =
+    addressToErgoTreeHex(address) |> (tree => org.ergoplatform.explorer.ErgoTree(tree))
 
   @inline def hexStringToBytes[
     F[_]: CRaise[*[_], Base16DecodingFailed]: Applicative

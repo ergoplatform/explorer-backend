@@ -10,7 +10,7 @@ import doobie.ConnectionIO
 import doobie.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
 import org.ergoplatform.explorer.db.repositories.BlockInfoRepo
@@ -30,7 +30,7 @@ final class BlockchainStatsMigration(
     for {
       _    <- log.info(s"Current offset is [$offset]")
       data <- blockInfoRepo.getMany(offset, limit, Asc.value, "height").transact(xa)
-      (correctHeights, _) = data.foldLeft((List.empty[(Id, BlockStats)], data.headOption)) {
+      (correctHeights, _) = data.foldLeft((List.empty[(BlockId, BlockStats)], data.headOption)) {
                               case ((acc, Some(prevBlock)), currentBlock)
                                   if currentBlock.blockInfo.blockChainTotalSize < prevBlock.blockInfo.blockChainTotalSize =>
                                 val blockMiningTime = currentBlock.blockInfo.timestamp - prevBlock.blockInfo.timestamp

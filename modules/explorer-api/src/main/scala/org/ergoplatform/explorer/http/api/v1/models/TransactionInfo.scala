@@ -5,13 +5,13 @@ import derevo.derive
 import org.ergoplatform.explorer
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.models.aggregates._
-import org.ergoplatform.explorer.{Id, TxId}
+import org.ergoplatform.explorer.{BlockId, TxId}
 import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
 final case class TransactionInfo(
   id: TxId,
-  blockId: Id,
+  blockId: BlockId,
   inclusionHeight: Int,
   timestamp: Long,
   index: Int,

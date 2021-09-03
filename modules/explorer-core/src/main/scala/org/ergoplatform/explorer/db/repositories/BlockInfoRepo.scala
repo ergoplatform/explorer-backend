@@ -4,13 +4,13 @@ import cats.effect.Sync
 import cats.syntax.functor._
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedBlockInfo, MinerStats, TimePoint}
+import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 
 /** [[BlockStats]] data access operations.
   */
@@ -22,7 +22,7 @@ trait BlockInfoRepo[D[_]] {
 
   /** Get block info with a given `headerId`.
     */
-  def get(id: Id): D[Option[BlockStats]]
+  def get(id: BlockId): D[Option[BlockStats]]
 
   /** Get slice of the main chain.
     */
@@ -43,7 +43,7 @@ trait BlockInfoRepo[D[_]] {
 
   /** Get size in bytes of the block with the given `id`.
     */
-  def getBlockSize(id: Id): D[Option[Int]]
+  def getBlockSize(id: BlockId): D[Option[Int]]
 
   def getLastStats: D[Option[BlockStats]]
 
@@ -71,10 +71,10 @@ trait BlockInfoRepo[D[_]] {
 
   /** Update main_chain status for all inputs related to given `headerId`.
     */
-  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit]
+  def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit]
 
   def updateTotalParamsByHeaderId(
-    headerId: Id,
+    headerId: BlockId,
     newSize: Long,
     newTxsCount: Long,
     newMiningTime: Long,
@@ -98,7 +98,7 @@ object BlockInfoRepo {
     def insert(blockInfo: BlockStats): D[Unit] =
       QS.insertNoConflict(blockInfo).void.liftConnectionIO
 
-    def get(id: Id): D[Option[BlockStats]] =
+    def get(id: BlockId): D[Option[BlockStats]] =
       QS.getBlockInfo(id).option.liftConnectionIO
 
     def getMany(
@@ -115,7 +115,7 @@ object BlockInfoRepo {
     def getManyByIdLike(query: String): D[List[ExtendedBlockInfo]] =
       QS.getManyExtendedByIdLike(query).to[List].liftConnectionIO
 
-    def getBlockSize(id: Id): D[Option[Int]] =
+    def getBlockSize(id: BlockId): D[Option[Int]] =
       QS.getBlockSize(id).option.liftConnectionIO
 
     def getLastStats: D[Option[BlockStats]] =
@@ -154,11 +154,11 @@ object BlockInfoRepo {
     def minerStatsSince(ts: Long): D[List[MinerStats]] =
       QS.minerStatsSince(ts).to[List].liftConnectionIO
 
-    def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): D[Unit] =
+    def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
 
     def updateTotalParamsByHeaderId(
-      headerId: Id,
+      headerId: BlockId,
       newSize: Long,
       newTxsCount: Long,
       newMiningTime: Long,

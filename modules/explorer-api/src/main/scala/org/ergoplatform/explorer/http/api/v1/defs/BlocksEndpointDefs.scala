@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v1.defs
 
 import cats.data.NonEmptyMap
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives.{paging, sorting}
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
@@ -28,9 +28,9 @@ class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(PathPrefix)
       .out(jsonBody[Items[BlockInfo]])
 
-  def getBlockSummaryByIdDef: Endpoint[Id, ApiErr, BlockSummary, Any] =
+  def getBlockSummaryByIdDef: Endpoint[BlockId, ApiErr, BlockSummary, Any] =
     baseEndpointDef.get
-      .in(PathPrefix / path[Id])
+      .in(PathPrefix / path[BlockId])
       .out(jsonBody[BlockSummary])
 
   val allowedSortingFields: NonEmptyMap[String, String] =

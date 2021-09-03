@@ -2,13 +2,13 @@ package org.ergoplatform.explorer.http.api.v1.models
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
 import org.ergoplatform.explorer.protocol.blocks
 import sttp.tapir.{Schema, Validator}
 
 final case class BlockInfo(
-  id: Id,
+  id: BlockId,
   height: Int,
   epoch: Int,
   version: Byte,

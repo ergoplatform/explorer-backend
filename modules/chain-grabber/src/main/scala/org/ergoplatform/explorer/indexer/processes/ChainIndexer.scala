@@ -11,10 +11,9 @@ import cats.syntax.traverse._
 import cats.{Monad, Parallel}
 import fs2.Stream
 import mouse.anyf._
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.BuildFrom.syntax._
 import org.ergoplatform.explorer.Err.ProcessingErr.{InconsistentNodeView, NoBlocksWritten}
-import org.ergoplatform.explorer.Id
-import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
@@ -23,6 +22,7 @@ import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData, TotalStats
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
+import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.settings.{IndexerSettings, ProtocolSettings}
 import tofu.concurrent.MakeRef
 import tofu.logging.{Logging, Logs}
@@ -45,7 +45,7 @@ object ChainIndexer {
     network: ErgoNetwork[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[ChainIndexer[F]] =
     logs.forService[ChainIndexer[F]].flatMap { implicit log =>
-      makeRef.refOf(List.empty[(Id, Int)]).flatMap { updatesRef =>
+      makeRef.refOf(List.empty[(BlockId, Int)]).flatMap { updatesRef =>
         RepoBundle[F, D].map(new Live[F, D](settings, network, updatesRef, _)(trans))
       }
     }
@@ -54,10 +54,10 @@ object ChainIndexer {
     F[_]: Monad: Parallel: Timer: Bracket[*[_], Throwable]: Logging,
     D[_]: Monad
   ](
-     settings: IndexerSettings,
-     network: ErgoNetwork[F],
-     pendingChainUpdates: Ref[F, List[(Id, Int)]],
-     repos: RepoBundle[D]
+    settings: IndexerSettings,
+    network: ErgoNetwork[F],
+    pendingChainUpdates: Ref[F, List[(BlockId, Int)]],
+    repos: RepoBundle[D]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
 
@@ -165,19 +165,19 @@ object ChainIndexer {
     private def getLastGrabbedBlockHeight: F[Int] =
       repos.headers.getBestHeight ||> trans.xa
 
-    private def getHeaderIdsAtHeight(height: Int): D[List[Id]] =
+    private def getHeaderIdsAtHeight(height: Int): D[List[BlockId]] =
       repos.headers.getAllByHeight(height).map(_.map(_.id))
 
-    private def getBlock(id: Id): F[Option[Header]] =
+    private def getBlock(id: BlockId): F[Option[Header]] =
       repos.headers.get(id) ||> trans.xa
 
-    private def getBlockInfo(id: Id): F[Option[BlockStats]] =
+    private def getBlockInfo(id: BlockId): F[Option[BlockStats]] =
       repos.blocksInfo.get(id) ||> trans.xa
 
-    private def markAsMain(id: Id, height: Int): F[Unit] =
+    private def markAsMain(id: BlockId, height: Int): F[Unit] =
       pendingChainUpdates.update(_ :+ (id -> height))
 
-    private def updateBlockInfo(prevBlockId: Id, blockId: Id): F[Unit] =
+    private def updateBlockInfo(prevBlockId: BlockId, blockId: BlockId): F[Unit] =
       (for {
         _                 <- OptionT.liftF(info"Updating stats of block $blockId")
         prevBlockStats    <- OptionT(getBlockInfo(prevBlockId))
@@ -202,7 +202,7 @@ object ChainIndexer {
       }
 
     private def updateBlockStats(
-      blockId: Id,
+      blockId: BlockId,
       totals: TotalStats
     ): D[Unit] =
       repos.blocksInfo.updateTotalParamsByHeaderId(
@@ -215,7 +215,7 @@ object ChainIndexer {
         totals.totalCoinsInTxs
       )
 
-    private def updateChainStatus(blockId: Id, mainChain: Boolean): D[Unit] =
+    private def updateChainStatus(blockId: BlockId, mainChain: Boolean): D[Unit] =
       repos.headers.updateChainStatusById(blockId, mainChain) >>
       repos.blocksInfo.updateChainStatusByHeaderId(blockId, mainChain) >>
       repos.txs.updateChainStatusByHeaderId(blockId, mainChain) >>

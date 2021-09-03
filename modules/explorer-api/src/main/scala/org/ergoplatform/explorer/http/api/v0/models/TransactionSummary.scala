@@ -7,7 +7,7 @@ import io.circe.{Codec, Decoder, Encoder, Json}
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedDataInput, ExtendedInput, ExtendedOutput}
 import org.ergoplatform.explorer.http.api.v0.models.TransactionSummary.MiniBlockInfo
-import org.ergoplatform.explorer.{Id, TxId}
+import org.ergoplatform.explorer.{BlockId, TxId}
 import sttp.tapir.{Schema, Validator}
 
 final case class TransactionSummary(
@@ -25,7 +25,7 @@ final case class TransactionSummary(
 
 object TransactionSummary {
 
-  final case class MiniBlockInfo(id: Id, height: Int)
+  final case class MiniBlockInfo(id: BlockId, height: Int)
 
   implicit val decoder: Decoder[TransactionSummary] = deriveMagnoliaDecoder
 

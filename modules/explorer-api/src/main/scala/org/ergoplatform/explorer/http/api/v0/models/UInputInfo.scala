@@ -40,11 +40,11 @@ object UInputInfo {
       in.input.boxId,
       in.input.txId,
       SpendingProofInfo(in.input.proofBytes, in.input.extension),
-      in.value,
+      Some(in.value),
       in.input.index,
-      in.outputTxId,
-      in.outputIndex,
-      in.address
+      Some(in.outputTxId),
+      Some(in.outputIndex),
+      Some(in.address)
     )
 
   def batch(ins: List[ExtendedUInput]): List[UInputInfo] =

@@ -153,8 +153,8 @@ CREATE TABLE node_outputs
 CREATE INDEX "node_outputs__box_id" ON node_outputs (box_id);
 CREATE INDEX "node_outputs__tx_id" ON node_outputs (tx_id);
 CREATE INDEX "node_outputs__header_id" ON node_outputs (header_id);
-CREATE INDEX "node_outputs__address" ON node_outputs (address);
-CREATE INDEX "node_outputs__ergo_tree" ON node_outputs (ergo_tree);
+CREATE INDEX "node_outputs__address" ON node_outputs using hash (address);
+CREATE INDEX "node_outputs__ergo_tree" ON node_outputs using hash (ergo_tree);
 CREATE INDEX "node_outputs__ergo_tree_template_hash" ON node_outputs (ergo_tree_template_hash);
 CREATE INDEX "node_outputs__timestamp" ON node_outputs (timestamp);
 CREATE INDEX "node_outputs__main_chain" ON node_outputs (main_chain);
@@ -197,7 +197,7 @@ CREATE TABLE script_constants
 );
 
 CREATE INDEX "script_constants__box_id" ON script_constants (box_id);
-CREATE INDEX "script_constants__rendered_value" ON script_constants (rendered_value);
+CREATE INDEX "script_constants__rendered_value" ON script_constants using hash (rendered_value);
 
 /* Unconfirmed transactions.
  */
@@ -253,7 +253,7 @@ CREATE TABLE node_u_outputs
 
 CREATE INDEX "node_u_outputs__box_id" ON node_u_outputs (box_id);
 CREATE INDEX "node_u_outputs__tx_id" ON node_u_outputs (tx_id);
-CREATE INDEX "node_u_outputs__address" ON node_u_outputs (address);
+CREATE INDEX "node_u_outputs__address" ON node_u_outputs using hash (address);
 CREATE INDEX "node_u_outputs__ergo_tree_template_hash" ON node_u_outputs (ergo_tree_template_hash);
 
 /* Inputs containing in unconfirmed outputs.

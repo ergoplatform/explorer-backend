@@ -7,7 +7,7 @@ import doobie.util.query.Query0
 import doobie.util.update.Update0
 import doobie.{Fragments, LogHandler}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, FullInput}
-import org.ergoplatform.explorer.{Id, TxId}
+import org.ergoplatform.explorer.{BlockId, TxId}
 
 /** A set of queries for doobie implementation of [InputRepo].
   */
@@ -115,7 +115,7 @@ object InputQuerySet extends QuerySet {
       .query[FullInput]
   }
 
-  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+  def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
          |update node_inputs set main_chain = $newChainStatus
          |where header_id = $headerId

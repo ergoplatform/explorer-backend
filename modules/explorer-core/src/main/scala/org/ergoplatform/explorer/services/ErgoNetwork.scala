@@ -7,11 +7,14 @@ import cats.syntax.parallel._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.ErgoLikeTransaction
-import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.{InvalidTransaction, TransactionSubmissionFailed}
+import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.InvalidTransaction
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiNodeInfo, ApiTransaction}
+import org.ergoplatform.explorer.protocol.ergoInstances._
 import org.ergoplatform.explorer.settings.NetworkSettings
-import org.ergoplatform.explorer.{Id, UrlString}
+import org.ergoplatform.explorer.{BlockId, UrlString}
+import org.http4s.Status.InternalServerError
 import org.http4s.circe.CirceEntityDecoder._
+import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}
 import tofu.Tries
@@ -33,11 +36,11 @@ trait ErgoNetwork[F[_]] {
 
   /** Get block ids at the given `height`.
     */
-  def getBlockIdsAtHeight(height: Int): F[List[Id]]
+  def getBlockIdsAtHeight(height: Int): F[List[BlockId]]
 
   /** Get full block by its `id`.
     */
-  def getFullBlockById(id: Id): F[Option[ApiFullBlock]]
+  def getFullBlockById(id: BlockId): F[Option[ApiFullBlock]]
 
   /** Get unconfirmed transactions from UTX pool.
     */
@@ -82,14 +85,14 @@ object ErgoNetwork {
         client.expect[ApiNodeInfo](makeGetRequest(s"$url/info"))
       }
 
-    def getBlockIdsAtHeight(height: Int): F[List[Id]] =
+    def getBlockIdsAtHeight(height: Int): F[List[BlockId]] =
       run { url =>
-        client.expect[List[Id]](
+        client.expect[List[BlockId]](
           makeGetRequest(s"$url/blocks/at/$height")
         )
       }
 
-    def getFullBlockById(id: Id): F[Option[ApiFullBlock]] =
+    def getFullBlockById(id: BlockId): F[Option[ApiFullBlock]] =
       run { url =>
         client.expectOption[ApiFullBlock](
           makeGetRequest(s"$url/blocks/$id")
@@ -126,13 +129,13 @@ object ErgoNetwork {
                 Uri.unsafeFromString(s"$url/transactions")
               ).withEntity(tx)
             )
-            .handleWith[Throwable](e => log.error(e)(s"Failed to submit transaction{id=${tx.id} to node{url=$url"))
+            .handleWith[Throwable] { e =>
+              log.error(e)(s"Failed to submit transaction{id=${tx.id} to node{url=$url") as InternalServerError
+            }
         }
           .flatMap { res =>
             if (res.exists(_.responseClass == Status.ClientError))
               InvalidTransaction(tx.id).raise
-            else if (!res.exists(_.isSuccess))
-              TransactionSubmissionFailed(tx.id).raise
             else ().pure[F]
           }
       }

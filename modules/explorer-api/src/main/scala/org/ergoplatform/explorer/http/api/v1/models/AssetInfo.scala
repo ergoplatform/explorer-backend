@@ -3,12 +3,12 @@ package org.ergoplatform.explorer.http.api.v1.models
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedAsset
-import org.ergoplatform.explorer.{BoxId, Id, TokenId, TokenType}
+import org.ergoplatform.explorer.{BlockId, BoxId, TokenId, TokenType}
 import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
 final case class AssetInfo(
-  headerId: Id,
+  headerId: BlockId,
   boxId: BoxId,
   tokenId: TokenId,
   index: Int,

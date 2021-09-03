@@ -4,7 +4,7 @@ import doobie.LogHandler
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.models.AdProof
 
 /** A set of queries for doobie implementation of [AdProofRepo].
@@ -19,7 +19,7 @@ object AdProofQuerySet extends QuerySet {
     "digest"
   )
 
-  def getByHeaderId(headerId: Id)(implicit lh: LogHandler): Query0[AdProof] =
+  def getByHeaderId(headerId: BlockId)(implicit lh: LogHandler): Query0[AdProof] =
     sql"select header_id, proof_bytes, digest from node_ad_proofs where header_id = $headerId"
       .query[AdProof]
 }

@@ -4,11 +4,11 @@ import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.BlockExtension
-import org.ergoplatform.explorer.{HexString, Id}
+import org.ergoplatform.explorer.{BlockId, HexString}
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class BlockExtensionInfo(
-  headerId: Id,
+  headerId: BlockId,
   digest: HexString,
   fields: Json
 )

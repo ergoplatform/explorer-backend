@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.protocol.models
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import org.ergoplatform.explorer.{HexString, Id}
+import org.ergoplatform.explorer.{BlockId, HexString}
 
 /** A model mirroring NodeInfo entity from Ergo node REST API.
   * See `NodeInfo` in https://github.com/ergoplatform/ergo/blob/master/src/main/resources/api/openapi.yaml
@@ -13,13 +13,13 @@ final case class ApiNodeInfo(
   name: String,
   stateType: String,
   difficulty: Long,
-  bestFullHeaderId: Id,
-  bestHeaderId: Id,
+  bestFullHeaderId: BlockId,
+  bestHeaderId: BlockId,
   peersCount: Int,
   unconfirmedCount: Int,
   appVersion: String,
   stateRoot: HexString,
-  previousFullHeaderId: Id,
+  previousFullHeaderId: BlockId,
   fullHeight: Int,
   headersHeight: Int,
   stateVersion: HexString,

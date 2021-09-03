@@ -5,14 +5,13 @@ import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.protocol.blocks
-import org.ergoplatform.explorer.{HexString, Id}
+import org.ergoplatform.explorer.{BlockId, HexString}
 import scorex.util.encode.Base16
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
 
 final case class HeaderInfo(
-  id: Id,
-  parentId: Id,
+  id: BlockId,
+  parentId: BlockId,
   version: Short,
   height: Int,
   epoch: Int,

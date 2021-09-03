@@ -1,12 +1,12 @@
 package org.ergoplatform.explorer.db.models
 
-import org.ergoplatform.explorer.{Id, TxId}
+import org.ergoplatform.explorer.{BlockId, TxId}
 
 /** Represents `node_transactions` table.
   */
 final case class Transaction(
   id: TxId,
-  headerId: Id,
+  headerId: BlockId,
   inclusionHeight: Int,
   isCoinbase: Boolean,
   timestamp: Long, // approx time output appeared in the blockchain

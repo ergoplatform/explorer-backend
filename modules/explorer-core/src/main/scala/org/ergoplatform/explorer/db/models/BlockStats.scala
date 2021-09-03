@@ -1,12 +1,12 @@
 package org.ergoplatform.explorer.db.models
 
-import org.ergoplatform.explorer.{Address, Id}
+import org.ergoplatform.explorer.{Address, BlockId}
 
 /** Represents `blocks_info` table.
   * Containing main fields from protocol header and full-block stats.
   */
 final case class BlockStats(
-  headerId: Id,
+  headerId: BlockId,
   timestamp: Long,
   height: Int,
   difficulty: Long,

@@ -36,8 +36,11 @@ object Err {
 
   object RequestProcessingErr {
 
-    final case class IllegalRequest(details: String)
-      extends RequestProcessingErr(s"Illegal request: $details")
+    final case class BadRequest(details: String)
+      extends RequestProcessingErr(s"Bad request: $details")
+
+    final case class FeatureNotSupported(details: String)
+      extends RequestProcessingErr(s"Feature not supported: $details")
 
     final case class InconsistentDbData(details: String)
       extends RequestProcessingErr(s"Inconsistent blockchain data in db: $details")

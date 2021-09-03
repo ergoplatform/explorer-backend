@@ -6,7 +6,7 @@ import doobie.refined.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.query.Query0
 import doobie.util.update.Update0
-import org.ergoplatform.explorer.Id
+import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedBlockInfo, MinerStats, TimePoint}
@@ -41,7 +41,7 @@ object BlockInfoQuerySet extends QuerySet {
     "main_chain"
   )
 
-  def getBlockInfo(headerId: Id)(implicit lh: LogHandler): Query0[BlockStats] =
+  def getBlockInfo(headerId: BlockId)(implicit lh: LogHandler): Query0[BlockStats] =
     sql"""
          |select
          |  bi.header_id,
@@ -209,7 +209,7 @@ object BlockInfoQuerySet extends QuerySet {
          |where bi.header_id like ${s"%$q%"}
          |""".stripMargin.query[ExtendedBlockInfo]
 
-  def getBlockSize(id: Id)(implicit lh: LogHandler): Query0[Int] =
+  def getBlockSize(id: BlockId)(implicit lh: LogHandler): Query0[Int] =
     sql"select block_size from blocks_info where header_id = $id".query[Int]
 
   def totalDifficultySince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
@@ -327,14 +327,14 @@ object BlockInfoQuerySet extends QuerySet {
          |order by count desc
          |""".stripMargin.query[MinerStats]
 
-  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+  def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
          |update blocks_info set main_chain = $newChainStatus
          |where header_id = $headerId
          |""".stripMargin.update
 
   def updateTotalParametersByHeaderId(
-    headerId: Id,
+    headerId: BlockId,
     newSize: Long,
     newTxsCount: Long,
     newMiningTime: Long,

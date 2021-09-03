@@ -310,7 +310,7 @@ object OutputQuerySet extends QuerySet {
       )
       .query[BigDecimal]
 
-  def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
+  def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
          |update node_outputs set main_chain = $newChainStatus
          |where header_id = $headerId

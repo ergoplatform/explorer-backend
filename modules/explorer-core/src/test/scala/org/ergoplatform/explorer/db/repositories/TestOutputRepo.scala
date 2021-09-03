@@ -102,7 +102,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
     genesisAddress: Address
   ): F[BigDecimal] = ???
 
-  override def updateChainStatusByHeaderId(headerId: Id, newChainStatus: Boolean): F[Unit] = ???
+  override def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): F[Unit] = ???
 
   override def balanceStatsMain(offset: Int, limit: Int): F[List[(Address, Long)]] = ???
 
