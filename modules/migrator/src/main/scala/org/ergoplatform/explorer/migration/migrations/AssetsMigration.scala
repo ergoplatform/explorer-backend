@@ -47,7 +47,7 @@ final class AssetsMigration(
     for {
       out  <- tx.outputs.find(_.assets.map(_.tokenId).contains(allowedTokenId))
       regs <- out.additionalRegisters.as[Map[RegisterId, HexString]].toOption
-      props = TokenPropsParser.eip4.parse(regs)
+      props = TokenPropsParser.eip4Partial.parse(regs)
       asset <- out.assets.find(_.tokenId == allowedTokenId)
     } yield Token(
       asset.tokenId,
