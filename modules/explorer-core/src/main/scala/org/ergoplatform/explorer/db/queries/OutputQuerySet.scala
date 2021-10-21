@@ -195,7 +195,7 @@ object OutputQuerySet extends QuerySet {
     limit: Int
   )(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
-         |select
+         |select distinct on (o.box_id, o.global_index)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -216,7 +216,7 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
-         |order by o.creation_height asc
+         |order by o.global_index desc
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
