@@ -42,6 +42,6 @@ object Networks {
     }
 
     def getStats: F[NetworkStats] =
-      stats.countUniqueAddr.map(NetworkStats(_)) ||> trans.xa
+      stats.countUniqueAddrs.map(NetworkStats(_)) ||> trans.xa
   }
 }

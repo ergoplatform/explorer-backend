@@ -14,7 +14,7 @@ final class StatsEndpointsDefs {
     baseEndpointDef.get
       .in("info")
       .out(jsonBody[NetworkState])
-      .deprecated("Use `/networkState` instead")
+      .deprecated()
 
   def getNetworkState: Endpoint[Unit, ApiErr, NetworkState, Any] =
     baseEndpointDef.get
@@ -24,5 +24,5 @@ final class StatsEndpointsDefs {
   def getNetworkStats: Endpoint[Unit, ApiErr, NetworkStats, Any] =
     baseEndpointDef.get
       .in("networkStats")
-      .out(jsonBody[NetworkState])
+      .out(jsonBody[NetworkStats])
 }
