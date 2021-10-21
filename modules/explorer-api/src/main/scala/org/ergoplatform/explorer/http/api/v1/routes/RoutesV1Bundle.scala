@@ -38,7 +38,7 @@ object RoutesV1Bundle {
   ): F[RoutesV1Bundle[F]] =
     for {
       implicit0(log: Logger[F]) <- Slf4jLogger.create
-      infos                     <- NetworkInfos(trans)
+      infos                     <- Networks(trans)
       boxes                     <- Boxes(serviceSettings)(trans)
       tokens                    <- Tokens(trans)
       assets                    <- Assets(trans)
@@ -47,7 +47,7 @@ object RoutesV1Bundle {
       transactions              <- Transactions(serviceSettings)(trans)
       addresses                 <- Addresses(trans)
       mempool                   <- Mempool(serviceSettings, utxCacheSettings, redis)(trans)
-      infoRoutes      = InfoRoutes(infos)
+      infoRoutes      = StatsRoutes(infos)
       boxesRoutes     = BoxesRoutes(requestsSettings, boxes)
       epochsRoutes    = EpochsRoutes(epochs)
       blocksRoutes    = BlocksRoutes(requestsSettings, blocks)
