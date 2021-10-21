@@ -7,7 +7,7 @@ import org.ergoplatform.explorer.db.models.EpochParameters
 import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
-final case class NetworkInfo(
+final case class NetworkState(
   lastBlockId: BlockId,
   height: Int,
   maxBoxGix: Long,
@@ -15,8 +15,8 @@ final case class NetworkInfo(
   params: EpochParameters
 )
 
-object NetworkInfo {
+object NetworkState {
 
-  implicit def schema: Schema[NetworkInfo]       = Schema.derived[NetworkInfo]
-  implicit def validator: Validator[NetworkInfo] = schema.validator
+  implicit def schema: Schema[NetworkState]       = Schema.derived[NetworkState]
+  implicit def validator: Validator[NetworkState] = schema.validator
 }

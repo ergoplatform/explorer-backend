@@ -32,7 +32,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
     new AddressesEndpointDefs(settings).endpoints ++
     new BlocksEndpointDefs(settings).endpoints ++
     new MempoolEndpointDefs().endpoints ++
-    new InfoEndpointsDefs().endpoints
+    new StatsEndpointsDefs().endpoints
 
   private def tags =
     Tag("transactions", "Transactions methods".some) ::
