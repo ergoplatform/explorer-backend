@@ -192,9 +192,10 @@ object OutputQuerySet extends QuerySet {
   def getMainUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
-    limit: Int
-  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
-    sql"""
+    limit: Int,
+    ordering: OrderingString
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val q   = sql"""
          |select distinct on (o.box_id, o.global_index)
          |  o.box_id,
          |  o.tx_id,
@@ -216,9 +217,11 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true
          |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
-         |order by o.global_index desc
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput]
+         |""".stripMargin
+    val ord = Fragment.const(s"order by o.global_index $ordering")
+    val lim = Fragment.const(s"offset $offset limit $limit")
+    (q ++ ord ++ lim).query
+  }
 
   def countUnspentByErgoTree(
     ergoTree: HexString

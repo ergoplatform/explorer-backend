@@ -88,8 +88,8 @@ final class BoxesRoutes[
     }
 
   private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByErgoTreeDef) { case (tree, paging) =>
-      service.getUnspentOutputsByErgoTree(tree, paging).adaptThrowable.value
+    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByErgoTreeDef) { case (tree, paging, ord) =>
+      service.getUnspentOutputsByErgoTree(tree, paging, ord).adaptThrowable.value
     }
 
   private def getOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
@@ -108,8 +108,8 @@ final class BoxesRoutes[
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByAddressDef) { case (address, paging) =>
-      service.getUnspentOutputsByAddress(address, paging).adaptThrowable.value
+    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByAddressDef) { case (address, paging, ord) =>
+      service.getUnspentOutputsByAddress(address, paging, ord).adaptThrowable.value
     }
 
   private def searchOutputsR: HttpRoutes[F] =

@@ -38,7 +38,7 @@ trait Boxes[F[_]] {
 
   /** Get unspent outputs with the given `address` in proposition.
     */
-  def getUnspentOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]]
+  def getUnspentOutputsByAddress(address: Address, paging: Paging, ord: SortOrder): F[Items[OutputInfo]]
 
   /** Get all outputs with the given `ergoTree` in proposition.
     */
@@ -46,7 +46,7 @@ trait Boxes[F[_]] {
 
   /** Get unspent outputs with the given `ergoTree` in proposition.
     */
-  def getUnspentOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]]
+  def getUnspentOutputsByErgoTree(ergoTree: HexString, paging: Paging, ord: SortOrder): F[Items[OutputInfo]]
 
   /** Get all outputs containing a given `tokenId`.
     */
@@ -140,13 +140,13 @@ object Boxes {
         .thrushK(trans.xa)
     }
 
-    def getUnspentOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] = {
+    def getUnspentOutputsByAddress(address: Address, paging: Paging, ord: SortOrder): F[Items[OutputInfo]] = {
       val ergoTree = addressToErgoTreeHex(address)
       outputs
         .countUnspentByErgoTree(ergoTree)
         .flatMap { total =>
           outputs
-            .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
+            .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value)
             .chunkN(serviceSettings.chunkSize)
             .through(toOutputInfo)
             .to[List]
@@ -168,12 +168,12 @@ object Boxes {
         }
         .thrushK(trans.xa)
 
-    def getUnspentOutputsByErgoTree(ergoTree: HexString, paging: Paging): F[Items[OutputInfo]] =
+    def getUnspentOutputsByErgoTree(ergoTree: HexString, paging: Paging, ord: SortOrder): F[Items[OutputInfo]] =
       outputs
         .countUnspentByErgoTree(ergoTree)
         .flatMap { total =>
           outputs
-            .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
+            .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value)
             .chunkN(serviceSettings.chunkSize)
             .through(toOutputInfo)
             .to[List]
