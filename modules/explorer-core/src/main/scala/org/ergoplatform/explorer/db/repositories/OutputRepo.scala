@@ -69,7 +69,8 @@ trait OutputRepo[D[_], S[_[_], _]] {
   def streamUnspentByErgoTree(
     ergoTree: HexString,
     offset: Int,
-    limit: Int
+    limit: Int,
+    ord: OrderingString
   ): S[D, ExtendedOutput]
 
   /** Count unspent main-chain outputs with a given `ergoTree` from persistence.
@@ -261,9 +262,10 @@ object OutputRepo {
     def streamUnspentByErgoTree(
       ergoTree: HexString,
       offset: Int,
-      limit: Int
+      limit: Int,
+      ordering: OrderingString
     ): Stream[D, ExtendedOutput] =
-      QS.getMainUnspentByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
+      QS.getMainUnspentByErgoTree(ergoTree, offset, limit, ordering).stream.translate(liftK)
 
     def countUnspentByErgoTree(ergoTree: HexString): D[Int] =
       QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO

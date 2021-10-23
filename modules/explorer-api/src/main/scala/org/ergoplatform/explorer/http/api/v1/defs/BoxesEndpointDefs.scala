@@ -94,10 +94,11 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def getUnspentOutputsByErgoTreeDef: Endpoint[(HexString, Paging), ApiErr, Items[OutputInfo], Any] =
+  def getUnspentOutputsByErgoTreeDef: Endpoint[(HexString, Paging, SortOrder), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byErgoTree" / path[HexString])
       .in(paging(settings.maxEntitiesPerRequest))
+      .in(ordering)
       .out(jsonBody[Items[OutputInfo]])
 
   def getOutputsByErgoTreeTemplateHashDef: Endpoint[(ErgoTreeTemplateHash, Paging), ApiErr, Items[OutputInfo], Any] =
@@ -119,10 +120,11 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def getUnspentOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
+  def getUnspentOutputsByAddressDef: Endpoint[(Address, Paging, SortOrder), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byAddress" / path[Address])
       .in(paging(settings.maxEntitiesPerRequest))
+      .in(ordering)
       .out(jsonBody[Items[OutputInfo]])
 
   def searchOutputsDef: Endpoint[(BoxQuery, Paging), ApiErr, Items[OutputInfo], Any] =

@@ -3,12 +3,11 @@ package org.ergoplatform.explorer.http.api.v0.services
 import cats.Monad
 import cats.data.OptionT
 import cats.effect.Sync
-import cats.syntax.flatMap._
-import cats.syntax.functor._
 import cats.syntax.apply._
+import cats.syntax.functor._
 import cats.syntax.list._
-import mouse.all._
 import fs2.{Chunk, Pipe, Stream}
+import mouse.all._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Err.RefinementFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.AddressDecodingFailed
@@ -16,10 +15,11 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, OutputRepo}
-import org.ergoplatform.explorer.{Address, BoxId, CRaise, HexString}
+import org.ergoplatform.explorer.http.api.models.Sorting
 import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
 import org.ergoplatform.explorer.protocol.sigma
 import org.ergoplatform.explorer.syntax.stream._
+import org.ergoplatform.explorer.{Address, BoxId, CRaise, HexString}
 
 trait BoxesService[F[_], S[_[_], _]] {
 
@@ -69,13 +69,13 @@ object BoxesService {
 
     def getOutputsByAddress(address: Address): Stream[F, OutputInfo] =
       (sigma.addressToErgoTreeHex(address) |> (outRepo
-          .streamAllByErgoTree(_, 0, Int.MaxValue)
-          .chunkN(100))).through(toOutputInfo) ||> trans.xas
+        .streamAllByErgoTree(_, 0, Int.MaxValue)
+        .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getUnspentOutputsByAddress(address: Address): Stream[F, OutputInfo] =
       (sigma.addressToErgoTreeHex(address) |> (outRepo
-          .streamUnspentByErgoTree(_, 0, Int.MaxValue)
-          .chunkN(100))).through(toOutputInfo) ||> trans.xas
+        .streamUnspentByErgoTree(_, 0, Int.MaxValue, Sorting.Asc.value)
+        .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getOutputsByErgoTree(ergoTree: HexString): Stream[F, OutputInfo] =
       outRepo
@@ -85,7 +85,7 @@ object BoxesService {
 
     def getUnspentOutputsByErgoTree(ergoTree: HexString): Stream[F, OutputInfo] =
       outRepo
-        .streamUnspentByErgoTree(ergoTree, 0, Int.MaxValue)
+        .streamUnspentByErgoTree(ergoTree, 0, Int.MaxValue, Sorting.Asc.value)
         .chunkN(100)
         .through(toOutputInfo) ||> trans.xas
 
