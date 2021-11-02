@@ -1,8 +1,8 @@
 lazy val commonSettings = Seq(
   scalacOptions ++= commonScalacOptions,
-  scalaVersion := "2.12.14",
+  scalaVersion := "2.12.15",
   organization := "org.ergoplatform",
-  version := "9.5.1",
+  version := "9.6.0",
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= dependencies.Testing ++ dependencies.CompilerPlugins,

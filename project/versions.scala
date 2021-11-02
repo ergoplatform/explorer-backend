@@ -37,7 +37,7 @@ object versions {
   val EnumeratumVersion      = "1.6.1"
   val EnumeratumCirceVersion = "1.6.1"
 
-  val KindProjector = "0.13.0"
+  val KindProjector = "0.13.2"
   val MacroParadise = "2.1.1"
 
   val ScalaTestVersion              = "3.0.8"

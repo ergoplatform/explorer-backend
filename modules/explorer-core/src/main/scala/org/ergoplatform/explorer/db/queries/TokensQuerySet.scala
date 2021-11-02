@@ -5,7 +5,7 @@ import doobie.refined.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.log.LogHandler
 import doobie.util.query.Query0
-import org.ergoplatform.explorer.TokenId
+import org.ergoplatform.explorer.{TokenId, TokenSymbol}
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.Token
 
@@ -28,6 +28,13 @@ object TokensQuerySet extends QuerySet {
          |select t.token_id, t.box_id, t.emission_amount, t.name, t.description, t.type, t.decimals from tokens t
          |left join node_outputs o on o.box_id = t.box_id
          |where t.token_id = $id and o.main_chain = true
+         |""".stripMargin.query[Token]
+
+  def getBySymbol(sym: TokenSymbol): Query0[Token] =
+    sql"""
+         |select t.token_id, t.box_id, t.emission_amount, t.name, t.description, t.type, t.decimals from tokens t
+         |left join node_outputs o on o.box_id = t.box_id
+         |where t.name = $sym and o.main_chain = true
          |""".stripMargin.query[Token]
 
   def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean)(implicit

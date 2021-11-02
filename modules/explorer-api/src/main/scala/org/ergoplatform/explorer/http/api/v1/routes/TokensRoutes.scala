@@ -20,7 +20,7 @@ final class TokensRoutes[
   val defs = new TokensEndpointDefs(settings)
 
   val routes: HttpRoutes[F] =
-    listR <+> searchByIdR <+> getByIdR
+    listR <+> searchR <+> getBySymbolR <+> getByIdR
 
   private def getByIdR: HttpRoutes[F] =
     Http4sServerInterpreter.toRoutes(defs.getByIdDef) { id =>
@@ -31,8 +31,16 @@ final class TokensRoutes[
         .value
     }
 
-  private def searchByIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.searchByIdDef) { case (q, paging) =>
+  private def getBySymbolR: HttpRoutes[F] =
+    Http4sServerInterpreter.toRoutes(defs.getBySymbolDef) { sym =>
+      tokens
+        .getBySymbol(sym)
+        .adaptThrowable
+        .value
+    }
+
+  private def searchR: HttpRoutes[F] =
+    Http4sServerInterpreter.toRoutes(defs.searchDef) { case (q, paging) =>
       tokens.search(q, paging).adaptThrowable.value
     }
 
