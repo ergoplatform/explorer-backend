@@ -6,11 +6,11 @@ import derevo.derive
 import doobie.ConnectionIO
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Token
+import org.ergoplatform.explorer.{TokenId, TokenSymbol}
 import tofu.higherKind.derived.representableK
 import tofu.syntax.monadic._
 
@@ -22,6 +22,8 @@ trait TokenRepo[D[_]] {
   def insertMany(tokens: List[Token]): D[Unit]
 
   def get(id: TokenId): D[Option[Token]]
+
+  def getBySymbol(sym: TokenSymbol): D[List[Token]]
 
   def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean): D[List[Token]]
 
@@ -52,6 +54,8 @@ object TokenRepo {
     def insertMany(tokens: List[Token]): ConnectionIO[Unit] = QS.insertManyNoConflict(tokens).void
 
     def get(id: TokenId): ConnectionIO[Option[Token]] = QS.get(id).option
+
+    def getBySymbol(sym: TokenSymbol): ConnectionIO[List[Token]] = QS.getBySymbol(sym).to[List]
 
     def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean): ConnectionIO[List[Token]] =
       QS.getAll(offset, limit, ordering, hideNfts).to[List]

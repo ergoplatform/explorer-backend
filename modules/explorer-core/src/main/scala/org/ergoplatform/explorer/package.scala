@@ -7,13 +7,12 @@ import cats.syntax.functor._
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{W, refineV}
+import eu.timepit.refined.{refineV, W}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.Err.RefinementFailed
-import org.ergoplatform.explorer.{BlockId, TokenId}
 import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
@@ -166,6 +165,30 @@ package object explorer {
       HexString.fromString(s).map(TokenId.apply)
 
     def fromStringUnsafe(s: String): TokenId = unsafeWrap(HexString.fromStringUnsafe(s))
+  }
+
+  @newtype case class TokenSymbol(value: String)
+
+  object TokenSymbol {
+    // doobie instances
+    implicit def get: Get[TokenSymbol] = deriving
+    implicit def put: Put[TokenSymbol] = deriving
+
+    // circe instances
+    implicit def encoder: Encoder[TokenSymbol] = deriving
+    implicit def decoder: Decoder[TokenSymbol] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[TokenSymbol] = deriving
+
+    implicit def jsonCodec: Codec.JsonCodec[TokenSymbol] = deriving
+
+    implicit def schema: Schema[TokenSymbol] =
+      Schema.schemaForString.description("Token Symbol").asInstanceOf[Schema[TokenSymbol]]
+
+    implicit def validator: Validator[TokenSymbol] = Validator.minLength(2).contramap(_.value)
+
+    def fromStringUnsafe(s: String): TokenSymbol = TokenSymbol(s)
   }
 
   @newtype case class ErgoTreeTemplateHash(value: HexString)

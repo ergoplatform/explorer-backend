@@ -4,7 +4,7 @@ import cats.effect.Sync
 import cats.{FlatMap, Monad}
 import fs2.Stream
 import mouse.anyf._
-import org.ergoplatform.explorer.{CRaise, TokenId}
+import org.ergoplatform.explorer.{CRaise, TokenId, TokenSymbol}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
@@ -20,6 +20,8 @@ import tofu.syntax.foption._
 trait Tokens[F[_]] {
 
   def get(id: TokenId): F[Option[TokenInfo]]
+
+  def getBySymbol(sym: TokenSymbol): F[List[TokenInfo]]
 
   /** Get all assets matching a given `query`.
     */
@@ -46,6 +48,9 @@ object Tokens {
 
     def get(id: TokenId): F[Option[TokenInfo]] =
       tokenRepo.get(id).mapIn(TokenInfo(_)).thrushK(trans.xa)
+
+    def getBySymbol(sym: TokenSymbol): F[List[TokenInfo]] =
+      tokenRepo.getBySymbol(sym).map(_.map(TokenInfo(_))).thrushK(trans.xa)
 
     def search(q: String, paging: Paging): F[Items[TokenInfo]] =
       tokenRepo
