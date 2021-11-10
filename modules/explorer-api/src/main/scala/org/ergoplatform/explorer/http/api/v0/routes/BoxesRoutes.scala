@@ -22,7 +22,7 @@ final class BoxesRoutes[
     getOutputByIdR <+> getOutputsByErgoTreeR <+> getUnspentOutputsByErgoTreeR <+>
     getOutputsByAddressR <+> getUnspentOutputsByAddressR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getOutputByIdR: HttpRoutes[F] =
     interpreter.toRoutes(getOutputByIdDef) { id =>

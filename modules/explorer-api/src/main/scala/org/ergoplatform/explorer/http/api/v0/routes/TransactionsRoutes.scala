@@ -23,7 +23,7 @@ final class TransactionsRoutes[
     getUnconfirmedTxsByAddressR <+> getUnconfirmedTxByIdR <+> getUnconfirmedTxsR <+>
     getTxsSinceR <+> sendTransactionR <+> getTxByIdR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getTxByIdR: HttpRoutes[F] =
     interpreter.toRoutes(getTxByIdDef) { txId =>

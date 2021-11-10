@@ -20,7 +20,7 @@ final class StatsRoutes[
 
   val routes: HttpRoutes[F] = getNetworkInfoR <+> getNetworkStateR <+> getNetworkStatsR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getNetworkInfoR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getNetworkInfo) { _ =>

@@ -17,7 +17,7 @@ final class StatsRoutes[
 
   val routes: HttpRoutes[F] = getCurrentStatsR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getCurrentStatsR: HttpRoutes[F] =
     interpreter.toRoutes(getCurrentStatsDef) { _ =>

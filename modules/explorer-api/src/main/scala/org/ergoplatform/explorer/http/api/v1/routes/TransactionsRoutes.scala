@@ -22,7 +22,7 @@ final class TransactionsRoutes[
   val routes: HttpRoutes[F] =
     getByInputsScriptTemplateR <+> getByIdR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getByIdR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getByIdDef) { txId =>

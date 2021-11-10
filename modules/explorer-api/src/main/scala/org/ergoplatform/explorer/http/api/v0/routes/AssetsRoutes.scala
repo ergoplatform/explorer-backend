@@ -22,7 +22,7 @@ final class AssetsRoutes[
   val routes: HttpRoutes[F] =
     getAllIssuingBoxesR <+> getIssuingBoxR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getAllIssuingBoxesR: HttpRoutes[F] =
     interpreter.toRoutes(getAllIssuingBoxesDef) { paging =>

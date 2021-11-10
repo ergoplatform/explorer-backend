@@ -22,7 +22,7 @@ final class TokensRoutes[
   val routes: HttpRoutes[F] =
     listR <+> searchR <+> getBySymbolR <+> getByIdR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getByIdR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getByIdDef) { id =>

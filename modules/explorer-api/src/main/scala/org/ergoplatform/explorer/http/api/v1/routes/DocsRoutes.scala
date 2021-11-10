@@ -23,7 +23,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
 
   val routes: HttpRoutes[F] = openApiSpecR <+> redocApiSpecR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def allEndpoints =
     new TransactionsEndpointDefs(settings).endpoints ++

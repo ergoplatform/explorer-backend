@@ -21,7 +21,7 @@ final class DexRoutes[
   val routes: HttpRoutes[F] =
     getUnspentSellOrdersR <+> getUnspentBuyOrdersR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getUnspentSellOrdersR: HttpRoutes[F] =
     interpreter.toRoutes(getUnspentSellOrdersDef) {

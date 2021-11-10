@@ -7,6 +7,7 @@
 .metals
 .bloop
 target
+data
 /modules/*/target/
 /target/
 /project/target/

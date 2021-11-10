@@ -38,7 +38,7 @@ final class BoxesRoutes[
     getUnspentOutputsByAddressR <+>
     getOutputByIdR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def streamUnspentOutputsR: HttpRoutes[F] =
     interpreter.toRoutes(defs.streamUnspentOutputsDef) { epochs =>

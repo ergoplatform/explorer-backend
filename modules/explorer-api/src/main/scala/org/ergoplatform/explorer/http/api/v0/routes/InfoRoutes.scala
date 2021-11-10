@@ -20,7 +20,7 @@ final class InfoRoutes[
 
   val routes: HttpRoutes[F] = getCurrentStatsR <+> getCurrentSupplyR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getCurrentStatsR: HttpRoutes[F] =
     interpreter.toRoutes(getBlockChainInfoDef)(_ => service.getBlockChainInfo.adaptThrowable.value)

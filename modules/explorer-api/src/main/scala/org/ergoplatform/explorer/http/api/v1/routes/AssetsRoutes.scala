@@ -21,7 +21,7 @@ final class AssetsRoutes[
   val routes: HttpRoutes[F] =
     listTokensR <+> searchByTokenIdR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def searchByTokenIdR: HttpRoutes[F] =
     interpreter.toRoutes(defs.searchByTokenIdDef) { case (q, paging) =>

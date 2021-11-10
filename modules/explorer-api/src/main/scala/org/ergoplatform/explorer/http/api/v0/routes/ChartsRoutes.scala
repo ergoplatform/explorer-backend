@@ -23,7 +23,7 @@ final class ChartsRoutes[
     getAvgTxsNumPerBlockR <+> getTotalTxsNumR <+> getAvgDifficultyR <+>
     getMinersRevenuR <+> getHashRateR <+> getHashRateDistributionR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getTotalCoinsAmtR: HttpRoutes[F] =
     interpreter.toRoutes(getTotalCoinsAmtDef) { timespan =>

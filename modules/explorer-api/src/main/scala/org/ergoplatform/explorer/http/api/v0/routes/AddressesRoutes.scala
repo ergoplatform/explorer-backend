@@ -24,7 +24,7 @@ final class AddressesRoutes[
 
   import org.ergoplatform.explorer.http.api.v0.defs.AddressesEndpointDefs._
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   val routes: HttpRoutes[F] =
     getAddressR <+> getTxsByAddressR <+> getAssetHoldersR <+> getBalancesR

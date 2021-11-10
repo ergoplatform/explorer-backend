@@ -20,7 +20,7 @@ final class EpochsRoutes[
 
   val routes: HttpRoutes[F] = getEpochInfoR
 
-  private val interpreter = Http4sServerInterpreter(opts)
+  private def interpreter = Http4sServerInterpreter(opts)
 
   private def getEpochInfoR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getEpochInfoDef) { _ =>
