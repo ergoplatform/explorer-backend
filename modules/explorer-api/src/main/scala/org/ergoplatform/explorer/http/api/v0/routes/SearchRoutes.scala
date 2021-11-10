@@ -17,8 +17,10 @@ final class SearchRoutes[
 
   val routes: HttpRoutes[F] = searchR
 
+  private val interpreter = Http4sServerInterpreter(opts)
+
   private def searchR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(searchDef) { q =>
+    interpreter.toRoutes(searchDef) { q =>
       search.search(q).adaptThrowable.value
     }
 }

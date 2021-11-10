@@ -18,13 +18,15 @@ final class MempoolRoutes[
 
   val routes: HttpRoutes[F] = sendTransactionR <+> getTransactionsByAddressR
 
+  private val interpreter = Http4sServerInterpreter(opts)
+
   private def sendTransactionR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.sendTransactionDef) { tx =>
+    interpreter.toRoutes(defs.sendTransactionDef) { tx =>
       service.submit(tx).adaptThrowable.value
     }
 
   private def getTransactionsByAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getTransactionsByAddressDef) { case (address, paging) =>
+    interpreter.toRoutes(defs.getTransactionsByAddressDef) { case (address, paging) =>
       service.getByAddress(address, paging).adaptThrowable.value
     }
 }

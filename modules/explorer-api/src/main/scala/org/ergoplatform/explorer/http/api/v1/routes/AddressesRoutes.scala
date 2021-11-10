@@ -16,24 +16,26 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
   settings: RequestsSettings,
   transactions: Transactions[F],
   addresses: Addresses[F]
-) {
+)(implicit opts: Http4sServerOptions[F, F]) {
 
   val defs = new AddressesEndpointDefs(settings)
 
   val routes: HttpRoutes[F] = getTxsByAddressR <+> getConfirmedBalanceR <+> getTotalBalanceR
 
+  private val interpreter = Http4sServerInterpreter(opts)
+
   private def getTxsByAddressR =
-    Http4sServerInterpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging) =>
+    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging) =>
       transactions.getByAddress(addr, paging).adaptThrowable.value
     }
 
   private def getConfirmedBalanceR =
-    Http4sServerInterpreter.toRoutes(defs.getConfirmedBalanceDef) { case (addr, confirmations) =>
+    interpreter.toRoutes(defs.getConfirmedBalanceDef) { case (addr, confirmations) =>
       addresses.confirmedBalanceOf(addr, confirmations).adaptThrowable.value
     }
 
   private def getTotalBalanceR =
-    Http4sServerInterpreter.toRoutes(defs.getTotalBalanceDef) { addr =>
+    interpreter.toRoutes(defs.getTotalBalanceDef) { addr =>
       addresses.totalBalanceOf(addr).adaptThrowable.value
     }
 }

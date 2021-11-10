@@ -37,7 +37,7 @@ object commonDirectives {
     defaultFieldOpt: Option[String] = None
   ): EndpointInput[Sorting] =
     (query[Option[String]]("sortBy").validate(
-      Validator.`enum`(none :: allowedFields.keys.toNonEmptyList.toList.map(_.some))
+      Validator.enumeration(none :: allowedFields.keys.toNonEmptyList.toList.map(_.some))
     ) and query[Option[Sorting.SortOrder]]("sortDirection"))
       .map { input =>
         val (fieldOpt, orderOpt) = input

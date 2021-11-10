@@ -28,12 +28,7 @@ object ergoInstances {
     io.circe.Codec.from(ergoLikeTransactionDecoder, ergoLikeTransactionEncoder)
 
   implicit def schemaErgoLikeTx: Schema[ErgoLikeTransaction] =
-    Schema(
-      SchemaType.SProduct(
-        SchemaType.SObjectInfo("ErgoLikeTransaction"),
-        Iterable.empty[SProductField[ErgoLikeTransaction]].toList
-      )
-    ) // todo: derive schema for the whole ErgoLikeTransaction.
+    Schema(SchemaType.SProduct(Iterable.empty[SProductField[ErgoLikeTransaction]].toList)) // todo: derive schema for the whole ErgoLikeTransaction.
 
   implicit def validatorErgoLikeTx: Validator[ErgoLikeTransaction] =
     Validator.min(1).contramap[ErgoLikeTransaction](_.inputs.size)

@@ -22,8 +22,10 @@ final class TransactionsRoutes[
   val routes: HttpRoutes[F] =
     getByInputsScriptTemplateR <+> getByIdR
 
+  private val interpreter = Http4sServerInterpreter(opts)
+
   private def getByIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getByIdDef) { txId =>
+    interpreter.toRoutes(defs.getByIdDef) { txId =>
       service
         .get(txId)
         .adaptThrowable
@@ -32,7 +34,7 @@ final class TransactionsRoutes[
     }
 
   private def getByInputsScriptTemplateR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getByInputsScriptTemplateDef) { case (template, paging, ordering) =>
+    interpreter.toRoutes(defs.getByInputsScriptTemplateDef) { case (template, paging, ordering) =>
       service.getByInputsScriptTemplate(template, paging, ordering).adaptThrowable.value
     }
 }

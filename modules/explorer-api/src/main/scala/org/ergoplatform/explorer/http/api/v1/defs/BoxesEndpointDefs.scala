@@ -39,20 +39,20 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "stream")
       .in(blocksSlicing(settings.maxBlocksPerRequest))
-      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def streamUnspentOutputsByEpochsDef: Endpoint[Int, ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byLastEpochs" / "stream")
       .in(lastBlocks(settings.maxBlocksPerRequest))
-      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def streamUnspentOutputsByGixDef: Endpoint[(Long, Int), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byGlobalIndex" / "stream")
       .in(query[Long]("minGix").validate(Validator.min(0L)).description("Min global index (in blockchain) of a box"))
       .in(limit(settings.maxEntitiesPerRequest))
-      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
       .description("Get a stream of unspent outputs ordered by global index")
 
   def streamOutputsByErgoTreeTemplateHashDef
@@ -60,7 +60,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
       .in(blocksSlicing(settings.maxBlocksPerRequest))
-      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
       .description("Get a stream of unspent outputs by a hash of the given ErgoTreeTemplate")
 
   def streamUnspentOutputsByErgoTreeTemplateHashDef
@@ -68,7 +68,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "byErgoTreeTemplateHash" / path[ErgoTreeTemplateHash] / "stream")
       .in(blocksSlicing(settings.maxBlocksPerRequest))
-      .out(streamListBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
 
   def outputsByTokenIdDef: Endpoint[(TokenId, Paging), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get

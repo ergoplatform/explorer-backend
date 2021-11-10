@@ -43,7 +43,6 @@ object UInputInfo {
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        SchemaType.SObjectInfo("AdditionalRegisters"),
         Schema(SchemaType.SString[Json]())
       )(_ => Map.empty)
     )

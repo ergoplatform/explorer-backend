@@ -20,22 +20,24 @@ final class StatsRoutes[
 
   val routes: HttpRoutes[F] = getNetworkInfoR <+> getNetworkStateR <+> getNetworkStatsR
 
+  private val interpreter = Http4sServerInterpreter(opts)
+
   private def getNetworkInfoR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getNetworkInfo) { _ =>
+    interpreter.toRoutes(defs.getNetworkInfo) { _ =>
       infos.getState.adaptThrowable
         .orNotFound(s"Latest network info")
         .value
     }
 
   private def getNetworkStateR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getNetworkState) { _ =>
+    interpreter.toRoutes(defs.getNetworkState) { _ =>
       infos.getState.adaptThrowable
         .orNotFound(s"Latest network state")
         .value
     }
 
   private def getNetworkStatsR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getNetworkStats) { _ =>
+    interpreter.toRoutes(defs.getNetworkStats) { _ =>
       infos.getStats.adaptThrowable.value
     }
 }

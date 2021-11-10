@@ -20,12 +20,5 @@ object BlockExtension {
 
   implicit def schema: Schema[BlockExtension] = Schema.derived[BlockExtension]
 
-  //todo: test
-  implicit private def fieldsSchema: Schema[Json] =
-    Schema(
-      SchemaType.SOpenProduct(
-        SchemaType.SObjectInfo("Fields"),
-        Schema.schemaForString
-      )(_ => Map.empty)
-    )
+  implicit private def fieldsSchema: Schema[Json] = Schema.string[Json]
 }
