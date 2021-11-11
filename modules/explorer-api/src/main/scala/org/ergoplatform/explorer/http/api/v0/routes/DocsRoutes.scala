@@ -20,6 +20,8 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Htt
 
   val routes: HttpRoutes[F] = openApiSpecR <+> redocApiSpecR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def allEndpoints =
     AddressesEndpointDefs.endpoints ++
     AssetsEndpointDefs.endpoints ++
@@ -46,13 +48,13 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Htt
     Nil
 
   private val docsAsYaml =
-    OpenAPIDocsInterpreter
+    OpenAPIDocsInterpreter()
       .toOpenAPI(allEndpoints, "Ergo Explorer API v0", "1.0")
       .tags(tags)
       .toYaml
 
   private def openApiSpecR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(apiSpecDef) { _ =>
+    interpreter.toRoutes(apiSpecDef) { _ =>
       docsAsYaml
         .asRight[ApiErr]
         .pure[F]

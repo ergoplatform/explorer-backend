@@ -5,15 +5,13 @@ import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import cats.syntax.semigroupk._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.CRaise
-import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.routes.RoutesV0Bundle
 import org.ergoplatform.explorer.http.api.v1.routes.RoutesV1Bundle
 import org.ergoplatform.explorer.settings.ApiSettings
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server}
 import org.http4s.syntax.kleisli._
@@ -36,7 +34,7 @@ object HttpApi {
     ec: ExecutionContext,
     encoder: ErgoAddressEncoder,
     opts: Http4sServerOptions[F, F]
-  ): Resource[F, Server[F]] =
+  ): Resource[F, Server] =
     for {
       v0 <- Resource.eval(RoutesV0Bundle(settings.protocol, settings.utxCache, redis)(trans))
       v1 <- Resource.eval(RoutesV1Bundle(settings.service, settings.requests, settings.utxCache, redis)(trans))

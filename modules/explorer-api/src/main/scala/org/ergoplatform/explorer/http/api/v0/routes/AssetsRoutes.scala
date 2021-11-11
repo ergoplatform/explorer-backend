@@ -22,8 +22,10 @@ final class AssetsRoutes[
   val routes: HttpRoutes[F] =
     getAllIssuingBoxesR <+> getIssuingBoxR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def getAllIssuingBoxesR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getAllIssuingBoxesDef) { paging =>
+    interpreter.toRoutes(getAllIssuingBoxesDef) { paging =>
       service
         .getAllIssuingBoxes(paging)
         .adaptThrowable
@@ -31,7 +33,7 @@ final class AssetsRoutes[
     }
 
   private def getIssuingBoxR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getIssuingBoxDef) { tokenId =>
+    interpreter.toRoutes(getIssuingBoxDef) { tokenId =>
       service
         .getIssuingBoxes(NonEmptyList.one(tokenId))
         .compile

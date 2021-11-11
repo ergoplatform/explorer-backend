@@ -21,13 +21,15 @@ final class AssetsRoutes[
   val routes: HttpRoutes[F] =
     listTokensR <+> searchByTokenIdR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def searchByTokenIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.searchByTokenIdDef) { case (q, paging) =>
+    interpreter.toRoutes(defs.searchByTokenIdDef) { case (q, paging) =>
       assets.getAllLike(q, paging).adaptThrowable.value
     }
 
   private def listTokensR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.listTokensDef) { case (paging, ordering, hideNfts) =>
+    interpreter.toRoutes(defs.listTokensDef) { case (paging, ordering, hideNfts) =>
       tokens.getAll(paging, ordering, hideNfts).adaptThrowable.value
     }
 }

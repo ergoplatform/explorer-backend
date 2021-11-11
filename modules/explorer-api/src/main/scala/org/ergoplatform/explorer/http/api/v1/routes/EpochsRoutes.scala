@@ -20,8 +20,10 @@ final class EpochsRoutes[
 
   val routes: HttpRoutes[F] = getEpochInfoR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def getEpochInfoR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getEpochInfoDef) { _ =>
+    interpreter.toRoutes(defs.getEpochInfoDef) { _ =>
       epochs
         .getLastEpoch
         .adaptThrowable

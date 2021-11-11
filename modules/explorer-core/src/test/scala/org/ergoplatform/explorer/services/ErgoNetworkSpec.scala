@@ -10,6 +10,7 @@ import io.circe.syntax._
 import io.estatico.newtype.ops._
 import org.ergoplatform.explorer.UrlString
 import org.ergoplatform.explorer.settings.NetworkSettings
+import org.http4s.Uri.Path.Segment
 import org.http4s.client.Client
 import org.http4s.{Request, Response}
 import org.scalacheck.Gen.Parameters
@@ -24,7 +25,7 @@ class ErgoNetworkSpec extends PropSpec with Matchers {
   def createFakeClient[F[_]: Sync](bestNode: Ref[F, (UrlString, Int)])(implicit
     F: BracketThrow[F]
   ) = Client[F] {
-    case Request(_, uri, _, _, _, _) if uri.path.contains("info") =>
+    case Request(_, uri, _, _, _, _) if uri.path.segments.contains(Segment("info")) =>
       Resource.eval(bestNode.get).flatMap { case (node, height) =>
         Resource.pure(
           Response[F](

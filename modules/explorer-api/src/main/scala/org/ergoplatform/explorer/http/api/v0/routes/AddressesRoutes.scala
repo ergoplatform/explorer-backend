@@ -24,17 +24,19 @@ final class AddressesRoutes[
 
   import org.ergoplatform.explorer.http.api.v0.defs.AddressesEndpointDefs._
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   val routes: HttpRoutes[F] =
     getAddressR <+> getTxsByAddressR <+> getAssetHoldersR <+> getBalancesR
 
   def getAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getAddressDef) {
+    interpreter.toRoutes(getAddressDef) {
       case (address, minConfirmations) =>
         addressesService.getAddressInfo(address, minConfirmations).adaptThrowable.value
     }
 
   def getTxsByAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getTxsByAddressDef) {
+    interpreter.toRoutes(getTxsByAddressDef) {
       case (address, paging) =>
         transactionsService
           .getTxsInfoByAddress(address, paging)
@@ -43,7 +45,7 @@ final class AddressesRoutes[
     }
 
   def getAssetHoldersR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getAssetHoldersDef) {
+    interpreter.toRoutes(getAssetHoldersDef) {
       case (tokenId, paging) =>
         addressesService
           .getAssetHoldersAddresses(tokenId, paging)
@@ -54,7 +56,7 @@ final class AddressesRoutes[
     }
 
   def getBalancesR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getBalancesDef) { paging =>
+    interpreter.toRoutes(getBalancesDef) { paging =>
       addressesService.balances(paging).adaptThrowable.value
     }
 }

@@ -38,43 +38,45 @@ final class BoxesRoutes[
     getUnspentOutputsByAddressR <+>
     getOutputByIdR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def streamUnspentOutputsR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.streamUnspentOutputsDef) { epochs =>
+    interpreter.toRoutes(defs.streamUnspentOutputsDef) { epochs =>
       streaming.bytesStream(service.streamUnspentOutputs(epochs))
     }
 
   private def streamUnspentOutputsByEpochsR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.streamUnspentOutputsByEpochsDef) { lastEpochs =>
+    interpreter.toRoutes(defs.streamUnspentOutputsByEpochsDef) { lastEpochs =>
       streaming.bytesStream(service.streamUnspentOutputs(lastEpochs))
     }
 
   private def streamUnspentOutputsByGixR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.streamUnspentOutputsByGixDef) { case (minGix, limit) =>
+    interpreter.toRoutes(defs.streamUnspentOutputsByGixDef) { case (minGix, limit) =>
       streaming.bytesStream(service.streamUnspentOutputs(minGix, limit))
     }
 
   private def streamOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.streamOutputsByErgoTreeTemplateHashDef) { case (template, epochs) =>
+    interpreter.toRoutes(defs.streamOutputsByErgoTreeTemplateHashDef) { case (template, epochs) =>
       streaming.bytesStream(service.streamOutputsByErgoTreeTemplateHash(template, epochs))
     }
 
   private def streamUnspentOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.streamUnspentOutputsByErgoTreeTemplateHashDef) { case (template, epochs) =>
+    interpreter.toRoutes(defs.streamUnspentOutputsByErgoTreeTemplateHashDef) { case (template, epochs) =>
       streaming.bytesStream(service.streamUnspentOutputsByErgoTreeTemplateHash(template, epochs))
     }
 
   private def outputsByTokenIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.outputsByTokenIdDef) { case (tokenId, paging) =>
+    interpreter.toRoutes(defs.outputsByTokenIdDef) { case (tokenId, paging) =>
       service.getOutputsByTokenId(tokenId, paging).adaptThrowable.value
     }
 
   private def unspentOutputsByTokenIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.unspentOutputsByTokenIdDef) { case (tokenId, paging, ord) =>
+    interpreter.toRoutes(defs.unspentOutputsByTokenIdDef) { case (tokenId, paging, ord) =>
       service.getUnspentOutputsByTokenId(tokenId, paging, ord).adaptThrowable.value
     }
 
   private def getOutputByIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getOutputByIdDef) { id =>
+    interpreter.toRoutes(defs.getOutputByIdDef) { id =>
       service
         .getOutputById(id)
         .adaptThrowable
@@ -83,47 +85,47 @@ final class BoxesRoutes[
     }
 
   private def getOutputsByErgoTreeR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getOutputsByErgoTreeDef) { case (tree, paging) =>
+    interpreter.toRoutes(defs.getOutputsByErgoTreeDef) { case (tree, paging) =>
       service.getOutputsByErgoTree(tree, paging).adaptThrowable.value
     }
 
   private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByErgoTreeDef) { case (tree, paging, ord) =>
+    interpreter.toRoutes(defs.getUnspentOutputsByErgoTreeDef) { case (tree, paging, ord) =>
       service.getUnspentOutputsByErgoTree(tree, paging, ord).adaptThrowable.value
     }
 
   private def getOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getOutputsByErgoTreeTemplateHashDef) { case (tree, paging) =>
+    interpreter.toRoutes(defs.getOutputsByErgoTreeTemplateHashDef) { case (tree, paging) =>
       service.getOutputsByErgoTreeTemplateHash(tree, paging).adaptThrowable.value
     }
 
   private def getUnspentOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByErgoTreeTemplateHashDef) { case (tree, paging) =>
+    interpreter.toRoutes(defs.getUnspentOutputsByErgoTreeTemplateHashDef) { case (tree, paging) =>
       service.getUnspentOutputsByErgoTreeTemplateHash(tree, paging).adaptThrowable.value
     }
 
   private def getOutputsByAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getOutputsByAddressDef) { case (address, paging) =>
+    interpreter.toRoutes(defs.getOutputsByAddressDef) { case (address, paging) =>
       service.getOutputsByAddress(address, paging).adaptThrowable.value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.getUnspentOutputsByAddressDef) { case (address, paging, ord) =>
+    interpreter.toRoutes(defs.getUnspentOutputsByAddressDef) { case (address, paging, ord) =>
       service.getUnspentOutputsByAddress(address, paging, ord).adaptThrowable.value
     }
 
   private def searchOutputsR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.searchOutputsDef) { case (query, paging) =>
+    interpreter.toRoutes(defs.searchOutputsDef) { case (query, paging) =>
       service.searchAll(query, paging).adaptThrowable.value
     }
 
   private def searchUnspentOutputsR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.searchUnspentOutputsDef) { case (query, paging) =>
+    interpreter.toRoutes(defs.searchUnspentOutputsDef) { case (query, paging) =>
       service.searchUnspent(query, paging).adaptThrowable.value
     }
 
   private def searchUnspentOutputsByAssetsUnionR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(defs.searchUnspentOutputsByTokensUnionDef) { case (query, paging) =>
+    interpreter.toRoutes(defs.searchUnspentOutputsByTokensUnionDef) { case (query, paging) =>
       service.searchUnspentByAssetsUnion(query, paging).adaptThrowable.value
     }
 }

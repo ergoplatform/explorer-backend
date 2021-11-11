@@ -21,8 +21,10 @@ final class DexRoutes[
   val routes: HttpRoutes[F] =
     getUnspentSellOrdersR <+> getUnspentBuyOrdersR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def getUnspentSellOrdersR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getUnspentSellOrdersDef) {
+    interpreter.toRoutes(getUnspentSellOrdersDef) {
       case (tokenId, paging) =>
         service
           .getUnspentSellOrders(tokenId, paging)
@@ -33,7 +35,7 @@ final class DexRoutes[
     }
 
   private def getUnspentBuyOrdersR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getUnspentBuyOrdersDef) {
+    interpreter.toRoutes(getUnspentBuyOrdersDef) {
       case (tokenId, paging) =>
         service
           .getUnspentBuyOrders(tokenId, paging)

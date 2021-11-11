@@ -17,7 +17,6 @@ object BlockExtensionInfo {
   implicit private def fieldsSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        SchemaType.SObjectInfo("ExtensionFields"),
         Schema(SchemaType.SString[Json]())
       )(_ => Map.empty)
     )

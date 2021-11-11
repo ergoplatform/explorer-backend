@@ -22,8 +22,10 @@ final class BoxesRoutes[
     getOutputByIdR <+> getOutputsByErgoTreeR <+> getUnspentOutputsByErgoTreeR <+>
     getOutputsByAddressR <+> getUnspentOutputsByAddressR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def getOutputByIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getOutputByIdDef) { id =>
+    interpreter.toRoutes(getOutputByIdDef) { id =>
       service
         .getOutputById(id)
         .adaptThrowable
@@ -32,22 +34,22 @@ final class BoxesRoutes[
     }
 
   private def getOutputsByErgoTreeR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getOutputsByErgoTreeDef) { tree =>
+    interpreter.toRoutes(getOutputsByErgoTreeDef) { tree =>
       service.getOutputsByErgoTree(tree).compile.toList.adaptThrowable.value
     }
 
   private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getUnspentOutputsByErgoTreeDef) { tree =>
+    interpreter.toRoutes(getUnspentOutputsByErgoTreeDef) { tree =>
       service.getUnspentOutputsByErgoTree(tree).compile.toList.adaptThrowable.value
     }
 
   private def getOutputsByAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getOutputsByAddressDef) { address =>
+    interpreter.toRoutes(getOutputsByAddressDef) { address =>
       service.getOutputsByAddress(address).compile.toList.adaptThrowable.value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getUnspentOutputsByAddressDef) { address =>
+    interpreter.toRoutes(getUnspentOutputsByAddressDef) { address =>
       service.getUnspentOutputsByAddress(address).compile.toList.adaptThrowable.value
     }
 }

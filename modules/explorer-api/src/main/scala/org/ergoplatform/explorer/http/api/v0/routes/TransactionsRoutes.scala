@@ -23,8 +23,10 @@ final class TransactionsRoutes[
     getUnconfirmedTxsByAddressR <+> getUnconfirmedTxByIdR <+> getUnconfirmedTxsR <+>
     getTxsSinceR <+> sendTransactionR <+> getTxByIdR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def getTxByIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getTxByIdDef) { txId =>
+    interpreter.toRoutes(getTxByIdDef) { txId =>
       txsService
         .getTxInfo(txId)
         .adaptThrowable
@@ -33,7 +35,7 @@ final class TransactionsRoutes[
     }
 
   private def getUnconfirmedTxsR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getUnconfirmedTxsDef) { paging =>
+    interpreter.toRoutes(getUnconfirmedTxsDef) { paging =>
       offChainService
         .getUnconfirmedTxs(paging)
         .adaptThrowable
@@ -41,7 +43,7 @@ final class TransactionsRoutes[
     }
 
   private def getUnconfirmedTxByIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getUnconfirmedTxByIdDef) { txId =>
+    interpreter.toRoutes(getUnconfirmedTxByIdDef) { txId =>
       offChainService
         .getUnconfirmedTxInfo(txId)
         .adaptThrowable
@@ -50,7 +52,7 @@ final class TransactionsRoutes[
     }
 
   private def getUnconfirmedTxsByAddressR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getUnconfirmedTxsByAddressDef) { case (paging, address) =>
+    interpreter.toRoutes(getUnconfirmedTxsByAddressDef) { case (paging, address) =>
       offChainService
         .getUnconfirmedTxsByAddress(address, paging)
         .adaptThrowable
@@ -58,7 +60,7 @@ final class TransactionsRoutes[
     }
 
   private def getTxsSinceR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getTxsSinceDef) { case (paging, height) =>
+    interpreter.toRoutes(getTxsSinceDef) { case (paging, height) =>
       txsService
         .getTxsSince(height, paging)
         .adaptThrowable
@@ -66,7 +68,7 @@ final class TransactionsRoutes[
     }
 
   private def sendTransactionR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(sendTransactionDef) { tx =>
+    interpreter.toRoutes(sendTransactionDef) { tx =>
       offChainService.submitTransaction(tx).adaptThrowable.value
     }
 }

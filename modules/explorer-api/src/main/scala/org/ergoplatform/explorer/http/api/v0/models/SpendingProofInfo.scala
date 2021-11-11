@@ -24,7 +24,6 @@ object SpendingProofInfo {
   implicit private def extensionSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        SchemaType.SObjectInfo("ProofExtension"),
         Schema(SchemaType.SString[Json]())
       )(_ => Map.empty)
     )

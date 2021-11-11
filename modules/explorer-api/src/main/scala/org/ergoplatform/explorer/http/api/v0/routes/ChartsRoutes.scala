@@ -23,48 +23,50 @@ final class ChartsRoutes[
     getAvgTxsNumPerBlockR <+> getTotalTxsNumR <+> getAvgDifficultyR <+>
     getMinersRevenuR <+> getHashRateR <+> getHashRateDistributionR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def getTotalCoinsAmtR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getTotalCoinsAmtDef) { timespan =>
+    interpreter.toRoutes(getTotalCoinsAmtDef) { timespan =>
       service.getTotalCoins(timespan).adaptThrowable.value
     }
 
   private def getAvgBlockSizeR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getAvgBlockSizeDef) { timespan =>
+    interpreter.toRoutes(getAvgBlockSizeDef) { timespan =>
       service.getAvgBlockSize(timespan).adaptThrowable.value
     }
 
   private def getBlockChainSizeR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getBlockChainSizeDef) { timespan =>
+    interpreter.toRoutes(getBlockChainSizeDef) { timespan =>
       service.getBlockChainSize(timespan).adaptThrowable.value
     }
 
   private def getAvgTxsNumPerBlockR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getAvgTxsNumPerBlockDef) { timespan =>
+    interpreter.toRoutes(getAvgTxsNumPerBlockDef) { timespan =>
       service.getAvgTxsNumPerBlock(timespan).adaptThrowable.value
     }
 
   private def getTotalTxsNumR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getTotalTxsNumDef) { timespan =>
+    interpreter.toRoutes(getTotalTxsNumDef) { timespan =>
       service.getTransactionsNum(timespan).adaptThrowable.value
     }
 
   private def getAvgDifficultyR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getAvgDifficultyDef) { timespan =>
+    interpreter.toRoutes(getAvgDifficultyDef) { timespan =>
       service.getAvgDifficulty(timespan).adaptThrowable.value
     }
 
   private def getMinersRevenuR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getMinersRevenueDef) { timespan =>
+    interpreter.toRoutes(getMinersRevenueDef) { timespan =>
       service.getMinersRevenue(timespan).adaptThrowable.value
     }
 
   private def getHashRateR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getHashRateDef) { timespan =>
+    interpreter.toRoutes(getHashRateDef) { timespan =>
       service.getHashRate(timespan).adaptThrowable.value
     }
 
   private def getHashRateDistributionR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getHashRateDistributionDef) { _ =>
+    interpreter.toRoutes(getHashRateDistributionDef) { _ =>
       service.getHashRateDistribution(24.hours).adaptThrowable.value
     }
 }

@@ -23,8 +23,10 @@ final class BlocksRoutes[
   val routes: HttpRoutes[F] =
     getBlocksR <+> getBlockSummaryByIdR <+> getBlockIdsAtHeightR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def getBlocksR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getBlocksDef) {
+    interpreter.toRoutes(getBlocksDef) {
       case (paging, sorting) =>
         service
           .getBlocks(paging, sorting)
@@ -33,7 +35,7 @@ final class BlocksRoutes[
     }
 
   private def getBlockSummaryByIdR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getBlockSummaryByIdDef) { id =>
+    interpreter.toRoutes(getBlockSummaryByIdDef) { id =>
       service
         .getBlockSummaryById(id)
         .adaptThrowable
@@ -42,7 +44,7 @@ final class BlocksRoutes[
     }
 
   private def getBlockIdsAtHeightR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getBlockIdsAtHeightDef) { height =>
+    interpreter.toRoutes(getBlockIdsAtHeightDef) { height =>
       service
         .getBlockIdsAtHeight(height)
         .adaptThrowable

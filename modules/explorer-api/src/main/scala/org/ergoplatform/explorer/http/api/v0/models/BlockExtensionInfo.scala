@@ -20,7 +20,6 @@ object BlockExtensionInfo {
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        SchemaType.SObjectInfo("fields"),
         Schema(SchemaType.SString[Json]())
       )(_ => Map.empty)
     )

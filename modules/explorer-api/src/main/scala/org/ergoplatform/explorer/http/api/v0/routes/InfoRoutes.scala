@@ -20,11 +20,13 @@ final class InfoRoutes[
 
   val routes: HttpRoutes[F] = getCurrentStatsR <+> getCurrentSupplyR
 
+  private def interpreter = Http4sServerInterpreter(opts)
+
   private def getCurrentStatsR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getBlockChainInfoDef)(_ => service.getBlockChainInfo.adaptThrowable.value)
+    interpreter.toRoutes(getBlockChainInfoDef)(_ => service.getBlockChainInfo.adaptThrowable.value)
 
   private def getCurrentSupplyR: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(getCurrentSupplyDef) { _ =>
+    interpreter.toRoutes(getCurrentSupplyDef) { _ =>
       service.getBlockChainInfo
         .map { info =>
           BigDecimal

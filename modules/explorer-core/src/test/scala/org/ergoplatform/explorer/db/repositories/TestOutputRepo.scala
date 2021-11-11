@@ -37,12 +37,6 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
-  override def streamUnspentByErgoTree(
-    ergoTree: HexString,
-    offset: Int,
-    limit: Int
-  ): fs2.Stream[F, ExtendedOutput] = ???
-
   def countAllByTokenId(tokenId: TokenId): F[Int] = ???
 
   def countUnspentByTokenId(tokenId: TokenId): F[Int] = ???
@@ -130,6 +124,10 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
   def searchUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId], offset: Int, limit: Int): fs2.Stream[F, Output] = ???
 
   def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): F[Int] = ???
+
+  /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
+    */
+  def streamUnspentByErgoTree(ergoTree: HexString, offset: Int, limit: Int, ord: OrderingString): fs2.Stream[F, ExtendedOutput] = ???
 }
 
 object TestOutputRepo {
