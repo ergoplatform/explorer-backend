@@ -34,7 +34,7 @@ trait TransactionsService[F[_]] {
 
   /** Get transactions related to a given `address`.
     */
-  def getTxsInfoByAddress(address: Address, paging: Paging): F[Items[TransactionInfo]]
+  def getTxsInfoByAddress(address: Address, paging: Paging, concise: Boolean): F[Items[TransactionInfo]]
 
   /** Get all transactions appeared in the blockchain after the given `height`.
     */
@@ -85,13 +85,14 @@ object TransactionsService {
 
     def getTxsInfoByAddress(
       address: Address,
-      paging: Paging
+      paging: Paging,
+      concise: Boolean
     ): F[Items[TransactionInfo]] =
       transactionRepo.countRelatedToAddress(address).flatMap { total =>
         transactionRepo
           .getRelatedToAddress(address, paging.offset, paging.limit)
           .map(_.grouped(100))
-          .flatMap(_.toList.flatTraverse(assembleInfo))
+          .flatMap(_.toList.flatTraverse(assembleInfo()))
           .map(Items(_, total))
       } ||> trans.xa
 
@@ -99,12 +100,12 @@ object TransactionsService {
       transactionRepo
         .getMainSince(height, paging.offset, paging.limit)
         .map(_.grouped(100))
-        .flatMap(_.toList.flatTraverse(assembleInfo)) ||> trans.xa
+        .flatMap(_.toList.flatTraverse(assembleInfo())) ||> trans.xa
 
     def getIdsLike(query: String): F[List[TxId]] =
       transactionRepo.getIdsLike(query) ||> trans.xa
 
-    private def assembleInfo: List[Transaction] => D[List[TransactionInfo]] =
+    private def assembleInfo(concise: Boolean = false): List[Transaction] => D[List[TransactionInfo]] =
       txChunk =>
         (for {
           txIdsNel   <- OptionT.fromOption[D](txChunk.map(_.id).toNel)
@@ -115,7 +116,9 @@ object TransactionsService {
           assets     <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
           bestHeight <- OptionT.liftF(headerRepo.getBestHeight)
           txsWithHeights = txChunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-          txInfo         = TransactionInfo.batch(txsWithHeights, ins, dataIns, outs, assets)
+          txInfo =
+            if (concise) TransactionInfo.batch(txsWithHeights, List.empty, List.empty, List.empty, List.empty)
+            else TransactionInfo.batch(txsWithHeights, ins, dataIns, outs, assets)
         } yield txInfo).value.map(_.toList.flatten)
   }
 }

@@ -37,9 +37,9 @@ final class AddressesRoutes[
 
   def getTxsByAddressR: HttpRoutes[F] =
     interpreter.toRoutes(getTxsByAddressDef) {
-      case (address, paging) =>
+      case (address, paging, concise) =>
         transactionsService
-          .getTxsInfoByAddress(address, paging)
+          .getTxsInfoByAddress(address, paging, concise)
           .adaptThrowable
           .value
     }

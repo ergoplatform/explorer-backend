@@ -72,6 +72,11 @@ object commonDirectives {
   def limit(maxEntities: Int): EndpointInput.Query[Int] =
     query[Int]("limit").validate(Validator.max(maxEntities))
 
+  def concise: EndpointInput.Query[Boolean] =
+    query[Boolean]("concise")
+      .default(false)
+      .description("Hide excessive data")
+
   private def validateBounds(bounds: (Int, Int), max: Int): List[ValidationError[_]] =
     bounds match {
       case (minH, maxH) if maxH - minH > max =>

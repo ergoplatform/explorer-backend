@@ -21,10 +21,11 @@ object AddressesEndpointDefs {
       .in(confirmations)
       .out(jsonBody[AddressInfo])
 
-  def getTxsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[TransactionInfo], Any] =
+  def getTxsByAddressDef: Endpoint[(Address, Paging, Boolean), ApiErr, Items[TransactionInfo], Any] =
     baseEndpointDef
       .in(PathPrefix / path[Address] / "transactions")
       .in(paging)
+      .in(concise)
       .out(jsonBody[Items[TransactionInfo]])
 
   def getAssetHoldersDef: Endpoint[(TokenId, Paging), ApiErr, List[Address], Any] =
