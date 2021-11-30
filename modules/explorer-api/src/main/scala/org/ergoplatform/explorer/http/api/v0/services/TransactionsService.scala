@@ -92,7 +92,7 @@ object TransactionsService {
         transactionRepo
           .getRelatedToAddress(address, paging.offset, paging.limit)
           .map(_.grouped(100))
-          .flatMap(_.toList.flatTraverse(assembleInfo()))
+          .flatMap(_.toList.flatTraverse(assembleInfo(concise)))
           .map(Items(_, total))
       } ||> trans.xa
 
