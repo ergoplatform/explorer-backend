@@ -108,17 +108,19 @@ object TransactionsService {
     private def assembleInfo(concise: Boolean = false): List[Transaction] => D[List[TransactionInfo]] =
       txChunk =>
         (for {
-          txIdsNel   <- OptionT.fromOption[D](txChunk.map(_.id).toNel)
-          ins        <- OptionT.liftF(inputRepo.getAllByTxIds(txIdsNel))
-          dataIns    <- OptionT.liftF(dataInputRepo.getAllByTxIds(txIdsNel))
-          outs       <- OptionT.liftF(outputRepo.getAllByTxIds(txIdsNel))
-          boxIdsNel  <- OptionT.fromOption[D](outs.map(_.output.boxId).toNel)
-          assets     <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
+          txIdsNel <- OptionT.fromOption[D](txChunk.map(_.id).toNel)
+          (ins, dataIns, outs, assets) <-
+            if (!concise) for {
+              ins       <- OptionT.liftF(inputRepo.getAllByTxIds(txIdsNel))
+              dataIns   <- OptionT.liftF(dataInputRepo.getAllByTxIds(txIdsNel))
+              outs      <- OptionT.liftF(outputRepo.getAllByTxIds(txIdsNel))
+              boxIdsNel <- OptionT.fromOption[D](outs.map(_.output.boxId).toNel)
+              assets    <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
+            } yield (ins, dataIns, outs, assets)
+            else OptionT.pure[D]((List.empty, List.empty, List.empty, List.empty))
           bestHeight <- OptionT.liftF(headerRepo.getBestHeight)
           txsWithHeights = txChunk.map(tx => tx -> tx.numConfirmations(bestHeight))
-          txInfo =
-            if (concise) TransactionInfo.batch(txsWithHeights, List.empty, List.empty, List.empty, List.empty)
-            else TransactionInfo.batch(txsWithHeights, ins, dataIns, outs, assets)
+          txInfo         = TransactionInfo.batch(txsWithHeights, ins, dataIns, outs, assets)
         } yield txInfo).value.map(_.toList.flatten)
   }
 }
