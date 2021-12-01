@@ -26,7 +26,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   def streamAllUnspent(minGix: Long, limit: Int): fs2.Stream[F, Output] = ???
 
-  override def streamSpent(minGix: Long, limit: Int): fs2.Stream[F, Output] = ???
+  override def streamAll(minGix: Long, limit: Int): fs2.Stream[F, Output] = ???
 
   override def getAllByErgoTree(
     ergoTree: HexString,

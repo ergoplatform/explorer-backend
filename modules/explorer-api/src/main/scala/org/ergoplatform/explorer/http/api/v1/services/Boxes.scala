@@ -81,7 +81,7 @@ trait Boxes[F[_]] {
 
   /** Get all unspent outputs appeared in the blockchain after an output at a given global index `minGix` (inclusively).
     */
-  def streamSpentOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo]
+  def streamOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo]
 
   /** Get all outputs containing a given `tokenId`.
     */
@@ -252,9 +252,9 @@ object Boxes {
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)
 
-    def streamSpentOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo] =
+    def streamOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo] =
       outputs
-        .streamSpent(minGix, limit)
+        .streamAll(minGix, limit)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)

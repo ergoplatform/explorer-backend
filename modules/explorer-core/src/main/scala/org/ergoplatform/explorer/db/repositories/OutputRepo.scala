@@ -154,7 +154,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all outputs appeared in the blockchain after an output at a given global index `minGix` (inclusively).
     */
-  def streamSpent(minGix: Long, limit: Int): S[D, Output]
+  def streamAll(minGix: Long, limit: Int): S[D, Output]
 
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): S[D, ExtendedOutput]
 
@@ -346,8 +346,8 @@ object OutputRepo {
     def streamAllUnspent(minGix: Long, limit: Int): Stream[D, Output] =
       QS.getUnspent(minGix, limit).stream.translate(liftK)
 
-    def streamSpent(minGix: Long, limit: Int): Stream[D, Output] =
-      QS.getSpent(minGix, limit).stream.translate(liftK)
+    def streamAll(minGix: Long, limit: Int): Stream[D, Output] =
+      QS.getAll(minGix, limit).stream.translate(liftK)
 
     def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): Stream[D, ExtendedOutput] =
       QS.getAllByTokenId(tokenId, offset, limit).stream.translate(liftK)

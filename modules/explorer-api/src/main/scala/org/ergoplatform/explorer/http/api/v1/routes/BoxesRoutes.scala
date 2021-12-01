@@ -21,7 +21,7 @@ final class BoxesRoutes[
 
   val routes: HttpRoutes[F] =
     streamUnspentOutputsByEpochsR <+>
-    streamSpentOutputsByGixR <+>
+    streamOutputsByGixR <+>
     streamUnspentOutputsByGixR <+>
     streamUnspentOutputsR <+>
     streamOutputsByErgoTreeTemplateHashR <+>
@@ -56,9 +56,9 @@ final class BoxesRoutes[
       streaming.bytesStream(service.streamUnspentOutputs(minGix, limit))
     }
 
-  private def streamSpentOutputsByGixR: HttpRoutes[F] =
-    interpreter.toRoutes(defs.streamSpentOutputsByGixDef) { case (minGix, limit) =>
-      streaming.bytesStream(service.streamSpentOutputs(minGix, limit))
+  private def streamOutputsByGixR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.streamOutputsByGixDef) { case (minGix, limit) =>
+      streaming.bytesStream(service.streamOutputs(minGix, limit))
     }
 
   private def streamOutputsByErgoTreeTemplateHashR: HttpRoutes[F] =
