@@ -373,7 +373,7 @@ object OutputQuerySet extends QuerySet {
          |order by o.global_index asc
          |""".stripMargin.query[Output]
 
-  def getAll(minGix: Long, limit: Int)(implicit lh: LogHandler): Query0[Output] =
+  def getSpent(minGix: Long, limit: Int)(implicit lh: LogHandler): Query0[Output] =
     sql"""
          |select
          |  o.box_id,
@@ -393,6 +393,7 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_headers h on h.id = o.header_id
          |where o.main_chain = true
+         |  and i.box_id is not null
          |  and o.global_index >= $minGix
          |  and o.global_index < ${minGix + limit}
          |order by o.global_index asc
