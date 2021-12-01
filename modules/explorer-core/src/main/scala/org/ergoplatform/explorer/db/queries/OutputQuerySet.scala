@@ -373,6 +373,31 @@ object OutputQuerySet extends QuerySet {
          |order by o.global_index asc
          |""".stripMargin.query[Output]
 
+  def getAll(minGix: Long, limit: Int)(implicit lh: LogHandler): Query0[Output] =
+    sql"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.settlement_height,
+         |  o.index,
+         |  o.global_index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain
+         |from node_outputs o
+         |left join node_headers h on h.id = o.header_id
+         |where o.main_chain = true
+         |  and o.global_index >= $minGix
+         |  and o.global_index < ${minGix + limit}
+         |order by o.global_index asc
+         |""".stripMargin.query[Output]
+
   def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select distinct on (o.box_id, o.creation_height)

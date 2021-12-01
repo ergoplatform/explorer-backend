@@ -79,6 +79,10 @@ trait Boxes[F[_]] {
     */
   def streamUnspentOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo]
 
+  /** Get all unspent outputs appeared in the blockchain after an output at a given global index `minGix` (inclusively).
+    */
+  def streamOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo]
+
   /** Get all outputs containing a given `tokenId`.
     */
   def getOutputsByTokenId(tokenId: TokenId, paging: Paging): F[Items[OutputInfo]]
@@ -226,7 +230,7 @@ object Boxes {
 
     def streamUnspentOutputs(range: HeightRange): Stream[F, OutputInfo] =
       outputs
-        .getAllUnspent(range.minHeight, range.maxHeight)
+        .streamAllUnspent(range.minHeight, range.maxHeight)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)
@@ -235,7 +239,7 @@ object Boxes {
       Stream
         .eval(headers.getBestHeight)
         .flatMap { bestHeight =>
-          outputs.getAllUnspent(bestHeight - suffixLen, bestHeight)
+          outputs.streamAllUnspent(bestHeight - suffixLen, bestHeight)
         }
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
@@ -243,7 +247,14 @@ object Boxes {
 
     def streamUnspentOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo] =
       outputs
-        .getAllUnspent(minGix, limit)
+        .streamAllUnspent(minGix, limit)
+        .chunkN(serviceSettings.chunkSize)
+        .through(toUnspentOutputInfo)
+        .thrushK(trans.xas)
+
+    def streamOutputs(minGix: Long, limit: Int): Stream[F, OutputInfo] =
+      outputs
+        .streamAll(minGix, limit)
         .chunkN(serviceSettings.chunkSize)
         .through(toUnspentOutputInfo)
         .thrushK(trans.xas)
