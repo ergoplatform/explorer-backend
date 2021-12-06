@@ -82,6 +82,9 @@ object InputQuerySet extends QuerySet {
          |  o.tx_id,
          |  o.value,
          |  o.index,
+         |  o.global_index,
+         |  o.creation_height,
+         |  o.settlement_height,
          |  o.ergo_tree,
          |  o.address,
          |  o.additional_registers
@@ -105,6 +108,9 @@ object InputQuerySet extends QuerySet {
            |  o.tx_id,
            |  o.value,
            |  o.index,
+           |  o.global_index,
+           |  o.creation_height,
+           |  o.settlement_height,
            |  o.ergo_tree,
            |  o.address,
            |  o.additional_registers
