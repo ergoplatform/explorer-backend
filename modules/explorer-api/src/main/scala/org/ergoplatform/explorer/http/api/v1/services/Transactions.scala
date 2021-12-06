@@ -34,6 +34,8 @@ trait Transactions[F[_]] {
     address: Address,
     paging: Paging
   ): F[Items[TransactionInfo]]
+
+  def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo]
 }
 
 object Transactions {
@@ -107,6 +109,13 @@ object Transactions {
             .map(Items(_, total))
         }
         .thrushK(trans.xa)
+
+    def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo] =
+      transactions
+        .streamTransactions(minGix, limit)
+        .chunkN(serviceSettings.chunkSize)
+        .through(makeTransaction)
+        .thrushK(trans.xas)
 
     private def makeTransaction: Pipe[D, Chunk[Transaction], TransactionInfo] =
       for {
