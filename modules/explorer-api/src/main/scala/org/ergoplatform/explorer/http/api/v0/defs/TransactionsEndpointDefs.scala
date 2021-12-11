@@ -1,5 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.defs
 
+import cats.data.NonEmptyMap
+import cats.syntax.option._
 import org.ergoplatform.ErgoLikeTransaction
 import org.ergoplatform.explorer.{Address, TxId}
 import org.ergoplatform.explorer.http.api.ApiErr
@@ -27,6 +29,7 @@ object TransactionsEndpointDefs {
     baseEndpointDef.get
       .in(PathPrefix / "unconfirmed")
       .in(paging)
+      .in(sorting(allowedSortingFields, defaultFieldOpt = "inclusionheight".some))
       .out(jsonBody[Items[UTransactionInfo]])
 
   def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionSummary, Any] =
@@ -52,4 +55,9 @@ object TransactionsEndpointDefs {
       .in(PathPrefix / "send")
       .in(jsonBody[ErgoLikeTransaction])
       .out(jsonBody[TxIdResponse])
+
+  val allowedSortingFields: NonEmptyMap[String, String] =
+    NonEmptyMap.of(
+        "inclusionheight" -> "inclusion_height"
+    )
 }
