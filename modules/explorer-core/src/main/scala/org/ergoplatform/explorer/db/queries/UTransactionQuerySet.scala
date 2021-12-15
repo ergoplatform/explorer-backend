@@ -6,7 +6,9 @@ import doobie.refined.implicits._
 import doobie.util.query.Query0
 import doobie.Fragments.in
 import doobie.LogHandler
+import doobie.util.fragment.Fragment
 import doobie.util.update.Update0
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.{HexString, TxId}
 
@@ -41,7 +43,22 @@ object UTransactionQuerySet extends QuerySet {
          |""".stripMargin.query[UTransaction]
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[UTransaction] =
-    sql"select id, creation_timestamp, size from node_u_transactions order by creation_timestamp desc offset $offset limit $limit".query[UTransaction]
+    sql"select id, creation_timestamp, size from node_u_transactions order by creation_timestamp desc offset $offset limit $limit"
+      .query[UTransaction]
+
+  def getAll(offset: Int, limit: Int, ordering: OrderingString, orderBy: String)(implicit
+    lh: LogHandler
+  ): Query0[UTransaction] = {
+    val ord =
+      Fragment.const(s"order by $orderBy $ordering")
+
+    val lim =
+      Fragment.const(s"offset $offset limit $limit")
+
+    val q = sql"select id, creation_timestamp, size from node_u_transactions"
+
+    (q ++ ord ++ lim).query[UTransaction]
+  }
 
   def getAllIds(implicit lh: LogHandler): Query0[TxId] =
     sql"select id from node_u_transactions".query[TxId]
