@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{ErgoTree, HexString, TxId}
+import org.ergoplatform.explorer.constraints.OrderingString
 
 trait UTransactionRepo[D[_], S[_[_], _]] {
 
@@ -47,6 +48,10 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
   /** Get all unconfirmed transactions.
     */
   def getAll(offset: Int, limit: Int): D[List[UTransaction]]
+
+  /** Get all unconfirmed transactions with sorting
+    */
+  def getAll(offset: Int, limit: Int, order: OrderingString, sortBy: String): D[List[UTransaction]]
 
   /** Get ids of all unconfirmed transactions.
     */
@@ -99,6 +104,9 @@ object UTransactionRepo {
       QS.getAllRelatedToErgoTree(ergoTree.value, offset, limit).stream.translate(liftK)
 
     def getAll(offset: Int, limit: Int): D[List[UTransaction]] =
+      QS.getAll(offset, limit).to[List].liftConnectionIO
+
+    def getAll(offset: Int, limit: Int, order: OrderingString, sortBy: String): D[List[UTransaction]] =
       QS.getAll(offset, limit).to[List].liftConnectionIO
 
     def getAllIds: D[List[TxId]] =

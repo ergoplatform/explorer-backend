@@ -24,10 +24,10 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
-import org.ergoplatform.explorer.protocol.{sigma, TxValidation}
+import org.ergoplatform.explorer.protocol.{TxValidation, sigma}
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import tofu.syntax.raise._
@@ -38,7 +38,7 @@ trait OffChainService[F[_]] {
 
   /** Get unconfirmed transactions.
     */
-  def getUnconfirmedTxs(paging: Paging): F[Items[UTransactionInfo]]
+  def getUnconfirmedTxs(paging: Paging, sorting: Sorting): F[Items[UTransactionInfo]]
 
   /** Get unconfirmed transaction with a given `id`.
     */
@@ -97,11 +97,11 @@ object OffChainService {
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends OffChainService[F] {
 
-    def getUnconfirmedTxs(paging: Paging): F[Items[UTransactionInfo]] =
+    def getUnconfirmedTxs(paging: Paging, sorting: Sorting): F[Items[UTransactionInfo]] =
       uTxRepo.countAll.flatMap { total =>
         txRepo.getRecentIds.flatMap { recentlyConfirmed =>
           uTxRepo
-            .getAll(paging.offset, paging.limit)
+            .getAll(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
             .map(_.grouped(100))
             .flatMap(_.toList.flatTraverse(assembleUInfo))
             .map(confirmedDiff(_, total)(recentlyConfirmed))

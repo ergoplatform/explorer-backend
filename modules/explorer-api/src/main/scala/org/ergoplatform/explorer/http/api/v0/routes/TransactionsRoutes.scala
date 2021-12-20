@@ -35,9 +35,10 @@ final class TransactionsRoutes[
     }
 
   private def getUnconfirmedTxsR: HttpRoutes[F] =
-    interpreter.toRoutes(getUnconfirmedTxsDef) { paging =>
+    interpreter.toRoutes(getUnconfirmedTxsDef) {
+      case (paging, sorting) =>
       offChainService
-        .getUnconfirmedTxs(paging)
+        .getUnconfirmedTxs(paging, sorting)
         .adaptThrowable
         .value
     }
