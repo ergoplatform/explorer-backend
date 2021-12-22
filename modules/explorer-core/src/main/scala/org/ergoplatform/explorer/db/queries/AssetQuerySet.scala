@@ -83,7 +83,7 @@ object AssetQuerySet extends QuerySet {
     lh: LogHandler
   ): Query0[AggregatedAsset] =
     sql"""
-         |select agg.token_id, agg.total, t.name, t.decimals from (
+         |select agg.token_id, agg.total, t.name, t.decimals t.type from (
          |  select ia.token_id, sum(ia.value) as total from (
          |    select distinct on (a.index, a.token_id, a.box_id)
          |      a.token_id,
