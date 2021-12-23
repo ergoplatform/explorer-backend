@@ -77,7 +77,7 @@ object AddressesService {
       } yield {
         val totalBalance = balance + offChainBalance
         val tokensBalanceInfo =
-          assets.map { case AggregatedAsset(tokenId, amount, name, decimals) =>
+          assets.map { case AggregatedAsset(tokenId, amount, name, decimals, _) =>
             AssetSummary(tokenId, amount, name, decimals)
           }
         val indexedAssets = assets.map(a => a.tokenId -> a).toMap
