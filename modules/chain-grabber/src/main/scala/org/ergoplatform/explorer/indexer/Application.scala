@@ -12,8 +12,8 @@ import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
 import org.ergoplatform.explorer.indexer.processes.{ChainIndexer, EpochsIndexer}
 import org.ergoplatform.explorer.settings.pureConfigInstances._
 import org.ergoplatform.explorer.settings.IndexerSettings
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
 import pureconfig.generic.auto._
 import tofu.concurrent.MakeRef
 import tofu.logging.Logs

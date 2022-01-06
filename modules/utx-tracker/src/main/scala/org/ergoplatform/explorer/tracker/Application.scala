@@ -9,8 +9,8 @@ import monix.eval.{Task, TaskApp}
 import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.db.DoobieTrans
 import org.ergoplatform.explorer.settings.UtxTrackerSettings
-import org.http4s.client.blaze.BlazeClientBuilder
 import org.ergoplatform.explorer.settings.pureConfigInstances._
+import org.http4s.blaze.client.BlazeClientBuilder
 import pureconfig.generic.auto._
 
 import scala.concurrent.ExecutionContext.global
