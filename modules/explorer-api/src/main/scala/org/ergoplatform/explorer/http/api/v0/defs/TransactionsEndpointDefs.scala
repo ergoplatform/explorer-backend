@@ -1,9 +1,11 @@
 package org.ergoplatform.explorer.http.api.v0.defs
 
+import cats.data.NonEmptyMap
+import cats.syntax.option._
 import org.ergoplatform.ErgoLikeTransaction
 import org.ergoplatform.explorer.{Address, TxId}
 import org.ergoplatform.explorer.http.api.ApiErr
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, TransactionSummary, TxIdResponse, UTransactionInfo, UTransactionSummary}
 import org.ergoplatform.explorer.protocol.ergoInstances._
@@ -23,10 +25,11 @@ object TransactionsEndpointDefs {
       .in(PathPrefix / path[TxId])
       .out(jsonBody[TransactionSummary])
 
-  def getUnconfirmedTxsDef: Endpoint[Paging, ApiErr, Items[UTransactionInfo], Any] =
+  def getUnconfirmedTxsDef: Endpoint[(Paging, Sorting), ApiErr, Items[UTransactionInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "unconfirmed")
       .in(paging)
+      .in(sorting(allowedSortingFields, defaultFieldOpt = "creationtimestamp".some))
+      .in(PathPrefix / "unconfirmed")
       .out(jsonBody[Items[UTransactionInfo]])
 
   def getUnconfirmedTxByIdDef: Endpoint[TxId, ApiErr, UTransactionSummary, Any] =
@@ -52,4 +55,9 @@ object TransactionsEndpointDefs {
       .in(PathPrefix / "send")
       .in(jsonBody[ErgoLikeTransaction])
       .out(jsonBody[TxIdResponse])
+
+  val allowedSortingFields: NonEmptyMap[String, String] =
+    NonEmptyMap.of(
+        "creationtimestamp" -> "creation_timestamp"
+    )
 }
