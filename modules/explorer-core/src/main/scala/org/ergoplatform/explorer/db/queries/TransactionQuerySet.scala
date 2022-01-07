@@ -78,6 +78,15 @@ object TransactionQuerySet extends QuerySet {
          |offset ${offset.toLong} limit ${limit.toLong}
          |""".stripMargin.query[Transaction]
 
+  def getAll(minGix: Long, limit: Int)(implicit lh: LogHandler): Query0[Transaction] =
+    sql"""
+         |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain from node_transactions t
+         |where t.main_chain = true
+         |  and t.global_index >= $minGix
+         |  and t.global_index < ${minGix + limit}
+         |order by t.global_index asc
+         |""".stripMargin.query[Transaction]
+
   def countRelatedToAddress(address: Address)(implicit lh: LogHandler): Query0[Int] =
     sql"""
          |select count(distinct t.id) from node_transactions t

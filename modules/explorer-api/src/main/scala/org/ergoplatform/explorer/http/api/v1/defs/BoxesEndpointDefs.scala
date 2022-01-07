@@ -30,6 +30,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     getUnspentOutputsByErgoTreeTemplateHashDef ::
     getOutputsByAddressDef ::
     getUnspentOutputsByAddressDef ::
+    streamOutputsByGixDef ::
     searchUnspentOutputsByTokensUnionDef ::
     searchUnspentOutputsDef ::
     searchOutputsDef ::
@@ -54,6 +55,14 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(limit(settings.maxEntitiesPerRequest))
       .out(streamBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
       .description("Get a stream of unspent outputs ordered by global index")
+
+  def streamOutputsByGixDef: Endpoint[(Long, Int), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    baseEndpointDef.get
+      .in(PathPrefix / "byGlobalIndex" / "stream")
+      .in(query[Long]("minGix").validate(Validator.min(0L)).description("Min global index (in blockchain) of a box"))
+      .in(limit(settings.maxEntitiesPerRequest))
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[OutputInfo]], CodecFormat.Json(), None))
+      .description("Get a stream of outputs ordered by global index")
 
   def streamOutputsByErgoTreeTemplateHashDef
     : Endpoint[(ErgoTreeTemplateHash, HeightRange), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =

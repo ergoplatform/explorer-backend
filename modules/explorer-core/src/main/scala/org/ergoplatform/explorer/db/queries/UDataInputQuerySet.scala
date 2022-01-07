@@ -19,7 +19,7 @@ object UDataInputQuerySet extends QuerySet {
     "box_id",
     "tx_id",
     "index"
-  ) // WT_ERG <-> WT_ADA
+  )
 
   def getAll(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[ExtendedUDataInput] =
     sql"""

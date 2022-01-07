@@ -12,6 +12,9 @@ final case class FullInput(
   outputTxId: TxId,
   value: Long, // amount of nanoERG in thee corresponding box
   outputIndex: Int, // index of the output in the transaction
+  outputGlobalIndex: Long,
+  outputCreatedAt: Int,
+  outputSettledAt: Int,
   ergoTree: HexString, // serialized and hex-encoded ErgoTree
   address: Address, // an address derived from ergoTree
   additionalRegisters: Json

@@ -24,7 +24,9 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   override def getByBoxId(boxId: BoxId): F[Option[ExtendedOutput]] = ???
 
-  def getAllUnspent(minGix: Long, limit: Int): fs2.Stream[F, Output] = ???
+  def streamAllUnspent(minGix: Long, limit: Int): fs2.Stream[F, Output] = ???
+
+  override def streamAll(minGix: Long, limit: Int): fs2.Stream[F, Output] = ???
 
   override def getAllByErgoTree(
     ergoTree: HexString,
@@ -102,7 +104,7 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   override def totalAddressesMain: F[Int] = ???
 
-  override def getAllUnspent(minHeight: Int, maxHeight: Int): fs2.Stream[F, Output] = ???
+  override def streamAllUnspent(minHeight: Int, maxHeight: Int): fs2.Stream[F, Output] = ???
 
   override def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] = ???
 
