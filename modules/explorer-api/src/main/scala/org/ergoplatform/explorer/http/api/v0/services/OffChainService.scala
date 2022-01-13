@@ -27,7 +27,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.v0.models.{TxIdResponse, UTransactionInfo, UTransactionSummary}
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
-import org.ergoplatform.explorer.protocol.{TxValidation, sigma}
+import org.ergoplatform.explorer.protocol.{sigma, TxValidation}
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import tofu.syntax.raise._
