@@ -7,7 +7,13 @@ import org.ergoplatform.explorer.{Address, TxId}
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.commonDirectives._
-import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, TransactionSummary, TxIdResponse, UTransactionInfo, UTransactionSummary}
+import org.ergoplatform.explorer.http.api.v0.models.{
+  TransactionInfo,
+  TransactionSummary,
+  TxIdResponse,
+  UTransactionInfo,
+  UTransactionSummary
+}
 import org.ergoplatform.explorer.protocol.ergoInstances._
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -37,8 +43,7 @@ object TransactionsEndpointDefs {
       .in(PathPrefix / "unconfirmed" / path[TxId])
       .out(jsonBody[UTransactionSummary])
 
-  def getUnconfirmedTxsByAddressDef
-    : Endpoint[(Paging, Address), ApiErr, Items[UTransactionInfo], Any] =
+  def getUnconfirmedTxsByAddressDef: Endpoint[(Paging, Address), ApiErr, Items[UTransactionInfo], Any] =
     baseEndpointDef.get
       .in(paging)
       .in(PathPrefix / "unconfirmed" / "byAddress" / path[Address])
@@ -58,6 +63,7 @@ object TransactionsEndpointDefs {
 
   val allowedSortingFields: NonEmptyMap[String, String] =
     NonEmptyMap.of(
-        "creationtimestamp" -> "creation_timestamp"
+      "creationtimestamp" -> "creation_timestamp",
+      "size"              -> "size"
     )
 }
