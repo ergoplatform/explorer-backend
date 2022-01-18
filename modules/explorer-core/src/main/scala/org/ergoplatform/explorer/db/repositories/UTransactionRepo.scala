@@ -45,6 +45,10 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, UTransaction]
 
+  /** Get all unconfirmed transactions.
+    */
+  def getAll(offset: Int, limit: Int): D[List[UTransaction]]
+
   /** Get all unconfirmed transactions with sorting
     */
   def getAll(offset: Int, limit: Int, order: OrderingString, sortBy: String): D[List[UTransaction]]
@@ -98,6 +102,9 @@ object UTransactionRepo {
 
     def streamRelatedToErgoTree(ergoTree: ErgoTree, offset: Int, limit: Int): Stream[D, UTransaction] =
       QS.getAllRelatedToErgoTree(ergoTree.value, offset, limit).stream.translate(liftK)
+
+    def getAll(offset: Int, limit: Int): D[List[UTransaction]] =
+      QS.getAll(offset, limit).to[List].liftConnectionIO
 
     def getAll(offset: Int, limit: Int, order: OrderingString, sortBy: String): D[List[UTransaction]] =
       QS.getAll(offset, limit).to[List].liftConnectionIO
