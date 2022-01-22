@@ -12,7 +12,7 @@ final case class NetworkState(
   height: Int,
   maxBoxGix: Long,
   maxTxGix: Long,
-  params: EpochParameters
+  params: EpochInfo
 )
 
 object NetworkState {
