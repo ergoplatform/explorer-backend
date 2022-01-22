@@ -9,7 +9,6 @@ import sttp.tapir.{Schema, Validator}
   */
 @derive(encoder, decoder)
 final case class EpochInfo(
-  id: Int,
   height: Int,
   storageFeeFactor: Int,
   minValuePerByte: Int,
@@ -29,7 +28,6 @@ object EpochInfo {
 
   def apply(params: EpochParameters): EpochInfo =
     new EpochInfo(
-      params.id,
       params.height,
       params.storageFeeFactor,
       params.minValuePerByte,
