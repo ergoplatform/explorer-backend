@@ -70,7 +70,7 @@ object UAssetQuerySet extends QuerySet {
 
   def aggregateUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[AggregatedAsset] =
     sql"""
-         |select agg.token_id, agg.total, t.name, t.decimals from (
+         |select agg.token_id, agg.total, t.name, t.decimals, t.type from (
          |  select ia.token_id, sum(ia.value) as total from (
          |    select
          |      a.token_id,
@@ -78,7 +78,7 @@ object UAssetQuerySet extends QuerySet {
          |      a.value
          |    from node_u_assets a
          |    inner join (
-         |      select o.box_id from node_outputs o
+         |      select o.box_id from node_u_outputs o
          |      left join node_u_inputs i on i.box_id = o.box_id
          |      where i.box_id is null and o.ergo_tree = $ergoTree
          |    ) as uo on uo.box_id = a.box_id
