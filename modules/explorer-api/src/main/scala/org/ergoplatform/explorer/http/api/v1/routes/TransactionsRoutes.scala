@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.routes
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
-import org.ergoplatform.explorer.http.api.ApiErr
+import org.ergoplatform.explorer.http.api.{streaming, ApiErr}
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
@@ -17,10 +17,10 @@ final class TransactionsRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](settings: RequestsSettings, service: Transactions[F])(implicit opts: Http4sServerOptions[F, F]) {
 
-  val defs = new TransactionsEndpointDefs(settings)
+  val defs = new TransactionsEndpointDefs[F](settings)
 
   val routes: HttpRoutes[F] =
-    getByInputsScriptTemplateR <+> getByIdR
+    streamByGixR <+> getByInputsScriptTemplateR <+> getByIdR
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -36,6 +36,11 @@ final class TransactionsRoutes[
   private def getByInputsScriptTemplateR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getByInputsScriptTemplateDef) { case (template, paging, ordering) =>
       service.getByInputsScriptTemplate(template, paging, ordering).adaptThrowable.value
+    }
+
+  private def streamByGixR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.streamByGixDef) { case (minGix, limit) =>
+      streaming.bytesStream(service.streamAll(minGix, limit))
     }
 }
 

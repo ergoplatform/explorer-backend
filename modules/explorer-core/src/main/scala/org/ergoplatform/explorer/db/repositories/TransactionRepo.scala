@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
-import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, BlockId, TxId}
+import org.ergoplatform.explorer.{Address, BlockId, ErgoTreeTemplateHash, TxId}
 
 /** [[Transaction]] data access operations.
   */
@@ -55,6 +55,8 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int
   ): S[D, Transaction]
+
+  def streamTransactions(minGix: Long, limit: Int): S[D, Transaction]
 
   /** Get total number of transactions related to a given `address`.
     */
@@ -138,6 +140,9 @@ object TransactionRepo {
       limit: Int
     ): Stream[D, Transaction] =
       QS.getAllRelatedToAddress(address, offset, limit).stream.translate(liftK)
+
+    def streamTransactions(minGix: Long, limit: Int): Stream[D, Transaction] =
+      QS.getAll(minGix, limit).stream.translate(liftK)
 
     def countRelatedToAddress(address: Address): D[Int] =
       QS.countRelatedToAddress(address).unique.liftConnectionIO

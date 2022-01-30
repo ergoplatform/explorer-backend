@@ -17,6 +17,9 @@ final case class InputInfo(
   outputBlockId: BlockId,
   outputTransactionId: TxId,
   outputIndex: Int,
+  outputGlobalIndex: Long,
+  outputCreatedAt: Int,
+  outputSettledAt: Int,
   ergoTree: HexString,
   address: Address,
   assets: List[AssetInstanceInfo],
@@ -36,6 +39,9 @@ object InputInfo {
         _.description("ID of the transaction outputting corresponding box")
       )
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
+      .modify(_.outputGlobalIndex)(_.description("Global index of the output corresponding this input"))
+      .modify(_.outputCreatedAt)(_.description("Height the output corresponding this input was created at"))
+      .modify(_.outputSettledAt)(_.description("Height the output corresponding this input was settled at"))
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
 
   implicit val validator: Validator[InputInfo] = schema.validator
@@ -56,6 +62,9 @@ object InputInfo {
       i.outputHeaderId,
       i.outputTxId,
       i.outputIndex,
+      i.outputGlobalIndex,
+      i.outputCreatedAt,
+      i.outputSettledAt,
       i.ergoTree,
       i.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
