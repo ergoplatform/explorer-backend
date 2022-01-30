@@ -13,7 +13,7 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UTransaction
 import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{AssetInstanceInfo, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
 import org.ergoplatform.explorer.http.api.v1.models.{Balance, TotalBalance, UTransactionInfo}
@@ -21,7 +21,7 @@ import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
 import org.ergoplatform.explorer.protocol.sigma.{addressToErgoTreeHex, addressToErgoTreeNewtype}
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
-import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, HexString, TxId}
+import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, HexString, TokenId, TxId}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import tofu.Throws
 import tofu.syntax.monadic._
@@ -82,15 +82,53 @@ object Mempool {
               if (outputInfo.ergoTree != hexString) sum + outputInfo.value
               else sum
             }
-            val newB = balance.nanoErgs - debitSum
-            Balance(newB, List())
+
+            val debitSumTokenGroups = transactionInfo.outputs
+              .foldLeft(Map[TokenId, AssetInstanceInfo]()) { case (groupedTokens, outputInfo) =>
+                if (outputInfo.ergoTree != hexString)
+                  outputInfo.assets.foldLeft(groupedTokens) { case (gT, asset) =>
+                    val gTAsset = gT.getOrElse(asset.tokenId, asset.copy(amount = 0L))
+                    gT + (asset.tokenId -> gTAsset.copy(amount = gTAsset.amount + asset.amount))
+                  }
+                else groupedTokens
+              }
+
+            val newTokensBalance = balance.tokens.map { token =>
+              debitSumTokenGroups.get(token.tokenId).map { assetInfo =>
+                token.copy(amount = token.amount - assetInfo.amount)
+              } match {
+                case Some(value) => value
+                case None        => token
+              }
+            }
+
+            Balance(balance.nanoErgs - debitSum, newTokensBalance)
           case _ =>
             val creditSum = transactionInfo.outputs.foldLeft(0L) { case (sum, outputInfo) =>
               if (outputInfo.ergoTree == hexString) sum + outputInfo.value
               else sum
             }
-            val newB = balance.nanoErgs + creditSum
-            Balance(newB, List())
+
+            val creditSumTokenGroups = transactionInfo.outputs
+              .foldLeft(Map[TokenId, AssetInstanceInfo]()) { case (groupedTokens, outputInfo) =>
+                if (outputInfo.ergoTree == hexString)
+                  outputInfo.assets.foldLeft(groupedTokens) { case (gT, asset) =>
+                    val gTAsset = gT.getOrElse(asset.tokenId, asset.copy(amount = 0L))
+                    gT + (asset.tokenId -> gTAsset.copy(amount = gTAsset.amount + asset.amount))
+                  }
+                else groupedTokens
+              }
+
+            val newTokensBalance = balance.tokens.map { token =>
+              creditSumTokenGroups.get(token.tokenId).map { assetInfo =>
+                token.copy(amount = token.amount + assetInfo.amount)
+              } match {
+                case Some(value) => value
+                case None        => token
+              }
+            }
+
+            Balance(balance.nanoErgs + creditSum, newTokensBalance)
         }
       }
 
