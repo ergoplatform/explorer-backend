@@ -4,7 +4,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.Json
 import org.ergoplatform.explorer._
-import org.ergoplatform.explorer.db.models.Output
+import org.ergoplatform.explorer.db.models.{Output, UOutput}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput, ExtendedUAsset, ExtendedUOutput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import sttp.tapir.{Schema, SchemaType, Validator}
@@ -47,25 +47,14 @@ object UOutputInfo {
     )
 
   def apply(
-             o: ExtendedUOutput,
-             assets: List[ExtendedUAsset]
+    o: ExtendedUOutput,
+    assets: List[ExtendedUAsset]
   ): UOutputInfo =
-    UOutputInfo(
-      o.boxId,
-      o.txId,
-      o.value,
-      o.index,
-      o.creationHeight,
-      o.ergoTree,
-      o.address,
-      assets.sortBy(_.index).map(AssetInstanceInfo(_)),
-      o.additionalRegisters,
-      o.spendingTxId
-    )
+    unspent(o.output, assets).copy(spentTransactionId = o.spendingTxId)
 
   def unspent(
-               o: ExtendedUOutput,
-               assets: List[ExtendedUAsset]
+    o: UOutput,
+    assets: List[ExtendedUAsset]
   ): UOutputInfo =
     UOutputInfo(
       o.boxId,
@@ -77,6 +66,6 @@ object UOutputInfo {
       o.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       o.additionalRegisters,
-      None,
+      None
     )
 }
