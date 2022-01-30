@@ -16,12 +16,12 @@ import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
-import org.ergoplatform.explorer.http.api.v1.models.UTransactionInfo
+import org.ergoplatform.explorer.http.api.v1.models.{Balance, TotalBalance, UTransactionInfo}
 import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
-import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
+import org.ergoplatform.explorer.protocol.sigma.{addressToErgoTreeHex, addressToErgoTreeNewtype}
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
-import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
+import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, HexString, TxId}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import tofu.Throws
 import tofu.syntax.monadic._
@@ -39,6 +39,11 @@ trait Mempool[F[_]] {
     address: Address,
     paging: Paging
   ): F[Items[UTransactionInfo]]
+
+  def getUnconfirmedBalanceByAddress(
+    address: Address,
+    confirmedBalance: Balance
+  ): F[TotalBalance]
 
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 }
@@ -63,6 +68,60 @@ object Mempool {
     extends Mempool[F] {
 
     import repo._
+
+    def buildUnconfirmedBalance(
+      items: List[UTransactionInfo],
+      confirmedBalance: Balance,
+      ergoTree: ErgoTree,
+      hexString: HexString
+    ): Balance =
+      items.foldLeft(confirmedBalance) { case (balance, transactionInfo) =>
+        transactionInfo.inputs.head.ergoTree match {
+          case ieT if ieT == ergoTree =>
+            val debitSum = transactionInfo.outputs.foldLeft(0L) { case (sum, outputInfo) =>
+              if (outputInfo.ergoTree != hexString) sum + outputInfo.value
+              else sum
+            }
+            val newB = balance.nanoErgs - debitSum
+            Balance(newB, List())
+          case _ =>
+            val creditSum = transactionInfo.outputs.foldLeft(0L) { case (sum, outputInfo) =>
+              if (outputInfo.ergoTree == hexString) sum + outputInfo.value
+              else sum
+            }
+            val newB = balance.nanoErgs + creditSum
+            Balance(newB, List())
+        }
+      }
+
+    def getUnconfirmedBalanceByAddress(
+      address: Address,
+      confirmedBalance: Balance
+    ): F[TotalBalance] = {
+      val ergoTree  = addressToErgoTreeNewtype(address)
+      val hexString = addressToErgoTreeHex(address)
+
+      txs
+        .countByErgoTree(ergoTree.value)
+        .flatMap { total =>
+          txs
+            .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+            .chunkN(settings.chunkSize)
+            .through(makeTransaction)
+            .to[List]
+            .map { poolItems =>
+              total match {
+                case 0 => TotalBalance(confirmedBalance, Balance.empty)
+                case _ =>
+                  TotalBalance(
+                    confirmedBalance,
+                    buildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, hexString)
+                  )
+              }
+            }
+        }
+        .thrushK(trans.xa)
+    }
 
     def getByErgoTree(ergoTree: ErgoTree, paging: Paging): F[Items[UTransactionInfo]] =
       txs

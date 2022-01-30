@@ -55,7 +55,7 @@ object RoutesV1Bundle {
       tokensRoutes    = TokensRoutes(requestsSettings, tokens)
       assetsRoutes    = AssetsRoutes(requestsSettings, assets, tokens)
       txsRoutes       = TransactionsRoutes(requestsSettings, transactions)
-      addressesRoutes = AddressesRoutes(requestsSettings, transactions, addresses)
+      addressesRoutes = AddressesRoutes(requestsSettings, transactions, addresses, mempool)
       docs            = DocsRoutes(requestsSettings)
       routes =
         infoRoutes <+> txsRoutes <+> boxesRoutes <+> epochsRoutes <+> tokensRoutes <+> assetsRoutes <+> addressesRoutes <+> blocksRoutes <+> mempoolRoutes <+> docs
