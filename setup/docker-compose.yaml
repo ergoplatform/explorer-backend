@@ -1,0 +1,64 @@
+version: '3.4'
+
+services:
+  explorer-postgres:
+    image: postgres:11-alpine
+    container_name: explorer-postgres
+    shm_size: 4g
+    environment:
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+      - ./data/postgres:/var/lib/postgresql/data:rw
+  explorer-redis:
+    image: redis:latest
+    container_name: explorer-redis
+    restart: always
+    command: ["redis-server"]
+    ports:
+       - "127.0.0.1:6379:6379"
+    volumes:
+      - ./data/redis:/usr/local/etc/redis
+  chain-grabber:
+    container_name: chain-grabber
+    build:
+      context: ..
+      dockerfile: modules/chain-grabber/Dockerfile
+#    volumes:
+#      - ./modules/chain-grabber/src/main/resources:/explorer-backend/modules/chain-grabber/src/main/resources
+    depends_on:
+      - explorer-postgres
+      - explorer-redis
+  utx-broadcaster:
+    container_name: utx-broadcaster
+    build:
+      context: ..
+      dockerfile: modules/utx-broadcaster/Dockerfile
+#    volumes:
+#      - ./modules/utx-broadcaster/src/main/resources:/explorer-backend/modules/utx-broadcaster/src/main/resources
+    depends_on:
+      - explorer-postgres
+      - explorer-redis
+  utx-tracker:
+    container_name: utx-tracker
+    build:
+      context: ..
+      dockerfile: modules/utx-tracker/Dockerfile
+#    volumes:
+#      - ./modules/utx-tracker/src/main/resources:/explorer-backend/modules/utx-tracker/src/main/resources
+    depends_on:
+      - explorer-postgres
+      - explorer-redis
+  explorer-api:
+    container_name: explorer-api
+    build:
+      context: ..
+      dockerfile: modules/explorer-api/Dockerfile
+#    volumes:
+#      - ./modules/explorer-api/src/main/resources:/explorer-backend/modules/explorer-api/src/main/resources
+#      - ./modules/explorer-api/src/main/scala/org/ergoplatform/explorer:/explorer-backend/modules/explorer-api/src/main/scala/org/ergoplatform/explorer
+    depends_on:
+      - explorer-postgres
+      - explorer-redis
