@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.{BlockInfoRepo, EpochInfoRepo, StatsRepo}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.{NetworkState, NetworkStats}
+import org.ergoplatform.explorer.http.api.v1.models.{EpochInfo, NetworkState, NetworkStats}
 import tofu.syntax.monadic._
 
 trait Networks[F[_]] {
@@ -35,8 +35,9 @@ object Networks {
     def getState: F[Option[NetworkState]] = {
       val queryT =
         for {
-          block <- OptionT(blocks.getLastStats)
-          epoch <- OptionT(epochs.getLastEpoch)
+          block  <- OptionT(blocks.getLastStats)
+          params <- OptionT(epochs.getLastEpoch)
+          epoch = EpochInfo(params)
         } yield NetworkState(block.headerId, block.height, block.maxBoxGix, block.maxTxGix, epoch)
       queryT.value ||> trans.xa
     }
