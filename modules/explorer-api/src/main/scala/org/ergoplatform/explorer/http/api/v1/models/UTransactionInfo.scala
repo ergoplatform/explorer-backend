@@ -84,10 +84,10 @@ object UTransactionInfo {
         UDataInputInfo(in, relAssets)
       }
     val relatedOutputs = outputs
-      .filter(_.txId == tx.id)
-      .sortBy(_.index)
+      .filter(_.output.txId == tx.id)
+      .sortBy(_.output.index)
       .map { out =>
-        val relAssets = groupedOutAssets.get(out.boxId).toList.flatten
+        val relAssets = groupedOutAssets.get(out.output.boxId).toList.flatten
         UOutputInfo(out, relAssets)
       }
     apply(

@@ -115,7 +115,7 @@ object OffChainService {
         ins     <- txs.flatTraverse(tx => inRepo.getAllByTxId(tx.id))
         dataIns <- txs.flatTraverse(tx => dataInRepo.getAllByTxId(tx.id))
         outs    <- txs.flatTraverse(tx => outRepo.getAllByTxId(tx.id))
-        boxIdsNel = outs.map(_.boxId).toNel
+        boxIdsNel = outs.map(_.output.boxId).toNel
         assets <- boxIdsNel.toList.flatTraverse(assetRepo.getAllByBoxIds)
         txInfo = txOpt.map(UTransactionSummary(_, ins, dataIns, outs, assets))
       } yield txInfo) ||> trans.xa
@@ -161,7 +161,7 @@ object OffChainService {
           ins       <- OptionT.liftF(inRepo.getAllByTxIds(txIdsNel))
           dataIns   <- OptionT.liftF(dataInRepo.getAllByTxIds(txIdsNel))
           outs      <- OptionT.liftF(outRepo.getAllByTxIds(txIdsNel))
-          boxIdsNel <- OptionT.fromOption[D](outs.map(_.boxId).toNel)
+          boxIdsNel <- OptionT.fromOption[D](outs.map(_.output.boxId).toNel)
           assets    <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
           txInfo = UTransactionInfo.batch(txChunk, ins, dataIns, outs, assets)
         } yield txInfo).value.map(_.toList.flatten)
