@@ -6,6 +6,7 @@ import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
+import org.ergoplatform.explorer.db.models.UOutput
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUOutput
 import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 
@@ -62,6 +63,25 @@ object UOutputQuerySet extends QuerySet {
          |left join node_u_inputs i on i.box_id = o.box_id
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedUOutput]
+
+  def getAllUnspent(offset: Int, limit: Int)(implicit lh: LogHandler): Query0[UOutput] =
+    sql"""
+         |select distinct on (o.box_id)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  i.tx_id
+         |from node_u_outputs o
+         |left join node_u_inputs i on i.box_id = o.box_id
+         |where i.box_id is null
+         |offset $offset limit $limit
+         |""".stripMargin.query
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedUOutput] =
     sql"""

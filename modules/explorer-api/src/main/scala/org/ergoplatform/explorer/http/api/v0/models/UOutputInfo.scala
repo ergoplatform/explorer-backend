@@ -48,19 +48,19 @@ object UOutputInfo {
 
   def apply(out: ExtendedUOutput, assets: List[ExtendedUAsset]): UOutputInfo =
     UOutputInfo(
-      out.boxId,
-      out.txId,
-      out.value,
-      out.index,
-      out.creationHeight,
-      out.ergoTree,
-      out.address.some,
+      out.output.boxId,
+      out.output.txId,
+      out.output.value,
+      out.output.index,
+      out.output.creationHeight,
+      out.output.ergoTree,
+      out.output.address.some,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
-      registers.convolveJson(out.additionalRegisters)
+      registers.convolveJson(out.output.additionalRegisters)
     )
 
   def batch(outputs: List[ExtendedUOutput], assets: List[ExtendedUAsset]): List[UOutputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)
-    outputs.map(out => apply(out, groupedAssets.get(out.boxId).toList.flatten))
+    outputs.map(out => apply(out, groupedAssets.get(out.output.boxId).toList.flatten))
   }
 }
