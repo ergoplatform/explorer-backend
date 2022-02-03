@@ -36,6 +36,12 @@ trait Boxes[F[_]] {
     */
   def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]]
 
+  def getOutputsByAddressFilteredMempool(
+    address: Address,
+    paging: Paging,
+    excludedBoxes: List[BoxId]
+  ): F[Items[OutputInfo]]
+
   /** Get unspent outputs with the given `address` in proposition.
     */
   def getUnspentOutputsByAddress(address: Address, paging: Paging, ord: SortOrder): F[Items[OutputInfo]]
@@ -130,6 +136,26 @@ object Boxes {
       } yield OutputInfo(box, assets)).value.thrushK(trans.xa)
 
     def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]] = {
+      val ergoTree = addressToErgoTreeHex(address)
+      outputs
+        .countAllByErgoTree(ergoTree)
+        .flatMap { total =>
+          outputs
+            .streamAllByErgoTree(ergoTree, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(toOutputInfo)
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
+    }
+
+    def getOutputsByAddressFilteredMempool(
+      address: Address,
+      paging: Paging,
+      excludedBoxes: List[BoxId]
+    ): F[Items[OutputInfo]] = {
+      // TODO: exclude spent BoxIDS from Outputs in Query
       val ergoTree = addressToErgoTreeHex(address)
       outputs
         .countAllByErgoTree(ergoTree)

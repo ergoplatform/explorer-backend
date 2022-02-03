@@ -5,7 +5,7 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo, OutputInfoM}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
@@ -123,11 +123,11 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def getOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
+  def getOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, OutputInfoM, Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byAddress" / path[Address])
       .in(paging(settings.maxEntitiesPerRequest))
-      .out(jsonBody[Items[OutputInfo]])
+      .out(jsonBody[OutputInfoM])
 
   def getUnspentOutputsByAddressDef: Endpoint[(Address, Paging, SortOrder), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get

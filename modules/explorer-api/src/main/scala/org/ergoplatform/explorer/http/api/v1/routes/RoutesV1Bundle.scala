@@ -48,7 +48,7 @@ object RoutesV1Bundle {
       addresses                 <- Addresses(trans)
       mempool                   <- Mempool(serviceSettings, utxCacheSettings, redis)(trans)
       infoRoutes      = StatsRoutes(infos)
-      boxesRoutes     = BoxesRoutes(requestsSettings, boxes)
+      boxesRoutes     = BoxesRoutes(requestsSettings, boxes, mempool)
       epochsRoutes    = EpochsRoutes(epochs)
       blocksRoutes    = BlocksRoutes(requestsSettings, blocks)
       mempoolRoutes   = MempoolRoutes(mempool)
