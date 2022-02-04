@@ -39,7 +39,7 @@ object HttpApi {
       v0 <- Resource.eval(RoutesV0Bundle(settings.protocol, settings.utxCache, redis)(trans))
       v1 <- Resource.eval(RoutesV1Bundle(settings.service, settings.requests, settings.utxCache, redis)(trans))
       routes     = v0.routes <+> v1.routes
-      corsRoutes = CORS(routes)
+      corsRoutes = CORS(routes, CORS.DefaultCORSConfig)
       http <- BlazeServerBuilder[F](ec)
                 .bindHttp(settings.http.port, settings.http.host)
                 .withHttpApp(Router("/" -> corsRoutes).orNotFound)
