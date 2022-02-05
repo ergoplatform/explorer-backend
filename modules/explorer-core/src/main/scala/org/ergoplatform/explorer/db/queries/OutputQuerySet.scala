@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.Fragments.notIn
 import doobie.util.query.Query0
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.constraints.OrderingString
@@ -87,6 +88,40 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
+  def getUnspentMainByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    excludedBoxes: NonEmptyList[BoxId]
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val lim     = fr"offset $offset limit $limit"
+    val queryFr = fr"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.settlement_height,
+         |  o.index,
+         |  o.global_index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  i.tx_id
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |where o.main_chain = true and o.ergo_tree = $ergoTree
+         |and o.box_id
+         |""".stripMargin
+
+    (notIn(queryFr, excludedBoxes) ++ lim).query[ExtendedOutput]
+
+  }
+
   def countAllByErgoTree(
     ergoTree: HexString
   )(implicit lh: LogHandler): Query0[Int] =
@@ -95,6 +130,20 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |where o.main_chain = true and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
+
+  def countAllUnspentByErgoTree(
+    ergoTree: HexString,
+    excludedBoxes: NonEmptyList[BoxId]
+  )(implicit lh: LogHandler): Query0[Int] = {
+    val queryFr = fr"""
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |where o.main_chain = true and o.ergo_tree = $ergoTree
+         |and o.box_id
+         |""".stripMargin
+
+    notIn(queryFr, excludedBoxes).query[Int]
+  }
 
   def getMainByErgoTree(
     ergoTree: HexString,

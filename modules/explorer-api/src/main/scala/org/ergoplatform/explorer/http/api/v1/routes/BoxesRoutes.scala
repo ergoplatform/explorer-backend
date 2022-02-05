@@ -1,9 +1,11 @@
 package org.ergoplatform.explorer.http.api.v1.routes
 
+import cats.data.NonEmptyList
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.BoxId
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
@@ -118,11 +120,13 @@ final class BoxesRoutes[
   private def getOutputsByAddressR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getOutputsByAddressDef) { case (address, paging) =>
       (for {
-        sBoxId <- mempool.getSpentOutputsByAddress(address).adaptThrowable
-        uTxo   <- mempool.getOutputsByAddress(address).adaptThrowable
+        spentBoxIds    <- mempool.getUSpentOutputsByAddress(address).adaptThrowable
+        mempoolOutputs <- mempool.getUOutputsByAddress(address).adaptThrowable
         filteredOutputs <-
-          service.getOutputsByAddressFilteredMempool(address, paging, sBoxId).adaptThrowable
-      } yield OutputInfoM(filteredOutputs, uTxo)).value
+          service
+            .getFilteredOutputsByAddress(address, paging, NonEmptyList.ofInitLast(spentBoxIds, BoxId("")))
+            .adaptThrowable
+      } yield OutputInfoM(filteredOutputs, mempoolOutputs)).value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =

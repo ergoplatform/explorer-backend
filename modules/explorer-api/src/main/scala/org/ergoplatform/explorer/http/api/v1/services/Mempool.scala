@@ -46,9 +46,9 @@ trait Mempool[F[_]] {
     confirmedBalance: Balance
   ): F[TotalBalance]
 
-  def getOutputsByAddress(address: Address): F[Items[UOutputInfo]]
+  def getUOutputsByAddress(address: Address): F[Items[UOutputInfo]]
 
-  def getSpentOutputsByAddress(address: Address): F[List[BoxId]]
+  def getUSpentOutputsByAddress(address: Address): F[List[BoxId]]
 
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 
@@ -139,47 +139,38 @@ object Mempool {
         }
       }
 
-    def getOutputsByAddress(address: Address): F[Items[UOutputInfo]] = {
+    def getUOutputsByAddress(address: Address): F[Items[UOutputInfo]] = {
       val ergoTree  = addressToErgoTreeNewtype(address)
       val hexString = addressToErgoTreeHex(address)
 
       txs
         .countByErgoTree(ergoTree.value)
-        .flatMap { total =>
+        .flatMap { _ =>
           txs
             .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
             .chunkN(settings.chunkSize)
             .through(mkTransaction)
             .to[List]
             .map { poolItems =>
-              total match {
-                case 0 => Items(List.empty[UOutputInfo], 0)
-                case _ =>
-                  val outputs = poolItems.flatMap(_.outputs.filter(_.ergoTree == hexString))
-                  Items(outputs, outputs.length)
-              }
+              val outputs = poolItems.flatMap(_.outputs.filter(_.ergoTree == hexString))
+              Items(outputs, outputs.length)
             }
         }
         .thrushK(trans.xa)
     }
 
-    def getSpentOutputsByAddress(address: Address): F[List[BoxId]] = {
+    def getUSpentOutputsByAddress(address: Address): F[List[BoxId]] = {
       val ergoTree = addressToErgoTreeNewtype(address)
 
       txs
         .countByErgoTree(ergoTree.value)
-        .flatMap { total =>
+        .flatMap { _ =>
           txs
             .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
             .chunkN(settings.chunkSize)
             .through(mkTransaction)
             .to[List]
-            .map { poolItems =>
-              total match {
-                case 0 => List.empty[BoxId]
-                case _ => poolItems.flatMap(_.inputs.map(_.boxId))
-              }
-            }
+            .map(_.flatMap(_.inputs.map(_.boxId)))
         }
         .thrushK(trans.xa)
     }

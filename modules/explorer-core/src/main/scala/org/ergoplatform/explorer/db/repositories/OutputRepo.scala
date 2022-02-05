@@ -60,9 +60,23 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def streamAllByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
 
+  /** Get outputs with a given `ergoTree` from persistence,
+    * filtering spent boxIds from Mempool
+    */
+  def streamAllUnspentByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    excludedBoxes: NonEmptyList[BoxId]
+  ): S[D, ExtendedOutput]
+
   /** Count outputs with a given `ergoTree` from persistence.
     */
   def countAllByErgoTree(ergoTree: HexString): D[Int]
+
+  /** Count outputs with a given `ergoTree` from persistence, filtering spent boxIds from Mempool
+    */
+  def countAllUnspentByErgoTree(ergoTree: HexString, excludedBoxes: NonEmptyList[BoxId]): D[Int]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
@@ -239,12 +253,23 @@ object OutputRepo {
     def countAllByErgoTree(ergoTree: HexString): D[Int] =
       QS.countAllByErgoTree(ergoTree).unique.liftConnectionIO
 
+    def countAllUnspentByErgoTree(ergoTree: HexString, excludedBoxes: NonEmptyList[BoxId]): D[Int] =
+      QS.countAllUnspentByErgoTree(ergoTree, excludedBoxes).unique.liftConnectionIO
+
     def streamAllByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
+
+    def streamAllUnspentByErgoTree(
+      ergoTree: HexString,
+      offset: Int,
+      limit: Int,
+      excludedBoxes: NonEmptyList[BoxId]
+    ): Stream[D, ExtendedOutput] =
+      QS.getUnspentMainByErgoTree(ergoTree, offset, limit, excludedBoxes).stream.translate(liftK)
 
     def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): D[List[BoxId]] =
       QS.getAllMainUnspentIdsByErgoTree(ergoTree)
