@@ -34,7 +34,7 @@ class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(minGlobalIndex)
       .in(limit(settings.maxEntitiesPerRequest))
       .out(streamBody(Fs2Streams[F])(Schema.derived[List[BlockInfo]], CodecFormat.Json(), None))
-      .description("Get a stream of unspent outputs ordered by global index")
+      .description("Get a stream of blocks ordered by global index (height)")
 
   def getBlockSummaryByIdDef: Endpoint[BlockId, ApiErr, BlockSummary, Any] =
     baseEndpointDef.get
