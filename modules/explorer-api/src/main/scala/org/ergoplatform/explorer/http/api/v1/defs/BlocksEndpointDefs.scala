@@ -54,7 +54,7 @@ class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
 
   val allowedHeaderSortingFields: NonEmptyMap[String, String] =
     NonEmptyMap.of(
-      "timestamp"         -> "timestamp",
-      "height"            -> "height"
+      "timestamp" -> "timestamp",
+      "height"    -> "height"
     )
 }
