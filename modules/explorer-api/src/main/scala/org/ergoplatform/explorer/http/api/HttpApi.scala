@@ -14,7 +14,6 @@ import org.ergoplatform.explorer.settings.ApiSettings
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server}
-import org.http4s.syntax.kleisli._
 import sttp.tapir.server.http4s.Http4sServerOptions
 import tofu.Throws
 

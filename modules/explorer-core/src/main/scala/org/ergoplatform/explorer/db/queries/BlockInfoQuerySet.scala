@@ -71,7 +71,7 @@ object BlockInfoQuerySet extends QuerySet {
          |""".stripMargin.query[BlockStats]
 
   def getManyExtendedMain(
-    offset: Int,
+    offset: Long,
     limit: Int,
     ordering: OrderingString,
     orderBy: String

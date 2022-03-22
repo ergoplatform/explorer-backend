@@ -6,8 +6,10 @@ import cats.syntax.either._
 import cats.syntax.functor._
 import doobie.util.{Get, Put}
 import eu.timepit.refined.api.{Refined, Validate}
+import eu.timepit.refined.boolean.OneOf
+import eu.timepit.refined.predicates.all.Equal
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{refineV, W}
+import eu.timepit.refined.{W, refineV}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
@@ -17,6 +19,7 @@ import org.ergoplatform.explorer.constraints._
 import pureconfig.ConfigReader
 import pureconfig.error.CannotConvert
 import scorex.util.encode.Base16
+import shapeless.HNil
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
 import tofu.Raise.ContravariantRaise
@@ -29,19 +32,9 @@ package object explorer {
 
   object constraints {
 
-    final case class ValidOrdering()
+    type OrderingSpec = MatchesRegex[W.`"^(?i)(asc|desc)$"`.T]
 
-    object ValidOrdering {
-
-      implicit def validLongValidate: Validate.Plain[String, ValidOrdering] =
-        Validate.fromPredicate(
-          x => x.toLowerCase == "asc" || x.toLowerCase == "desc",
-          _ => "ValidOrdering",
-          ValidOrdering()
-        )
-    }
-
-    type OrderingString = String Refined ValidOrdering
+    type OrderingString = String Refined OrderingSpec
 
     type Base58Spec = MatchesRegex[W.`"[1-9A-HJ-NP-Za-km-z]+"`.T]
 
