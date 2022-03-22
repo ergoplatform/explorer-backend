@@ -18,7 +18,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.{BlockReferencesInfo, BlockSummary, FullBlockInfo}
-import org.ergoplatform.explorer.http.api.v1.models.BlockInfo
+import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo}
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{BlockId, CRaise}
 import tofu.syntax.raise._
@@ -37,6 +37,10 @@ trait Blocks[F[_]] {
   /** Stream blocks
     */
   def streamBlocks(minGix: Long, limit: Int): Stream[F, BlockInfo]
+  
+  /** Get a slice of block header items.
+    */
+  def getBlockHeaders(paging: Paging, sorting: Sorting): F[Items[BlockHeader]]
 }
 
 object Blocks {
@@ -103,6 +107,14 @@ object Blocks {
 
     def streamBlocks(minGix: Long, limit: Int): Stream[F, BlockInfo] =
       blockInfoRepo.stream(minGix, limit).map(BlockInfo(_)).thrushK(trans.xas)
+
+    def getBlockHeaders(paging: Paging, sorting: Sorting): F[Items[BlockHeader]] = {
+      headerRepo.getBestHeight.flatMap { total =>
+        headerRepo.getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
+          .map(_.map(BlockHeader(_)))
+          .map(Items(_, total))
+      } ||> trans.xa
+    }
 
     private def getFullBlockInfo(id: BlockId): Stream[D, Option[FullBlockInfo]] =
       for {
