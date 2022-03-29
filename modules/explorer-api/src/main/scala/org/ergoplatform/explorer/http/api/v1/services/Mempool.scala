@@ -11,19 +11,20 @@ import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.{BadRequest, FeatureNotSupported}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.{Output, UOutput, UTransaction}
+import org.ergoplatform.explorer.db.models.{UOutput, UTransaction}
 import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
-import org.ergoplatform.explorer.http.api.models.{AssetInstanceInfo, HeightRange, Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
-import org.ergoplatform.explorer.http.api.v1.models.{Balance, OutputInfo, TotalBalance, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{Balance, TotalBalance, UOutputInfo, UTransactionInfo}
 import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
 import org.ergoplatform.explorer.protocol.sigma.{addressToErgoTreeHex, addressToErgoTreeNewtype}
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
-import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, HexString, TokenId, TxId}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import org.ergoplatform.explorer.syntax.stream._
+import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.http.api.v1.utils.BuildUnconfirmedBalance
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import tofu.Throws
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
@@ -72,75 +73,11 @@ object Mempool {
 
     import repo._
 
-    def buildUnconfirmedBalance(
-      items: List[UTransactionInfo],
-      confirmedBalance: Balance,
-      ergoTree: ErgoTree,
-      hexString: HexString
-    ): Balance =
-      items.foldLeft(confirmedBalance) { case (balance, transactionInfo) =>
-        transactionInfo.inputs.head.ergoTree match {
-          case ieT if ieT == ergoTree =>
-            val debitSum = transactionInfo.outputs.foldLeft(0L) { case (sum, outputInfo) =>
-              if (outputInfo.ergoTree != hexString) sum + outputInfo.value
-              else sum
-            }
-
-            val debitSumTokenGroups = transactionInfo.outputs
-              .foldLeft(Map[TokenId, AssetInstanceInfo]()) { case (groupedTokens, outputInfo) =>
-                if (outputInfo.ergoTree != hexString)
-                  outputInfo.assets.foldLeft(groupedTokens) { case (gT, asset) =>
-                    val gTAsset = gT.getOrElse(asset.tokenId, asset.copy(amount = 0L))
-                    gT + (asset.tokenId -> gTAsset.copy(amount = gTAsset.amount + asset.amount))
-                  }
-                else groupedTokens
-              }
-
-            val newTokensBalance = balance.tokens.map { token =>
-              debitSumTokenGroups.get(token.tokenId).map { assetInfo =>
-                token.copy(amount = token.amount - assetInfo.amount)
-              } match {
-                case Some(value) => value
-                case None        => token
-              }
-            }
-
-            Balance(balance.nanoErgs - debitSum, newTokensBalance)
-          case _ =>
-            val creditSum = transactionInfo.outputs.foldLeft(0L) { case (sum, outputInfo) =>
-              if (outputInfo.ergoTree == hexString) sum + outputInfo.value
-              else sum
-            }
-
-            val creditSumTokenGroups = transactionInfo.outputs
-              .foldLeft(Map[TokenId, AssetInstanceInfo]()) { case (groupedTokens, outputInfo) =>
-                if (outputInfo.ergoTree == hexString)
-                  outputInfo.assets.foldLeft(groupedTokens) { case (gT, asset) =>
-                    val gTAsset = gT.getOrElse(asset.tokenId, asset.copy(amount = 0L))
-                    gT + (asset.tokenId -> gTAsset.copy(amount = gTAsset.amount + asset.amount))
-                  }
-                else groupedTokens
-              }
-
-            val newTokensBalance = balance.tokens.map { token =>
-              creditSumTokenGroups.get(token.tokenId).map { assetInfo =>
-                token.copy(amount = token.amount + assetInfo.amount)
-              } match {
-                case Some(value) => value
-                case None        => token
-              }
-            }
-
-            Balance(balance.nanoErgs + creditSum, newTokensBalance)
-        }
-      }
-
     def getUnconfirmedBalanceByAddress(
       address: Address,
       confirmedBalance: Balance
     ): F[TotalBalance] = {
-      val ergoTree  = addressToErgoTreeNewtype(address)
-      val hexString = addressToErgoTreeHex(address)
+      val ergoTree = addressToErgoTreeNewtype(address)
 
       txs
         .countByErgoTree(ergoTree.value)
@@ -156,7 +93,7 @@ object Mempool {
                 case _ =>
                   TotalBalance(
                     confirmedBalance,
-                    buildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, hexString)
+                    BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
                   )
               }
             }
