@@ -10,7 +10,7 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{Balance, TokenAmount, TotalBalance, TransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, Balance, TokenAmount, TotalBalance, TransactionInfo}
 import org.ergoplatform.explorer.protocol.sigma
 import tofu.syntax.monadic._
 
@@ -19,6 +19,8 @@ trait Addresses[F[_]] {
   def confirmedBalanceOf(address: Address, minConfirmations: Int): F[Balance]
 
   def totalBalanceOf(address: Address): F[TotalBalance]
+
+  def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo]]
 }
 
 object Addresses {
@@ -59,5 +61,12 @@ object Addresses {
         unconfirmed = Balance(offChainBalance, offChainAssets.map(TokenAmount(_)))
       )) ||> trans.xa
     }
+
+    // TODO: merge with branch i170 to collect unconfirmed Tx considering Mempool
+    private def AddressInfoOf(address: Address): AddressInfo = ???
+
+    def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo]] = ???
+    // build Map using private def AddressInfoOf
+
   }
 }

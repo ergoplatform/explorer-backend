@@ -20,7 +20,7 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
 
   val defs = new AddressesEndpointDefs(settings)
 
-  val routes: HttpRoutes[F] = getTxsByAddressR <+> getConfirmedBalanceR <+> getTotalBalanceR
+  val routes: HttpRoutes[F] = getTxsByAddressR <+> getConfirmedBalanceR <+> getTotalBalanceR <+> getBatchAddressInfo
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -37,6 +37,11 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
   private def getTotalBalanceR =
     interpreter.toRoutes(defs.getTotalBalanceDef) { addr =>
       addresses.totalBalanceOf(addr).adaptThrowable.value
+    }
+
+  private def getBatchAddressInfo =
+    interpreter.toRoutes(defs.getBatchAddressInfo) { batch =>
+      addresses.addressInfoOf(batch).adaptThrowable.value
     }
 }
 
