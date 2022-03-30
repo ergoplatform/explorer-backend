@@ -130,7 +130,11 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all outputs related to a given list of `txId`.
     */
-  def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]]
+  def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]]
+
+  /** Get all outputs related to a given list of `txId` for specific address if provided
+    */
+  def getAllByTxIds(txIds: NonEmptyList[TxId], ergoTree: Option[HexString]): D[List[ExtendedOutput]]
 
   /** Get all addresses matching the given `query`.
     */
@@ -328,6 +332,11 @@ object OutputRepo {
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
 
+    /** Get all outputs related to a given list of `txId` for specific address if provided
+      */
+    override def getAllByTxIds(txIds: NonEmptyList[TxId], ergoTree: Option[HexString]): D[List[ExtendedOutput]] =
+      QS.getAllByTxIds(txIds, ergoTree).to[List].liftConnectionIO
+
     def getAllLike(query: String): D[List[Address]] =
       QS.getAllLike(query).to[List].liftConnectionIO
 
@@ -407,5 +416,6 @@ object OutputRepo {
 
     def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): D[Int] =
       QS.countUnspentByAssetsUnion(templateHash, assets).unique.liftConnectionIO
+
   }
 }

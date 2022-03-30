@@ -43,7 +43,12 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   def countUnspentByTokenId(tokenId: TokenId): F[Int] = ???
 
-  def countAll(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]]): F[Int] = ???
+  def countAll(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]]
+  ): F[Int] = ???
 
   override def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): F[Long] = ???
 
@@ -108,7 +113,12 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   override def getAllByTokenId(tokenId: TokenId, offset: Int, limit: Int): fs2.Stream[F, ExtendedOutput] = ???
 
-  override def getUnspentByTokenId(tokenId: TokenId, offset: Int, limit: Int, ordering: OrderingString): fs2.Stream[F, Output] = ???
+  override def getUnspentByTokenId(
+    tokenId: TokenId,
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString
+  ): fs2.Stream[F, Output] = ???
 
   override def searchAll(
     templateHash: ErgoTreeTemplateHash,
@@ -119,17 +129,43 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
     limit: Int
   ): fs2.Stream[F, ExtendedOutput] = ???
 
-  def searchUnspent(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]], offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+  def searchUnspent(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]],
+    offset: Int,
+    limit: Int
+  ): fs2.Stream[F, Output] = ???
 
-  def countUnspent(templateHash: ErgoTreeTemplateHash, registers: Option[NonEmptyList[(RegisterId, String)]], constants: Option[NonEmptyList[(Int, String)]], assets: Option[NonEmptyList[TokenId]]): F[Int] = ???
+  def countUnspent(
+    templateHash: ErgoTreeTemplateHash,
+    registers: Option[NonEmptyList[(RegisterId, String)]],
+    constants: Option[NonEmptyList[(Int, String)]],
+    assets: Option[NonEmptyList[TokenId]]
+  ): F[Int] = ???
 
-  def searchUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId], offset: Int, limit: Int): fs2.Stream[F, Output] = ???
+  def searchUnspentByAssetsUnion(
+    templateHash: ErgoTreeTemplateHash,
+    assets: List[TokenId],
+    offset: Int,
+    limit: Int
+  ): fs2.Stream[F, Output] = ???
 
   def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): F[Int] = ???
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
-  def streamUnspentByErgoTree(ergoTree: HexString, offset: Int, limit: Int, ord: OrderingString): fs2.Stream[F, ExtendedOutput] = ???
+  def streamUnspentByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    ord: OrderingString
+  ): fs2.Stream[F, ExtendedOutput] = ???
+
+  /** Get all outputs related to a given list of `txId`.
+    */
+  override def getAllByTxIds(txIds: NonEmptyList[TxId], ergoTree: Option[HexString]): F[List[ExtendedOutput]] = ???
 }
 
 object TestOutputRepo {

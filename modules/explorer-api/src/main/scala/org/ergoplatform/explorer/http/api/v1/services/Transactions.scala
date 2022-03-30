@@ -16,9 +16,10 @@ import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
 import org.ergoplatform.explorer.settings.ServiceSettings
-import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, TxId}
+import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, HexString, TxId}
 import tofu.syntax.monadic._
 import tofu.syntax.streams.compile._
+import org.ergoplatform.explorer.protocol.sigma
 
 trait Transactions[F[_]] {
 
@@ -32,7 +33,8 @@ trait Transactions[F[_]] {
 
   def getByAddress(
     address: Address,
-    paging: Paging
+    paging: Paging,
+    onlyAddrBox: Boolean
   ): F[Items[TransactionInfo]]
 
   def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo]
@@ -57,7 +59,7 @@ object Transactions {
     outputs: OutputRepo[D, Stream],
     transactions: TransactionRepo[D, Stream],
     headers: HeaderRepo[D]
-  )(trans: D Trans F)
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends Transactions[F] {
 
     def get(id: TxId): F[Option[TransactionInfo]] = {
@@ -88,7 +90,7 @@ object Transactions {
           transactions
             .getByInputsScriptTemplate(template, paging.offset, paging.limit, ordering.value)
             .chunkN(serviceSettings.chunkSize)
-            .through(makeTransaction)
+            .through(makeTransaction())
             .to[List]
             .map(Items(_, total))
         }
@@ -96,7 +98,8 @@ object Transactions {
 
     def getByAddress(
       address: Address,
-      paging: Paging
+      paging: Paging,
+      onlyAddrBox: Boolean
     ): F[Items[TransactionInfo]] =
       transactions
         .countRelatedToAddress(address)
@@ -104,7 +107,7 @@ object Transactions {
           transactions
             .streamRelatedToAddress(address, paging.offset, paging.limit)
             .chunkN(serviceSettings.chunkSize)
-            .through(makeTransaction)
+            .through(makeTransaction(onlyAddrBox, Some(sigma.addressToErgoTreeHex(address))))
             .to[List]
             .map(Items(_, total))
         }
@@ -114,18 +117,23 @@ object Transactions {
       transactions
         .streamTransactions(minGix, limit)
         .chunkN(serviceSettings.chunkSize)
-        .through(makeTransaction)
+        .through(makeTransaction())
         .thrushK(trans.xas)
 
-    private def makeTransaction: Pipe[D, Chunk[Transaction], TransactionInfo] =
+    private def makeTransaction(
+      onlyAddrBox: Boolean        = false,
+      ergoTree: Option[HexString] = None
+    ): Pipe[D, Chunk[Transaction], TransactionInfo] =
       for {
-        chunk      <- _
-        txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
-        ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
-        inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
-        dataIns    <- Stream.eval(dataInputs.getFullByTxIds(txIds))
-        outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
+        chunk    <- _
+        txIds    <- Stream.emit(chunk.map(_.id).toNel).unNone
+        ins      <- Stream.eval(inputs.getFullByTxIds(txIds))
+        inIds    <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
+        inAssets <- Stream.eval(assets.getAllByBoxIds(inIds))
+        dataIns  <- Stream.eval(dataInputs.getFullByTxIds(txIds))
+        outs <-
+          if (onlyAddrBox) Stream.eval(outputs.getAllByTxIds(txIds, ergoTree))
+          else Stream.eval(outputs.getAllByTxIds(txIds))
         outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
         outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
         bestHeight <- Stream.eval(headers.getBestHeight)

@@ -16,10 +16,11 @@ class AddressesEndpointDefs(settings: RequestsSettings) {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getTxsByAddressDef :: getConfirmedBalanceDef :: getTotalBalanceDef :: Nil
 
-  def getTxsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[TransactionInfo], Any] =
+  def getTxsByAddressDef: Endpoint[(Address, Paging, Boolean), ApiErr, Items[TransactionInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / path[Address] / "transactions")
       .in(paging(settings.maxEntitiesPerRequest))
+      .in(onlyAddressBoxes)
       .out(jsonBody[Items[TransactionInfo]])
 
   def getConfirmedBalanceDef: Endpoint[(Address, Int), ApiErr, Balance, Any] =

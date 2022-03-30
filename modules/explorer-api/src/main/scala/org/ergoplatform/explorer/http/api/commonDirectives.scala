@@ -27,6 +27,9 @@ object commonDirectives {
   val confirmations: EndpointInput[Int] =
     query[Option[Int]]("minConfirmations").map(_.getOrElse(0))(_.some)
 
+  val onlyAddressBoxes: EndpointInput[Boolean] =
+    query[Option[Boolean]](name = "onlyAddressBoxes").map(_.getOrElse(false))(_.some)
+
   val timespan: EndpointInput[FiniteDuration] =
     query[Option[String]]("timespan").map {
       _.flatMap(parseTimespan).getOrElse(FiniteDuration(365, TimeUnit.DAYS))

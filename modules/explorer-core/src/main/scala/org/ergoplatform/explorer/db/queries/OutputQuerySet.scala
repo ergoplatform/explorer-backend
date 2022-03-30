@@ -260,7 +260,8 @@ object OutputQuerySet extends QuerySet {
          |""".stripMargin.query[ExtendedOutput]
 
   def getAllByTxIds(
-    txIds: NonEmptyList[TxId]
+    txIds: NonEmptyList[TxId],
+    ergoTree: Option[HexString] = None
   )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
     val q =
       sql"""
@@ -283,9 +284,9 @@ object OutputQuerySet extends QuerySet {
            |from node_outputs o
            |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
            |""".stripMargin
-    (q ++ Fragments.in(fr"where o.tx_id", txIds))
+    (q ++ Fragments.in(fr"where o.tx_id", txIds) ++ Fragments.andOpt(ergoTree.map(x => fr"o.ergo_tree = $x")))
       .query[ExtendedOutput]
-  }
+  } // ++ Fragments.and(fr"")
 
   def getAllLike(substring: String)(implicit lh: LogHandler): Query0[Address] =
     sql"select distinct address from node_outputs where address like ${"%" + substring + "%"}"
