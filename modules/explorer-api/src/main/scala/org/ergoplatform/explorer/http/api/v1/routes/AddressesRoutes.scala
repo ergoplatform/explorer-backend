@@ -25,8 +25,8 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
   private def interpreter = Http4sServerInterpreter(opts)
 
   private def getTxsByAddressR =
-    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging) =>
-      transactions.getByAddress(addr, paging).adaptThrowable.value
+    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging, concise) =>
+      transactions.getByAddress(addr, paging, concise).adaptThrowable.value
     }
 
   private def getConfirmedBalanceR =
