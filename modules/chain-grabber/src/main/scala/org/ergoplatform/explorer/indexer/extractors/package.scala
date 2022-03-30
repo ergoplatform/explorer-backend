@@ -191,7 +191,7 @@ package object extractors {
 //    }
 
   implicit def scriptConstantsBuildFrom[F[_]: Monad]: BuildFrom[F, SlotData, List[ScriptConstant]] =
-    BuildFrom.pure(List.empty)
+    BuildFrom.pure(_ => List.empty)
 
   implicit def tokensBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Token]] =
     new TokensBuildFromEip4
