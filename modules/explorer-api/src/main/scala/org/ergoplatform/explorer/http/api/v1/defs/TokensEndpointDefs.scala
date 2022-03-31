@@ -4,7 +4,7 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.TokenInfo
+import org.ergoplatform.explorer.http.api.v1.models.{Eip0021, TokenInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import org.ergoplatform.explorer.{TokenId, TokenSymbol}
 import sttp.tapir._
@@ -47,4 +47,9 @@ final class TokensEndpointDefs(settings: RequestsSettings) {
       .in(ordering)
       .in(hideNfts)
       .out(jsonBody[Items[TokenInfo]])
+
+  def eip0021: Endpoint[Unit, ApiErr, Eip0021, Any] =
+    baseEndpointDef.get
+      .in(PathPrefix)
+      .out(jsonBody[Eip0021])
 }

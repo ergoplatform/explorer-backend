@@ -50,6 +50,9 @@ final class TokensRoutes[
     interpreter.toRoutes(defs.listDef) { case (paging, ordering, hideNfts) =>
       tokens.getAll(paging, ordering, hideNfts).adaptThrowable.value
     }
+
+  private def eip0021: HttpRoutes[F] =
+    interpreter.toRoutes(defs.eip0021)(_ => ???)
 }
 
 object TokensRoutes {

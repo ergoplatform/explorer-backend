@@ -11,7 +11,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.TokenInfo
+import org.ergoplatform.explorer.http.api.v1.models.{Eip0021, TokenInfo}
 import tofu.syntax.monadic._
 import tofu.syntax.foption._
 
@@ -30,6 +30,11 @@ trait Tokens[F[_]] {
   /** Get all issued tokens.
     */
   def getAll(paging: Paging, ordering: SortOrder, hideNfts: Boolean): F[Items[TokenInfo]]
+
+  /** Get genuine tokens & blocked token (Eip0021)
+    */
+
+  def getEip0021TokenList: F[Eip0021]
 }
 
 object Tokens {
@@ -64,13 +69,21 @@ object Tokens {
         .thrushK(trans.xa)
 
     def getAll(paging: Paging, ordering: SortOrder, hideNfts: Boolean): F[Items[TokenInfo]] =
-      tokenRepo.countAll(hideNfts)
+      tokenRepo
+        .countAll(hideNfts)
         .flatMap { total =>
           tokenRepo
             .getAll(paging.offset, paging.limit, ordering.value, hideNfts)
             .map(_.map(TokenInfo(_)))
             .map(Items(_, total))
         }
+        .thrushK(trans.xa)
+
+    /** Get genuine tokens & blocked token (Eip0021)
+      */
+    override def getEip0021TokenList: F[Eip0021] =
+      tokenRepo.getEip0021TokenList
+        .map(Eip0021(_))
         .thrushK(trans.xa)
   }
 }

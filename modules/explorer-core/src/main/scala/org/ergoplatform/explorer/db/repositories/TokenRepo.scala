@@ -9,7 +9,7 @@ import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.Token
+import org.ergoplatform.explorer.db.models.{Eip0021TokenList, Token}
 import org.ergoplatform.explorer.{TokenId, TokenSymbol}
 import tofu.higherKind.derived.representableK
 import tofu.syntax.monadic._
@@ -27,7 +27,7 @@ trait TokenRepo[D[_]] {
 
   def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean): D[List[Token]]
 
-  def countAll(hideNfts: Boolean): D[Int]
+  def countAll(hideNfts: Boolean = false): D[Int]
 
   /** Get all tokens matching a given `idSubstring`.
     */
@@ -36,6 +36,8 @@ trait TokenRepo[D[_]] {
   /** Get the total number of tokens matching a given `idSubstring`.
     */
   def countAllLike(q: String): D[Int]
+
+  def getEip0021TokenList: D[Eip0021TokenList]
 }
 
 object TokenRepo {
@@ -67,5 +69,8 @@ object TokenRepo {
 
     def countAllLike(q: String): ConnectionIO[Int] =
       QS.countAllLike(q).unique
+
+    // TODO: Implement Query Set for Eip0021TokenList
+    def getEip0021TokenList: ConnectionIO[Eip0021TokenList] = ???
   }
 }
