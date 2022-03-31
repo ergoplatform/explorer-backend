@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.tracker
 
-import cats.effect.{Sync, Timer}
+import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.applicative._
 import cats.syntax.applicativeError._
@@ -22,11 +22,12 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.settings.{ProtocolSettings, UtxTrackerSettings}
 import org.ergoplatform.explorer.tracker.extractors._
 import tofu.{Context, MonadThrow, WithContext}
+import cats.effect.Temporal
 
 /** Synchronises local memory pool representation with the network.
   */
 final class UtxTracker[
-  F[_]: Timer: Logger: MonadThrow,
+  F[_]: Temporal: Logger: MonadThrow,
   D[_]: Monad
 ](
    settings: UtxTrackerSettings,
@@ -73,7 +74,7 @@ final class UtxTracker[
 
 object UtxTracker {
 
-  def apply[F[_]: Timer: Sync, D[_]: Monad: LiftConnectionIO](
+  def apply[F[_]: Temporal: Sync, D[_]: Monad: LiftConnectionIO](
     settings: UtxTrackerSettings,
     network: ErgoNetwork[F]
   )(xa: D ~> F): F[UtxTracker[F, D]] =

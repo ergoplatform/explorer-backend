@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.migration.migrations
 
-import cats.effect.{IO, Timer}
+import cats.effect.IO
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
@@ -20,13 +20,14 @@ import org.ergoplatform.explorer.{HexString, RegisterId}
 import tofu.syntax.monadic._
 
 import scala.util.Try
+import cats.effect.Temporal
 
 final class RegistersMigration(
   conf: ProcessingConfig,
   registers: BoxRegisterRepo[ConnectionIO],
   xa: Transactor[IO],
   log: Logger[IO]
-)(implicit timer: Timer[IO]) {
+)(implicit timer: Temporal[IO]) {
 
   def run: IO[Unit] = migrateBatch(conf.offset, conf.batchSize)
 
@@ -105,7 +106,7 @@ object RegistersMigration {
   def apply(
     conf: ProcessingConfig,
     xa: Transactor[IO]
-  )(implicit timer: Timer[IO]): IO[Unit] =
+  )(implicit timer: Temporal[IO]): IO[Unit] =
     for {
       logger <- Slf4jLogger.create[IO]
       repo   <- BoxRegisterRepo[IO, ConnectionIO]

@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.migration.migrations
 
-import cats.effect.{IO, Timer}
+import cats.effect.IO
 import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -17,6 +17,7 @@ import org.ergoplatform.explorer.migration.configs.ProcessingConfig
 import org.ergoplatform.explorer.protocol.TokenPropsParser
 import org.ergoplatform.explorer.{HexString, RegisterId, TokenId, TokenType}
 import tofu.syntax.monadic._
+import cats.effect.Temporal
 
 final class AssetsMigration(
   conf: ProcessingConfig,
@@ -24,7 +25,7 @@ final class AssetsMigration(
   txs: TransactionsService[IO],
   xa: Transactor[IO],
   log: Logger[IO]
-)(implicit timer: Timer[IO]) {
+)(implicit timer: Temporal[IO]) {
 
   def run: IO[Unit] = migrateBatch(conf.offset, conf.batchSize)
 
@@ -66,7 +67,7 @@ object AssetsMigration {
   def apply(
     conf: ProcessingConfig,
     xa: Transactor[IO]
-  )(implicit timer: Timer[IO], e: ErgoAddressEncoder): IO[Unit] =
+  )(implicit timer: Temporal[IO], e: ErgoAddressEncoder): IO[Unit] =
     for {
       logger    <- Slf4jLogger.create[IO]
       tokenRepo <- TokenRepo[IO, ConnectionIO]

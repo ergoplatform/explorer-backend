@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.data.NonEmptyList
-import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.effect.Concurrent
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
@@ -10,9 +10,10 @@ import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v0.services.AssetsService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
+import cats.effect.Temporal
 
 final class AssetsRoutes[
-  F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: ContextShift: Temporal: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: AssetsService[F, fs2.Stream])(
   implicit opts: Http4sServerOptions[F, F]
 ) {
@@ -45,7 +46,7 @@ final class AssetsRoutes[
 
 object AssetsRoutes {
 
-  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
+  def apply[F[_]: Concurrent: ContextShift: Temporal: Logger](
     service: AssetsService[F, fs2.Stream]
   )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new AssetsRoutes(service).routes

@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.db
 
-import cats.effect.{Async, Blocker, ContextShift, Resource, Sync}
+import cats.effect.{Async, Resource, Sync}
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import org.ergoplatform.explorer.settings.DbSettings
@@ -13,7 +13,7 @@ object DoobieTrans {
   ): Resource[F, HikariTransactor[F]] =
     for {
       cp      <- ExecutionContexts.fixedThreadPool(size = settings.cpSize)
-      blocker <- Blocker[F]
+      blocker <- Resource.unit[F]
       xa <- HikariTransactor.newHikariTransactor[F](
               driverClassName = "org.postgresql.Driver",
               settings.url,

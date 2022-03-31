@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v1.routes
 
-import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.effect.Concurrent
 import cats.syntax.semigroupk._
 import org.ergoplatform.explorer.http.api.{ApiErr, streaming}
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
@@ -9,9 +9,10 @@ import org.ergoplatform.explorer.http.api.v1.defs.MempoolEndpointDefs
 import org.ergoplatform.explorer.http.api.v1.services.Mempool
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
+import cats.effect.Temporal
 
 final class MempoolRoutes[
-  F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: ContextShift: Temporal: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: Mempool[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   val defs = new MempoolEndpointDefs[F]
@@ -39,7 +40,7 @@ final class MempoolRoutes[
 object MempoolRoutes {
 
   def apply[
-    F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
+    F[_]: Concurrent: ContextShift: Temporal: AdaptThrowableEitherT[*[_], ApiErr]
   ](service: Mempool[F])(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new MempoolRoutes[F](service).routes
 }

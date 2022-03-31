@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.migration.migrations
 
 import cats.Parallel
-import cats.effect.{IO, Timer}
+import cats.effect.IO
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.parallel._
@@ -25,6 +25,7 @@ import org.ergoplatform.explorer.{BoxId, ErgoTreeTemplateHash, HexString, Regist
 import tofu.syntax.monadic._
 
 import scala.util.Try
+import cats.effect.Temporal
 
 final class RegistersAndConstantsMigration(
   conf: ProcessingConfig,
@@ -32,7 +33,7 @@ final class RegistersAndConstantsMigration(
   constants: ScriptConstantsRepo[ConnectionIO],
   xa: Transactor[IO],
   log: Logger[IO]
-)(implicit timer: Timer[IO], par: Parallel[IO]) {
+)(implicit timer: Temporal[IO], par: Parallel[IO]) {
 
   def run: IO[Unit] = (if (conf.updateSchema) updateSchema else IO.unit) >> migrateBatch(conf.offset, conf.batchSize)
 
@@ -195,7 +196,7 @@ object RegistersAndConstantsMigration {
   def apply(
     conf: ProcessingConfig,
     xa: Transactor[IO]
-  )(implicit timer: Timer[IO], par: Parallel[IO]): IO[Unit] =
+  )(implicit timer: Temporal[IO], par: Parallel[IO]): IO[Unit] =
     for {
       logger <- Slf4jLogger.create[IO]
       rs     <- BoxRegisterRepo[IO, ConnectionIO]

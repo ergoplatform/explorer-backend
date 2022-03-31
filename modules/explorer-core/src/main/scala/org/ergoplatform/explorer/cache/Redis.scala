@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.cache
 
-import cats.effect.{Concurrent, ContextShift, Resource}
+import cats.effect.{Concurrent, Resource, Spawn}
 import cats.syntax.functor._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import dev.profunktor.redis4cats.connection.{RedisClient, RedisURI}
@@ -15,7 +15,7 @@ object Redis {
 
   /** Create new Redis client
     */
-  def apply[F[_]: Concurrent: ContextShift](
+  def apply[F[_]: Concurrent: Spawn](
     settings: RedisSettings
   ): Resource[F, RedisCommands[F, String, String]] =
     for {

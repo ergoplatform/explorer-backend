@@ -1,8 +1,7 @@
 package org.ergoplatform.explorer.services
 
 import cats.data.NonEmptyList
-import cats.effect.concurrent.Ref
-import cats.effect.{BracketThrow, IO, Resource, Sync}
+import cats.effect.{IO, Resource, Sync}
 import eu.timepit.refined.refineV
 import eu.timepit.refined.string.Url
 import fs2.Stream
@@ -19,11 +18,12 @@ import org.scalatest.{Matchers, PropSpec}
 import tofu.syntax.monadic._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import cats.effect.{ MonadCancelThrow, Ref }
 
 class ErgoNetworkSpec extends PropSpec with Matchers {
 
   def createFakeClient[F[_]: Sync](bestNode: Ref[F, (UrlString, Int)])(implicit
-    F: BracketThrow[F]
+    F: MonadCancelThrow[F]
   ) = Client[F] {
     case Request(_, uri, _, _, _, _) if uri.path.segments.contains(Segment("info")) =>
       Resource.eval(bestNode.get).flatMap { case (node, height) =>

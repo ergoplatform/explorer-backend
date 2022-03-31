@@ -3,9 +3,9 @@ package org.ergoplatform.explorer.services
 import cats.Monad
 import cats.data.NonEmptyList
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import org.ergoplatform.explorer.UrlString
 import tofu.syntax.monadic._
+import cats.effect.Ref
 
 trait NodesPool[F[_]] {
 

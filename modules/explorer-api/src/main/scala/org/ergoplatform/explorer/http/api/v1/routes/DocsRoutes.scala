@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v1.routes
 
-import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.effect.Concurrent
 import cats.syntax.applicative._
 import cats.syntax.either._
 import cats.syntax.option._
@@ -14,8 +14,9 @@ import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.redoc.http4s.RedocHttp4s
 import sttp.tapir.server.http4s._
+import cats.effect.Temporal
 
-final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: RequestsSettings)(implicit
+final class DocsRoutes[F[_]: Concurrent: ContextShift: Temporal](settings: RequestsSettings)(implicit
   opts: Http4sServerOptions[F, F]
 ) {
 
@@ -69,7 +70,7 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](settings: Requests
 
 object DocsRoutes {
 
-  def apply[F[_]: Concurrent: ContextShift: Timer](
+  def apply[F[_]: Concurrent: ContextShift: Temporal](
     settings: RequestsSettings
   )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
     new DocsRoutes[F](settings).routes

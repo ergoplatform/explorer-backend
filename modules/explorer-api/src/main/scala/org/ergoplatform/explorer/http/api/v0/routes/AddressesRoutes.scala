@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{Concurrent, ContextShift, Sync, Timer}
+import cats.effect.{Concurrent, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.semigroupk._
@@ -14,9 +14,10 @@ import org.ergoplatform.explorer.http.api.v0.services.{AddressesService, Transac
 import org.http4s.HttpRoutes
 import sttp.tapir._
 import sttp.tapir.server.http4s._
+import cats.effect.Temporal
 
 final class AddressesRoutes[
-  F[_]: Concurrent: Timer: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: Temporal: ContextShift: AdaptThrowableEitherT[*[_], ApiErr]
 ](
   addressesService: AddressesService[F, Stream],
   transactionsService: TransactionsService[F]
@@ -63,7 +64,7 @@ final class AddressesRoutes[
 
 object AddressesRoutes {
 
-  def apply[F[_]: Concurrent: Timer: ContextShift: Logger](
+  def apply[F[_]: Concurrent: Temporal: ContextShift: Logger](
     addressesService: AddressesService[F, Stream],
     transactionsService: TransactionsService[F]
   )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =

@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
 import cats.Monad
-import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.effect.Concurrent
 import cats.syntax.semigroupk._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import io.chrisdavenport.log4cats.Logger
@@ -19,13 +19,14 @@ import sttp.tapir.server.http4s.Http4sServerOptions
 import tofu.syntax.monadic._
 
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 final case class RoutesV0Bundle[F[_]](routes: HttpRoutes[F])
 
 object RoutesV0Bundle {
 
   def apply[
-    F[_]: Concurrent: ContextShift: Timer,
+    F[_]: Concurrent: ContextShift: Temporal,
     D[_]: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: Monad: LiftConnectionIO
   ](
     protocolSettings: ProtocolSettings,

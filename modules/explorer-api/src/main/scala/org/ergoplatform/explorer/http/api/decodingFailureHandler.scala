@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api
 
-import cats.effect.{ContextShift, Sync}
+import cats.effect.Sync
 import sttp.model.{Header, StatusCode}
 import sttp.tapir._
 import sttp.tapir.json.circe._

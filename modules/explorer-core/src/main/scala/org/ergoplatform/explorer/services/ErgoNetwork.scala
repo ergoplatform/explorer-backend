@@ -2,7 +2,6 @@ package org.ergoplatform.explorer.services
 
 import cats.Parallel
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import cats.syntax.parallel._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -21,6 +20,7 @@ import tofu.Tries
 import tofu.syntax.handle._
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
+import cats.effect.Ref
 
 /** A service providing an access to the Ergo network.
   */

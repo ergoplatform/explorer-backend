@@ -1,9 +1,8 @@
 package org.ergoplatform.explorer.indexer.processes
 
 import cats.data.OptionT
-import cats.effect.concurrent.Ref
 import cats.effect.syntax.bracket._
-import cats.effect.{Bracket, Sync, Timer}
+import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
@@ -30,6 +29,7 @@ import tofu.syntax.logging._
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
 import tofu.{Context, MonadThrow, WithContext}
+import cats.effect.{ Ref, Temporal }
 
 /** Synchronizes local view with the Ergo network.
   */
@@ -40,7 +40,7 @@ trait ChainIndexer[F[_]] {
 
 object ChainIndexer {
 
-  def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
+  def apply[F[_]: Sync: Parallel: Temporal, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
     network: ErgoNetwork[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[ChainIndexer[F]] =
@@ -51,7 +51,7 @@ object ChainIndexer {
     }
 
   final class Live[
-    F[_]: Monad: Parallel: Timer: Bracket[*[_], Throwable]: Logging,
+    F[_]: Monad: Parallel: Temporal: Bracket[*[_], Throwable]: Logging,
     D[_]: Monad
   ](
     settings: IndexerSettings,

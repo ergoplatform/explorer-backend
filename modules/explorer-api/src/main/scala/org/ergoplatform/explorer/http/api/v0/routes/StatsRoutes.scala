@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{Concurrent, ContextShift, Sync, Timer}
+import cats.effect.{Concurrent, Sync}
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
@@ -8,9 +8,10 @@ import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v0.services.StatsService
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
+import cats.effect.Temporal
 
 final class StatsRoutes[
-  F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: ContextShift: Temporal: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: StatsService[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.StatsEndpointDefs._
@@ -27,7 +28,7 @@ final class StatsRoutes[
 
 object StatsRoutes {
 
-  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](service: StatsService[F])(
+  def apply[F[_]: Concurrent: ContextShift: Temporal: Logger](service: StatsService[F])(
     implicit opts: Http4sServerOptions[F, F]
   ): HttpRoutes[F] =
     new StatsRoutes(service).routes

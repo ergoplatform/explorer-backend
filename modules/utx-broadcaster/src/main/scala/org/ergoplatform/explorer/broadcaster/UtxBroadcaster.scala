@@ -1,7 +1,6 @@
 package org.ergoplatform.explorer.broadcaster
 
-import cats.effect.concurrent.Ref
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.effect.{Concurrent, Sync}
 import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -13,10 +12,11 @@ import org.ergoplatform.explorer.Err.RequestProcessingErr.NetworkErr.InvalidTran
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.settings.UtxBroadcasterSettings
+import cats.effect.{ Ref, Temporal }
 
 /** Broadcasts new transactions to the network.
   */
-final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
+final class UtxBroadcaster[F[_]: Temporal: Sync: Logger](
   settings: UtxBroadcasterSettings,
   network: ErgoNetwork[F],
   repo: ErgoLikeTransactionRepo[F, Stream]
@@ -55,7 +55,7 @@ final class UtxBroadcaster[F[_]: Timer: Sync: Logger](
 
 object UtxBroadcaster {
 
-  def apply[F[_]: Timer: Concurrent](
+  def apply[F[_]: Temporal: Concurrent](
     settings: UtxBroadcasterSettings,
     network: ErgoNetwork[F],
     redis: RedisCommands[F, String, String]

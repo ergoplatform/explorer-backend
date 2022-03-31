@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.migration.migrations
 
 import cats.Parallel
-import cats.effect.{IO, Timer}
+import cats.effect.IO
 import doobie.ConnectionIO
 import cats.syntax.traverse._
 import cats.syntax.option._
@@ -16,6 +16,7 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
 import org.ergoplatform.explorer.db.repositories.BlockInfoRepo
 import org.ergoplatform.explorer.http.api.models.Sorting.Asc
 import org.ergoplatform.explorer.migration.configs.ProcessingConfig
+import cats.effect.Temporal
 
 final class BlockchainStatsMigration(
   conf: ProcessingConfig,
@@ -74,7 +75,7 @@ object BlockchainStatsMigration {
   def apply(
     conf: ProcessingConfig,
     xa: Transactor[IO]
-  )(implicit timer: Timer[IO], par: Parallel[IO]): IO[Unit] =
+  )(implicit timer: Temporal[IO], par: Parallel[IO]): IO[Unit] =
     for {
       logger <- Slf4jLogger.create[IO]
       bi     <- BlockInfoRepo[IO, ConnectionIO]

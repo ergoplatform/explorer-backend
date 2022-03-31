@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.routes
 
-import cats.effect.{Concurrent, ContextShift, Sync, Timer}
+import cats.effect.{Concurrent, Sync}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
@@ -11,9 +11,10 @@ import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
 
 import scala.concurrent.duration._
+import cats.effect.Temporal
 
 final class ChartsRoutes[
-  F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
+  F[_]: Concurrent: ContextShift: Temporal: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: StatsService[F])(implicit opts: Http4sServerOptions[F, F]) {
 
   import org.ergoplatform.explorer.http.api.v0.defs.ChartsEndpointDefs._
@@ -73,7 +74,7 @@ final class ChartsRoutes[
 
 object ChartsRoutes {
 
-  def apply[F[_]: Concurrent: ContextShift: Timer: Logger](service: StatsService[F])(
+  def apply[F[_]: Concurrent: ContextShift: Temporal: Logger](service: StatsService[F])(
     implicit opts: Http4sServerOptions[F, F]
   ): HttpRoutes[F] =
     new ChartsRoutes(service).routes

@@ -1,7 +1,7 @@
 package org.ergoplatform.explorer.http.api
 
 import cats.Monad
-import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
+import cats.effect.{ConcurrentEffect, Resource}
 import cats.syntax.semigroupk._
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import org.ergoplatform.ErgoAddressEncoder
@@ -18,13 +18,14 @@ import sttp.tapir.server.http4s.Http4sServerOptions
 import tofu.Throws
 
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 object HttpApi {
 
   /** Create an API v0 http server.
     */
   def apply[
-    F[_]: ConcurrentEffect: ContextShift: Timer,
+    F[_]: ConcurrentEffect: ContextShift: Temporal,
     D[_]: Monad: Throws: LiftConnectionIO: CompileStream
   ](
     settings: ApiSettings,

@@ -89,5 +89,6 @@ lazy val commonScalacOptions = List(
   "-unchecked",
   "-Xfuture",
   "-Yno-adapted-args",
-  "-Ypartial-unification"
+  "-Ypartial-unification",
+  // "-P:semanticdb:synthetics:on"
 )

@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.indexer.processes
 
-import cats.effect.{Sync, Timer}
+import cats.effect.Sync
 import cats.{Monad, Parallel}
 import fs2.Stream
 import io.scalaland.chimney.dsl._
@@ -17,6 +17,7 @@ import tofu.concurrent.MakeRef
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
+import cats.effect.Temporal
 
 trait EpochsIndexer[F[_]] {
 
@@ -25,7 +26,7 @@ trait EpochsIndexer[F[_]] {
 
 object EpochsIndexer {
 
-  def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
+  def apply[F[_]: Sync: Parallel: Temporal, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
     network: ErgoNetwork[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[EpochsIndexer[F]] =
@@ -33,7 +34,7 @@ object EpochsIndexer {
       RepoBundle[F, D].map(new Live[F, D](settings, network, _)(trans))
     }
 
-  final private class Live[F[_]: Logging: Monad: Timer, D[_]](
+  final private class Live[F[_]: Logging: Monad: Temporal, D[_]](
     settings: IndexerSettings,
     network: ErgoNetwork[F],
     repos: RepoBundle[D]

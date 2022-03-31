@@ -1,6 +1,5 @@
 package org.ergoplatform.explorer.db
 
-import cats.effect.Bracket
 import cats.{~>, Monad}
 import doobie.free.connection.ConnectionIO
 import doobie.util.transactor.Transactor
