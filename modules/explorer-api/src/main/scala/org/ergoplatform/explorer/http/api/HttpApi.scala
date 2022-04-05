@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api
 
-import cats.Monad
+import cats.{Monad, Parallel}
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import cats.syntax.semigroupk._
 import dev.profunktor.redis4cats.algebra.RedisCommands
@@ -24,7 +24,7 @@ object HttpApi {
   /** Create an API v0 http server.
     */
   def apply[
-    F[_]: ConcurrentEffect: ContextShift: Timer,
+    F[_]: ConcurrentEffect: ContextShift: Timer: Parallel,
     D[_]: Monad: Throws: LiftConnectionIO: CompileStream
   ](
     settings: ApiSettings,

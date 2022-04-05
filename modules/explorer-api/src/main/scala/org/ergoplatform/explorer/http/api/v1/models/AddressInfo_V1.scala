@@ -5,20 +5,20 @@ import derevo.derive
 import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
-final case class AddressInfo(
+final case class AddressInfo_V1(
   hasUnconfirmedTxs: Boolean,
   used: Boolean,
   confirmedBalance: Balance
 )
 
-object AddressInfo {
+object AddressInfo_V1 {
 
-  implicit val schema: Schema[AddressInfo] =
+  implicit val schema: Schema[AddressInfo_V1] =
     Schema
-      .derived[AddressInfo]
+      .derived[AddressInfo_V1]
       .modify(_.hasUnconfirmedTxs)(_.description("BOOLEAN unconfirmed transactions"))
       .modify(_.used)(_.description("BOOLEAN"))
       .modify(_.confirmedBalance)(_.description("Confirmed balance in address"))
 
-  implicit val validator: Validator[AddressInfo] = schema.validator
+  implicit val validator: Validator[AddressInfo_V1] = schema.validator
 }

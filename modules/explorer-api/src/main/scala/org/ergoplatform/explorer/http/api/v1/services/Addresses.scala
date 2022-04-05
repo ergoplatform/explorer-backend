@@ -1,16 +1,16 @@
 package org.ergoplatform.explorer.http.api.v1.services
 
-import cats.Monad
+import cats.{Monad, Parallel}
 import cats.effect.Sync
 import fs2.Stream
 import mouse.anyf._
+import cats.syntax.parallel._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, Balance, TokenAmount, TotalBalance, TransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo_V1, Balance, TokenAmount, TotalBalance}
 import org.ergoplatform.explorer.protocol.sigma
 import tofu.syntax.monadic._
 
@@ -20,18 +20,18 @@ trait Addresses[F[_]] {
 
   def totalBalanceOf(address: Address): F[TotalBalance]
 
-  def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo]]
+  def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo_V1]]
 }
 
 object Addresses {
 
-  def apply[F[_]: Sync, D[_]: Monad: LiftConnectionIO](trans: D Trans F)(implicit
+  def apply[F[_]: Sync: Monad: Parallel, D[_]: Monad: LiftConnectionIO](trans: D Trans F)(implicit
     e: ErgoAddressEncoder
   ): F[Addresses[F]] =
     (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
       .mapN(new Live(_, _, _, _, _)(trans))
 
-  final class Live[F[_], D[_]: Monad](
+  final class Live[F[_]: Monad: Parallel, D[_]: Monad](
     headerRepo: HeaderRepo[D],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
@@ -62,11 +62,17 @@ object Addresses {
       )) ||> trans.xa
     }
 
-    // TODO: merge with branch i170 to collect unconfirmed Tx considering Mempool
-    private def AddressInfoOf(address: Address): AddressInfo = ???
+    // TODO: merge with branch i170 to collect hasConfirmedTx from MemPoolService
+    private def addressInfoOf(address: Address): F[(Address, AddressInfo_V1)] =
+      for {
+        balance <- confirmedBalanceOf(address, 0)
+      } yield (address, AddressInfo_V1(hasUnconfirmedTxs = true, used = true, balance))
 
-    def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo]] = ???
-    // build Map using private def AddressInfoOf
+    def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo_V1]] =
+      batch.distinct
+        .map(addressInfoOf)
+        .parSequence
+        .map(_.foldLeft(Map[Address, AddressInfo_V1]()) { case (m, t) => m + t })
 
   }
 }

@@ -4,7 +4,7 @@ import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, Balance, TotalBalance, TransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo_V1, Balance, TotalBalance, TransactionInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.tapir.json.circe._
 import sttp.tapir.{path, _}
@@ -34,10 +34,10 @@ class AddressesEndpointDefs(settings: RequestsSettings) {
       .in(PathPrefix / path[Address] / "balance" / "total")
       .out(jsonBody[TotalBalance])
 
-  def getBatchAddressInfo: Endpoint[List[Address], ApiErr, Map[Address, AddressInfo], Any] =
+  def getBatchAddressInfo: Endpoint[List[Address], ApiErr, Map[Address, AddressInfo_V1], Any] =
     baseEndpointDef
       .in(PathPrefix / "batch")
       .in(jsonBody[List[Address]])
-      .out(jsonBody[Map[Address, AddressInfo]])
+      .out(jsonBody[Map[Address, AddressInfo_V1]])
 
 }

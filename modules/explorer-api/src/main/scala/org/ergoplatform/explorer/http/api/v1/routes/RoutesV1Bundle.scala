@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v1.routes
 
-import cats.Monad
+import cats.{Monad, Parallel}
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import dev.profunktor.redis4cats.algebra.RedisCommands
@@ -24,7 +24,7 @@ final case class RoutesV1Bundle[F[_]](routes: HttpRoutes[F])
 object RoutesV1Bundle {
 
   def apply[
-    F[_]: Concurrent: ContextShift: Timer,
+    F[_]: Concurrent: ContextShift: Timer: Parallel,
     D[_]: Monad: Throws: LiftConnectionIO: CompileStream
   ](
     serviceSettings: ServiceSettings,
