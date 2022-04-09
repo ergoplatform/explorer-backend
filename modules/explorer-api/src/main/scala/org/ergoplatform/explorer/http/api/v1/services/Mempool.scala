@@ -47,6 +47,8 @@ trait Mempool[F[_]] {
     confirmedBalance: Balance
   ): F[TotalBalance]
 
+  def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
+
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 
   def streamUnspentOutputs: Stream[F, UOutputInfo]
@@ -73,12 +75,17 @@ object Mempool {
 
     import repo._
 
+    def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
+      txs
+        .countByErgoTree(ergoTree.value)
+        .map(_ > 0)
+        .thrushK(trans.xa)
+
     def getUnconfirmedBalanceByAddress(
       address: Address,
       confirmedBalance: Balance
     ): F[TotalBalance] = {
       val ergoTree = addressToErgoTreeNewtype(address)
-
       txs
         .countByErgoTree(ergoTree.value)
         .flatMap { total =>
