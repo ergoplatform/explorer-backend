@@ -5,9 +5,6 @@ object versions {
 
   val SigmaStateVersion = "4.0.5"
 
-  val Http4sVersion                  = "0.22.8"
-  val TapirVersion                   = "0.18.3"
-  val CirceVersion                   = "0.12.3"
   val Http4sVersion                  = "0.22.11"
   val TapirVersion                   = "0.18.3"
   val CirceVersion                   = "0.12.3"
