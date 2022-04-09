@@ -65,9 +65,17 @@ object dependencies {
     "org.manatki" %% "derevo-circe"     % DerevoVersion
   )
 
+  // for testing current sigmastate build (see sigmastate-ergo-it jenkins job)
+  val effectiveSigmaStateVersion = Option(System.getenv().get("SIGMASTATE_VERSION")).getOrElse(SigmaStateVersion)
+  val effectiveSigma             = "org.scorexfoundation" %% "sigma-state" % effectiveSigmaStateVersion
+
   val Ergo: List[ModuleID] = List(
     "org.ergoplatform" %% "ergo-wallet" % ErgoWalletVersion,
-    "org.ergoplatform" %% "contracts"   % ErgoContractsVersion
+    "org.ergoplatform" %% "contracts"   % ErgoContractsVersion,
+    effectiveSigma
+      .force()
+      .exclude("ch.qos.logback", "logback-classic")
+      .exclude("org.scorexfoundation", "scrypto")
   )
 
   val Logging: List[ModuleID] = List(
@@ -141,7 +149,9 @@ object dependencies {
     Redis ++
     Enums
 
-  lazy val api: List[ModuleID] = Monix
+  lazy val api: List[ModuleID] =
+    Monix ++
+    List((effectiveSigma % Test).classifier("tests"))
 
   lazy val grabber: List[ModuleID] = Monix
 

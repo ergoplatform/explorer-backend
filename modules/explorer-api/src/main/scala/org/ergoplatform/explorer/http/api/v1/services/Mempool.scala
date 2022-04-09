@@ -11,19 +11,20 @@ import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.{BadRequest, FeatureNotSupported}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.{Output, UOutput, UTransaction}
+import org.ergoplatform.explorer.db.models.{UOutput, UTransaction}
 import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
-import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
-import org.ergoplatform.explorer.http.api.v1.models.{OutputInfo, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{Balance, TotalBalance, UOutputInfo, UTransactionInfo}
 import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
-import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
+import org.ergoplatform.explorer.protocol.sigma.{addressToErgoTreeHex, addressToErgoTreeNewtype}
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
-import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import org.ergoplatform.explorer.syntax.stream._
+import org.ergoplatform.explorer._
+import org.ergoplatform.explorer.http.api.v1.utils.BuildUnconfirmedBalance
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
 import tofu.Throws
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
@@ -40,6 +41,13 @@ trait Mempool[F[_]] {
     address: Address,
     paging: Paging
   ): F[Items[UTransactionInfo]]
+
+  def getUnconfirmedBalanceByAddress(
+    address: Address,
+    confirmedBalance: Balance
+  ): F[TotalBalance]
+
+  def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
 
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 
@@ -66,6 +74,39 @@ object Mempool {
     extends Mempool[F] {
 
     import repo._
+
+    def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
+      txs
+        .countByErgoTree(ergoTree.value)
+        .map(_ > 0)
+        .thrushK(trans.xa)
+
+    def getUnconfirmedBalanceByAddress(
+      address: Address,
+      confirmedBalance: Balance
+    ): F[TotalBalance] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
+      txs
+        .countByErgoTree(ergoTree.value)
+        .flatMap { total =>
+          txs
+            .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+            .chunkN(settings.chunkSize)
+            .through(mkTransaction)
+            .to[List]
+            .map { poolItems =>
+              total match {
+                case 0 => TotalBalance(confirmedBalance, Balance.empty)
+                case _ =>
+                  TotalBalance(
+                    confirmedBalance,
+                    BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
+                  )
+              }
+            }
+        }
+        .thrushK(trans.xa)
+    }
 
     def getByErgoTree(ergoTree: ErgoTree, paging: Paging): F[Items[UTransactionInfo]] =
       txs

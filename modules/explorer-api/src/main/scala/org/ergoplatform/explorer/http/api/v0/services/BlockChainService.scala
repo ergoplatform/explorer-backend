@@ -135,7 +135,7 @@ object BlockChainService {
         txIdsNel     <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream
         inputs       <- inputRepo.getAllByTxIds(txIdsNel).asStream
         dataInputs   <- dataInputRepo.getAllByTxIds(txIdsNel).asStream
-        outputs      <- outputRepo.getAllByTxIds(txIdsNel).asStream
+        outputs      <- outputRepo.getAllByTxIds(txIdsNel, None).asStream
         boxIdsNel    <- outputs.map(_.output.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs")).asStream
         assets       <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream
