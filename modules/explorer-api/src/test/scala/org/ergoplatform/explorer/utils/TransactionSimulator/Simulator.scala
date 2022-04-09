@@ -19,11 +19,13 @@ object Simulator {
     amountToSend: Long,
     tokensToSend: Option[Map[TokenId, Long]]
   ): Try[SimulatedTransaction] = Try {
-    require(
-      tokensToSend.isDefined && sender.tokens.toList
-        .map(_._1) == tokensToSend.map(_.toList.map(_._1)).getOrElse(List()),
-      "tokens being sent must be available in senders wallet"
-    )
+
+    if (tokensToSend.isDefined)
+      require(
+        sender.tokens.toList
+          .map(_._1) == tokensToSend.map(_.toList.map(_._1)).getOrElse(List()),
+        "tokens being sent must be available in senders wallet"
+      )
 
     require(sender.balance >= (amountToSend + TransactionFee), "ergo - increase sending wallet balance")
 
