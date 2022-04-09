@@ -12,7 +12,7 @@ import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.Input
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedInput, FullInput}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
-import org.ergoplatform.explorer.{BlockId, TxId}
+import org.ergoplatform.explorer.{Address, BlockId, TxId}
 
 /** [[Input]] and [[ExtendedInput]] data access operations.
   */
@@ -40,7 +40,7 @@ trait InputRepo[D[_]] {
 
   /** Get all inputs related to a given list of `txId`.
     */
-  def getFullByTxIds(txIds: NonEmptyList[TxId]): D[List[FullInput]]
+  def getFullByTxIds(txIds: NonEmptyList[TxId], concise: Option[Address]): D[List[FullInput]]
 
   /** Update main_chain status for all inputs related to given `headerId`.
     */
@@ -73,8 +73,8 @@ object InputRepo {
     def getFullByTxId(txId: TxId): D[List[FullInput]] =
       QS.getFullByTxId(txId).to[List].liftConnectionIO
 
-    def getFullByTxIds(txIds: NonEmptyList[TxId]): D[List[FullInput]] =
-      QS.getFullByTxIds(txIds).to[List].liftConnectionIO
+    def getFullByTxIds(txIds: NonEmptyList[TxId], narrowByAddress: Option[Address]): D[List[FullInput]] =
+      narrowByAddress.fold(QS.getFullByTxIds(txIds))(QS.getFullByTxIds(txIds, _)).to[List].liftConnectionIO
 
     def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO

@@ -72,6 +72,11 @@ object commonDirectives {
   def limit(maxEntities: Int): EndpointInput.Query[Int] =
     query[Int]("limit").validate(Validator.max(maxEntities))
 
+  def minGlobalIndex: EndpointInput.Query[Long] =
+    query[Long]("minGix")
+      .validate(Validator.min(0L))
+      .description("Min global index (in blockchain) of an on-chain entity")
+
   def concise: EndpointInput.Query[Boolean] =
     query[Boolean]("concise")
       .default(false)

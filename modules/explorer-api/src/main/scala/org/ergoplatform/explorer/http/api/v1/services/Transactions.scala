@@ -20,6 +20,8 @@ import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, TxId}
 import tofu.syntax.monadic._
 import tofu.syntax.streams.compile._
 
+import scala.math.Ordering.Short
+
 trait Transactions[F[_]] {
 
   def get(id: TxId): F[Option[TransactionInfo]]
@@ -32,13 +34,16 @@ trait Transactions[F[_]] {
 
   def getByAddress(
     address: Address,
-    paging: Paging
+    paging: Paging,
+    concise: Boolean
   ): F[Items[TransactionInfo]]
 
   def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo]
 }
 
 object Transactions {
+
+  val MaxIdsPerRequest = 2048
 
   def apply[
     F[_]: Sync,
@@ -88,7 +93,7 @@ object Transactions {
           transactions
             .getByInputsScriptTemplate(template, paging.offset, paging.limit, ordering.value)
             .chunkN(serviceSettings.chunkSize)
-            .through(makeTransaction)
+            .through(makeTransaction(None))
             .to[List]
             .map(Items(_, total))
         }
@@ -96,15 +101,17 @@ object Transactions {
 
     def getByAddress(
       address: Address,
-      paging: Paging
+      paging: Paging,
+      concise: Boolean
     ): F[Items[TransactionInfo]] =
       transactions
         .countRelatedToAddress(address)
         .flatMap { total =>
+          val narrowBy = if (concise) Some(address) else None
           transactions
             .streamRelatedToAddress(address, paging.offset, paging.limit)
             .chunkN(serviceSettings.chunkSize)
-            .through(makeTransaction)
+            .through(makeTransaction(narrowBy))
             .to[List]
             .map(Items(_, total))
         }
@@ -114,20 +121,20 @@ object Transactions {
       transactions
         .streamTransactions(minGix, limit)
         .chunkN(serviceSettings.chunkSize)
-        .through(makeTransaction)
+        .through(makeTransaction(None))
         .thrushK(trans.xas)
 
-    private def makeTransaction: Pipe[D, Chunk[Transaction], TransactionInfo] =
+    private def makeTransaction(narrowByAddress: Option[Address]): Pipe[D, Chunk[Transaction], TransactionInfo] =
       for {
         chunk      <- _
         txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
-        ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
+        ins        <- Stream.eval(inputs.getFullByTxIds(txIds, narrowByAddress))
         inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
+        inAssets   <- Stream.emits(inIds.grouped(MaxIdsPerRequest).toList).evalMap(assets.getAllByBoxIds)
         dataIns    <- Stream.eval(dataInputs.getFullByTxIds(txIds))
-        outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
+        outs       <- Stream.eval(outputs.getAllByTxIds(txIds, narrowByAddress))
         outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-        outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
+        outAssets  <- Stream.emits(outIds.grouped(MaxIdsPerRequest).toList).evalMap(assets.getAllByBoxIds)
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
         txInfo <-

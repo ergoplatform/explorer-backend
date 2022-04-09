@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.routes
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
-import org.ergoplatform.explorer.http.api.ApiErr
+import org.ergoplatform.explorer.http.api.{streaming, ApiErr}
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
@@ -19,7 +19,7 @@ final class BlocksRoutes[
 
   val defs = new BlocksEndpointDefs[F](settings)
 
-  val routes: HttpRoutes[F] = getBlocksR <+> getBlockSummaryByIdR
+  val routes: HttpRoutes[F] = streamBlocksR <+> getBlocksR <+> getBlockSummaryByIdR <+> getBlockHeadersR
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -31,12 +31,25 @@ final class BlocksRoutes[
         .value
     }
 
+  private def streamBlocksR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.streamBlocksDef) { case (gix, limit) =>
+      streaming.bytesStream(blocks.streamBlocks(gix, limit))
+    }
+
   private def getBlockSummaryByIdR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getBlockSummaryByIdDef) { id =>
       blocks
         .getBlockSummaryById(id)
         .adaptThrowable
         .orNotFound(s"Block with id: $id")
+        .value
+    }
+
+  private def getBlockHeadersR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.getBlockHeadersDef) { case (paging, sorting)  =>
+      blocks
+        .getBlockHeaders(paging, sorting)
+        .adaptThrowable
         .value
     }
 }

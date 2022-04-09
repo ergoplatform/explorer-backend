@@ -42,7 +42,7 @@ object redisTransaction {
 
           val joinOrCancelFibers =
             fibers.get.flatMap { fbs =>
-              txFailed.get.ifA(
+              txFailed.get.ifM(
                 fbs.traverse(_.cancel).void,
                 fbs.traverse(_.join).void
               )
