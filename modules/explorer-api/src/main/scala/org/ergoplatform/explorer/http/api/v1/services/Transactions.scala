@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v1.services
 
 import cats.data.OptionT
 import cats.effect.Sync
+import cats.syntax.traverse._
 import cats.syntax.list._
 import cats.{FlatMap, Monad}
 import fs2.{Chunk, Pipe, Stream}
@@ -19,8 +20,6 @@ import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, TxId}
 import tofu.syntax.monadic._
 import tofu.syntax.streams.compile._
-
-import scala.math.Ordering.Short
 
 trait Transactions[F[_]] {
 
@@ -43,7 +42,7 @@ trait Transactions[F[_]] {
 
 object Transactions {
 
-  val MaxIdsPerRequest = 2048
+  val MaxIdsPerRequest = scala.Short.MaxValue / 4
 
   def apply[
     F[_]: Sync,
@@ -130,11 +129,11 @@ object Transactions {
         txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
         ins        <- Stream.eval(inputs.getFullByTxIds(txIds, narrowByAddress))
         inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets   <- Stream.emits(inIds.grouped(MaxIdsPerRequest).toList).evalMap(assets.getAllByBoxIds)
+        inAssets   <- Stream.eval(inIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds))
         dataIns    <- Stream.eval(dataInputs.getFullByTxIds(txIds))
         outs       <- Stream.eval(outputs.getAllByTxIds(txIds, narrowByAddress))
         outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-        outAssets  <- Stream.emits(outIds.grouped(MaxIdsPerRequest).toList).evalMap(assets.getAllByBoxIds)
+        outAssets  <- Stream.eval(outIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds))
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
         txInfo <-
