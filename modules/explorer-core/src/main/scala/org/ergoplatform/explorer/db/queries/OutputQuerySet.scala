@@ -157,6 +157,12 @@ object OutputQuerySet extends QuerySet {
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
 
+  def nodeOutputCount(ergoTree: HexString)(implicit lh: LogHandler): Query0[Long] =
+    sql"""
+         |select count(box_id) from node_outputs o
+         |where o.ergo_tree = $ergoTree
+         """.stripMargin.query[Long]
+
   def getAllMainUnspentIdsByErgoTree(
     ergoTree: HexString
   )(implicit lh: LogHandler): Query0[BoxId] =

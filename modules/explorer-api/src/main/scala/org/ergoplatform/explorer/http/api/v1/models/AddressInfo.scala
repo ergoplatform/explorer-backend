@@ -2,23 +2,26 @@ package org.ergoplatform.explorer.http.api.v1.models
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import org.ergoplatform.explorer.Address
 import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
-final case class AddressInfo_V1(
+final case class AddressInfo(
+  address: Address,
   hasUnconfirmedTxs: Boolean,
   used: Boolean,
   confirmedBalance: Balance
 )
 
-object AddressInfo_V1 {
+object AddressInfo {
 
-  implicit val schema: Schema[AddressInfo_V1] =
+  implicit val schema: Schema[AddressInfo] =
     Schema
-      .derived[AddressInfo_V1]
+      .derived[AddressInfo]
+      .modify(_.address)(_.description("Address"))
       .modify(_.hasUnconfirmedTxs)(_.description("BOOLEAN unconfirmed transactions"))
       .modify(_.used)(_.description("BOOLEAN"))
       .modify(_.confirmedBalance)(_.description("Confirmed balance in address"))
 
-  implicit val validator: Validator[AddressInfo_V1] = schema.validator
+  implicit val validator: Validator[AddressInfo] = schema.validator
 }
