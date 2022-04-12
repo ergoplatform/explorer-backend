@@ -144,7 +144,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get all outputs related to a given list of `txId`.
     */
-  def getAllByTxIds(txsId: NonEmptyList[TxId]): D[List[ExtendedOutput]]
+  def getAllByTxIds(txsId: NonEmptyList[TxId], narrowByAddress: Option[Address]): D[List[ExtendedOutput]]
 
   /** Get all addresses matching the given `query`.
     */
@@ -350,8 +350,8 @@ object OutputRepo {
     def getAllByTxId(txId: TxId): D[List[ExtendedOutput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO
 
-    def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedOutput]] =
-      QS.getAllByTxIds(txIds).to[List].liftConnectionIO
+    def getAllByTxIds(txIds: NonEmptyList[TxId], narrowByAddress: Option[Address]): D[List[ExtendedOutput]] =
+      narrowByAddress.fold(QS.getAllByTxIds(txIds))(QS.getAllByTxIds(txIds, _)).to[List].liftConnectionIO
 
     def getAllLike(query: String): D[List[Address]] =
       QS.getAllLike(query).to[List].liftConnectionIO

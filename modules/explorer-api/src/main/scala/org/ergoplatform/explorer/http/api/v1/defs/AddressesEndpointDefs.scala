@@ -4,10 +4,11 @@ import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{Balance, TotalBalance, TransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo_V1, Balance, TotalBalance, TransactionInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.tapir.json.circe._
 import sttp.tapir.{path, _}
+import org.ergoplatform.explorer.http.api.v1.implictis.BatchAddressInfo._
 
 class AddressesEndpointDefs(settings: RequestsSettings) {
 
@@ -16,10 +17,15 @@ class AddressesEndpointDefs(settings: RequestsSettings) {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getTxsByAddressDef :: getConfirmedBalanceDef :: getTotalBalanceDef :: Nil
 
-  def getTxsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[TransactionInfo], Any] =
+  def getTxsByAddressDef: Endpoint[(Address, Paging, Boolean), ApiErr, Items[TransactionInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / path[Address] / "transactions")
       .in(paging(settings.maxEntitiesPerRequest))
+      .in(
+        query[Boolean]("concise")
+          .default(false)
+          .description("Display only address inputs/outputs in transaction")
+      )
       .out(jsonBody[Items[TransactionInfo]])
 
   def getConfirmedBalanceDef: Endpoint[(Address, Int), ApiErr, Balance, Any] =
@@ -32,4 +38,11 @@ class AddressesEndpointDefs(settings: RequestsSettings) {
     baseEndpointDef
       .in(PathPrefix / path[Address] / "balance" / "total")
       .out(jsonBody[TotalBalance])
+
+  def getBatchAddressInfo: Endpoint[List[Address], ApiErr, Map[Address, AddressInfo_V1], Any] =
+    baseEndpointDef
+      .in(PathPrefix / "batch")
+      .in(jsonBody[List[Address]])
+      .out(jsonBody[Map[Address, AddressInfo_V1]])
+
 }

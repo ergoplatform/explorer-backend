@@ -2,13 +2,12 @@ package org.ergoplatform.explorer.http.api.v1.services
 
 import cats.effect.Sync
 import cats.instances.option._
-import cats.instances.list._
 import cats.syntax.apply._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
-import cats.{FlatMap, Functor, Monad}
+import cats.{Functor, Monad}
 import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
@@ -19,12 +18,10 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.{BlockReferencesInfo, BlockSummary, FullBlockInfo}
-import org.ergoplatform.explorer.http.api.v1.models.BlockInfo
+import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo}
 import org.ergoplatform.explorer.syntax.stream._
-import org.ergoplatform.explorer.{CRaise, BlockId}
-import tofu.data.Identity
+import org.ergoplatform.explorer.{BlockId, CRaise}
 import tofu.syntax.raise._
-import tofu.fs2Instances._
 import tofu.syntax.streams.compile._
 
 trait Blocks[F[_]] {
@@ -36,6 +33,14 @@ trait Blocks[F[_]] {
   /** Get summary for a block with a given `id`.
     */
   def getBlockSummaryById(id: BlockId): F[Option[BlockSummary]]
+
+  /** Stream blocks
+    */
+  def streamBlocks(minGix: Long, limit: Int): Stream[F, BlockInfo]
+  
+  /** Get a slice of block header items.
+    */
+  def getBlockHeaders(paging: Paging, sorting: Sorting): F[Items[BlockHeader]]
 }
 
 object Blocks {
@@ -100,6 +105,17 @@ object Blocks {
       summary.to[List].map(_.headOption.flatten).thrushK(trans.xa)
     }
 
+    def streamBlocks(minGix: Long, limit: Int): Stream[F, BlockInfo] =
+      blockInfoRepo.stream(minGix, limit).map(BlockInfo(_)).thrushK(trans.xas)
+
+    def getBlockHeaders(paging: Paging, sorting: Sorting): F[Items[BlockHeader]] = {
+      headerRepo.getBestHeight.flatMap { total =>
+        headerRepo.getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
+          .map(_.map(BlockHeader(_)))
+          .map(Items(_, total))
+      } ||> trans.xa
+    }
+
     private def getFullBlockInfo(id: BlockId): Stream[D, Option[FullBlockInfo]] =
       for {
         header       <- headerRepo.get(id).asStream.unNone
@@ -109,7 +125,7 @@ object Blocks {
         txIdsNel     <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream
         inputs       <- inputRepo.getAllByTxIds(txIdsNel).asStream
         dataInputs   <- dataInputRepo.getAllByTxIds(txIdsNel).asStream
-        outputs      <- outputRepo.getAllByTxIds(txIdsNel).asStream
+        outputs      <- outputRepo.getAllByTxIds(txIdsNel, None).asStream
         boxIdsNel    <- outputs.map(_.output.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs")).asStream
         assets       <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
         adProofsOpt  <- adProofRepo.getByHeaderId(id).asStream

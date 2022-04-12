@@ -22,13 +22,13 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
 
   val defs = new AddressesEndpointDefs(settings)
 
-  val routes: HttpRoutes[F] = getTxsByAddressR <+> getConfirmedBalanceR <+> getTotalBalanceR
+  val routes: HttpRoutes[F] = getTxsByAddressR <+> getConfirmedBalanceR <+> getTotalBalanceR <+> getBatchAddressInfo
 
   private def interpreter = Http4sServerInterpreter(opts)
 
   private def getTxsByAddressR =
-    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging) =>
-      transactions.getByAddress(addr, paging).adaptThrowable.value
+    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging, concise) =>
+      transactions.getByAddress(addr, paging, concise).adaptThrowable.value
     }
 
   private def getConfirmedBalanceR =
@@ -42,6 +42,11 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
         confirmedBalance <- addresses.confirmedBalanceOf(addr, minConfirmations = 0).adaptThrowable
         totalBalance     <- mempool.getUnconfirmedBalanceByAddress(addr, confirmedBalance).adaptThrowable
       } yield totalBalance).value
+    }
+
+  private def getBatchAddressInfo =
+    interpreter.toRoutes(defs.getBatchAddressInfo) { batch =>
+      addresses.addressInfoOf(batch).adaptThrowable.value
     }
 }
 

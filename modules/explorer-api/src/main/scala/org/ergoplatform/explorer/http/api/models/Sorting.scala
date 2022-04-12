@@ -26,11 +26,11 @@ object Sorting {
 
   case object Asc extends SortOrder {
     override def toString: String = value.value
-    def value: OrderingString = refineMV("ASC")
+    def value: OrderingString = refineMV("asc")
   }
 
   case object Desc extends SortOrder {
     override def toString: String = value.value
-    def value: OrderingString = refineMV("DESC")
+    def value: OrderingString = refineMV("desc")
   }
 }

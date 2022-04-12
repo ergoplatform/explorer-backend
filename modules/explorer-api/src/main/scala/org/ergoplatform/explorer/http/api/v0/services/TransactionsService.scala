@@ -113,7 +113,7 @@ object TransactionsService {
             if (!concise) for {
               ins       <- OptionT.liftF(inputRepo.getAllByTxIds(txIdsNel))
               dataIns   <- OptionT.liftF(dataInputRepo.getAllByTxIds(txIdsNel))
-              outs      <- OptionT.liftF(outputRepo.getAllByTxIds(txIdsNel))
+              outs      <- OptionT.liftF(outputRepo.getAllByTxIds(txIdsNel, None))
               boxIdsNel <- OptionT.fromOption[D](outs.map(_.output.boxId).toNel)
               assets    <- OptionT.liftF(assetRepo.getAllByBoxIds(boxIdsNel))
             } yield (ins, dataIns, outs, assets)

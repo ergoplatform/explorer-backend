@@ -4,8 +4,9 @@ import cats.effect.Sync
 import cats.syntax.functor._
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
+import eu.timepit.refined.refineMV
 import org.ergoplatform.explorer.BlockId
-import org.ergoplatform.explorer.constraints.OrderingString
+import org.ergoplatform.explorer.constraints.{OrderingSpec, OrderingString}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockStats
@@ -32,6 +33,10 @@ trait BlockInfoRepo[D[_]] {
     order: OrderingString,
     sortBy: String
   ): D[List[ExtendedBlockInfo]]
+
+  /** Stream blocks.
+    */
+  def stream(minGix: Long, limit: Int): fs2.Stream[D, ExtendedBlockInfo]
 
   /** Get all blocks appeared in the main chain after the given timestamp `ts`.
     */
@@ -108,6 +113,11 @@ object BlockInfoRepo {
       orderBy: String
     ): D[List[ExtendedBlockInfo]] =
       QS.getManyExtendedMain(offset, limit, ordering, orderBy).to[List].liftConnectionIO
+
+    def stream(minGix: Long, limit: Int): fs2.Stream[D, ExtendedBlockInfo] =
+      QS.getManyExtendedMain(minGix, limit, refineMV[OrderingSpec]("asc"), "height")
+        .stream
+        .translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def getManySince(ts: Long): D[List[BlockStats]] =
       QS.getManySince(ts).to[List].liftConnectionIO

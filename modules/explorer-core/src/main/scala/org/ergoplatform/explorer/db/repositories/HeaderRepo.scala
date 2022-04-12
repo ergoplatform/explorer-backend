@@ -6,6 +6,7 @@ import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.BlockId
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
@@ -48,6 +49,15 @@ trait HeaderRepo[D[_]] {
     * for a header with a given `id`.
     */
   def updateChainStatusById(id: BlockId, newChainStatus: Boolean): D[Unit]
+
+  /** Get slice of the main chain.
+    */
+  def getMany(
+    offset: Int,
+    limit: Int,
+    order: OrderingString,
+    sortBy: String
+  ): D[List[Header]]
 }
 
 object HeaderRepo {
@@ -57,8 +67,7 @@ object HeaderRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends HeaderRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends HeaderRepo[D] {
 
     import org.ergoplatform.explorer.db.queries.{HeaderQuerySet => QS}
 
@@ -87,5 +96,13 @@ object HeaderRepo {
 
     def updateChainStatusById(id: BlockId, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusById(id, newChainStatus).run.void.liftConnectionIO
+
+    def getMany(
+      offset: Int,
+      limit: Int,
+      ordering: OrderingString,
+      orderBy: String
+    ): D[List[Header]] =
+      QS.getMany(offset, limit, ordering, orderBy).to[List].liftConnectionIO
   }
 }
