@@ -99,7 +99,7 @@ final class RegistersAndConstantsMigration(
         } yield BoxRegister(id, out.boxId, valueType, serializedValue, value)
         val registersJson = registers
           .map { case BoxRegister(id, _, valueType, rawValue, decodedValue) =>
-            id.entryName -> ExpandedRegister(rawValue, valueType, decodedValue)
+            id.entryName -> ExpandedRegister(rawValue, Some(valueType), Some(decodedValue))
           }
           .toMap
           .asJson
