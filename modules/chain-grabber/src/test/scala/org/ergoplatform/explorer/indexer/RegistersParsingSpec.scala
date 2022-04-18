@@ -28,7 +28,7 @@ class RegistersParsingSpec extends PropSpec with Matchers {
     "\"R6\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
     "\"R7\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
     "\"R8\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
-    "\"R9\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}}"
+    "\"R9\":{\"renderedValue\":null,\"serializedValue\":\"3c0e400e03505250022e30633430306530313034313135393666373537323230366336663631366532303461363136653735363137323739\",\"sigmaType\":null}}"
   }
 
   def prevBlockId     = BlockId.fromStringUnsafe("66dbe6cf7c4ab9fb76aeea5bf58851d1f97d4ee27a24ef2af4b9b155a88fc5ae")
@@ -100,7 +100,7 @@ class RegistersParsingSpec extends PropSpec with Matchers {
       |   "R6":"62",
       |   "R7":"62",
       |   "R8":"62",
-      |   "R9":"62"
+      |   "R9":"3c0e400e03505250022e30633430306530313034313135393666373537323230366336663631366532303461363136653735363137323739"
       | }
       |}
       |""".stripMargin
