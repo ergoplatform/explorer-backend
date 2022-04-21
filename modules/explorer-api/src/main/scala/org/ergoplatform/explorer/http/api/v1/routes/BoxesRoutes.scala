@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.routes
 import cats.data.NonEmptyList
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
+import cats.syntax.list._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.BoxId
@@ -10,7 +11,7 @@ import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableE
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
 import org.ergoplatform.explorer.http.api.v1.defs.BoxesEndpointDefs
-import org.ergoplatform.explorer.http.api.v1.models.OutputInfoM
+import org.ergoplatform.explorer.http.api.v1.models.MOutputInfo
 import org.ergoplatform.explorer.http.api.v1.services.{Boxes, Mempool}
 import org.ergoplatform.explorer.http.api.{streaming, ApiErr}
 import org.ergoplatform.explorer.settings.RequestsSettings
@@ -42,7 +43,7 @@ final class BoxesRoutes[
     getUnspentOutputsByErgoTreeR <+>
     getOutputsByErgoTreeTemplateHashR <+>
     getUnspentOutputsByErgoTreeTemplateHashR <+>
-    getOutputsByAddressR <+>
+    getOutputsByAddressR <+> getFilteredOutputsByAddressR <+>
     getUnspentOutputsByAddressR <+>
     getOutputByIdR
 
@@ -119,14 +120,19 @@ final class BoxesRoutes[
 
   private def getOutputsByAddressR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getOutputsByAddressDef) { case (address, paging) =>
+      service.getOutputsByAddress(address, paging).adaptThrowable.value
+    }
+
+  private def getFilteredOutputsByAddressR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.getUnspentFilteredOutputsByAddressDef) { case (address, sorting) =>
       (for {
-        spentBoxIds    <- mempool.getUSpentOutputsByAddress(address).adaptThrowable
+        spentBoxIds    <- mempool.getUSpentBoxesByAddress(address).adaptThrowable
         mempoolOutputs <- mempool.getUOutputsByAddress(address).adaptThrowable
-        filteredOutputs <-
+        unspentBoxes <-
           service
-            .getFilteredOutputsByAddress(address, paging, NonEmptyList.ofInitLast(spentBoxIds, BoxId("")))
+            .getUnspentOutputsByAddress(address, sorting, spentBoxIds.toNel)
             .adaptThrowable
-      } yield OutputInfoM(filteredOutputs, mempoolOutputs)).value
+      } yield MOutputInfo.fromUOutputList(mempoolOutputs) <+> MOutputInfo.fromOutputList(unspentBoxes)).value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =

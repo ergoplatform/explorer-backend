@@ -60,23 +60,9 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def streamAllByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
 
-  /** Get outputs with a given `ergoTree` from persistence,
-    * filtering spent boxIds from Mempool
-    */
-  def streamAllUnspentByErgoTree(
-    ergoTree: HexString,
-    offset: Int,
-    limit: Int,
-    excludedBoxes: NonEmptyList[BoxId]
-  ): S[D, ExtendedOutput]
-
   /** Count outputs with a given `ergoTree` from persistence.
     */
   def countAllByErgoTree(ergoTree: HexString): D[Int]
-
-  /** Count outputs with a given `ergoTree` from persistence, filtering spent boxIds from Mempool
-    */
-  def countAllUnspentByErgoTree(ergoTree: HexString, excludedBoxes: NonEmptyList[BoxId]): D[Int]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
@@ -87,9 +73,23 @@ trait OutputRepo[D[_], S[_[_], _]] {
     ord: OrderingString
   ): S[D, ExtendedOutput]
 
+  /** Get unspent main-chain outputs with a given `ergoTree` from persistence
+    * & filter out outputs spent in mempool (for unconfirmed transactions)
+    */
+
+  def streamUnspentByErgoTree(
+    ergoTree: HexString,
+    ordering: OrderingString,
+    excludedBoxes: Option[NonEmptyList[BoxId]] // boxes spent in unconfirmed transactions
+  ): Stream[D, ExtendedOutput]
+
   /** Count unspent main-chain outputs with a given `ergoTree` from persistence.
     */
   def countUnspentByErgoTree(ergoTree: HexString): D[Int]
+
+  /** Count filtered(unconfirmed transactions) unspent main-chain outputs with a given `ergoTree` from persistence.
+    */
+  def countUnspentByErgoTree(ergoTree: HexString, excludedBoxes: Option[NonEmptyList[BoxId]]): D[Int]
 
   /** Get all main-chain outputs that are protected with given ergo tree template.
     */
@@ -253,23 +253,12 @@ object OutputRepo {
     def countAllByErgoTree(ergoTree: HexString): D[Int] =
       QS.countAllByErgoTree(ergoTree).unique.liftConnectionIO
 
-    def countAllUnspentByErgoTree(ergoTree: HexString, excludedBoxes: NonEmptyList[BoxId]): D[Int] =
-      QS.countAllUnspentByErgoTree(ergoTree, excludedBoxes).unique.liftConnectionIO
-
     def streamAllByErgoTree(
       ergoTree: HexString,
       offset: Int,
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getMainByErgoTree(ergoTree, offset, limit).stream.translate(liftK)
-
-    def streamAllUnspentByErgoTree(
-      ergoTree: HexString,
-      offset: Int,
-      limit: Int,
-      excludedBoxes: NonEmptyList[BoxId]
-    ): Stream[D, ExtendedOutput] =
-      QS.getUnspentMainByErgoTree(ergoTree, offset, limit, excludedBoxes).stream.translate(liftK)
 
     def getAllMainUnspentIdsByErgoTree(ergoTree: HexString): D[List[BoxId]] =
       QS.getAllMainUnspentIdsByErgoTree(ergoTree)
@@ -296,8 +285,25 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit, ordering).stream.translate(liftK)
 
+    def streamUnspentByErgoTree(
+      ergoTree: HexString,
+      ordering: OrderingString,
+      excludedBoxes: Option[NonEmptyList[BoxId]] // boxes spent in unconfirmed transactions
+    ): Stream[D, ExtendedOutput] =
+      excludedBoxes match {
+        case Some(eBoxes) =>
+          QS.getMainUnspentByErgoTreeFiltered(ergoTree, 0, Int.MaxValue, ordering, eBoxes).stream.translate(liftK)
+        case None => QS.getMainUnspentByErgoTree(ergoTree, 0, Int.MaxValue, ordering).stream.translate(liftK)
+      }
+
     def countUnspentByErgoTree(ergoTree: HexString): D[Int] =
       QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+
+    def countUnspentByErgoTree(ergoTree: HexString, excludedBoxes: Option[NonEmptyList[BoxId]]): D[Int] =
+      excludedBoxes match {
+        case Some(eBoxes) => QS.countUnspentByErgoTree(ergoTree, eBoxes).unique.liftConnectionIO
+        case None         => QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+      }
 
     def streamAllByErgoTreeTemplateHash(
       hash: ErgoTreeTemplateHash,

@@ -36,15 +36,14 @@ trait Boxes[F[_]] {
     */
   def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]]
 
-  /** Get all outputs with the given `address` in proposition and filter
-    * spent boxes from Mempool
+  /** Get all outputs with the given `address` in proposition & filter outputs spent in the mempool (for unconfirmed transactions)
     */
 
-  def getFilteredOutputsByAddress(
+  def getUnspentOutputsByAddress(
     address: Address,
-    paging: Paging,
-    excludedBoxes: NonEmptyList[BoxId]
-  ): F[Items[OutputInfo]]
+    ord: SortOrder,
+    excludedBoxes: Option[NonEmptyList[BoxId]]
+  ): F[List[OutputInfo]]
 
   /** Get unspent outputs with the given `address` in proposition.
     */
@@ -154,21 +153,20 @@ object Boxes {
         .thrushK(trans.xa)
     }
 
-    def getFilteredOutputsByAddress(
+    def getUnspentOutputsByAddress(
       address: Address,
-      paging: Paging,
-      excludedBoxes: NonEmptyList[BoxId]
-    ): F[Items[OutputInfo]] = {
+      ord: SortOrder,
+      excludedBoxes: Option[NonEmptyList[BoxId]]
+    ): F[List[OutputInfo]] = {
       val ergoTree = addressToErgoTreeHex(address)
       outputs
-        .countAllUnspentByErgoTree(ergoTree, excludedBoxes)
-        .flatMap { total =>
+        .countUnspentByErgoTree(ergoTree, excludedBoxes)
+        .flatMap { _ =>
           outputs
-            .streamAllUnspentByErgoTree(ergoTree, paging.offset, paging.limit, excludedBoxes)
+            .streamUnspentByErgoTree(ergoTree, ord.value, excludedBoxes)
             .chunkN(serviceSettings.chunkSize)
             .through(toOutputInfo)
             .to[List]
-            .map(Items(_, total))
         }
         .thrushK(trans.xa)
     }

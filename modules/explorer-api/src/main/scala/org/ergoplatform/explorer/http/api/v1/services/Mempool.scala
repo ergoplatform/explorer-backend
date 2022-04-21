@@ -42,9 +42,9 @@ trait Mempool[F[_]] {
     paging: Paging
   ): F[Items[UTransactionInfo]]
 
-  def getUOutputsByAddress(address: Address): F[Items[UOutputInfo]]
+  def getUOutputsByAddress(address: Address): F[List[UOutputInfo]]
 
-  def getUSpentOutputsByAddress(address: Address): F[List[BoxId]]
+  def getUSpentBoxesByAddress(address: Address): F[List[BoxId]]
 
   def getUnconfirmedBalanceByAddress(
     address: Address,
@@ -85,10 +85,8 @@ object Mempool {
         .map(_ > 0)
         .thrushK(trans.xa)
 
-    def getUOutputsByAddress(address: Address): F[Items[UOutputInfo]] = {
-      val ergoTree  = addressToErgoTreeNewtype(address)
-      val hexString = addressToErgoTreeHex(address)
-
+    def getUOutputsByAddress(address: Address): F[List[UOutputInfo]] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
       txs
         .countByErgoTree(ergoTree.value)
         .flatMap { _ =>
@@ -97,17 +95,13 @@ object Mempool {
             .chunkN(settings.chunkSize)
             .through(mkTransaction)
             .to[List]
-            .map { poolItems =>
-              val outputs = poolItems.flatMap(_.outputs.filter(_.ergoTree == hexString))
-              Items(outputs, outputs.length)
-            }
+            .map(_.flatMap(_.outputs.filter(_.ergoTree == ergoTree.value)))
         }
         .thrushK(trans.xa)
     }
 
-    def getUSpentOutputsByAddress(address: Address): F[List[BoxId]] = {
+    def getUSpentBoxesByAddress(address: Address): F[List[BoxId]] = {
       val ergoTree = addressToErgoTreeNewtype(address)
-
       txs
         .countByErgoTree(ergoTree.value)
         .flatMap { _ =>
