@@ -6,11 +6,11 @@ import fs2.Stream
 import mouse.anyf._
 import cats.syntax.parallel._
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.Address
+import org.ergoplatform.explorer.{Address, ErgoTree, HexString}
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo_V1, Balance, TokenAmount, TotalBalance}
+import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, Balance, TokenAmount, TotalBalance}
 import org.ergoplatform.explorer.protocol.sigma
 import tofu.syntax.monadic._
 
@@ -20,7 +20,7 @@ trait Addresses[F[_]] {
 
   def totalBalanceOf(address: Address): F[TotalBalance]
 
-  def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo_V1]]
+  def addressInfoOf(batch: List[Address], hasUnconfirmedTxs: ErgoTree => F[Boolean]): F[Map[Address, AddressInfo]]
 }
 
 object Addresses {
@@ -62,17 +62,30 @@ object Addresses {
       )) ||> trans.xa
     }
 
-    // TODO: merge with branch i170 to collect hasConfirmedTx from MemPoolService
-    private def addressInfoOf(address: Address): F[(Address, AddressInfo_V1)] =
+    private def hasBeenUsedByErgoTree(ergoTree: HexString): F[Boolean] =
+      (for { used <- outputRepo.nodeOutputCount(ergoTree) } yield used > 0) ||> trans.xa
+
+    private def addressInfoOf(
+      address: Address,
+      hasUnconfirmedTxs: ErgoTree => F[Boolean]
+    ): F[(Address, AddressInfo)] = {
+      val tree = sigma.addressToErgoTreeNewtype(address)
       for {
         balance <- confirmedBalanceOf(address, 0)
-      } yield (address, AddressInfo_V1(hasUnconfirmedTxs = true, used = true, balance))
+        hUTxs   <- hasUnconfirmedTxs(tree)
+        used    <- hasBeenUsedByErgoTree(tree.value)
+      } yield (address, AddressInfo(address = address, hasUnconfirmedTxs = hUTxs, used = used, balance))
+    }
 
-    def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo_V1]] =
+    def addressInfoOf(batch: List[Address], hasUnconfirmedTxs: ErgoTree => F[Boolean]): F[Map[Address, AddressInfo]] =
       batch.distinct
-        .map(addressInfoOf)
+        .map(addressInfoOf(_, hasUnconfirmedTxs))
+        .grouped(10)
+        .map(_.parSequence)
+        .toList
         .parSequence
-        .map(_.foldLeft(Map[Address, AddressInfo_V1]()) { case (m, t) => m + t })
+        .map(_.flatten)
+        .map(_.foldLeft(Map[Address, AddressInfo]()) { case (m, t) => m + t })
 
   }
 }

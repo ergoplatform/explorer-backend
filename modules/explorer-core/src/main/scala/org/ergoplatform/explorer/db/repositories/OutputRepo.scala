@@ -48,6 +48,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long]
 
+  /** check if wallet is in use
+    */
+  def nodeOutputCount(ergoTree: HexString): D[Long]
+
   /** Get balances of all addresses in the network.
     */
   def balanceStatsMain(offset: Int, limit: Int): D[List[(Address, Long)]]
@@ -438,5 +442,8 @@ object OutputRepo {
 
     def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): D[Int] =
       QS.countUnspentByAssetsUnion(templateHash, assets).unique.liftConnectionIO
+
+    def nodeOutputCount(ergoTree: HexString): D[Long] =
+      QS.nodeOutputCount(ergoTree).unique.liftConnectionIO
   }
 }
