@@ -1,12 +1,10 @@
 package org.ergoplatform.explorer.http.api.v1.routes
 
-import cats.data.NonEmptyList
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import cats.syntax.list._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.BoxId
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
@@ -124,15 +122,16 @@ final class BoxesRoutes[
     }
 
   private def getFilteredOutputsByAddressR: HttpRoutes[F] =
-    interpreter.toRoutes(defs.getUnspentFilteredOutputsByAddressDef) { case (address, sorting) =>
-      (for {
-        spentBoxIds    <- mempool.getUSpentBoxesByAddress(address).adaptThrowable
-        mempoolOutputs <- mempool.getUOutputsByAddress(address).adaptThrowable
-        unspentBoxes <-
-          service
-            .getUnspentOutputsByAddress(address, sorting, spentBoxIds.toNel)
-            .adaptThrowable
-      } yield MOutputInfo.fromUOutputList(mempoolOutputs) <+> MOutputInfo.fromOutputList(unspentBoxes)).value
+    interpreter.toRoutes(defs.`getUnspent&UnconfirmedOutputsMergedByAddressDef`) { case (address, sorting) =>
+      service
+        .`getUnspent&UnconfirmedOutputsMergedByAddress`(
+          address,
+          sorting,
+          mempool.getUSpentBoxesByAddress,
+          mempool.getUOutputsByAddress
+        )
+        .adaptThrowable
+        .value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =

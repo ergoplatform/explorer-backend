@@ -129,9 +129,10 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def getUnspentFilteredOutputsByAddressDef: Endpoint[(Address, SortOrder), ApiErr, List[MOutputInfo], Any] =
+  def `getUnspent&UnconfirmedOutputsMergedByAddressDef`
+    : Endpoint[(Address, SortOrder), ApiErr, List[MOutputInfo], Any] =
     baseEndpointDef.get
-      .in(PathPrefix / "unspent-filtered" / "byAddress" / path[Address])
+      .in(PathPrefix / "unspent" / "unconfirmed" / "byAddress" / path[Address])
       .in(ordering)
       .out(jsonBody[List[MOutputInfo]])
 

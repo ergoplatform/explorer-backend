@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v1.services
 
 import cats.data.{NonEmptyList, OptionT}
 import cats.effect.Sync
+import cats.syntax.semigroupk._
 import cats.syntax.list._
 import cats.{Functor, Monad}
 import fs2.{Chunk, Pipe, Stream}
@@ -17,7 +18,7 @@ import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputR
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, MOutputInfo, OutputInfo, UOutputInfo}
 import org.ergoplatform.explorer.protocol.sigma._
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
@@ -44,6 +45,17 @@ trait Boxes[F[_]] {
     ord: SortOrder,
     excludedBoxes: Option[NonEmptyList[BoxId]]
   ): F[List[OutputInfo]]
+
+  /** Return combination of unspent boxes (with consideration to the Mempool) &
+    * unconfirmed boxes in Mempool
+    */
+
+  def `getUnspent&UnconfirmedOutputsMergedByAddress`(
+    address: Address,
+    ord: SortOrder,
+    getUSpentBoxes: Address => F[List[BoxId]],
+    getUOutputs: Address => F[List[UOutputInfo]]
+  ): F[List[MOutputInfo]]
 
   /** Get unspent outputs with the given `address` in proposition.
     */
@@ -116,13 +128,13 @@ trait Boxes[F[_]] {
 object Boxes {
 
   def apply[
-    F[_]: Sync,
+    F[_]: Sync: Monad,
     D[_]: Monad: Throws: LiftConnectionIO: CompileStream
   ](serviceSettings: ServiceSettings)(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[Boxes[F]] =
     (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D]).mapN(new Live(serviceSettings, _, _, _)(trans))
 
   final private class Live[
-    F[_]: Functor: CompileStream,
+    F[_]: Functor: CompileStream: Monad,
     D[_]: Monad: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: CompileStream
   ](
     serviceSettings: ServiceSettings,
@@ -170,6 +182,17 @@ object Boxes {
         }
         .thrushK(trans.xa)
     }
+
+    def `getUnspent&UnconfirmedOutputsMergedByAddress`(
+      address: Address,
+      ord: SortOrder,
+      getUSpentBoxes: Address => F[List[BoxId]],
+      getUOutputs: Address => F[List[UOutputInfo]]
+    ): F[List[MOutputInfo]] = for {
+      spentBoxIds    <- getUSpentBoxes(address)
+      mempoolOutputs <- getUOutputs(address)
+      unspentBoxes   <- getUnspentOutputsByAddress(address, ord, spentBoxIds.toNel)
+    } yield MOutputInfo.fromUOutputList(mempoolOutputs) <+> MOutputInfo.fromOutputList(unspentBoxes)
 
     def getUnspentOutputsByAddress(address: Address, paging: Paging, ord: SortOrder): F[Items[OutputInfo]] = {
       val ergoTree = addressToErgoTreeHex(address)
