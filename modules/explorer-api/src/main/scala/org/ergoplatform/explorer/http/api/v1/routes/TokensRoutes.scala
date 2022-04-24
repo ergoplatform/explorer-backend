@@ -20,7 +20,7 @@ final class TokensRoutes[
   val defs = new TokensEndpointDefs(settings)
 
   val routes: HttpRoutes[F] =
-    listR <+> searchR <+> getBySymbolR <+> getByIdR
+    listR <+> searchR <+> getBySymbolR <+> getByIdR <+> checkTokenR <+> getGenuineTokenListR <+> getBlockedTokenListR
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -51,8 +51,21 @@ final class TokensRoutes[
       tokens.getAll(paging, ordering, hideNfts).adaptThrowable.value
     }
 
-  private def eip0021: HttpRoutes[F] =
-    interpreter.toRoutes(defs.eip0021)(_ => ???)
+  private def checkTokenR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.checkToken) { case (tokenId, tokenName) =>
+      tokens.checkToken(tokenId, tokenName).adaptThrowable.value
+    }
+
+  private def getGenuineTokenListR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.getGenuineTokenList) { _ =>
+      tokens.getGenuineTokenList.adaptThrowable.value
+    }
+
+  private def getBlockedTokenListR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.getBlockedTokenList) { _ =>
+      tokens.getBlockedTokenList.adaptThrowable.value
+    }
+
 }
 
 object TokensRoutes {

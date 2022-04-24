@@ -4,7 +4,7 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{Eip0021, TokenInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{CheckTokenInfo, GenuineTokenInfo, TokenInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import org.ergoplatform.explorer.{TokenId, TokenSymbol}
 import sttp.tapir._
@@ -48,8 +48,19 @@ final class TokensEndpointDefs(settings: RequestsSettings) {
       .in(hideNfts)
       .out(jsonBody[Items[TokenInfo]])
 
-  def eip0021: Endpoint[Unit, ApiErr, Eip0021, Any] =
+  def checkToken: Endpoint[(TokenId, String), ApiErr, CheckTokenInfo, Any] =
     baseEndpointDef.get
-      .in(PathPrefix)
-      .out(jsonBody[Eip0021])
+      .in(PathPrefix / "check" / path[TokenId] / path[String])
+      .out(jsonBody[CheckTokenInfo])
+
+  def getGenuineTokenList: Endpoint[Unit, ApiErr, Items[GenuineTokenInfo], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "listGenuine")
+      .out(jsonBody[Items[GenuineTokenInfo]])
+
+  def getBlockedTokenList: Endpoint[Unit, ApiErr, Items[String], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "listBlocked")
+      .out(jsonBody[Items[String]])
+
 }

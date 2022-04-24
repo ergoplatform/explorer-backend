@@ -1,8 +1,8 @@
-package org.ergoplatform.explorer.protocol.models
+package org.ergoplatform.explorer.http.api.v1.models
 
-import org.ergoplatform.explorer.TokenId
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import org.ergoplatform.explorer.TokenId
 import sttp.tapir.{Schema, Validator}
 
 /** [[https://github.com/ergoplatform/eips/blob/master/eip-0021.md#genuine-tokens EIP0021: Genuine Tokens Verification]]: <br/>
@@ -12,22 +12,22 @@ import sttp.tapir.{Schema, Validator}
   */
 
 @derive(encoder, decoder)
-final case class GenuineTokens(
-  verboseName: String,
+final case class GenuineTokenInfo(
   tokenId: TokenId,
+  tokenName: String,
   uniqueName: Boolean,
-  issuer: String
+  issuer: Option[String]
 )
 
-object GenuineTokens {
+object GenuineTokenInfo {
 
-  implicit val schema: Schema[GenuineTokens] =
+  implicit val schema: Schema[GenuineTokenInfo] =
     Schema
-      .derived[GenuineTokens]
-      .modify(_.verboseName)(_.description("Token Verbose Name"))
+      .derived[GenuineTokenInfo]
+      .modify(_.tokenName)(_.description("Token Verbose Name"))
       .modify(_.tokenId)(_.description("Token ID"))
       .modify(_.uniqueName)(_.description("Boolean Token Verbose Name is unique"))
       .modify(_.issuer)(_.description("Token Issuer"))
 
-  implicit val validator: Validator[GenuineTokens] = schema.validator
+  implicit val validator: Validator[GenuineTokenInfo] = schema.validator
 }
