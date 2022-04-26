@@ -5,7 +5,7 @@ import doobie.util.fragment.Fragment
 import doobie.util.log.LogHandler
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.TokenId
-import org.ergoplatform.explorer.db.models.{BlockedToken, GenuineToken}
+import org.ergoplatform.explorer.db.models.BlockedToken
 
 object BlockedTokenQuerySet extends QuerySet {
 

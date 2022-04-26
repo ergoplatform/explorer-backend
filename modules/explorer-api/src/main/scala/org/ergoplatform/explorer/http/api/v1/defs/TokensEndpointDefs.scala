@@ -53,14 +53,16 @@ final class TokensEndpointDefs(settings: RequestsSettings) {
       .in(PathPrefix / "check" / path[TokenId] / path[String])
       .out(jsonBody[CheckTokenInfo])
 
-  def getGenuineTokenList: Endpoint[Unit, ApiErr, Items[GenuineTokenInfo], Any] =
+  def getGenuineTokenList: Endpoint[Paging, ApiErr, Items[GenuineTokenInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "listGenuine")
+      .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[GenuineTokenInfo]])
 
-  def getBlockedTokenList: Endpoint[Unit, ApiErr, Items[String], Any] =
+  def getBlockedTokenList: Endpoint[Paging, ApiErr, Items[String], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "listBlocked")
+      .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[String]])
 
 }

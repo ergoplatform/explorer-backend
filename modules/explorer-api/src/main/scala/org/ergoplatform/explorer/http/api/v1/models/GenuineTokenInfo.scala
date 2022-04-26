@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.models
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import org.ergoplatform.explorer.TokenId
+import org.ergoplatform.explorer.db.models.GenuineToken
 import sttp.tapir.{Schema, Validator}
 
 /** [[https://github.com/ergoplatform/eips/blob/master/eip-0021.md#genuine-tokens EIP0021: Genuine Tokens Verification]]: <br/>
@@ -20,6 +21,14 @@ final case class GenuineTokenInfo(
 )
 
 object GenuineTokenInfo {
+
+  def apply(genuineToken: GenuineToken): GenuineTokenInfo =
+    GenuineTokenInfo(
+      genuineToken.id,
+      genuineToken.tokenName,
+      genuineToken.uniqueName,
+      genuineToken.issuer
+    )
 
   implicit val schema: Schema[GenuineTokenInfo] =
     Schema
