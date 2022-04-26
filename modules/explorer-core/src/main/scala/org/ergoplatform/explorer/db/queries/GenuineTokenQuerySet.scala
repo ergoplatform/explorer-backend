@@ -28,10 +28,24 @@ object GenuineTokenQuerySet extends QuerySet {
          |where gt.token_id = $id
          |""".stripMargin.query[GenuineToken]
 
+  def get(id: TokenId, name: String): Query0[GenuineToken] =
+    sql"""
+         |select gt.token_id, gt.tokenName, gt.uniqueName, gt.issuer from genuine_tokens gt
+         |where gt.token_id = $id
+         | and LOWER(gt.name) = LOWER($name)
+         |""".stripMargin.query[GenuineToken]
+
   def get(name: String): Query0[GenuineToken] =
     sql"""
          |select gt.token_id, gt.tokenName, gt.uniqueName, gt.issuer from genuine_tokens gt
          |where LOWER(gt.name) = LOWER($name)
+         |""".stripMargin.query[GenuineToken]
+
+  def get(name: String, unique: Boolean): Query0[GenuineToken] =
+    sql"""
+         |select gt.token_id, gt.tokenName, gt.uniqueName, gt.issuer from genuine_tokens gt
+         |where LOWER(gt.name) = LOWER($name)
+         | and gt.uniqueName = $unique
          |""".stripMargin.query[GenuineToken]
 
   def getAll(offset: Int, limit: Int)(implicit

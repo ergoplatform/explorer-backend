@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.{CheckTokenInfo, GenuineTokenInfo, TokenInfo}
+import org.ergoplatform.explorer.http.api.v1.utils.TokenVerification
 import tofu.syntax.monadic._
 import tofu.syntax.foption._
 
@@ -54,7 +55,7 @@ object Tokens {
 
   final private class Live[
     F[_]: FlatMap,
-    D[_]: CRaise[*[_], InconsistentDbData]: Monad
+    D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
   ](tokenRepo: TokenRepo[D], genuineTokenRepo: GenuineTokenRepo[D], blockedTokenRepo: BlockedTokenRepo[D])(
     trans: D Trans F
   ) extends Tokens[F] {
@@ -97,7 +98,19 @@ object Tokens {
         - If nothing applies, the token authenticity is **unknown**.
      */
 
-    def checkToken(tokenId: TokenId, tokenName: String): F[CheckTokenInfo] = ???
+    def checkToken(tokenId: TokenId, tokenName: String): F[CheckTokenInfo] =
+      (
+        for {
+          tokenState <- TokenVerification(
+                          tokenId,
+                          tokenName,
+                          genuineTokenRepo.get,
+                          blockedTokenRepo.get,
+                          genuineTokenRepo.getByNameAndUnique
+                        )
+          genuineToken <- genuineTokenRepo.get(tokenId)
+        } yield CheckTokenInfo(tokenState, genuineToken.map(GenuineTokenInfo(_)))
+      ) ||> trans.xa
 
     def getGenuineTokenList(paging: Paging): F[Items[GenuineTokenInfo]] =
       (for {
@@ -112,14 +125,3 @@ object Tokens {
       } yield Items(bts, total)) ||> trans.xa
   }
 }
-
-/*
-### Process to add tokens to this list
-
-As outlined before, this list should only hold tokens of value. This means that mainly tokens of financial value can be added. Before opening a PR to add your token to
-this list, ask yourself if your token is interesting for scammers. When the answer is no, the token should probably not added to this list.
-On rare occasions, tokens of a certain intrinsic value to the community could be added as well when there was a community vote with significant community participation.
-Applications and REST API service providers can add own tokens to their list, but should be open about it. As Ergo is neutral, the list defined here should be
-compact and the smallest common denominator.
-
- */

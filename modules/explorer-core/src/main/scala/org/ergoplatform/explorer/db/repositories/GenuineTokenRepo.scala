@@ -22,6 +22,10 @@ trait GenuineTokenRepo[D[_]] {
 
   def get(id: TokenId): D[Option[GenuineToken]]
 
+  def get(id: TokenId, name: String): D[Option[GenuineToken]]
+
+  def getByNameAndUnique(tokenName: String, unique: Boolean): D[Option[GenuineToken]]
+
   def getAll(offset: Int, limit: Int): D[List[GenuineToken]]
 
   def countAll: D[Int]
@@ -47,5 +51,10 @@ object GenuineTokenRepo {
     override def getAll(offset: Int, limit: Int): ConnectionIO[List[GenuineToken]] = QS.getAll(offset, limit).to[List]
 
     override def countAll: ConnectionIO[Int] = QS.countAll.unique
+
+    override def getByNameAndUnique(tokenName: String, unique: Boolean): ConnectionIO[Option[GenuineToken]] =
+      QS.get(tokenName, unique).option
+
+    override def get(id: TokenId, name: String): ConnectionIO[Option[GenuineToken]] = QS.get(id, name).option
   }
 }
