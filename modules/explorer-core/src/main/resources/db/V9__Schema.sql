@@ -298,7 +298,7 @@ CREATE TABLE genuine_tokens
     issuer          VARCHAR
 );
 
-CREATE TABLE tokens
+CREATE TABLE blocked_tokens
 (
     token_id        VARCHAR(64)   PRIMARY KEY,
     token_name      VARCHAR,      NOT NULL
