@@ -57,13 +57,13 @@ final class TokensRoutes[
     }
 
   private def getGenuineTokenListR: HttpRoutes[F] =
-    interpreter.toRoutes(defs.getGenuineTokenList) { _ =>
-      tokens.getGenuineTokenList.adaptThrowable.value
+    interpreter.toRoutes(defs.getGenuineTokenList) { paging =>
+      tokens.getGenuineTokenList(paging).adaptThrowable.value
     }
 
   private def getBlockedTokenListR: HttpRoutes[F] =
-    interpreter.toRoutes(defs.getBlockedTokenList) { _ =>
-      tokens.getBlockedTokenList.adaptThrowable.value
+    interpreter.toRoutes(defs.getBlockedTokenList) { paging =>
+      tokens.getBlockedTokenList(paging).adaptThrowable.value
     }
 
 }

@@ -2,7 +2,6 @@ package org.ergoplatform.explorer.http.api.v1.services
 
 import cats.effect.Sync
 import cats.{FlatMap, Monad}
-import fs2.Stream
 import mouse.anyf._
 import org.ergoplatform.explorer.{CRaise, TokenId, TokenSymbol}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
@@ -11,7 +10,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{Eip0021, TokenInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{CheckTokenInfo, GenuineTokenInfo, TokenInfo}
 import tofu.syntax.monadic._
 import tofu.syntax.foption._
 
@@ -31,10 +30,18 @@ trait Tokens[F[_]] {
     */
   def getAll(paging: Paging, ordering: SortOrder, hideNfts: Boolean): F[Items[TokenInfo]]
 
-  /** Get genuine tokens & blocked token (Eip0021)
+  /** Check token verification status
     */
+  def checkToken(tokenId: TokenId, tokenName: String): F[CheckTokenInfo]
 
-  def getEip0021TokenList: F[Eip0021]
+  /** Get all genuine tokens (Eip0021)
+    */
+  def getGenuineTokenList(paging: Paging): F[Items[GenuineTokenInfo]]
+
+  /** Get all blocked tokens (Eip0021)
+    */
+  def getBlockedTokenList(paging: Paging): F[Items[String]]
+
 }
 
 object Tokens {
@@ -43,13 +50,14 @@ object Tokens {
     F[_]: Sync,
     D[_]: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: Monad
   ](trans: D Trans F): F[Tokens[F]] =
-    TokenRepo[F, D].map(new Live(_)(trans))
+    (TokenRepo[F, D], GenuineTokenRepo[F, D], BlockedTokenRepo[F, D]).mapN(new Live(_, _, _)(trans))
 
   final private class Live[
     F[_]: FlatMap,
     D[_]: CRaise[*[_], InconsistentDbData]: Monad
-  ](tokenRepo: TokenRepo[D])(trans: D Trans F)
-    extends Tokens[F] {
+  ](tokenRepo: TokenRepo[D], genuineTokenRepo: GenuineTokenRepo[D], blockedTokenRepo: BlockedTokenRepo[D])(
+    trans: D Trans F
+  ) extends Tokens[F] {
 
     def get(id: TokenId): F[Option[TokenInfo]] =
       tokenRepo.get(id).mapIn(TokenInfo(_)).thrushK(trans.xa)
@@ -79,11 +87,39 @@ object Tokens {
         }
         .thrushK(trans.xa)
 
-    /** Get genuine tokens & blocked token (Eip0021)
-      */
-    override def getEip0021TokenList: F[Eip0021] =
-      tokenRepo.getEip0021TokenList
-        .map(Eip0021(_))
-        .thrushK(trans.xa)
+    /*
+        ## Token authenticity verification algorithm
+        The verification algorithm relies on a list of blocked tokens and a list of genuine tokens that can have a unique name.
+        The token to test is checked as follows:
+        - Is the token id listed in verified tokens? If yes, the token is **verified**.
+        - Is the token id listed in blocked tokens? If yes, the token is **blocked**.
+        - Is the token id not listed, but its name is the name of a verified token with unique name? If yes, the token is **suspicious**.
+        - If nothing applies, the token authenticity is **unknown**.
+     */
+
+    def checkToken(tokenId: TokenId, tokenName: String): F[CheckTokenInfo] = ???
+
+    def getGenuineTokenList(paging: Paging): F[Items[GenuineTokenInfo]] =
+      (for {
+        total <- genuineTokenRepo.countAll
+        gts   <- genuineTokenRepo.getAll(paging.offset, paging.limit).map(_.map(GenuineTokenInfo(_)))
+      } yield Items(gts, total)) ||> trans.xa
+
+    def getBlockedTokenList(paging: Paging): F[Items[String]] =
+      (for {
+        total <- blockedTokenRepo.countAll
+        bts   <- blockedTokenRepo.getAll(paging.offset, paging.limit).map(_.map(_.tokenName))
+      } yield Items(bts, total)) ||> trans.xa
   }
 }
+
+/*
+### Process to add tokens to this list
+
+As outlined before, this list should only hold tokens of value. This means that mainly tokens of financial value can be added. Before opening a PR to add your token to
+this list, ask yourself if your token is interesting for scammers. When the answer is no, the token should probably not added to this list.
+On rare occasions, tokens of a certain intrinsic value to the community could be added as well when there was a community vote with significant community participation.
+Applications and REST API service providers can add own tokens to their list, but should be open about it. As Ergo is neutral, the list defined here should be
+compact and the smallest common denominator.
+
+ */
