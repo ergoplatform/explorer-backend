@@ -178,17 +178,20 @@ package object extractors {
       } yield BoxRegister(id, out.boxId, typeSig, rawValue, value)
     }
 
+//  implicit def scriptConstantsBuildFrom[F[_]: Monad]: BuildFrom[F, SlotData, List[ScriptConstant]] =
+//    BuildFrom.pure { case SlotData(ApiFullBlock(_, apiTxs, _, _, _), _) =>
+//      for {
+//        tx        <- apiTxs.transactions
+//        out       <- tx.outputs.toList
+//        constants <- sigma.extractErgoTreeConstants[Try](out.ergoTree).toOption.toList
+//        (ix, tp, v, rv) <- constants.flatMap { case (ix, c, v) =>
+//                             sigma.renderEvaluatedValue(c).map { case (tp, rv) => (ix, tp, v, rv) }.toList
+//                           }
+//      } yield ScriptConstant(ix, out.boxId, tp, v, rv)
+//    }
+
   implicit def scriptConstantsBuildFrom[F[_]: Monad]: BuildFrom[F, SlotData, List[ScriptConstant]] =
-    BuildFrom.pure { case SlotData(ApiFullBlock(_, apiTxs, _, _, _), _) =>
-      for {
-        tx        <- apiTxs.transactions
-        out       <- tx.outputs.toList
-        constants <- sigma.extractErgoTreeConstants[Try](out.ergoTree).toOption.toList
-        (ix, tp, v, rv) <- constants.flatMap { case (ix, c, v) =>
-                             sigma.renderEvaluatedValue(c).map { case (tp, rv) => (ix, tp, v, rv) }.toList
-                           }
-      } yield ScriptConstant(ix, out.boxId, tp, v, rv)
-    }
+    BuildFrom.pure(_ => List.empty)
 
   implicit def tokensBuildFrom[F[_]: Applicative]: BuildFrom[F, SlotData, List[Token]] =
     new TokensBuildFromEip4

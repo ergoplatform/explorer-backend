@@ -8,18 +8,19 @@ import org.ergoplatform.explorer.db.RealDbTest
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalatest._
+import flatspec._
+import matchers._
 
-class AssetRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCheckDrivenPropertyChecks {
+class AssetRepoSpec extends AnyFlatSpec with should.Matchers with RealDbTest {
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.db.models.generators._
 
-  property("insert/getAllByBoxId") {
+  "AssetRepo" should "insert/getAllByBoxId" in {
     withLiveRepo[ConnectionIO] { repo =>
       forSingleInstance(assetsWithBoxIdGen) { case (boxId, assets) =>
-        repo.getAllByBoxId(boxId).runWithIO() shouldBe 'empty
+        repo.getAllByBoxId(boxId).runWithIO() should be('empty)
         assets.foreach { asset =>
           repo.insert(asset).runWithIO()
         }
@@ -32,12 +33,12 @@ class AssetRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaChe
     }
   }
 
-  property("insert/getIssuingBoxes/getAllIssuingBoxes") {
+  it should "insert/getIssuingBoxes/getAllIssuingBoxes" in {
     withLiveRepos[ConnectionIO] { (assetRepo, outputRepo, inputRepo) =>
       forSingleInstance(issueTokensGen(5)) { issuedTokens =>
-        assetRepo.getAllIssuingBoxes(0, Int.MaxValue).runWithIO() shouldBe empty
+        assetRepo.getAllIssuingBoxes(0, Int.MaxValue).runWithIO() should be(empty)
         val issuedTokenIds = NonEmptyList.fromList(issuedTokens.map(_._3.tokenId)).get
-        assetRepo.getIssuingBoxesByTokenIds(issuedTokenIds).runWithIO() shouldBe empty
+        assetRepo.getIssuingBoxesByTokenIds(issuedTokenIds).runWithIO() should be(empty)
 
         issuedTokens.foreach { case (input, out, token) =>
           // issue a token

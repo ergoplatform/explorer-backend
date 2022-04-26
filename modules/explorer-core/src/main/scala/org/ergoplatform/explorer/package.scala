@@ -9,7 +9,7 @@ import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.boolean.OneOf
 import eu.timepit.refined.predicates.all.Equal
 import eu.timepit.refined.string.{HexStringSpec, MatchesRegex, Url}
-import eu.timepit.refined.{W, refineV}
+import eu.timepit.refined.{refineMV, refineV, W}
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
@@ -25,6 +25,8 @@ import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema, Validator}
 import tofu.Raise.ContravariantRaise
 import tofu.logging.Loggable
 import tofu.syntax.raise._
+
+import scala.util.Try
 
 package object explorer {
 
@@ -76,6 +78,8 @@ package object explorer {
       F[_]: CRaise[*[_], RefinementFailed]: Applicative
     ](s: String): F[BlockId] =
       HexString.fromString(s).map(BlockId.apply)
+
+    def fromStringUnsafe(s: String): BlockId = fromString[Try](s).get
   }
 
   @newtype case class TxId(value: String)

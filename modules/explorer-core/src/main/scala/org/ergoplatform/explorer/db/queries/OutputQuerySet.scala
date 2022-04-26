@@ -287,6 +287,35 @@ object OutputQuerySet extends QuerySet {
       .query[ExtendedOutput]
   }
 
+  def getAllByTxIds(
+    txIds: NonEmptyList[TxId],
+    narrowByAddress: Address
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val q =
+      sql"""
+           |select distinct on (o.box_id)
+           |  o.box_id,
+           |  o.tx_id,
+           |  o.header_id,
+           |  o.value,
+           |  o.creation_height,
+           |  o.settlement_height,
+           |  o.index,
+           |  o.global_index,
+           |  o.ergo_tree,
+           |  o.ergo_tree_template_hash,
+           |  o.address,
+           |  o.additional_registers,
+           |  o.timestamp,
+           |  o.main_chain,
+           |  i.tx_id
+           |from node_outputs o
+           |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+           |""".stripMargin
+    (q ++ Fragments.in(fr"where o.address = $narrowByAddress and o.tx_id", txIds))
+      .query[ExtendedOutput]
+  }
+
   def getAllLike(substring: String)(implicit lh: LogHandler): Query0[Address] =
     sql"select distinct address from node_outputs where address like ${"%" + substring + "%"}"
       .query[Address]
