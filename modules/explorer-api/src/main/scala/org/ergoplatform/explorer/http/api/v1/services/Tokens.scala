@@ -11,7 +11,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.{CheckTokenInfo, GenuineTokenInfo, TokenInfo}
-import org.ergoplatform.explorer.http.api.v1.utils.TokenVerification
+import org.ergoplatform.explorer.http.api.v1.utils.{TokenVerificationD, TokenVerificationOptionT}
 import tofu.syntax.monadic._
 import tofu.syntax.foption._
 
@@ -101,15 +101,11 @@ object Tokens {
     def checkToken(tokenId: TokenId, tokenName: String): F[CheckTokenInfo] =
       (
         for {
-          tokenState <- TokenVerification(
-                          tokenId,
-                          tokenName,
-                          genuineTokenRepo.get,
-                          blockedTokenRepo.get,
-                          genuineTokenRepo.getByNameAndUnique
-                        )
-          genuineToken <- genuineTokenRepo.get(tokenId)
-        } yield CheckTokenInfo(tokenState, genuineToken.map(GenuineTokenInfo(_)))
+          genuineT  <- genuineTokenRepo.get(tokenId)
+          blockedT  <- blockedTokenRepo.get(tokenId)
+          genuineTs <- genuineTokenRepo.getByNameAndUniqueOP(tokenName, unique = true)
+          ops = TokenVerificationOptionT(genuineT, blockedT, genuineTs)
+        } yield CheckTokenInfo(ops.getOrElse(0), genuineT.map(GenuineTokenInfo(_)))
       ) ||> trans.xa
 
     def getGenuineTokenList(paging: Paging): F[Items[GenuineTokenInfo]] =
