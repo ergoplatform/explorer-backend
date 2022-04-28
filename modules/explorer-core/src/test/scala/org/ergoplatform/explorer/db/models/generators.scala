@@ -14,6 +14,27 @@ object generators {
 
   import commonGenerators._
 
+  //  Gen[List[GenuineToken]]
+  def genuineTokenListGen(gtList: Iterable[(String, Boolean)]): Gen[List[GenuineToken]] =
+    Gen.sequence[List[GenuineToken], GenuineToken](gtList.map { case (name, unique) => genuineTokenGen(name, unique) })
+
+  def genuineTokenGen(tokenName: String, uniqueName: Boolean): Gen[GenuineToken] =
+    for {
+      id     <- assetIdGen
+      issuer <- Gen.oneOf[Option[String]](Some("ISSUER#1"), Some("ISSUER#2"), None)
+    } yield GenuineToken(id, tokenName, uniqueName, issuer)
+
+  def `tokenName&IDGen`(tokenName: String): Gen[(TokenId, String)] =
+    for {
+      id <- assetIdGen
+    } yield (id, tokenName)
+
+  def blockedTokenGen: Gen[BlockedToken] =
+    for {
+      id        <- assetIdGen
+      tokenName <- Gen.oneOf("BLOCKED#1", "BLOCKED#2", "BLOCKED#3")
+    } yield BlockedToken(id, tokenName)
+
   def headerGen: Gen[Header] =
     for {
       id            <- idGen
@@ -221,8 +242,8 @@ object generators {
   def issueTokensGen(num: Int): Gen[List[(Input, Output, Asset)]] =
     Gen.listOfN(num, issueTokenGen)
 
-  /** from http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/test/resources/mockwebserver/node_responses/response_Box_AAE_seller_contract.json#L4-L4
-    * which was generated with http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/main/scala-2.12/org/ergoplatform/appkit/ergotool/dex/CreateSellOrderCmd.scala#L58-L58
+  /**  from [[http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/test/resources/mockwebserver/node_responses/response_Box_AAE_seller_contract.json#L4-L4 response_Box_AAE_seller_contract.json#L4-L4]]<br />
+    * which was generated with [[http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/main/scala-2.12/org/ergoplatform/appkit/ergotool/dex/CreateSellOrderCmd.scala#L58-L58 CreateSellOrderCmd.scala#L58-L58]]
     */
   val sellOrderErgoTree: HexString = HexString
     .fromString[Try](

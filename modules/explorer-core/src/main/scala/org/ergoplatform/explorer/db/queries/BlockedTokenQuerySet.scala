@@ -22,14 +22,14 @@ object BlockedTokenQuerySet extends QuerySet {
 
   def get(id: TokenId): Query0[BlockedToken] =
     sql"""
-         |select gt.token_id, gt.tokenName from blocked_tokens gt
+         |select gt.token_id, gt.token_name from blocked_tokens gt
          |where gt.token_id = $id
          |""".stripMargin.query[BlockedToken]
 
   def get(name: String): Query0[BlockedToken] =
     sql"""
-         |select gt.token_id, gt.tokenName from blocked_tokens gt
-         |where LOWER(gt.name) = LOWER($name)
+         |select gt.token_id, gt.token_name from blocked_tokens gt
+         |where LOWER(gt.token_name) = LOWER($name)
          |""".stripMargin.query[BlockedToken]
 
   def getAll(offset: Int, limit: Int)(implicit
@@ -37,14 +37,14 @@ object BlockedTokenQuerySet extends QuerySet {
   ): Query0[BlockedToken] = {
     val q =
       sql"""
-           |select gt.token_id, gt.tokenName from blocked_tokens gt
+           |select gt.token_id, gt.token_name from blocked_tokens gt
            |""".stripMargin
     val offsetLimitFr = Fragment.const(s"offset $offset limit $limit")
     (q ++ offsetLimitFr).query[BlockedToken]
   }
 
   def countAll()(implicit lh: LogHandler): Query0[Int] = {
-    val q = sql"select count(*) from genuine_tokens"
+    val q = sql"select count(*) from blocked_tokens"
     q.query[Int]
   }
 }

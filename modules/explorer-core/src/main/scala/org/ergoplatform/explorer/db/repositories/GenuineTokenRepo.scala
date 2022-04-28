@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.Monad
 import cats.effect.Sync
 import cats.tagless.syntax.functorK._
 import derevo.derive
@@ -16,6 +17,8 @@ import tofu.syntax.monadic._
 @derive(representableK)
 trait GenuineTokenRepo[D[_]] {
 
+  def insertUnsafe(token: GenuineToken): D[Unit]
+
   def insert(token: GenuineToken): D[Unit]
 
   def insertMany(tokens: List[GenuineToken]): D[Unit]
@@ -24,7 +27,11 @@ trait GenuineTokenRepo[D[_]] {
 
   def get(id: TokenId, name: String): D[Option[GenuineToken]]
 
-  def getByNameAndUnique(tokenName: String, unique: Boolean): D[Option[GenuineToken]]
+  def getByName(tokenName: String): D[List[GenuineToken]]
+
+  def getByNameAndUnique(tokenName: String, unique: Boolean): D[List[GenuineToken]]
+
+  def getByNameAndUniqueOP(tokenName: String, unique: Boolean): D[Option[List[GenuineToken]]]
 
   def getAll(offset: Int, limit: Int): D[List[GenuineToken]]
 
@@ -33,7 +40,7 @@ trait GenuineTokenRepo[D[_]] {
 
 object GenuineTokenRepo {
 
-  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[GenuineTokenRepo[D]] =
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO: Monad]: F[GenuineTokenRepo[D]] =
     DoobieLogHandler.create[F].map { implicit lh =>
       (new Live).mapK(LiftConnectionIO[D].liftConnectionIOK)
     }
@@ -42,7 +49,22 @@ object GenuineTokenRepo {
 
     import org.ergoplatform.explorer.db.queries.{GenuineTokenQuerySet => QS}
 
-    override def insert(token: GenuineToken): ConnectionIO[Unit] = QS.insertNoConflict(token).void
+    // uniqueName must be one
+    // if tokeName is already in use, uniqueName cannot be inserted
+    // todo: Maybe raise error when an attempt to insert token with wrong uniqueness is made
+    override def insert(token: GenuineToken): ConnectionIO[Unit] =
+      getByName(token.tokenName).flatMap { x =>
+        if (x.isEmpty) insertUnsafe(token)
+        else {
+          if (x.exists(_.uniqueName == true)) ().pure[ConnectionIO]
+          else {
+            if (token.uniqueName) ().pure[ConnectionIO]
+            else insertUnsafe(token)
+          }
+        }
+      }
+
+    override def insertUnsafe(token: GenuineToken): ConnectionIO[Unit] = QS.insertNoConflict(token).void
 
     override def insertMany(tokens: List[GenuineToken]): ConnectionIO[Unit] = QS.insertManyNoConflict(tokens).void
 
@@ -52,9 +74,20 @@ object GenuineTokenRepo {
 
     override def countAll: ConnectionIO[Int] = QS.countAll.unique
 
-    override def getByNameAndUnique(tokenName: String, unique: Boolean): ConnectionIO[Option[GenuineToken]] =
-      QS.get(tokenName, unique).option
+    // can only be one genuine token with a tokenName and uniqueName=true
+    override def getByNameAndUnique(tokenName: String, unique: Boolean): ConnectionIO[List[GenuineToken]] =
+      QS.get(tokenName, unique).to[List]
+
+    override def getByNameAndUniqueOP(tokenName: String, unique: Boolean): ConnectionIO[Option[List[GenuineToken]]] =
+      QS.get(tokenName, unique).to[List].map {
+        case Nil     => None
+        case List()  => None
+        case x :: xs => Some(x :: xs)
+      }
 
     override def get(id: TokenId, name: String): ConnectionIO[Option[GenuineToken]] = QS.get(id, name).option
+
+    override def getByName(tokenName: String): ConnectionIO[List[GenuineToken]] = QS.get(tokenName).to[List]
+
   }
 }

@@ -24,28 +24,28 @@ object GenuineTokenQuerySet extends QuerySet {
 
   def get(id: TokenId): Query0[GenuineToken] =
     sql"""
-         |select gt.token_id, gt.tokenName, gt.uniqueName, gt.issuer from genuine_tokens gt
+         |select gt.token_id, gt.token_name, gt.unique_name, gt.issuer from genuine_tokens gt
          |where gt.token_id = $id
          |""".stripMargin.query[GenuineToken]
 
   def get(id: TokenId, name: String): Query0[GenuineToken] =
     sql"""
-         |select gt.token_id, gt.tokenName, gt.uniqueName, gt.issuer from genuine_tokens gt
+         |select gt.token_id, gt.token_name, gt.unique_name, gt.issuer from genuine_tokens gt
          |where gt.token_id = $id
-         | and LOWER(gt.name) = LOWER($name)
+         | and LOWER(gt.token_name) = LOWER($name)
          |""".stripMargin.query[GenuineToken]
 
   def get(name: String): Query0[GenuineToken] =
     sql"""
-         |select gt.token_id, gt.tokenName, gt.uniqueName, gt.issuer from genuine_tokens gt
-         |where LOWER(gt.name) = LOWER($name)
+         |select gt.token_id, gt.token_name, gt.unique_name, gt.issuer from genuine_tokens gt
+         |where LOWER(gt.token_name) = LOWER($name)
          |""".stripMargin.query[GenuineToken]
 
   def get(name: String, unique: Boolean): Query0[GenuineToken] =
     sql"""
-         |select gt.token_id, gt.tokenName, gt.uniqueName, gt.issuer from genuine_tokens gt
-         |where LOWER(gt.name) = LOWER($name)
-         | and gt.uniqueName = $unique
+         |select gt.token_id, gt.token_name, gt.unique_name, gt.issuer from genuine_tokens gt
+         |where LOWER(gt.token_name) = LOWER($name)
+         | and gt.unique_name = $unique
          |""".stripMargin.query[GenuineToken]
 
   def getAll(offset: Int, limit: Int)(implicit
@@ -53,7 +53,7 @@ object GenuineTokenQuerySet extends QuerySet {
   ): Query0[GenuineToken] = {
     val q =
       sql"""
-           |select gt.token_id, gt.tokenName, gt.uniqueName, gt.issuer from genuine_tokens gt
+           |select gt.token_id, gt.token_name, gt.unique_name, gt.issuer from genuine_tokens gt
            |""".stripMargin
     val offsetLimitFr = Fragment.const(s"offset $offset limit $limit")
     (q ++ offsetLimitFr).query[GenuineToken]

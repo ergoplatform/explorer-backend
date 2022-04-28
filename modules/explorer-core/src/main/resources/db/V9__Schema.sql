@@ -293,15 +293,15 @@ CREATE INDEX "tokens__box_id" ON tokens (box_id);
 CREATE TABLE genuine_tokens
 (
     token_id        VARCHAR(64)   PRIMARY KEY,
-    token_name      VARCHAR,      NOT NULL,
-    unique_name     BOOLEAN,      NOT NULL,
+    token_name      VARCHAR      NOT NULL,
+    unique_name     BOOLEAN      NOT NULL,
     issuer          VARCHAR
 );
 
 CREATE TABLE blocked_tokens
 (
     token_id        VARCHAR(64)   PRIMARY KEY,
-    token_name      VARCHAR,      NOT NULL
+    token_name      VARCHAR      NOT NULL
 );
 
 CREATE TABLE epochs_parameters
