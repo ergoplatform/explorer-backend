@@ -2,14 +2,16 @@ package org.ergoplatform.explorer.v1.utils
 
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.http.api.v1.utils.BuildUnconfirmedBalance
-import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import org.ergoplatform.explorer.utils.TransactionSimulator.{constants, Simulator}
+import org.ergoplatform.explorer.utils.TransactionSimulator.Simulator
 import org.ergoplatform.explorer.utils.TransactionSimulator.constants.{SigUSD1, SigUSD2, TransactionFee, WalletT}
+import scala.util.Success
 
-import scala.util.{Success, Try}
+import org.scalatest._
+import flatspec._
+import matchers._
 
-class BuildUnconfirmedBalanceSpec extends PropSpec with Matchers with ScalaCheckDrivenPropertyChecks {
+class BuildUnconfirmedBalanceSpec extends AnyFlatSpec with should.Matchers with ScalaCheckDrivenPropertyChecks {
 
   // 100Erg 100Token
   val senderWallet: WalletT = WalletT(
@@ -29,7 +31,7 @@ class BuildUnconfirmedBalanceSpec extends PropSpec with Matchers with ScalaCheck
     )
   )
 
-  property("calculate sending wallet nanoErg unconfirmed balance") {
+  "BuildUnconfirmedBalance protocol" should "calculate sending wallet nanoErg unconfirmed balance" in {
     val toSend = 5000000000L // 5Erg
     val res    = Simulator(senderWallet, receivingWallet, toSend, None)
     res shouldBe a[Success[_]]
@@ -42,7 +44,7 @@ class BuildUnconfirmedBalanceSpec extends PropSpec with Matchers with ScalaCheck
     unconfirmedBalance.nanoErgs shouldBe (senderWallet.balance - TransactionFee - toSend)
   }
 
-  property("calculate receiving wallet nanoErg unconfirmed balance") {
+  it should "calculate receiving wallet nanoErg unconfirmed balance" in {
     val toSend = 8000000000L // 8Erg
     val res    = Simulator(senderWallet, receivingWallet, toSend, None)
     res shouldBe a[Success[_]]
@@ -55,7 +57,7 @@ class BuildUnconfirmedBalanceSpec extends PropSpec with Matchers with ScalaCheck
     unconfirmedBalance.nanoErgs shouldBe (receivingWallet.balance + toSend)
   }
 
-  property("calculate sending wallet assets unconfirmed balance") {
+  it should "calculate sending wallet assets unconfirmed balance" in {
     val tokenSentAmount = 100L
     val res = Simulator(
       senderWallet,
@@ -80,7 +82,7 @@ class BuildUnconfirmedBalanceSpec extends PropSpec with Matchers with ScalaCheck
 
   }
 
-  property("calculate receiving wallet assets unconfirmed balance") {
+  it should "calculate receiving wallet assets unconfirmed balance" in {
     val tokenSentAmount = 100L
     val res = Simulator(
       senderWallet,

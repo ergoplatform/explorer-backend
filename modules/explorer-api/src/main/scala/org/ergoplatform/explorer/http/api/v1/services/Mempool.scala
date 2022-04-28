@@ -49,7 +49,9 @@ trait Mempool[F[_]] {
   def getUnconfirmedBalanceByAddress(
     address: Address,
     confirmedBalance: Balance
-  ): F[TotalBalance]
+  ): F[Balance]
+
+  def getTotalBalance(address: Address, confirmedBalanceOf: (Address, Int) => F[Balance]): F[TotalBalance]
 
   def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
 
@@ -60,7 +62,7 @@ trait Mempool[F[_]] {
 
 object Mempool {
 
-  def apply[F[_]: Concurrent, D[_]: Monad: CompileStream: LiftConnectionIO](
+  def apply[F[_]: Concurrent: Monad, D[_]: Monad: CompileStream: LiftConnectionIO](
     settings: ServiceSettings,
     utxCacheSettings: UtxCacheSettings,
     redis: Option[RedisCommands[F, String, String]]
@@ -118,7 +120,7 @@ object Mempool {
     def getUnconfirmedBalanceByAddress(
       address: Address,
       confirmedBalance: Balance
-    ): F[TotalBalance] = {
+    ): F[Balance] = {
       val ergoTree = addressToErgoTreeNewtype(address)
       txs
         .countByErgoTree(ergoTree.value)
@@ -130,17 +132,19 @@ object Mempool {
             .to[List]
             .map { poolItems =>
               total match {
-                case 0 => TotalBalance(confirmedBalance, Balance.empty)
-                case _ =>
-                  TotalBalance(
-                    confirmedBalance,
-                    BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
-                  )
+                case 0 => Balance.empty
+                case _ => BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
               }
             }
         }
         .thrushK(trans.xa)
     }
+
+    def getTotalBalance(address: Address, confirmedBalanceOf: (Address, Int) => F[Balance]): F[TotalBalance] =
+      for {
+        confirmed   <- confirmedBalanceOf(address, 0)
+        unconfirmed <- getUnconfirmedBalanceByAddress(address, confirmed)
+      } yield TotalBalance(confirmed, unconfirmed)
 
     def getByErgoTree(ergoTree: ErgoTree, paging: Paging): F[Items[UTransactionInfo]] =
       txs

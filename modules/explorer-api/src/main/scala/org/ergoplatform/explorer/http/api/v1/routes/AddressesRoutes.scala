@@ -38,10 +38,7 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
 
   private def getTotalBalanceR =
     interpreter.toRoutes(defs.getTotalBalanceDef) { addr =>
-      (for {
-        confirmedBalance <- addresses.confirmedBalanceOf(addr, minConfirmations = 0).adaptThrowable
-        totalBalance     <- mempool.getUnconfirmedBalanceByAddress(addr, confirmedBalance).adaptThrowable
-      } yield totalBalance).value
+      mempool.getTotalBalance(addr, addresses.confirmedBalanceOf).adaptThrowable.value
     }
 
   private def getBatchAddressInfo =
