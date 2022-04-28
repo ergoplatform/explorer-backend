@@ -7,8 +7,8 @@ import org.ergoplatform.explorer.{HexString, SigmaType}
 @derive(encoder, decoder)
 final case class ExpandedRegister(
   serializedValue: HexString,
-  sigmaType: SigmaType,
-  renderedValue: String
+  sigmaType: Option[SigmaType],
+  renderedValue: Option[String]
 )
 
 @derive(encoder, decoder)

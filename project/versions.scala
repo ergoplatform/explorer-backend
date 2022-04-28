@@ -42,9 +42,9 @@ object versions {
   val KindProjector = "0.13.2"
   val MacroParadise = "2.1.1"
 
-  val ScalaTestVersion              = "3.0.8"
-  val ScalaCheckVersion             = "1.14.1"
-  val ScalaCheckShapelessVersion    = "1.2.3"
+  val ScalaTestVersion              = "3.2.11"
+  val ScalaTestPlusVersion          = "3.2.11.0"
+  val ScalaCheckShapelessVersion    = "1.2.5"
   val TestContainersPostgresVersion = "1.7.3"
-  val TestContainersScalaVersion    = "0.39.1"
+  val TestContainersScalaVersion    = "0.40.5"
 }

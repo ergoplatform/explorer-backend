@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.services
 
 import cats.data.NonEmptyList
 import cats.effect.concurrent.Ref
-import cats.effect.{BracketThrow, IO, Resource, Sync}
+import cats.effect.{BracketThrow, ContextShift, IO, Resource, Sync}
 import eu.timepit.refined.refineV
 import eu.timepit.refined.string.Url
 import fs2.Stream
@@ -13,18 +13,21 @@ import org.ergoplatform.explorer.settings.NetworkSettings
 import org.http4s.Uri.Path.Segment
 import org.http4s.client.Client
 import org.http4s.{Request, Response}
+import tofu.syntax.monadic._
 import org.scalacheck.Gen.Parameters
 import org.scalacheck.rng.Seed
-import org.scalatest.{Matchers, PropSpec}
-import tofu.syntax.monadic._
+
+import org.scalatest._
+import flatspec._
+import matchers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ErgoNetworkSpec extends PropSpec with Matchers {
+class ErgoNetworkSpec extends AnyFlatSpec with should.Matchers {
 
   def createFakeClient[F[_]: Sync](bestNode: Ref[F, (UrlString, Int)])(implicit
     F: BracketThrow[F]
-  ) = Client[F] {
+  ): Client[F] = Client[F] {
     case Request(_, uri, _, _, _, _) if uri.path.segments.contains(Segment("info")) =>
       Resource.eval(bestNode.get).flatMap { case (node, height) =>
         Resource.pure(
@@ -40,12 +43,12 @@ class ErgoNetworkSpec extends PropSpec with Matchers {
           )
         )
       }
-    case req => ???
+    case _ => ???
   }
 
-  property("Ergo network service should correctly determine node with best height") {
+  "Ergo network service " should "correctly determine node with best height" in {
 
-    implicit val contextShift = IO.contextShift(global)
+    implicit val contextShift: ContextShift[IO] = IO.contextShift(global)
 
     def genNodes: NonEmptyList[UrlString] = NonEmptyList.fromListUnsafe((0 to 100).foldLeft(List.empty[UrlString]) {
       case (list, index) =>
@@ -72,6 +75,6 @@ class ErgoNetworkSpec extends PropSpec with Matchers {
       bestHeightOnNode <- makeSeveralRequest(ergoNetwork, selfCheckIntervalRequests)
     } yield bestHeightOnNode == bestHeight
 
-    program.unsafeRunSync() shouldBe true
+    program.unsafeRunSync() should be(true)
   }
 }
