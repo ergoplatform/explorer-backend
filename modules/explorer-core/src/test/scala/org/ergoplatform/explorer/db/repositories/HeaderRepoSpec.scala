@@ -4,43 +4,41 @@ import cats.effect.{IO, Sync}
 import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.{RealDbTest, repositories}
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 
-class HeaderRepoSpec
-  extends PropSpec
-  with Matchers
-  with RealDbTest
-  with ScalaCheckDrivenPropertyChecks {
+import org.scalatest._
+import flatspec._
+import matchers._
+
+class HeaderRepoSpec extends AnyFlatSpec with should.Matchers with RealDbTest {
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.db.models.generators._
 
-  property("insert/get") {
+  "HeaderRepo" should "insert/get" in {
     withHeaderRepo[ConnectionIO] { repo =>
       forSingleInstance(headerGen) { header =>
-        repo.get(header.id).runWithIO() shouldBe None
+        repo.get(header.id).runWithIO() should be(None)
         repo.insert(header).runWithIO()
-        repo.get(header.id).runWithIO() shouldBe Some(header)
+        repo.get(header.id).runWithIO() should be(Some(header))
       }
     }
   }
 
-  property("getAllByHeight") {
+  it should "getAllByHeight" in {
     withHeaderRepo[ConnectionIO] { repo =>
       forSingleInstance(headerGen) { header =>
         repo.insert(header).runWithIO()
-        repo.getAllByHeight(header.height).runWithIO() shouldBe List(header)
+        repo.getAllByHeight(header.height).runWithIO() should be(List(header))
       }
     }
   }
 
-  property("getHeightOf") {
+  it should "getHeightOf" in {
     withHeaderRepo[ConnectionIO] { repo =>
       forSingleInstance(headerGen) { header =>
         repo.insert(header).runWithIO()
-        repo.getHeightOf(header.id).runWithIO() shouldBe Some(header.height)
+        repo.getHeightOf(header.id).runWithIO() should be(Some(header.height))
       }
     }
   }

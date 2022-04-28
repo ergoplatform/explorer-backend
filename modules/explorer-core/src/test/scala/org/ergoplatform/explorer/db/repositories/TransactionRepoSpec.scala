@@ -5,86 +5,83 @@ import doobie.free.connection.ConnectionIO
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class TransactionRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCheckDrivenPropertyChecks {
+import org.scalatest._
+import flatspec._
+import matchers._
+
+class TransactionRepoSpec extends AnyFlatSpec with should.Matchers with RealDbTest {
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.db.models.generators._
 
-  property("insert/getMain") {
+  "TransactionRepo" should "insert/getMain" in {
     withLiveRepos[ConnectionIO] { (headerRepo, txRepo) =>
-      forSingleInstance(headerWithTxsGen(mainChain = true)) {
-        case (header, txs) =>
-          headerRepo.insert(header).runWithIO()
-          txs.foreach { tx =>
-            txRepo.getMain(tx.id).runWithIO() shouldBe None
-            txRepo.insert(tx).runWithIO()
-            txRepo.getMain(tx.id).runWithIO() shouldBe Some(tx)
-          }
+      forSingleInstance(headerWithTxsGen(mainChain = true)) { case (header, txs) =>
+        headerRepo.insert(header).runWithIO()
+        txs.foreach { tx =>
+          txRepo.getMain(tx.id).runWithIO() should be(None)
+          txRepo.insert(tx).runWithIO()
+          txRepo.getMain(tx.id).runWithIO() should be(Some(tx))
+        }
       }
     }
   }
 
-  property("getMain (ignore transactions from forks)") {
+  it should "getMain (ignore transactions from forks)" in {
     withLiveRepos[ConnectionIO] { (headerRepo, txRepo) =>
-      forSingleInstance(headerWithTxsGen(mainChain = false)) {
-        case (header, txs) =>
-          headerRepo.insert(header).runWithIO()
-          txs.foreach { tx =>
-            txRepo.insert(tx).runWithIO()
-            txRepo.getMain(tx.id).runWithIO() shouldBe None
-          }
+      forSingleInstance(headerWithTxsGen(mainChain = false)) { case (header, txs) =>
+        headerRepo.insert(header).runWithIO()
+        txs.foreach { tx =>
+          txRepo.insert(tx).runWithIO()
+          txRepo.getMain(tx.id).runWithIO() should be(None)
+        }
       }
     }
   }
 
-  property("getAllMainByIdSubstring") {
+  it should "getAllMainByIdSubstring" in {
     withLiveRepos[ConnectionIO] { (headerRepo, txRepo) =>
-      forSingleInstance(headerWithTxsGen(mainChain = true)) {
-        case (header, txs) =>
-          headerRepo.insert(header).runWithIO()
-          txs.foreach { tx =>
-            txRepo.insert(tx).runWithIO()
-            txRepo
-              .getAllMainByIdSubstring(tx.id.value.take(8))
-              .runWithIO() shouldBe List(tx)
-          }
-      }
-    }
-  }
-
-  property("getAllByBlockId") {
-    withLiveRepos[ConnectionIO] { (headerRepo, txRepo) =>
-      forSingleInstance(headerWithTxsGen(mainChain = true)) {
-        case (header, txs) =>
-          headerRepo.insert(header).runWithIO()
-          txs.foreach { tx =>
-            txRepo.insert(tx).runWithIO()
-          }
+      forSingleInstance(headerWithTxsGen(mainChain = true)) { case (header, txs) =>
+        headerRepo.insert(header).runWithIO()
+        txs.foreach { tx =>
+          txRepo.insert(tx).runWithIO()
           txRepo
-            .getAllByBlockId(header.id)
-            .compile
-            .toList
-            .runWithIO() should contain theSameElementsAs txs
+            .getAllMainByIdSubstring(tx.id.value.take(8))
+            .runWithIO() should be(List(tx))
+        }
       }
     }
   }
 
-  property("updateChainStatusByHeaderId") {
+  it should "getAllByBlockId" in {
     withLiveRepos[ConnectionIO] { (headerRepo, txRepo) =>
-      forSingleInstance(headerWithTxsGen(mainChain = false)) {
-        case (header, txs) =>
-          headerRepo.insert(header).runWithIO()
-          txs.foreach { tx =>
-            txRepo.insert(tx).runWithIO()
-          }
-          txRepo
-            .updateChainStatusByHeaderId(header.id, newChainStatus = true)
-            .runWithIO()
-          txRepo.getAllByBlockId(header.id).compile.toList.runWithIO() should contain theSameElementsAs txs
-            .map(_.copy(mainChain = true))
+      forSingleInstance(headerWithTxsGen(mainChain = true)) { case (header, txs) =>
+        headerRepo.insert(header).runWithIO()
+        txs.foreach { tx =>
+          txRepo.insert(tx).runWithIO()
+        }
+        txRepo
+          .getAllByBlockId(header.id)
+          .compile
+          .toList
+          .runWithIO() should contain theSameElementsAs txs
+      }
+    }
+  }
+
+  it should "updateChainStatusByHeaderId" in {
+    withLiveRepos[ConnectionIO] { (headerRepo, txRepo) =>
+      forSingleInstance(headerWithTxsGen(mainChain = false)) { case (header, txs) =>
+        headerRepo.insert(header).runWithIO()
+        txs.foreach { tx =>
+          txRepo.insert(tx).runWithIO()
+        }
+        txRepo
+          .updateChainStatusByHeaderId(header.id, newChainStatus = true)
+          .runWithIO()
+        txRepo.getAllByBlockId(header.id).compile.toList.runWithIO() should contain theSameElementsAs txs
+          .map(_.copy(mainChain = true))
       }
     }
   }
