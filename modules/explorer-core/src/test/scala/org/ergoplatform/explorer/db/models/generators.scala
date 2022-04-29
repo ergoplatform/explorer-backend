@@ -14,6 +14,10 @@ object generators {
 
   import commonGenerators._
 
+  implicit class IntToNanoErgo(val value: Int) extends AnyVal {
+    def toNanoErgo: Long = (value * 1000000000).toLong
+  }
+
   //  Gen[List[GenuineToken]]
   def genuineTokenListGen(gtList: Iterable[(String, Boolean)]): Gen[List[GenuineToken]] =
     Gen.sequence[List[GenuineToken], GenuineToken](gtList.map { case (name, unique) => genuineTokenGen(name, unique) })
@@ -110,6 +114,15 @@ object generators {
       gix      <- Gen.posNum[Long]
     } yield Transaction(id, headerId, height, coinbase, ts, size, index, gix, mainChain)
 
+  def transactionGen(mainChain: Boolean, txId: TxId, height: Int, headerId: BlockId): Gen[Transaction] =
+    for {
+      coinbase <- Gen.oneOf(true, false)
+      ts       <- Gen.posNum[Long]
+      size     <- Gen.posNum[Int]
+      index    <- Gen.posNum[Int]
+      gix      <- Gen.posNum[Long]
+    } yield Transaction(txId, headerId, height, coinbase, ts, size, index, gix, mainChain)
+
   def headerWithTxsGen(mainChain: Boolean): Gen[(Header, List[Transaction])] =
     for {
       header <- headerGen.map(_.copy(mainChain = mainChain))
@@ -151,6 +164,61 @@ object generators {
 
   def outputGen(mainChain: Boolean): Gen[Output] = outputGen(mainChain, sellOrderErgoTree)
 
+  def outputGen(mainChain: Boolean, address: Address, tree: HexString, value: Long): Gen[Output] = for {
+    boxId    <- boxIdGen
+    txId     <- txIdGen
+    headerId <- idGen
+    height   <- Gen.posNum[Int]
+    idx      <- Gen.posNum[Int]
+    gix      <- Gen.posNum[Long]
+    template = sigma.deriveErgoTreeTemplateHash[Try](tree).get
+    regs <- jsonFieldsGen
+    ts   <- Gen.posNum[Long]
+  } yield Output(
+    boxId,
+    txId,
+    headerId,
+    value,
+    height,
+    height,
+    idx,
+    gix,
+    tree,
+    template,
+    address,
+    regs,
+    ts,
+    mainChain
+  )
+
+  def outputGen(mainChain: Boolean, address: Address, tree: HexString, values: List[Long]): Gen[List[Output]] =
+    Gen.sequence[List[Output], Output](values.map(outputGen(mainChain, address, tree, _)))
+
+  // create output with value and corresponding transaction @height
+  def balanceOfAddressGen(
+    mainChain: Boolean,
+    address: Address,
+    tree: HexString,
+    value: Long,
+    height: Int
+  ): Gen[(Header, Output, Transaction)] =
+    for {
+      header      <- headerGen.map(_.copy(mainChain = mainChain))
+      output      <- outputGen(mainChain, address, tree, value).map(_.copy(headerId = header.id))
+      transaction <- transactionGen(mainChain, output.txId, height, header.id)
+    } yield (header, output, transaction)
+
+  def balanceOfAddressGen(
+    mainChain: Boolean,
+    address: Address,
+    tree: HexString,
+    values: List[(Long, Int)] // Value(Ergo), Height
+  ): Gen[List[(Header, Output, Transaction)]] =
+    Gen.sequence[List[(Header, Output, Transaction)], (Header, Output, Transaction)](values.map {
+      case (value, height) =>
+        balanceOfAddressGen(mainChain, address, tree, value, height)
+    })
+
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
   ): Gen[(Header, Transaction, List[ExtendedOutput])] =
@@ -164,6 +232,15 @@ object generators {
   def inputGen(mainChain: Boolean = true): Gen[Input] =
     for {
       boxId    <- boxIdGen
+      txId     <- txIdGen
+      headerId <- idGen
+      index    <- Gen.posNum[Int]
+      proof    <- hexStringRGen
+      ext      <- jsonFieldsGen
+    } yield Input(boxId, txId, headerId, proof.some, ext, index, mainChain)
+
+  def inputGen(mainChain: Boolean, boxId: BoxId): Gen[Input] =
+    for {
       txId     <- txIdGen
       headerId <- idGen
       index    <- Gen.posNum[Int]
@@ -262,8 +339,8 @@ object generators {
   def dexSellOrdersGen(num: Int): Gen[List[(Output, Asset)]] =
     Gen.listOfN(num, dexSellOrderGen)
 
-  /** from http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/test/resources/mockwebserver/node_responses/response_Box_AAE_buyer_contract.json#L4-L4
-    * which was generated with http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/main/scala-2.12/org/ergoplatform/appkit/ergotool/dex/CreateBuyOrderCmd.scala#L56-L56
+  /** from [[http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/test/resources/mockwebserver/node_responses/response_Box_AAE_buyer_contract.json#L4-L4  response_Box_AAE_buyer_contract.json#L4-L4 ]] <br/>
+    * which was generated with [[http://github.com/aslesarenko/ergo-tool/blob/3b948e527a816e51acd4d85d99595cc93d735a59/src/main/scala-2.12/org/ergoplatform/appkit/ergotool/dex/CreateBuyOrderCmd.scala#L56-L56 CreateBuyOrderCmd.scala#L56-L56]]
     */
   val buyOrderErgoTree: HexString = HexString
     .fromString[Try](

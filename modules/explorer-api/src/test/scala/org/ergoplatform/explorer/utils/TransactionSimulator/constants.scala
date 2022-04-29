@@ -1,6 +1,5 @@
 package org.ergoplatform.explorer.utils.TransactionSimulator
 
-import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.http.api.v1.models.{Balance, TokenAmount, UTransactionInfo}
 import org.ergoplatform.explorer.{ErgoTree, HexString, TokenId, TokenType}
 
