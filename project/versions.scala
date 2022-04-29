@@ -1,7 +1,9 @@
 object versions {
 
-  val ErgoWalletVersion    = "v3.3.8-aaaab5ef-SNAPSHOT"
+  val ErgoWalletVersion    = "4.0.24"
   val ErgoContractsVersion = "1.0.0"
+
+  val SigmaStateVersion = "4.0.5"
 
   val Http4sVersion                  = "0.22.11"
   val TapirVersion                   = "0.18.3"
@@ -46,5 +48,3 @@ object versions {
   val TestContainersPostgresVersion = "1.7.3"
   val TestContainersScalaVersion    = "0.40.5"
 }
-
-// TODO: REMOVE SCALACHECK COMPLETELY
