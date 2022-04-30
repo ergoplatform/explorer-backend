@@ -13,7 +13,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{InclusionHeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
 import org.ergoplatform.explorer.settings.ServiceSettings
@@ -37,12 +37,19 @@ trait Transactions[F[_]] {
     concise: Boolean
   ): F[Items[TransactionInfo]]
 
+  def getByAddress(
+    address: Address,
+    paging: Paging,
+    concise: Boolean,
+    inclusionHeightRange: InclusionHeightRange
+  ): F[Items[TransactionInfo]]
+
   def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo]
 }
 
 object Transactions {
 
-  val MaxIdsPerRequest = scala.Short.MaxValue / 4
+  val MaxIdsPerRequest: Int = scala.Short.MaxValue / 4
 
   def apply[
     F[_]: Sync,
@@ -109,6 +116,31 @@ object Transactions {
           val narrowBy = if (concise) Some(address) else None
           transactions
             .streamRelatedToAddress(address, paging.offset, paging.limit)
+            .chunkN(serviceSettings.chunkSize)
+            .through(makeTransaction(narrowBy))
+            .to[List]
+            .map(Items(_, total))
+        }
+        .thrushK(trans.xa)
+
+    def getByAddress(
+      address: Address,
+      paging: Paging,
+      concise: Boolean,
+      inclusionHeightRange: InclusionHeightRange
+    ): F[Items[TransactionInfo]] =
+      transactions
+        .countRelatedToAddress(address, inclusionHeightRange.fromHeight, inclusionHeightRange.toHeight)
+        .flatMap { total =>
+          val narrowBy = if (concise) Some(address) else None
+          transactions
+            .streamRelatedToAddress(
+              address,
+              paging.offset,
+              paging.limit,
+              inclusionHeightRange.fromHeight,
+              inclusionHeightRange.toHeight
+            )
             .chunkN(serviceSettings.chunkSize)
             .through(makeTransaction(narrowBy))
             .to[List]

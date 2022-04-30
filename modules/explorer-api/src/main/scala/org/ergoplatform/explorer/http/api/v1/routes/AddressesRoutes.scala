@@ -5,6 +5,7 @@ import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
+import org.ergoplatform.explorer.http.api.models.{InclusionHeightRange, InclusionHeightRangeOp}
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v1.defs.AddressesEndpointDefs
 import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Transactions}
@@ -25,8 +26,16 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
   private def interpreter = Http4sServerInterpreter(opts)
 
   private def getTxsByAddressR =
-    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging, concise) =>
-      transactions.getByAddress(addr, paging, concise).adaptThrowable.value
+    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging, concise, inH) =>
+      inH match {
+        case InclusionHeightRangeOp(Some(fromHeight), Some(toHeight)) =>
+          transactions
+            .getByAddress(addr, paging, concise, InclusionHeightRange(fromHeight, toHeight))
+            .adaptThrowable
+            .value
+        case _ => transactions.getByAddress(addr, paging, concise).adaptThrowable.value
+      }
+
     }
 
   private def getConfirmedBalanceR =

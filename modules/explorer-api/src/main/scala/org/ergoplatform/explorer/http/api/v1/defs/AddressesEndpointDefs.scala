@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.defs
 import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{InclusionHeightRangeOp, Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.{Balance, TotalBalance, TransactionInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.tapir.json.circe._
@@ -16,7 +16,8 @@ class AddressesEndpointDefs(settings: RequestsSettings) {
   def endpoints: List[Endpoint[_, _, _, _]] =
     getTxsByAddressDef :: getConfirmedBalanceDef :: getTotalBalanceDef :: Nil
 
-  def getTxsByAddressDef: Endpoint[(Address, Paging, Boolean), ApiErr, Items[TransactionInfo], Any] =
+  def getTxsByAddressDef
+    : Endpoint[(Address, Paging, Boolean, InclusionHeightRangeOp), ApiErr, Items[TransactionInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / path[Address] / "transactions")
       .in(paging(settings.maxEntitiesPerRequest))
@@ -25,6 +26,7 @@ class AddressesEndpointDefs(settings: RequestsSettings) {
           .default(false)
           .description("Display only address inputs/outputs in transaction")
       )
+      .in(inclusionHeight)
       .out(jsonBody[Items[TransactionInfo]])
 
   def getConfirmedBalanceDef: Endpoint[(Address, Int), ApiErr, Balance, Any] =
