@@ -97,8 +97,8 @@ object TransactionQuerySet extends QuerySet {
          |  where os.main_chain = true and os.address = $address
          |) as os on os.tx_id = t.id
          |where t.main_chain = true
-         |  and t.inclusion_height <= $fromHeight
-         |  and t.inclusion_height >= $toHeight
+         |  and t.inclusion_height >= $fromHeight
+         |  and t.inclusion_height <= $toHeight
          |order by t.timestamp desc
          |offset ${offset.toLong} limit ${limit.toLong}
          |""".stripMargin.query[Transaction]
@@ -138,8 +138,8 @@ object TransactionQuerySet extends QuerySet {
          |  where os.main_chain = true and os.address = $address
          |) as os on os.tx_id = t.id
          |where t.main_chain = true
-         |  and t.inclusion_height <= $fromHeight
-         |  and t.inclusion_height >= $toHeight
+         |  and t.inclusion_height >= $fromHeight
+         |  and t.inclusion_height <= $toHeight
          |""".stripMargin.query[Int]
 
   def countMainSince(ts: Long): Query0[Int] =

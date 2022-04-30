@@ -114,6 +114,25 @@ object generators {
       gix      <- Gen.posNum[Long]
     } yield Transaction(id, headerId, height, coinbase, ts, size, index, gix, mainChain)
 
+  def `headerTxsOutputs&InputGen`(
+    mainChain: Boolean,
+    from: Int,
+    to: Int,
+    address: Address,
+    tree: HexString
+  ): Gen[List[(Header, Transaction, Output, Input)]] =
+    Gen.sequence[List[(Header, Transaction, Output, Input)], (Header, Transaction, Output, Input)](
+      Range.inclusive(from, to).toList.map { inH =>
+        for {
+          header <- headerGen.map(_.copy(mainChain = mainChain))
+          tx     <- transactionGen(mainChain).map(_.copy(inclusionHeight = inH, headerId = header.id))
+          out <-
+            outputGen(mainChain).map(_.copy(headerId = header.id, ergoTree = tree, address = address, txId = tx.id))
+          in <- inputGen(mainChain).map(_.copy(txId = tx.id, headerId = header.id, boxId = out.boxId))
+        } yield (header, tx, out, in)
+      }
+    )
+
   def transactionGen(mainChain: Boolean, txId: TxId, height: Int, headerId: BlockId): Gen[Transaction] =
     for {
       coinbase <- Gen.oneOf(true, false)
