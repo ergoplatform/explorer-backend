@@ -61,11 +61,11 @@ class TransactionSpec extends AnyFlatSpec with should.Matchers with TryValues wi
             )
             .unsafeRunSync()
 
-          txByAddr.items should contain theSameElementsAs hTxList.map(_._2)
+          txByAddr.items.map(_.id) should contain theSameElementsAs hTxList.map(_._2.id)
           txByAddr.total should be(11)
         }
       }
-    }
+    }.unsafeRunSync()
   }
 }
 
