@@ -14,28 +14,33 @@ import org.ergoplatform.explorer.protocol.models.{
 }
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.settings.MonetarySettings
-import org.scalatest.{Matchers, PropSpec}
 import tofu.{Context, WithContext}
 
-class RegistersParsingSpec extends PropSpec with Matchers {
-  property("All R4-R9 NonMandatoryRegisters are parsed") {
+import org.scalatest._
+import flatspec._
+import matchers._
+
+class RegistersParsingSpec extends AnyFlatSpec with should.Matchers {
+  import RegistersParsingSpec._
+  "R4-R9 NonMandatoryRegisters" should "parse" in {
     val Right(apiOutput) = io.circe.parser.decode[ApiOutput](sample)
     val List(output) =
       org.ergoplatform.explorer.indexer.extractors.outputsBuildFrom[IO].apply(slot(apiOutput)).unsafeRunSync()
-    output.additionalRegisters.noSpacesSortKeys shouldBe
-    "{\"R4\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
-    "\"R5\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
-    "\"R6\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
-    "\"R7\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
-    "\"R8\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
-    "\"R9\":{\"renderedValue\":null,\"serializedValue\":\"3c0e400e03505250022e30633430306530313034313135393666373537323230366336663631366532303461363136653735363137323739\",\"sigmaType\":null}}"
+    output.additionalRegisters.noSpacesSortKeys should be("")
+
   }
+}
 
-  def prevBlockId     = BlockId.fromStringUnsafe("66dbe6cf7c4ab9fb76aeea5bf58851d1f97d4ee27a24ef2af4b9b155a88fc5ae")
-  def blockId         = BlockId.fromStringUnsafe("5c388f43c7d1f341746f15549b313f072b5275ae2c0fa5b864fd279c850490f3")
-  def sampleHexString = HexString.fromStringUnsafe("5c388f43c7d1f341746f15549b313f072b5275ae2c0fa5b864fd279c850490f3")
+object RegistersParsingSpec {
 
-  def slot = (o: ApiOutput) =>
+  def prevBlockId: BlockId =
+    BlockId.fromStringUnsafe("66dbe6cf7c4ab9fb76aeea5bf58851d1f97d4ee27a24ef2af4b9b155a88fc5ae")
+  def blockId: BlockId = BlockId.fromStringUnsafe("5c388f43c7d1f341746f15549b313f072b5275ae2c0fa5b864fd279c850490f3")
+
+  def sampleHexString: HexString =
+    HexString.fromStringUnsafe("5c388f43c7d1f341746f15549b313f072b5275ae2c0fa5b864fd279c850490f3")
+
+  def slot: ApiOutput => SlotData = (o: ApiOutput) =>
     SlotData(
       ApiFullBlock(
         header = ApiHeader(
@@ -85,7 +90,7 @@ class RegistersParsingSpec extends PropSpec with Matchers {
     )
   )
 
-  lazy val sample =
+  lazy val sample: String =
     """
       |{
       | "boxId":"80a8b3a328d45ef468c27b1f5b0e0d924bfd52c16c1058aaaddd5d66ecf98610",
@@ -104,4 +109,11 @@ class RegistersParsingSpec extends PropSpec with Matchers {
       | }
       |}
       |""".stripMargin
+
+  val data: String = "{\"R4\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
+    "\"R5\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
+    "\"R6\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
+    "\"R7\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
+    "\"R8\":{\"renderedValue\":\"()\",\"serializedValue\":\"62\",\"sigmaType\":\"SUnit\"}," +
+    "\"R9\":{\"renderedValue\":null,\"serializedValue\":\"3c0e400e03505250022e30633430306530313034313135393666373537323230366336663631366532303461363136653735363137323739\",\"sigmaType\":null}}"
 }

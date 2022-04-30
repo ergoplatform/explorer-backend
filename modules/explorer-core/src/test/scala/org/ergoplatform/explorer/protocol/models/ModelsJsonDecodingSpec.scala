@@ -1,12 +1,14 @@
 package org.ergoplatform.explorer.protocol.models
 
-import io.circe.{Decoder, parser}
-import org.scalatest.{Matchers, PropSpec}
+import io.circe.{parser, Decoder}
+import org.scalatest._
+import flatspec._
+import matchers._
 
-class ModelsJsonDecodingSpec extends PropSpec with Matchers {
+class ModelsJsonDecodingSpec extends AnyFlatSpec with should.Matchers {
 
-  property("Api full block deserialization") {
-    parser.parse(MainNetBlockRaw).flatMap(Decoder[ApiFullBlock].decodeJson) shouldBe 'right
+  "case class ApiFullBlock" should "correctly decode from JSON" in {
+    parser.parse(MainNetBlockRaw).flatMap(Decoder[ApiFullBlock].decodeJson) should be('right)
   }
 
   private lazy val MainNetBlockRaw =
