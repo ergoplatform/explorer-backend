@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.Fragments.notIn
 import doobie.util.query.Query0
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.constraints.OrderingString
@@ -87,6 +88,40 @@ object OutputQuerySet extends QuerySet {
          |offset $offset limit $limit
          |""".stripMargin.query[ExtendedOutput]
 
+  def getUnspentMainByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    excludedBoxes: NonEmptyList[BoxId]
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val lim     = fr"offset $offset limit $limit"
+    val queryFr = fr"""
+         |select
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.header_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.settlement_height,
+         |  o.index,
+         |  o.global_index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  o.timestamp,
+         |  o.main_chain,
+         |  i.tx_id
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |where o.main_chain = true and o.ergo_tree = $ergoTree
+         |and o.box_id
+         |""".stripMargin
+
+    (notIn(queryFr, excludedBoxes) ++ lim).query[ExtendedOutput]
+
+  }
+
   def countAllByErgoTree(
     ergoTree: HexString
   )(implicit lh: LogHandler): Query0[Int] =
@@ -157,6 +192,12 @@ object OutputQuerySet extends QuerySet {
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
 
+  def nodeOutputCount(ergoTree: HexString)(implicit lh: LogHandler): Query0[Long] =
+    sql"""
+         |select count(box_id) from node_outputs o
+         |where o.ergo_tree = $ergoTree
+         """.stripMargin.query[Long]
+
   def getAllMainUnspentIdsByErgoTree(
     ergoTree: HexString
   )(implicit lh: LogHandler): Query0[BoxId] =
@@ -223,6 +264,42 @@ object OutputQuerySet extends QuerySet {
     (q ++ ord ++ lim).query
   }
 
+  def getMainUnspentByErgoTreeFiltered(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString,
+    excludedBoxes: NonEmptyList[BoxId]
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val q   = sql"""
+                   |select distinct on (o.box_id, o.global_index)
+                   |  o.box_id,
+                   |  o.tx_id,
+                   |  o.header_id,
+                   |  o.value,
+                   |  o.creation_height,
+                   |  o.settlement_height,
+                   |  o.index,
+                   |  o.global_index,
+                   |  o.ergo_tree,
+                   |  o.ergo_tree_template_hash,
+                   |  o.address,
+                   |  o.additional_registers,
+                   |  o.timestamp,
+                   |  o.main_chain,
+                   |  null
+                   |from node_outputs o
+                   |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+                   |where o.main_chain = true
+                   |  and i.box_id is null
+                   |  and o.ergo_tree = $ergoTree
+                   |  and o.box_id
+                   |""".stripMargin
+    val ord = Fragment.const(s"order by o.global_index $ordering")
+    val lim = Fragment.const(s"offset $offset limit $limit")
+    (notIn(q, excludedBoxes) ++ ord ++ lim).query
+  }
+
   def countUnspentByErgoTree(
     ergoTree: HexString
   )(implicit lh: LogHandler): Query0[Int] =
@@ -234,6 +311,23 @@ object OutputQuerySet extends QuerySet {
          |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
+
+  def countUnspentByErgoTree(
+    ergoTree: HexString,
+    excludedBoxes: NonEmptyList[BoxId]
+  )(implicit lh: LogHandler): Query0[Int] = {
+    val q = sql"""
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |where o.main_chain = true
+         |  and i.box_id is null
+         |  and o.ergo_tree = $ergoTree
+         |  and o.box_id
+         |""".stripMargin
+
+    notIn(q, excludedBoxes).query[Int]
+  }
 
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""

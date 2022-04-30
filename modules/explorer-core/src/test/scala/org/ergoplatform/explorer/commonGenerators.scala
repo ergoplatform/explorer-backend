@@ -18,7 +18,7 @@ object commonGenerators {
   implicit val arbHex: Arbitrary[HexString]      = Arbitrary(hexStringRGen)
   implicit val arbAddr: Arbitrary[Address]       = Arbitrary(addressGen)
   implicit val arbJson: Arbitrary[Json]          = Arbitrary(jsonFieldsGen)
-  implicit val arbId: Arbitrary[BlockId]              = Arbitrary(idGen)
+  implicit val arbId: Arbitrary[BlockId]         = Arbitrary(idGen)
   implicit val arbTxId: Arbitrary[TxId]          = Arbitrary(txIdGen)
   implicit val arbBoxId: Arbitrary[BoxId]        = Arbitrary(boxIdGen)
   implicit val arbAssetId: Arbitrary[TokenId]    = Arbitrary(assetIdGen)

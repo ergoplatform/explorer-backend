@@ -4,7 +4,7 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.TokenInfo
+import org.ergoplatform.explorer.http.api.v1.models.{CheckTokenInfo, GenuineTokenInfo, TokenInfo}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import org.ergoplatform.explorer.{TokenId, TokenSymbol}
 import sttp.tapir._
@@ -47,4 +47,22 @@ final class TokensEndpointDefs(settings: RequestsSettings) {
       .in(ordering)
       .in(hideNfts)
       .out(jsonBody[Items[TokenInfo]])
+
+  def checkToken: Endpoint[(TokenId, String), ApiErr, CheckTokenInfo, Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "check" / path[TokenId] / path[String])
+      .out(jsonBody[CheckTokenInfo])
+
+  def getGenuineTokenList: Endpoint[Paging, ApiErr, Items[GenuineTokenInfo], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "listGenuine")
+      .in(paging(settings.maxEntitiesPerRequest))
+      .out(jsonBody[Items[GenuineTokenInfo]])
+
+  def getBlockedTokenList: Endpoint[Paging, ApiErr, Items[String], Any] =
+    baseEndpointDef.get
+      .in(PathPrefix / "listBlocked")
+      .in(paging(settings.maxEntitiesPerRequest))
+      .out(jsonBody[Items[String]])
+
 }
