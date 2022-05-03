@@ -97,7 +97,7 @@ object dependencies {
     "com.dimafeng"               %% "testcontainers-scala-scalatest"  % TestContainersScalaVersion % Test,
     "com.dimafeng"               %% "testcontainers-scala-postgresql" % TestContainersScalaVersion % Test,
     "com.github.alexarchambault" %% "scalacheck-shapeless_1.14"       % ScalaCheckShapelessVersion % Test,
-    "org.scalatestplus"          %% "scalacheck-1-15"                 % ScalaTestPlusVersion       % "test"
+    "org.scalatestplus"          %% "scalacheck-1-15"                 % ScalaTestPlusVersion       % Test
   )
 
   val Typing: List[ModuleID] = List(
