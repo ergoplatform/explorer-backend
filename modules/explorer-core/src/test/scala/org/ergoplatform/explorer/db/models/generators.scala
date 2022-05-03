@@ -15,7 +15,7 @@ object generators {
   import commonGenerators._
 
   implicit class IntToNanoErgo(val value: Int) extends AnyVal {
-    def toNanoErgo: Long = (value * 1000000000).toLong
+    def toNanoErgo: Long = value.toLong * 1000000000L
   }
 
   //  Gen[List[GenuineToken]]
@@ -238,6 +238,30 @@ object generators {
         balanceOfAddressGen(mainChain, address, tree, value, height)
     })
 
+  def balanceOfAddressWithTokenGen(
+    mainChain: Boolean,
+    address: Address,
+    tree: HexString,
+    height: Int
+  ): Gen[(Header, Output, Transaction, Input, Token, Asset)] =
+    for {
+      header <- headerGen.map(_.copy(mainChain = mainChain))
+      out    <- outputGen(mainChain).map(_.copy(headerId = header.id, address = address, ergoTree = tree))
+      tx     <- transactionGen(mainChain, out.txId, height, header.id)
+      posIn  <- inputGen(mainChain).map(_.copy(txId = tx.id, headerId = header.id, boxId = out.boxId))
+      token  <- tokenGen
+      asset  <- assetGen.map(_.copy(boxId = out.boxId, tokenId = token.id))
+    } yield (header, out, tx, posIn, token, asset)
+
+  def balanceOfAddressWithTokenGen(
+    mainChain: Boolean,
+    address: Address,
+    tree: HexString,
+    height: Int,
+    number: Int
+  ): Gen[List[(Header, Output, Transaction, Input, Token, Asset)]] =
+    Gen.listOfN(number, balanceOfAddressWithTokenGen(mainChain, address, tree, height))
+
   def extOutputsWithTxWithHeaderGen(
     mainChain: Boolean
   ): Gen[(Header, Transaction, List[ExtendedOutput])] =
@@ -285,6 +309,17 @@ object generators {
       index    <- Gen.posNum[Int]
       amt      <- Gen.posNum[Long]
     } yield Asset(id, boxId, headerId, index, amt)
+
+  def tokenGen: Gen[Token] =
+    for {
+      id             <- assetIdGen
+      boxId          <- boxIdGen
+      emissionAmount <- Gen.posNum[Long]
+      name           <- Gen.option(Gen.alphaLowerStr)
+      description    <- Gen.const[Option[String]](None)
+      t              <- Gen.option(Gen.oneOf[TokenType](List(TokenType("EIP-004"), TokenType("EIP-0021"))))
+      decimals       <- Gen.const[Option[Int]](Some(2))
+    } yield Token(id, boxId, emissionAmount, name, description, t, decimals)
 
   def assetsWithBoxIdGen: Gen[(BoxId, List[Asset])] =
     boxIdGen.flatMap { boxId =>
@@ -373,5 +408,64 @@ object generators {
     for {
       out <- outputGen(mainChain = true, dexBuyOrderErgoTreeGen)
     } yield out
+
+  // unconfirmed transactions
+  def UTransactionGen: Gen[UTransaction] =
+    for {
+      ts <- Gen.posNum[Long]
+      id <- txIdGen
+      sz <- Gen.posNum[Int]
+    } yield UTransaction(id, ts, sz)
+
+  def UInputGen: Gen[UInput] =
+    for {
+      boxId <- boxIdGen
+      txId  <- txIdGen
+      index <- Gen.posNum[Int]
+      proof <- hexStringRGen
+      ext   <- jsonFieldsGen
+    } yield UInput(boxId, txId, index, proof.some, ext)
+
+  def UOutputGen(address: Address, tree: HexString): Gen[UOutput] =
+    for {
+      boxId  <- boxIdGen
+      txId   <- txIdGen
+      value  <- Gen.posNum[Long]
+      height <- Gen.posNum[Int]
+      idx    <- Gen.posNum[Int]
+      template = sigma.deriveErgoTreeTemplateHash[Try](tree).get
+      regs <- jsonFieldsGen
+    } yield UOutput(
+      boxId,
+      txId,
+      value,
+      height,
+      idx,
+      tree,
+      template,
+      address,
+      regs
+    )
+
+  def unconfirmedTransactionGen(
+    address: Address,
+    tree: HexString
+  ): Gen[(Output, UOutput, UInput, UTransaction, Header, Transaction)] =
+    for {
+      uout   <- UOutputGen(address, tree).map(_.copy(ergoTree = tree, address = address))
+      uin    <- UInputGen.map(_.copy(txId = uout.txId))
+      uTx    <- UTransactionGen.map(_.copy(id = uout.txId))
+      header <- headerGen.map(_.copy(mainChain = true))
+      tx     <- transactionGen(mainChain = true).map(_.copy(headerId = header.id))
+      out <-
+        outputGen(mainChain = true).map(_.copy(boxId = uout.boxId, ergoTree = tree, address = address, txId = tx.id))
+    } yield (out, uout, uin, uTx, header, tx)
+
+  def unconfirmedTransactionsGen(
+    address: Address,
+    tree: HexString,
+    number: Int
+  ): Gen[List[(Output, UOutput, UInput, UTransaction, Header, Transaction)]] =
+    Gen.listOfN(number, unconfirmedTransactionGen(address, tree))
 
 }

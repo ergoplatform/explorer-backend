@@ -34,14 +34,12 @@ class TransactionSpec extends AnyFlatSpec with should.Matchers with TryValues wi
     ErgoAddressEncoder(networkPrefix.value.toByte)
 
   "Transactions Services" should "get transactions by address between inclusion-height range" in {
-    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
     import tofu.fs2Instances._
+    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
+    val addressS                                = "3WzSdM7NrjDJswpu2ThfhWvVM1mKJhgnGNieWYcGVsYp3AoirgR5"
+    val addressT                                = Address.fromString[Try](addressS)
+    val addressTree                             = sigma.addressToErgoTreeHex(addressT.get)
     withTransactionService[IO, ConnectionIO] { txService =>
-      val addressS                                    = "3WzSdM7NrjDJswpu2ThfhWvVM1mKJhgnGNieWYcGVsYp3AoirgR5"
-      val networkPrefix: String Refined ValidByte     = "16"
-      implicit val addressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(networkPrefix.value.toByte)
-      val addressT                                    = Address.fromString[Try](addressS)
-      val addressTree                                 = sigma.addressToErgoTreeHex(addressT.get)
       addressT.isSuccess should be(true)
       withLiveRepos[ConnectionIO] { (headerRepo, txRepo, outputRepo, inputRepo) =>
         forSingleInstance(`headerTxsOutputs&InputGen`(mainChain = true, 10, 20, addressT.get, addressTree)) { hTxList =>
