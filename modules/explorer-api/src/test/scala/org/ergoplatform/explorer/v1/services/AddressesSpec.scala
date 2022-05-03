@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.v1.services
 
 import cats.{Monad, Parallel}
+import cats.syntax.option._
 import cats.effect.{Concurrent, ContextShift, IO}
 import dev.profunktor.redis4cats.algebra.RedisCommands
 import doobie.free.connection.ConnectionIO
@@ -228,13 +229,21 @@ class AddressesSpec extends AnyFlatSpec with should.Matchers with TryValues with
                   tokenRepo.insert(token).runWithIO()
                   assetRepo.insert(asset).runWithIO()
                 }
+
+                infoTupleList2.foreach { case (header, out, tx, _, token, asset) =>
+                  headerRepo.insert(header).runWithIO()
+                  oRepo.insert(out).runWithIO()
+                  txRepo.insert(tx).runWithIO()
+                  tokenRepo.insert(token).runWithIO()
+                  assetRepo.insert(asset).runWithIO()
+                }
                 // batch addressInfo Data:
                 val batchInfoResult =
                   addr.addressInfoOf(List(address1T, address2T).map(_.get), mem.hasUnconfirmedBalance).unsafeRunSync()
 
                 batchInfoResult should not be empty
-                batchInfoResult should contain(address1T.get)
-                batchInfoResult should contain(address2T.get)
+                batchInfoResult.contains(address1T.get) should be(true)
+                batchInfoResult.contains(address2T.get) should be(true)
 
                 // batchInfoResult(address1)
                 val b1FS         = addr.confirmedBalanceOf(address1T.get, 0).unsafeRunSync()
@@ -248,14 +257,15 @@ class AddressesSpec extends AnyFlatSpec with should.Matchers with TryValues with
                 val hbu2FS       = (addr invokePrivate hasBeenUsedByErgoTree(address2Tree)).unsafeRunSync()
                 val AddressInfo2 = AddressInfo(address = address2T.get, hasUnconfirmedTxs = hu2FS, hbu2FS, b2FS)
 
-                batchInfoResult.get(address1T.get) should be(AddressInfo1)
-                batchInfoResult.get(address2T.get) should be(AddressInfo2)
+                batchInfoResult.get(address1T.get) should be(AddressInfo1.some)
+                batchInfoResult.get(address2T.get) should be(AddressInfo2.some)
 
               }
             }
           }
         }
       }
+      .unsafeRunSync()
 
   }
 
