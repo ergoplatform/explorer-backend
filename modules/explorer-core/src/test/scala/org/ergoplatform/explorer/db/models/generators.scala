@@ -447,25 +447,20 @@ object generators {
       regs
     )
 
-  def unconfirmedTransactionGen(
+  def `unconfirmedTransactionWithUInput&UOutputGen`(
     address: Address,
     tree: HexString
   ): Gen[(Output, UOutput, UInput, UTransaction, Header, Transaction)] =
     for {
-      uout   <- UOutputGen(address, tree).map(_.copy(ergoTree = tree, address = address))
-      uin    <- UInputGen.map(_.copy(txId = uout.txId))
-      uTx    <- UTransactionGen.map(_.copy(id = uout.txId))
       header <- headerGen.map(_.copy(mainChain = true))
+      txId   <- txIdGen
+      boxId  <- boxIdGen
+      uout   <- UOutputGen(address, tree).map(_.copy(ergoTree = tree, address = address, txId = txId))
+      uin    <- UInputGen.map(_.copy(txId = txId, boxId = boxId))
+      uTx    <- UTransactionGen.map(_.copy(id = txId))
       tx     <- transactionGen(mainChain = true).map(_.copy(headerId = header.id))
       out <-
-        outputGen(mainChain = true).map(_.copy(boxId = uout.boxId, ergoTree = tree, address = address, txId = tx.id))
+        outputGen(mainChain = true).map(_.copy(boxId = boxId, ergoTree = tree, address = address, txId = txId))
     } yield (out, uout, uin, uTx, header, tx)
-
-  def unconfirmedTransactionsGen(
-    address: Address,
-    tree: HexString,
-    number: Int
-  ): Gen[List[(Output, UOutput, UInput, UTransaction, Header, Transaction)]] =
-    Gen.listOfN(number, unconfirmedTransactionGen(address, tree))
 
 }

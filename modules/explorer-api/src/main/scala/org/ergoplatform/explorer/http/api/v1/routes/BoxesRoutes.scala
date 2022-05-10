@@ -127,7 +127,7 @@ final class BoxesRoutes[
         .`getUnspent&UnconfirmedOutputsMergedByAddress`(
           address,
           sorting,
-          mempool.getUSpentBoxesByAddress,
+          mempool.getBoxesSpentInMempool,
           mempool.getUOutputsByAddress
         )
         .adaptThrowable

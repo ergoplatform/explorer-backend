@@ -44,7 +44,7 @@ trait Mempool[F[_]] {
 
   def getUOutputsByAddress(address: Address): F[List[UOutputInfo]]
 
-  def getUSpentBoxesByAddress(address: Address): F[List[BoxId]]
+  def getBoxesSpentInMempool(address: Address): F[List[BoxId]]
 
   def getUnconfirmedBalanceByAddress(
     address: Address,
@@ -89,32 +89,24 @@ object Mempool {
 
     def getUOutputsByAddress(address: Address): F[List[UOutputInfo]] = {
       val ergoTree = addressToErgoTreeNewtype(address)
-      txs
-        .countByErgoTree(ergoTree.value)
-        .flatMap { _ =>
-          txs
-            .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
-            .chunkN(settings.chunkSize)
-            .through(mkTransaction)
-            .to[List]
-            .map(_.flatMap(_.outputs.filter(_.ergoTree == ergoTree.value)))
-        }
-        .thrushK(trans.xa)
+      (for {
+        uTxInfoL <- txs
+                      .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+                      .chunkN(settings.chunkSize)
+                      .through(mkTransaction)
+                      .to[List]
+      } yield uTxInfoL.flatMap(_.outputs.filter(_.ergoTree == ergoTree.value))) ||> trans.xa
     }
 
-    def getUSpentBoxesByAddress(address: Address): F[List[BoxId]] = {
+    def getBoxesSpentInMempool(address: Address): F[List[BoxId]] = {
       val ergoTree = addressToErgoTreeNewtype(address)
-      txs
-        .countByErgoTree(ergoTree.value)
-        .flatMap { _ =>
-          txs
-            .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
-            .chunkN(settings.chunkSize)
-            .through(mkTransaction)
-            .to[List]
-            .map(_.flatMap(_.inputs.map(_.boxId)))
-        }
-        .thrushK(trans.xa)
+      (for {
+        uTxInfoL <- txs
+                      .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+                      .chunkN(settings.chunkSize)
+                      .through(mkTransaction)
+                      .to[List]
+      } yield uTxInfoL.flatMap(_.inputs.map(_.boxId))) ||> trans.xa
     }
 
     def getUnconfirmedBalanceByAddress(

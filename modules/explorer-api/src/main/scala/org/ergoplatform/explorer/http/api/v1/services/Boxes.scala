@@ -37,15 +37,6 @@ trait Boxes[F[_]] {
     */
   def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]]
 
-  /** Get all outputs with the given `address` in proposition & filter outputs spent in the mempool (for unconfirmed transactions)
-    */
-
-  def getUnspentOutputsByAddress(
-    address: Address,
-    ord: SortOrder,
-    excludedBoxes: Option[NonEmptyList[BoxId]]
-  ): F[List[OutputInfo]]
-
   /** Return combination of unspent boxes (with consideration to the Mempool) &
     * unconfirmed boxes in Mempool
     */
@@ -165,22 +156,23 @@ object Boxes {
         .thrushK(trans.xa)
     }
 
-    def getUnspentOutputsByAddress(
+    /** Get all outputs with the given `address` in proposition & filter outputs spent in the mempool (for unconfirmed transactions)
+      */
+    private def getUnspentOutputsByAddressF(
       address: Address,
       ord: SortOrder,
       excludedBoxes: Option[NonEmptyList[BoxId]]
     ): F[List[OutputInfo]] = {
       val ergoTree = addressToErgoTreeHex(address)
-      outputs
-        .countUnspentByErgoTree(ergoTree, excludedBoxes)
-        .flatMap { _ =>
-          outputs
-            .streamUnspentByErgoTree(ergoTree, ord.value, excludedBoxes)
-            .chunkN(serviceSettings.chunkSize)
-            .through(toOutputInfo)
-            .to[List]
-        }
-        .thrushK(trans.xa)
+      (
+        for {
+          unspentOuts <- outputs
+                           .streamUnspentByErgoTree(ergoTree, ord.value, excludedBoxes)
+                           .chunkN(serviceSettings.chunkSize)
+                           .through(toOutputInfo)
+                           .to[List]
+        } yield unspentOuts
+      ) ||> trans.xa
     }
 
     def `getUnspent&UnconfirmedOutputsMergedByAddress`(
@@ -191,7 +183,7 @@ object Boxes {
     ): F[List[MOutputInfo]] = for {
       spentBoxIds    <- getUSpentBoxes(address)
       mempoolOutputs <- getUOutputs(address)
-      unspentBoxes   <- getUnspentOutputsByAddress(address, ord, spentBoxIds.toNel)
+      unspentBoxes   <- getUnspentOutputsByAddressF(address, ord, spentBoxIds.toNel)
     } yield MOutputInfo.fromUOutputList(mempoolOutputs) <+> MOutputInfo.fromOutputList(unspentBoxes)
 
     def getUnspentOutputsByAddress(address: Address, paging: Paging, ord: SortOrder): F[Items[OutputInfo]] = {
