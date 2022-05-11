@@ -79,9 +79,10 @@ object ChainIndexer {
       for {
         networkHeight <- Stream.eval(network.getBestHeight)
         localHeight   <- Stream.eval(getLastGrabbedBlockHeight)
+        lowerHeight = (localHeight + 1) max startHeight
         _             <- Stream.eval(info"Current network height : $networkHeight")
         _             <- Stream.eval(info"Current explorer height: $localHeight")
-        range = Stream.range(localHeight + 1, networkHeight + 1)
+        range = Stream.range(lowerHeight, networkHeight + 1)
         _ <- range.evalMap { height =>
                index(height)
                  .flatTap { blocks =>
