@@ -228,17 +228,17 @@ object ChainIndexer {
     private def insertBlock(block: FlatBlock): F[Unit] = {
       val insertAll =
         repos.headers.insert(block.header) >>
-        (if (settings.indexes.blockStats) repos.blocksInfo.insert(block.info) else unit) >>
-        (if (settings.indexes.blockExtensions) repos.blockExtensions.insert(block.extension) else unit) >>
-        (if (settings.indexes.adProofs) block.adProofOpt.map(repos.adProofs.insert).getOrElse(unit[D]) else unit) >>
+        (if (settings.indexes.blockStats) repos.blocksInfo.insert(block.info) else unit[D]) >>
+        (if (settings.indexes.blockExtensions) repos.blockExtensions.insert(block.extension) else unit[D]) >>
+        (if (settings.indexes.adProofs) block.adProofOpt.map(repos.adProofs.insert).getOrElse(unit[D]) else unit[D]) >>
         repos.txs.insertMany(block.txs) >>
         repos.inputs.insetMany(block.inputs) >>
         repos.dataInputs.insetMany(block.dataInputs) >>
         repos.outputs.insertMany(block.outputs) >>
         repos.assets.insertMany(block.assets) >>
-        (if (settings.indexes.boxRegisters) repos.registers.insertMany(block.registers) else unit) >>
+        (if (settings.indexes.boxRegisters) repos.registers.insertMany(block.registers) else unit[D]) >>
         repos.tokens.insertMany(block.tokens) >>
-        (if (settings.indexes.boxRegisters) repos.constants.insertMany(block.constants) else unit)
+        (if (settings.indexes.boxRegisters) repos.constants.insertMany(block.constants) else unit[D])
       insertAll ||> trans.xa
     }
   }
