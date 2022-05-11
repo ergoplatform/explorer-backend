@@ -23,7 +23,6 @@ CREATE INDEX "node_headers__parent_id" ON node_headers (parent_id);
 CREATE INDEX "node_headers__height" ON node_headers (height);
 CREATE INDEX "node_headers__ts" ON node_headers (timestamp);
 CREATE INDEX "node_headers__main_chain" ON node_headers (main_chain);
-CREATE INDEX "node_headers__d" ON node_headers (d);
 
 CREATE TABLE node_extensions
 (
@@ -156,7 +155,6 @@ CREATE INDEX "node_outputs__header_id" ON node_outputs (header_id);
 CREATE INDEX "node_outputs__address" ON node_outputs using hash (address);
 CREATE INDEX "node_outputs__ergo_tree" ON node_outputs using hash (ergo_tree);
 CREATE INDEX "node_outputs__ergo_tree_template_hash" ON node_outputs (ergo_tree_template_hash);
-CREATE INDEX "node_outputs__timestamp" ON node_outputs (timestamp);
 CREATE INDEX "node_outputs__main_chain" ON node_outputs (main_chain);
 
 CREATE TABLE node_assets

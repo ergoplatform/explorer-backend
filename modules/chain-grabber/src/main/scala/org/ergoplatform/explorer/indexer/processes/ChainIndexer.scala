@@ -61,6 +61,8 @@ object ChainIndexer {
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
 
+    private val startHeight = settings.startHeight getOrElse GenesisHeight
+
     def run: Stream[F, Unit] =
       Stream(()).repeat
         .covary[F]
@@ -111,8 +113,8 @@ object ChainIndexer {
       val parentHeight = block.header.height - 1
       val checkParentF =
         getBlock(parentId).flatMap {
-          case Some(parentBlock) if parentBlock.mainChain   => unit[F]
-          case None if block.header.height == GenesisHeight => unit[F]
+          case Some(parentBlock) if parentBlock.mainChain => unit[F]
+          case None if block.header.height == startHeight => unit[F]
           case Some(parentBlock) =>
             info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
           case None =>
@@ -143,7 +145,7 @@ object ChainIndexer {
       info"Updating best block [$id] at height [$height]" >>
       getBlock(parentId).flatMap {
         case Some(parentBlock) if parentBlock.mainChain => unit[F]
-        case None if block.height == GenesisHeight      => unit[F]
+        case None if block.height == startHeight        => unit[F]
         case Some(parentBlock) =>
           info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
         case None =>
@@ -226,17 +228,17 @@ object ChainIndexer {
     private def insertBlock(block: FlatBlock): F[Unit] = {
       val insertAll =
         repos.headers.insert(block.header) >>
-        repos.blocksInfo.insert(block.info) >>
-        repos.blockExtensions.insert(block.extension) >>
-        block.adProofOpt.map(repos.adProofs.insert).getOrElse(unit[D]) >>
+        (if (settings.indexes.blockStats) repos.blocksInfo.insert(block.info) else unit) >>
+        (if (settings.indexes.blockExtensions) repos.blockExtensions.insert(block.extension) else unit) >>
+        (if (settings.indexes.adProofs) block.adProofOpt.map(repos.adProofs.insert).getOrElse(unit[D]) else unit) >>
         repos.txs.insertMany(block.txs) >>
         repos.inputs.insetMany(block.inputs) >>
         repos.dataInputs.insetMany(block.dataInputs) >>
         repos.outputs.insertMany(block.outputs) >>
         repos.assets.insertMany(block.assets) >>
-        repos.registers.insertMany(block.registers) >>
+        (if (settings.indexes.boxRegisters) repos.registers.insertMany(block.registers) else unit) >>
         repos.tokens.insertMany(block.tokens) >>
-        repos.constants.insertMany(block.constants)
+        (if (settings.indexes.boxRegisters) repos.constants.insertMany(block.constants) else unit)
       insertAll ||> trans.xa
     }
   }
