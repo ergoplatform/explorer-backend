@@ -26,7 +26,7 @@ class RegistersParsingSpec extends AnyFlatSpec with should.Matchers {
     val Right(apiOutput) = io.circe.parser.decode[ApiOutput](sample)
     val List(output) =
       org.ergoplatform.explorer.indexer.extractors.outputsBuildFrom[IO].apply(slot(apiOutput)).unsafeRunSync()
-    output.additionalRegisters.noSpacesSortKeys should be("")
+    output.additionalRegisters.noSpacesSortKeys should be(data)
 
   }
 }
