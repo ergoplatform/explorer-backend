@@ -15,27 +15,27 @@ trait RealDbTest extends CatsInstances with BeforeAndAfter with BeforeAndAfterAl
 
   implicit lazy val xa: Transactor[IO] =
     Transactor.fromDriverManager[IO](
-      container.driverClassName,
-      container.jdbcUrl,
-      container.username,
-      container.password
+      psqlContainer.driverClassName,
+      psqlContainer.jdbcUrl,
+      psqlContainer.username,
+      psqlContainer.password
     )
 
-  private lazy val container: PostgreSQLContainer =
+  private lazy val psqlContainer: PostgreSQLContainer =
     PostgreSQLContainer(DockerImageName.parse("postgres:11-alpine"), databaseName = "explorer", username = "ergo")
 
   private lazy val flyway = new Flyway()
 
   override def beforeAll(): Unit = {
-    container.container.start()
+    psqlContainer.container.start()
     flyway.setSqlMigrationSeparator("__")
     flyway.setLocations("classpath:db")
-    flyway.setDataSource(container.jdbcUrl, container.username, container.password)
+    flyway.setDataSource(psqlContainer.jdbcUrl, psqlContainer.username, psqlContainer.password)
     flyway.migrate()
   }
 
   override def afterAll(): Unit =
-    container.container.stop()
+    psqlContainer.container.stop()
 
   override def after(fun: => Any)(implicit pos: Position): Unit =
     truncateAll()

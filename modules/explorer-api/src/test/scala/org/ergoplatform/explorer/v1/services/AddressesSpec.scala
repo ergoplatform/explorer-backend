@@ -29,15 +29,23 @@ import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, TokenAmount}
 import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Mempool}
 import org.ergoplatform.explorer.protocol.sigma
 import org.ergoplatform.explorer.settings.{RedisSettings, ServiceSettings, UtxCacheSettings}
+import org.ergoplatform.explorer.testContainers.RedisTest
 import org.ergoplatform.explorer.v1.services.constants._
 import org.scalatest.{PrivateMethodTester, TryValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import tofu.syntax.monadic._
+
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 
-class AddressesSpec extends AnyFlatSpec with should.Matchers with TryValues with PrivateMethodTester with RealDbTest {
+class AddressesSpec
+  extends AnyFlatSpec
+  with should.Matchers
+  with TryValues
+  with PrivateMethodTester
+  with RealDbTest
+  with RedisTest {
   import org.ergoplatform.explorer.v1.services.AddressesSpec._
   import org.ergoplatform.explorer.db.models.generators._
 
@@ -48,7 +56,7 @@ class AddressesSpec extends AnyFlatSpec with should.Matchers with TryValues with
   "Address Service" should "get confirmed Balance (nanoErgs) of address" in {
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
     import tofu.fs2Instances._
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
           val addressT = Address.fromString[Try](SenderAddressString)
@@ -82,7 +90,7 @@ class AddressesSpec extends AnyFlatSpec with should.Matchers with TryValues with
   it should "get confirmed balance (tokens) of address" in {
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
     import tofu.fs2Instances._
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
           val addressT = Address.fromString[Try](SenderAddressString)
@@ -122,7 +130,7 @@ class AddressesSpec extends AnyFlatSpec with should.Matchers with TryValues with
     val address2T                               = Address.fromString[Try](address2S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
           address1T.isSuccess should be(true)
@@ -159,7 +167,7 @@ class AddressesSpec extends AnyFlatSpec with should.Matchers with TryValues with
     lazy val addressTree                        = sigma.addressToErgoTreeHex(addressT.get)
     val addressInfoOf                           = PrivateMethod[IO[(Address, AddressInfo)]]('addressInfoOf)
     val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, mem) =>
           addressT.isSuccess should be(true)
@@ -203,7 +211,7 @@ class AddressesSpec extends AnyFlatSpec with should.Matchers with TryValues with
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
     val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, mem) =>
           address1T.isSuccess should be(true)
@@ -278,8 +286,8 @@ object AddressesSpec {
   import cats.syntax.traverse._
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
-  private def withResources[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift] = for {
-    redis <- Some(RedisSettings("redis://localhost:6379")).map(Redis[F]).sequence
+  private def withResources[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift](port: Int) = for {
+    redis <- Some(RedisSettings(s"redis://localhost:$port")).map(Redis[F]).sequence
   } yield (ServiceSettings(chunkSize = 100), UtxCacheSettings(transactionTtl = 10.minute), redis)
 
   private def withServices[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift, D[

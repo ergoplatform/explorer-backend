@@ -15,10 +15,11 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.services.Mempool
+import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Mempool}
 import org.ergoplatform.explorer.settings.{RedisSettings, ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.v1.services.constants._
 import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.testContainers.RedisTest
 import org.scalatest.{PrivateMethodTester, TryValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -27,7 +28,13 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 import tofu.syntax.monadic._
 
-class MempoolSpec extends AnyFlatSpec with should.Matchers with TryValues with PrivateMethodTester with RealDbTest {
+class MempoolSpec
+  extends AnyFlatSpec
+  with should.Matchers
+  with TryValues
+  with PrivateMethodTester
+  with RealDbTest
+  with RedisTest {
   import org.ergoplatform.explorer.v1.services.MempoolSpec._
   import org.ergoplatform.explorer.db.models.generators._
 
@@ -44,9 +51,9 @@ class MempoolSpec extends AnyFlatSpec with should.Matchers with TryValues with P
     val address2T                               = Address.fromString[Try](address2S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
-        withServices[IO, ConnectionIO](settings, utxCache, redis) { mem =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (mem, _) =>
           address1T.isSuccess should be(true)
           address2T.isSuccess should be(true)
           withLiveRepos[ConnectionIO] { (hRepo, txRepo, outRepo, uoutRepo, uinRepo, uTxRepo) =>
@@ -79,9 +86,9 @@ class MempoolSpec extends AnyFlatSpec with should.Matchers with TryValues with P
     val address1S                               = SenderAddressString
     val address1T                               = Address.fromString[Try](address1S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
-        withServices[IO, ConnectionIO](settings, utxCache, redis) { mem =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (mem, _) =>
           address1T.isSuccess should be(true)
           withLiveRepos[ConnectionIO] { (hRepo, txRepo, outRepo, uoutRepo, uinRepo, uTxRepo) =>
             forSingleInstance(`unconfirmedTransactionWithUInput&UOutputGen`(address1T.get, address1Tree)) {
@@ -107,9 +114,9 @@ class MempoolSpec extends AnyFlatSpec with should.Matchers with TryValues with P
     val address1S                               = SenderAddressString
     val address1T                               = Address.fromString[Try](address1S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
-        withServices[IO, ConnectionIO](settings, utxCache, redis) { mem =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (mem, _) =>
           address1T.isSuccess should be(true)
           withLiveRepos[ConnectionIO] { (hRepo, txRepo, outRepo, uoutRepo, uinRepo, uTxRepo) =>
             forSingleInstance(`unconfirmedTransactionWithUInput&UOutputGen`(address1T.get, address1Tree)) {
@@ -121,6 +128,39 @@ class MempoolSpec extends AnyFlatSpec with should.Matchers with TryValues with P
                 uinRepo.insert(uin).runWithIO()
                 uoutRepo.insert(uout).runWithIO()
                 mem.getUOutputsByAddress(address1T.get).unsafeRunSync().map(_.transactionId) should be(List(utx.id))
+            }
+          }
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  it should "get Total balance considering mempool transactions" in {
+    import tofu.fs2Instances._
+    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
+    val address1S                               = SenderAddressString
+    val address1T                               = Address.fromString[Try](address1S)
+    lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
+    withResources[IO](container.mappedPort(6379))
+      .use { case (settings, utxCache, redis) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (mem, addr) =>
+          address1T.isSuccess should be(true)
+          withLiveRepos[ConnectionIO] { (hRepo, txRepo, outRepo, uoutRepo, uinRepo, uTxRepo) =>
+            forSingleInstance(
+              balanceOfAddressGen(
+                mainChain = true,
+                address1T.get,
+                address1Tree,
+                (100.toNanoErgo, 1) :: (200.toNanoErgo, 1) :: (300.toNanoErgo, 1) :: List[(Long, Int)]()
+              )
+            ) { infoTupleList =>
+              infoTupleList.foreach { case (header, out, tx) =>
+                hRepo.insert(header).runWithIO()
+                outRepo.insert(out).runWithIO()
+                txRepo.insert(tx).runWithIO()
+              }
+              val tb = mem.getTotalBalance(address1T.get, addr.confirmedBalanceOf).unsafeRunSync()
+              tb.confirmed.nanoErgs should be(600.toNanoErgo)
             }
           }
         }
@@ -144,8 +184,8 @@ object MempoolSpec {
 
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
-  private def withResources[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift] = for {
-    redis <- Some(RedisSettings("redis://localhost:6379")).map(Redis[F]).sequence
+  private def withResources[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift](port: Int) = for {
+    redis <- Some(RedisSettings(s"redis://localhost:$port")).map(Redis[F]).sequence
   } yield (ServiceSettings(chunkSize = 100), UtxCacheSettings(transactionTtl = 10.minute), redis)
 
   private def withServices[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift, D[
@@ -154,14 +194,15 @@ object MempoolSpec {
     settings: ServiceSettings,
     utxCacheSettings: UtxCacheSettings,
     redis: Option[RedisCommands[F, String, String]]
-  )(body: Mempool[F] => Any)(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
+  )(body: (Mempool[F], Addresses[F]) => Any)(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
     for {
       mempool <- Mempool[F, D](
                    settings,
                    utxCacheSettings,
                    redis
                  )(trans)
-      _ = body(mempool)
+      addresses <- Addresses[F, D](trans)
+      _ = body(mempool, addresses)
     } yield ()
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](

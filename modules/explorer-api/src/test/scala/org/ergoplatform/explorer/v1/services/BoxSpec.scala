@@ -23,6 +23,7 @@ import org.ergoplatform.explorer.http.api.v1.services.{Boxes, Mempool}
 import org.ergoplatform.explorer.settings.{RedisSettings, ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.v1.services.constants._
 import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.testContainers.RedisTest
 import org.scalatest.{PrivateMethodTester, TryValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -31,7 +32,13 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 import tofu.syntax.monadic._
 
-class BoxSpec extends AnyFlatSpec with should.Matchers with TryValues with PrivateMethodTester with RealDbTest {
+class BoxSpec
+  extends AnyFlatSpec
+  with should.Matchers
+  with TryValues
+  with PrivateMethodTester
+  with RealDbTest
+  with RedisTest {
   import org.ergoplatform.explorer.v1.services.BoxSpec._
   import org.ergoplatform.explorer.db.models.generators._
 
@@ -46,7 +53,7 @@ class BoxSpec extends AnyFlatSpec with should.Matchers with TryValues with Priva
     val address1T                               = Address.fromString[Try](address1S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     val getUnspentOutputsByAddressF             = PrivateMethod[IO[List[OutputInfo]]]('getUnspentOutputsByAddressF)
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, box) =>
           address1T.isSuccess should be(true)
@@ -94,7 +101,7 @@ class BoxSpec extends AnyFlatSpec with should.Matchers with TryValues with Priva
     val address1S                               = SenderAddressString
     val address1T                               = Address.fromString[Try](address1S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
-    withResources[IO]
+    withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (mem, box) =>
           address1T.isSuccess should be(true)
@@ -157,8 +164,8 @@ object BoxSpec {
 
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
-  private def withResources[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift] = for {
-    redis <- Some(RedisSettings("redis://localhost:6379")).map(Redis[F]).sequence
+  private def withResources[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift](port: Int) = for {
+    redis <- Some(RedisSettings(s"redis://localhost:$port")).map(Redis[F]).sequence
   } yield (ServiceSettings(chunkSize = 100), UtxCacheSettings(transactionTtl = 10.minute), redis)
 
   private def withServices[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift, D[

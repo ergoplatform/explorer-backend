@@ -46,11 +46,6 @@ trait Mempool[F[_]] {
 
   def getBoxesSpentInMempool(address: Address): F[List[BoxId]]
 
-  def getUnconfirmedBalanceByAddress(
-    address: Address,
-    confirmedBalance: Balance
-  ): F[Balance]
-
   def getTotalBalance(address: Address, confirmedBalanceOf: (Address, Int) => F[Balance]): F[TotalBalance]
 
   def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
@@ -109,7 +104,7 @@ object Mempool {
       } yield uTxInfoL.flatMap(_.inputs.map(_.boxId))) ||> trans.xa
     }
 
-    def getUnconfirmedBalanceByAddress(
+    private def getUnconfirmedBalanceByAddress(
       address: Address,
       confirmedBalance: Balance
     ): F[Balance] = {
