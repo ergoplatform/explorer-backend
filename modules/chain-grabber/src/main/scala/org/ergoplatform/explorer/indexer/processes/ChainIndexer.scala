@@ -4,6 +4,7 @@ import cats.data.OptionT
 import cats.effect.concurrent.Ref
 import cats.effect.syntax.bracket._
 import cats.effect.{Bracket, Sync, Timer}
+import cats.syntax.option._
 import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.parallel._
@@ -57,6 +58,7 @@ object ChainIndexer {
     settings: IndexerSettings,
     network: ErgoNetwork[F],
     pendingChainUpdates: Ref[F, List[(BlockId, Int)]],
+    lastBlockCache: Ref[F, (Option[Header], Option[BlockStats])],
     repos: RepoBundle[D]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
@@ -80,8 +82,8 @@ object ChainIndexer {
         networkHeight <- Stream.eval(network.getBestHeight)
         localHeight   <- Stream.eval(getLastGrabbedBlockHeight)
         lowerHeight = (localHeight + 1) max startHeight
-        _             <- Stream.eval(info"Current network height : $networkHeight")
-        _             <- Stream.eval(info"Current explorer height: $localHeight")
+        _ <- Stream.eval(info"Current network height : $networkHeight")
+        _ <- Stream.eval(info"Current explorer height: $localHeight")
         range = Stream.range(lowerHeight, networkHeight + 1)
         _ <- range.evalMap { height =>
                index(height)
@@ -107,29 +109,36 @@ object ChainIndexer {
       pullBlocks.guarantee(commitChainUpdates)
     }
 
-    private def applyBestBlock(block: ApiFullBlock): F[Unit] = {
+    private def applyBestBlock(block: ApiFullBlock): F[Header] = {
       val id           = block.header.id
       val height       = block.header.height
       val parentId     = block.header.parentId
       val parentHeight = block.header.height - 1
       val checkParentF =
         getBlock(parentId).flatMap {
-          case Some(parentBlock) if parentBlock.mainChain => unit[F]
-          case None if block.header.height == startHeight => unit[F]
+          case Some(parentBlock) if parentBlock.mainChain => unit[F] as parentBlock.some
+          case None if block.header.height == startHeight => unit[F] as none[Header]
           case Some(parentBlock) =>
-            info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
+            info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock) as parentBlock.some
           case None =>
             info"Parent block [$parentId] needs to be downloaded" >>
               network.getFullBlockById(parentId).flatMap {
                 case Some(parentBlock) =>
-                  applyBestBlock(parentBlock)
+                  applyBestBlock(parentBlock).map(_.some)
                 case None =>
                   InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]")
-                    .raise[F, Unit]
+                    .raise[F, Option[Header]]
               }
         }
-      info"Applying best block [$id] at height [$height]" >>
-      checkParentF >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ => markAsMain(id, height))
+      for {
+        _             <- info"Applying best block [$id] at height [$height]"
+        prevBlock     <- checkParentF
+        prevBlockInfo <- getBlockInfo(parentId)
+        flatBlock     <- scan(block, prevBlockInfo)
+        _             <- insertBlock(flatBlock)
+        _             <- markAsMain(id, height)
+        _             <- lastBlockCache.set(prevBlock -> prevBlockInfo)
+      } yield flatBlock.header
     }
 
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
@@ -172,10 +181,16 @@ object ChainIndexer {
       repos.headers.getAllByHeight(height).map(_.map(_.id))
 
     private def getBlock(id: BlockId): F[Option[Header]] =
-      repos.headers.get(id) ||> trans.xa
+      lastBlockCache.get.flatMap {
+        case (Some(h), _) if h.id == id => h.some.pure[F]
+        case _                          => repos.headers.get(id) ||> trans.xa
+      }
 
     private def getBlockInfo(id: BlockId): F[Option[BlockStats]] =
-      repos.blocksInfo.get(id) ||> trans.xa
+      lastBlockCache.get.flatMap {
+        case (_, Some(bi)) if bi.headerId == id => bi.some.pure[F]
+        case _                                  => repos.blocksInfo.get(id) ||> trans.xa
+      }
 
     private def markAsMain(id: BlockId, height: Int): F[Unit] =
       pendingChainUpdates.update(_ :+ (id -> height))
