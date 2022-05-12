@@ -60,7 +60,7 @@ object ChainIndexer {
     settings: IndexerSettings,
     network: ErgoNetwork[F],
     pendingChainUpdates: Ref[F, List[(BlockId, Int)]],
-    lastBlockCache: Ref[F, (Option[Header], Option[BlockStats])],
+    lastBlockCache: Ref[F, List[(Header, BlockStats)]],
     repos: RepoBundle[D]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
@@ -139,9 +139,14 @@ object ChainIndexer {
         flatBlock     <- scan(block, prevBlockInfo)
         _             <- insertBlock(flatBlock)
         _             <- markAsMain(id, height)
-        _             <- lastBlockCache.set(flatBlock.header.some -> flatBlock.info.some)
+        _             <- memoize(flatBlock)
       } yield ()
     }
+
+    private def memoize(fb: FlatBlock) =
+      lastBlockCache.update { xs =>
+        (fb.header, fb.info) :: xs.filter { case (header, _) => header.height >= fb.header.height - 1 }
+      }
 
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
       if (settings.writeOrphans)
@@ -183,15 +188,19 @@ object ChainIndexer {
       repos.headers.getAllByHeight(height).map(_.map(_.id))
 
     private def getBlock(id: BlockId): F[Option[Header]] =
-      lastBlockCache.get.flatMap {
-        case (Some(h), _) if h.id == id => h.some.pure[F]
-        case _                          => repos.headers.get(id) ||> trans.xa
+      lastBlockCache.get.flatMap { xs =>
+        xs.find { case (header, _) => header.id == id } match {
+          case Some((h, _)) => h.some.pure[F]
+          case None         => repos.headers.get(id) ||> trans.xa
+        }
       }
 
     private def getBlockInfo(id: BlockId): F[Option[BlockStats]] =
-      lastBlockCache.get.flatMap {
-        case (_, Some(bi)) if bi.headerId == id => bi.some.pure[F]
-        case _                                  => repos.blocksInfo.get(id) ||> trans.xa
+      lastBlockCache.get.flatMap { xs =>
+        xs.find { case (header, _) => header.id == id } match {
+          case Some((_, bi)) => bi.some.pure[F]
+          case None          => repos.blocksInfo.get(id) ||> trans.xa
+        }
       }
 
     private def markAsMain(id: BlockId, height: Int): F[Unit] =
