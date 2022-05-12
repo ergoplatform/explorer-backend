@@ -16,7 +16,7 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
 
   "GenuineTokenRepo" should "insert & get genuine token" in {
     withGenuineTokenRepo[ConnectionIO] { repo =>
-      forSingleInstance(genuineTokenGen("TOKEN#1", uniqueName = true)) { genuineToken =>
+      forSingleInstance(genuineTokenGen("TOKEN#1A", uniqueName = true)) { genuineToken =>
         repo.get(genuineToken.id).runWithIO() should be(None)
         repo.insertUnsafe(genuineToken).runWithIO()
         repo.get(genuineToken.id).runWithIO() should be(Some(genuineToken))
@@ -29,10 +29,10 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
       forSingleInstance(
         genuineTokenListGen(
           List(
-            ("TOKEN#1", false),
-            ("TOKEN#1", true),
-            ("TOKEN#1", false),
-            ("TOKEN#1", false)
+            ("TOKEN#1C", false),
+            ("TOKEN#1C", true),
+            ("TOKEN#1C", false),
+            ("TOKEN#1C", false)
           )
         )
       ) { genuineTokens =>
@@ -42,8 +42,8 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
         genuineTokens.foreach(repo.insert(_).runWithIO())
 
         repo.get(tkT.id).runWithIO() should be(None)
-        repo.getByNameAndUnique("TOKEN#1", unique = false).runWithIO() should be(tkF)
-        repo.getByNameAndUnique("TOKEN#1", unique = true).runWithIO() should be(List())
+        repo.getByNameAndUnique("TOKEN#1C", unique = false).runWithIO() should be(tkF)
+        repo.getByNameAndUnique("TOKEN#1C", unique = true).runWithIO() should be(List())
       }
     }
   }
@@ -53,10 +53,10 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
       forSingleInstance(
         genuineTokenListGen(
           List(
-            ("TOKEN#1", true),
-            ("TOKEN#1", false),
-            ("TOKEN#1", false),
-            ("TOKEN#1", false)
+            ("TOKEN#1B", true),
+            ("TOKEN#1B", false),
+            ("TOKEN#1B", false),
+            ("TOKEN#1B", false)
           )
         )
       ) { genuineTokens =>
@@ -66,17 +66,17 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
         genuineTokens.foreach(repo.insert(_).runWithIO())
 
         repo.get(tkT.id).runWithIO() should be(Some(tkT))
-        repo.getByNameAndUnique("TOKEN#1", unique = true).runWithIO() should be(tksT)
-        repo.getByNameAndUnique("TOKEN#1", unique = false).runWithIO() should be(List())
+        repo.getByNameAndUnique("TOKEN#1B", unique = true).runWithIO() should be(tksT)
+        repo.getByNameAndUnique("TOKEN#1B", unique = false).runWithIO() should be(List())
       }
     }
   }
 
   it should "get unique genuine token by name" in {
     withGenuineTokenRepo[ConnectionIO] { repo =>
-      forSingleInstance(genuineTokenGen("TOKEN#1", uniqueName = true)) { genuineToken =>
+      forSingleInstance(genuineTokenGen("TOKEN#1D", uniqueName = true)) { genuineToken =>
         repo.insertUnsafe(genuineToken).runWithIO()
-        repo.getByNameAndUnique("TOKEN#1", unique = true).runWithIO() should be(List(genuineToken))
+        repo.getByNameAndUnique("TOKEN#1D", unique = true).runWithIO() should be(List(genuineToken))
       }
     }
   }
@@ -86,20 +86,20 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
       forSingleInstance(
         genuineTokenListGen(
           List(
-            ("TOKEN#1", false),
-            ("TOKEN#1", false),
-            ("TOKEN#1", false),
-            ("TOKEN#2", true)
+            ("TOKEN#1E", false),
+            ("TOKEN#1E", false),
+            ("TOKEN#1E", false),
+            ("TOKEN#2E", true)
           )
         )
       ) { genuineTokens =>
-        val tk1 = genuineTokens.filter(_.tokenName == "TOKEN#1")
-        val tk2 = genuineTokens.filter(_.tokenName == "TOKEN#2")
+        val tk1 = genuineTokens.filter(_.tokenName == "TOKEN#1E")
+        val tk2 = genuineTokens.filter(_.tokenName == "TOKEN#2E")
         genuineTokens.foreach(repo.insertUnsafe(_).runWithIO())
 
-        repo.getByNameAndUnique("TOKEN#1", unique = true).runWithIO() should be(List.empty[GenuineToken])
-        repo.getByNameAndUnique("TOKEN#1", unique = false).runWithIO() should be(tk1)
-        repo.getByNameAndUnique("TOKEN#2", unique = true).runWithIO() should be(tk2)
+        repo.getByNameAndUnique("TOKEN#1E", unique = true).runWithIO() should be(List.empty[GenuineToken])
+        repo.getByNameAndUnique("TOKEN#1E", unique = false).runWithIO() should be(tk1)
+        repo.getByNameAndUnique("TOKEN#2E", unique = true).runWithIO() should be(tk2)
       }
     }
   }

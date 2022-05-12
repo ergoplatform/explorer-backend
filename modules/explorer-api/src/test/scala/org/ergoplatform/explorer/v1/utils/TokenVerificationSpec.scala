@@ -43,7 +43,7 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
   // suspicious token mimics a token in GenuineTokenList
   it should "return correct [genuine] integer value for SuspiciousTokens " in {
     withGenuineTokenRepo[ConnectionIO] { repo =>
-      val tokenName = "TOKEN#1"
+      val tokenName = "TOKEN#1A"
       forSingleInstance(genuineTokenGen(tokenName, uniqueName = true)) { genuineToken =>
         repo.insert(genuineToken).runWithIO()
         repo.get(genuineToken.id).runWithIO() should be(Some(genuineToken))
@@ -55,9 +55,9 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
 
   it should "correctly check GenuineTokens" in {
     withLiveRepos[ConnectionIO] { (genuineTokenRepo, blockedTokenRepo) =>
-      val token1Name = "TOKEN#1"
+      val token1Name = "TOKEN#1B"
       val gens = for {
-        gTs <- genuineTokenListGen(List((token1Name, true), ("TOKEN#2", true)))
+        gTs <- genuineTokenListGen(List((token1Name, true), ("TOKEN#2B", true)))
         bT  <- blockedTokenGen
       } yield (gTs, bT)
       forSingleInstance(gens) { case (gTs, bT) =>
@@ -78,7 +78,7 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
   it should "correctly check BlockedTokens" in {
     withLiveRepos[ConnectionIO] { (genuineTokenRepo, blockedTokenRepo) =>
       val gens = for {
-        gT <- genuineTokenGen("TOKEN#1", uniqueName = true)
+        gT <- genuineTokenGen("TOKEN#1C", uniqueName = true)
         bT <- blockedTokenGen
       } yield (gT, bT)
       forSingleInstance(gens) { case (gT, bT) =>
@@ -97,9 +97,9 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
 
   it should "correctly check BlockedTokens - Tokens in GenuineTokens & BlockedTokens are identified as blocked" in {
     withLiveRepos[ConnectionIO] { (genuineTokenRepo, blockedTokenRepo) =>
-      val token1Name = "TOKEN#1"
+      val token1Name = "TOKEN#1D"
       val gens = for {
-        gTs <- genuineTokenListGen(List((token1Name, true), ("TOKEN#2", true)))
+        gTs <- genuineTokenListGen(List((token1Name, true), ("TOKEN#2D", true)))
         bT  <- blockedTokenGen
       } yield (gTs, bT)
       forSingleInstance(gens) { case (gTs, bT) =>
@@ -121,9 +121,9 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
   it should "correctly check SuspiciousTokens" in {
     withLiveRepos[ConnectionIO] { (genuineTokenRepo, blockedTokenRepo) =>
       val gens = for {
-        gT <- genuineTokenGen("TOKEN#1", uniqueName = true)
+        gT <- genuineTokenGen("TOKEN#1E", uniqueName = true)
         bT <- blockedTokenGen
-        sT <- `tokenName&IDGen`("TOKEN#1") // AS Suspicious Token
+        sT <- `tokenName&IDGen`("TOKEN#1E") // AS Suspicious Token
       } yield (gT, bT, sT)
       forSingleInstance(gens) { case (gT, bT, sT) =>
         // suspicious token is not in the blockedLIST || genuineLIST & mimics the name ok a genuine token :)
@@ -143,9 +143,9 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
   it should "correctly check Unknown Tokens" in {
     withLiveRepos[ConnectionIO] { (genuineTokenRepo, blockedTokenRepo) =>
       val gens = for {
-        gT <- genuineTokenGen("TOKEN#1", uniqueName = true)
+        gT <- genuineTokenGen("TOKEN#1F", uniqueName = true)
         bT <- blockedTokenGen
-        sT <- `tokenName&IDGen`("TOKEN#2") // AS UNKNOWN Token
+        sT <- `tokenName&IDGen`("TOKEN#2F") // AS UNKNOWN Token
       } yield (gT, bT, sT)
       forSingleInstance(gens) { case (gT, bT, sT) =>
         genuineTokenRepo.insert(gT).runWithIO()

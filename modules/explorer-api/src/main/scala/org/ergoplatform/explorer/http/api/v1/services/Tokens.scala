@@ -11,7 +11,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v1.models.{CheckTokenInfo, GenuineTokenInfo, TokenInfo}
-import org.ergoplatform.explorer.http.api.v1.utils.{TokenVerificationD, TokenVerificationOptionT}
+import org.ergoplatform.explorer.http.api.v1.utils.TokenVerificationOptionT
 import tofu.syntax.monadic._
 import tofu.syntax.foption._
 
