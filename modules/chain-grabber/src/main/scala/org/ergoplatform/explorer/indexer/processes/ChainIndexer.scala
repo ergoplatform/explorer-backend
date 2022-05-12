@@ -48,7 +48,7 @@ object ChainIndexer {
     logs.forService[ChainIndexer[F]].flatMap { implicit log =>
       for {
         updatesRef     <- makeRef.refOf(List.empty[(BlockId, Int)])
-        lastBlockCache <- makeRef.refOf((none[Header], none[BlockStats]))
+        lastBlockCache <- makeRef.refOf(List.empty[(Header, BlockStats)])
         repos          <- RepoBundle[F, D]
       } yield new Live[F, D](settings, network, updatesRef, lastBlockCache, repos)(trans)
     }
