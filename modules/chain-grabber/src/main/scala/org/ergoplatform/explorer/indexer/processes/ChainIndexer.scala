@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.indexer.processes
 import cats.data.OptionT
 import cats.effect.concurrent.Ref
 import cats.effect.syntax.bracket._
-import cats.effect.{Bracket, Sync, Timer}
+import cats.effect.{Bracket, Concurrent, Sync, Timer}
 import cats.syntax.option._
 import cats.instances.list._
 import cats.syntax.foldable._
@@ -11,6 +11,7 @@ import cats.syntax.parallel._
 import cats.syntax.traverse._
 import cats.{Monad, Parallel}
 import fs2.Stream
+import fs2.concurrent.Queue
 import mouse.anyf._
 import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.BuildFrom.syntax._
@@ -32,6 +33,8 @@ import tofu.syntax.monadic._
 import tofu.syntax.raise._
 import tofu.{Context, MonadThrow, WithContext}
 
+import scala.concurrent.duration.DurationInt
+
 /** Synchronizes local view with the Ergo network.
   */
 trait ChainIndexer[F[_]] {
@@ -41,7 +44,9 @@ trait ChainIndexer[F[_]] {
 
 object ChainIndexer {
 
-  def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
+  val SyncQSize = 16
+
+  def apply[F[_]: Concurrent: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
     network: ErgoNetwork[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[ChainIndexer[F]] =
@@ -49,18 +54,22 @@ object ChainIndexer {
       for {
         updatesRef     <- makeRef.refOf(List.empty[(BlockId, Int)])
         lastBlockCache <- makeRef.refOf(List.empty[(Header, BlockStats)])
+        bestHeightRef  <- makeRef.refOf(none[Int])
+        syncQueue      <- Queue.bounded[F, (ApiFullBlock, List[ApiFullBlock])](SyncQSize)
         repos          <- RepoBundle[F, D]
-      } yield new Live[F, D](settings, network, updatesRef, lastBlockCache, repos)(trans)
+      } yield new Live[F, D](settings, network, updatesRef, lastBlockCache, bestHeightRef, syncQueue, repos)(trans)
     }
 
   final class Live[
-    F[_]: Monad: Parallel: Timer: Bracket[*[_], Throwable]: Logging,
+    F[_]: Concurrent: Parallel: Timer: Bracket[*[_], Throwable]: Logging,
     D[_]: Monad
   ](
     settings: IndexerSettings,
     network: ErgoNetwork[F],
     pendingChainUpdates: Ref[F, List[(BlockId, Int)]],
     lastBlockCache: Ref[F, List[(Header, BlockStats)]],
+    bestHeightR: Ref[F, Option[Int]],
+    syncQueue: Queue[F, (ApiFullBlock, List[ApiFullBlock])],
     repos: RepoBundle[D]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
@@ -86,29 +95,36 @@ object ChainIndexer {
         lowerHeight = (localHeight + 1) max startHeight
         _ <- Stream.eval(info"Current network height : $networkHeight")
         _ <- Stream.eval(info"Current explorer height: $localHeight")
-        range = Stream.range(lowerHeight, networkHeight + 1)
-        _ <- range.evalMap { height =>
-               index(height)
-                 .flatTap { blocks =>
-                   if (blocks > 0) info"$blocks block(s) grabbed from height $height"
-                   else NoBlocksWritten(height).raise[F, Unit]
-                 }
-             }
+        pull    = Stream.eval(pullBlocks(lowerHeight, networkHeight))
+        process = syncQueue.dequeue.evalMap { case (best, orphans) => index(best, orphans) }
+        _ <- Stream.emits(List(pull, process)).parJoinUnbounded
       } yield ()
 
-    private def index(height: Int): F[Int] = {
-      val pullBlocks =
+    private def pullBlocks(lower: Int, upper: Int): F[Unit] =
+      for {
+        ids     <- network.getBlockIdsAtHeight(lower)
+        _       <- info"Grabbing blocks at height $lower: [${ids.mkString(",")}]"
+        blocks0 <- ids.parTraverse(network.getFullBlockById)
+        blocks     = blocks0.flatten
+        blocksPart = blocks.partition(b => ids.headOption.contains(b.header.id))
+        _ <- blocksPart match {
+               case (List(best), others) => syncQueue.enqueue1((best, others))
+               case _                    => Timer[F].sleep(5.seconds) >> pullBlocks(lower, upper) // wait until block is available
+             }
+        _ <- if (lower < upper) pullBlocks(lower + 1, upper) else unit[F]
+        _ <- info"${blocks.size} block(s) grabbed from height $lower"
+      } yield ()
+
+    private def index(best: ApiFullBlock, orphaned: List[ApiFullBlock]): F[Unit] = {
+      val applyBlocks =
         for {
-          ids    <- network.getBlockIdsAtHeight(height)
-          _      <- info"Grabbing blocks at height $height: [${ids.mkString(",")}]"
-          blocks <- ids.parTraverse(network.getFullBlockById)
-          (best, orphaned) = blocks.flatten.partition(b => ids.headOption.contains(b.header.id))
-          _ <- info"Best block [${best.headOption.map(_.header.id)}]"
-          _ <- info"Orphaned blocks [${orphaned.map(_.header.id).mkString(", ")}]"
-          _ <- best.traverse(applyBestBlock)
+          _ <- info"Processing best block [${best.header.id}] at height [${best.header.height}]"
+          _ <- info"Processing orphaned blocks [${orphaned.map(_.header.id).mkString(", ")}]"
+          _ <- applyBestBlock(best)
           _ <- orphaned.traverse(applyOrphanedBlock)
-        } yield blocks.size
-      pullBlocks.guarantee(commitChainUpdates)
+          _ <- bestHeightR.set(Some(best.header.height))
+        } yield ()
+      applyBlocks.guarantee(commitChainUpdates)
     }
 
     private def applyBestBlock(block: ApiFullBlock): F[Unit] = {
@@ -182,7 +198,10 @@ object ChainIndexer {
     }
 
     private def getLastGrabbedBlockHeight: F[Int] =
-      repos.headers.getBestHeight ||> trans.xa
+      bestHeightR.get.flatMap {
+        case Some(height) => height.pure[F]
+        case None         => repos.headers.getBestHeight ||> trans.xa
+      }
 
     private def getHeaderIdsAtHeight(height: Int): D[List[BlockId]] =
       repos.headers.getAllByHeight(height).map(_.map(_.id))
@@ -198,8 +217,9 @@ object ChainIndexer {
     private def getBlockInfo(id: BlockId): F[Option[BlockStats]] =
       lastBlockCache.get.flatMap { xs =>
         xs.find { case (header, _) => header.id == id } match {
-          case Some((_, bi)) => bi.some.pure[F]
-          case None          => repos.blocksInfo.get(id) ||> trans.xa
+          case Some((_, bi))                        => bi.some.pure[F]
+          case None if !settings.indexes.blockStats => none[BlockStats].pure[F]
+          case None                                 => repos.blocksInfo.get(id) ||> trans.xa
         }
       }
 
@@ -227,6 +247,14 @@ object ChainIndexer {
             }
           }
           .thrushK(trans.xa)
+          .flatMap(_ =>
+            lastBlockCache.update {
+              _.map {
+                case (header, stats) if ids.exists(_._1 == header.id) => header.copy(mainChain = true) -> stats
+                case (header, stats)                                  => header                        -> stats
+              }
+            }
+          )
           .flatMap(_ => pendingChainUpdates.update(_ => List.empty))
       }
 
@@ -246,7 +274,8 @@ object ChainIndexer {
 
     private def updateChainStatus(blockId: BlockId, mainChain: Boolean): D[Unit] =
       repos.headers.updateChainStatusById(blockId, mainChain) >>
-      repos.blocksInfo.updateChainStatusByHeaderId(blockId, mainChain) >>
+      (if (settings.indexes.blockStats) repos.blocksInfo.updateChainStatusByHeaderId(blockId, mainChain)
+       else unit[D]) >>
       repos.txs.updateChainStatusByHeaderId(blockId, mainChain) >>
       repos.outputs.updateChainStatusByHeaderId(blockId, mainChain) >>
       repos.inputs.updateChainStatusByHeaderId(blockId, mainChain) >>
