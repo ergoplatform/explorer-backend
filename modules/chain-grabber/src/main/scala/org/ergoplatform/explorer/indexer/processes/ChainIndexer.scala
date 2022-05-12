@@ -46,9 +46,11 @@ object ChainIndexer {
     network: ErgoNetwork[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[ChainIndexer[F]] =
     logs.forService[ChainIndexer[F]].flatMap { implicit log =>
-      makeRef.refOf(List.empty[(BlockId, Int)]).flatMap { updatesRef =>
-        RepoBundle[F, D].map(new Live[F, D](settings, network, updatesRef, _)(trans))
-      }
+      for {
+        updatesRef     <- makeRef.refOf(List.empty[(BlockId, Int)])
+        lastBlockCache <- makeRef.refOf((none[Header], none[BlockStats]))
+        repos          <- RepoBundle[F, D]
+      } yield new Live[F, D](settings, network, updatesRef, lastBlockCache, repos)(trans)
     }
 
   final class Live[
@@ -161,7 +163,7 @@ object ChainIndexer {
         case None =>
           info"Parent block [$parentId] needs to be downloaded" >>
             network.getFullBlockById(parentId).flatMap {
-              case Some(parentBlock) => applyBestBlock(parentBlock)
+              case Some(parentBlock) => applyBestBlock(parentBlock).void
               case None =>
                 val parentHeight = block.height - 1
                 InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]
