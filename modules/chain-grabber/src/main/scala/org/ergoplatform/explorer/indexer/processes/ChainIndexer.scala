@@ -44,7 +44,8 @@ trait ChainIndexer[F[_]] {
 
 object ChainIndexer {
 
-  val SyncQSize = 16
+  val SyncQSize      = 16
+  val PrefetchBlocks = 12
 
   def apply[F[_]: Concurrent: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
@@ -55,9 +56,19 @@ object ChainIndexer {
         updatesRef     <- makeRef.refOf(List.empty[(BlockId, Int)])
         lastBlockCache <- makeRef.refOf(List.empty[(Header, BlockStats)])
         bestHeightRef  <- makeRef.refOf(none[Int])
+        blocksBufferR  <- makeRef.refOf(Map.empty[Int, (List[ApiFullBlock], List[ApiFullBlock])])
         syncQueue      <- Queue.bounded[F, (ApiFullBlock, List[ApiFullBlock])](SyncQSize)
         repos          <- RepoBundle[F, D]
-      } yield new Live[F, D](settings, network, updatesRef, lastBlockCache, bestHeightRef, syncQueue, repos)(trans)
+      } yield new Live[F, D](
+        settings,
+        network,
+        updatesRef,
+        lastBlockCache,
+        bestHeightRef,
+        blocksBufferR,
+        syncQueue,
+        repos
+      )(trans)
     }
 
   final class Live[
@@ -69,6 +80,7 @@ object ChainIndexer {
     pendingChainUpdates: Ref[F, List[(BlockId, Int)]],
     lastBlockCache: Ref[F, List[(Header, BlockStats)]],
     bestHeightR: Ref[F, Option[Int]],
+    blocksBufferR: Ref[F, Map[Int, (List[ApiFullBlock], List[ApiFullBlock])]],
     syncQueue: Queue[F, (ApiFullBlock, List[ApiFullBlock])],
     repos: RepoBundle[D]
   )(trans: Trans[D, F])
@@ -95,24 +107,41 @@ object ChainIndexer {
         lowerHeight = (localHeight + 1) max startHeight
         _ <- Stream.eval(info"Current network height : $networkHeight")
         _ <- Stream.eval(info"Current explorer height: $localHeight")
+        prefetch = Stream
+                     .range(lowerHeight, networkHeight + 1, PrefetchBlocks)
+                     .flatMap(i => prefetchBlocks(i, i + PrefetchBlocks - 1))
         pull    = Stream.eval(pullBlocks(lowerHeight, networkHeight))
         process = syncQueue.dequeue.evalMap { case (best, orphans) => index(best, orphans) }
-        _ <- Stream.emits(List(pull, process)).parJoinUnbounded
+        _ <- Stream.emits(List(prefetch, pull, process)).parJoinUnbounded
       } yield ()
+
+    private def prefetchBlocks(lower: Int, upper: Int): Stream[F, Unit] =
+      Stream
+        .range(lower, upper + 1)
+        .covary[F]
+        .map { height =>
+          val prefetch = for {
+            ids     <- network.getBlockIdsAtHeight(height)
+            blocks0 <- ids.parTraverse(network.getFullBlockById)
+            blocks     = blocks0.flatten
+            blocksPart = blocks.partition(b => ids.headOption.contains(b.header.id))
+            _ <- blocksBufferR.update(_.updated(height, blocksPart))
+          } yield ()
+          Stream.eval(prefetch)
+        }
+        .parJoinUnbounded
 
     private def pullBlocks(lower: Int, upper: Int): F[Unit] =
       for {
-        ids     <- network.getBlockIdsAtHeight(lower)
-        _       <- info"Grabbing blocks at height $lower: [${ids.mkString(",")}]"
-        blocks0 <- ids.parTraverse(network.getFullBlockById)
-        blocks     = blocks0.flatten
-        blocksPart = blocks.partition(b => ids.headOption.contains(b.header.id))
+        _          <- info"Pulling blocks from height $lower"
+        blocksPart <- blocksBufferR.getAndUpdate(_ - lower).map(_.get(lower))
         _ <- blocksPart match {
-               case (List(best), others) => syncQueue.enqueue1((best, others))
-               case _                    => Timer[F].sleep(5.seconds) >> pullBlocks(lower, upper) // wait until block is available
+               case Some((List(best), others)) => syncQueue.enqueue1((best, others))
+               case _                          => Timer[F].sleep(2.seconds) >> pullBlocks(lower, upper) // wait until block is available
              }
+        numBlocks = blocksPart.map(_._2.size + 1).getOrElse(0)
+        _ <- info"$numBlocks block(s) grabbed from height $lower"
         _ <- if (lower < upper) pullBlocks(lower + 1, upper) else unit[F]
-        _ <- info"${blocks.size} block(s) grabbed from height $lower"
       } yield ()
 
     private def index(best: ApiFullBlock, orphaned: List[ApiFullBlock]): F[Unit] = {
