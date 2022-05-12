@@ -111,36 +111,36 @@ object ChainIndexer {
       pullBlocks.guarantee(commitChainUpdates)
     }
 
-    private def applyBestBlock(block: ApiFullBlock): F[Header] = {
+    private def applyBestBlock(block: ApiFullBlock): F[Unit] = {
       val id           = block.header.id
       val height       = block.header.height
       val parentId     = block.header.parentId
       val parentHeight = block.header.height - 1
       val checkParentF =
         getBlock(parentId).flatMap {
-          case Some(parentBlock) if parentBlock.mainChain => unit[F] as parentBlock.some
-          case None if block.header.height == startHeight => unit[F] as none[Header]
+          case Some(parentBlock) if parentBlock.mainChain => unit[F]
+          case None if block.header.height == startHeight => unit[F]
           case Some(parentBlock) =>
-            info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock) as parentBlock.some
+            info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
           case None =>
             info"Parent block [$parentId] needs to be downloaded" >>
               network.getFullBlockById(parentId).flatMap {
                 case Some(parentBlock) =>
-                  applyBestBlock(parentBlock).map(_.some)
+                  applyBestBlock(parentBlock)
                 case None =>
                   InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]")
-                    .raise[F, Option[Header]]
+                    .raise[F, Unit]
               }
         }
       for {
         _             <- info"Applying best block [$id] at height [$height]"
-        prevBlock     <- checkParentF
+        _             <- checkParentF
         prevBlockInfo <- getBlockInfo(parentId)
         flatBlock     <- scan(block, prevBlockInfo)
         _             <- insertBlock(flatBlock)
         _             <- markAsMain(id, height)
-        _             <- lastBlockCache.set(prevBlock -> prevBlockInfo)
-      } yield flatBlock.header
+        _             <- lastBlockCache.set(flatBlock.header.some -> flatBlock.info.some)
+      } yield ()
     }
 
     private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
