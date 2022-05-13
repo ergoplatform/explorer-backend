@@ -44,7 +44,7 @@ object EpochsIndexer {
     override def run: Stream[F, Unit] =
       Stream(()).repeat
         .covary[F]
-        .metered(settings.pollInterval)
+        .metered(settings.epochPollInterval)
         .flatMap { _ =>
           Stream.eval(info"Starting epochs sync job ..") >> Stream.eval(sync).handleErrorWith { e =>
             Stream.eval(
