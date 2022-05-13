@@ -41,6 +41,8 @@ trait Mempool[F[_]] {
     paging: Paging
   ): F[Items[UTransactionInfo]]
 
+  def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
+
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 
   def streamUnspentOutputs: Stream[F, UOutputInfo]
@@ -66,6 +68,12 @@ object Mempool {
     extends Mempool[F] {
 
     import repo._
+
+    def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
+      txs
+        .countByErgoTree(ergoTree.value)
+        .map(_ > 0)
+        .thrushK(trans.xa)
 
     def getByErgoTree(ergoTree: ErgoTree, paging: Paging): F[Items[UTransactionInfo]] =
       txs
