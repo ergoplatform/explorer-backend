@@ -45,6 +45,10 @@ trait Mempool[F[_]] {
 
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 
+  def getUOutputsByAddress(address: Address): F[List[UOutputInfo]]
+
+  def getBoxesSpentInMempool(address: Address): F[List[BoxId]]
+
   def streamUnspentOutputs: Stream[F, UOutputInfo]
 }
 
@@ -74,6 +78,28 @@ object Mempool {
         .countByErgoTree(ergoTree.value)
         .map(_ > 0)
         .thrushK(trans.xa)
+
+    def getUOutputsByAddress(address: Address): F[List[UOutputInfo]] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
+      (for {
+        uTxInfoL <- txs
+                      .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+                      .chunkN(settings.chunkSize)
+                      .through(mkTransaction)
+                      .to[List]
+      } yield uTxInfoL.flatMap(_.outputs.filter(_.ergoTree == ergoTree.value))) ||> trans.xa
+    }
+
+    def getBoxesSpentInMempool(address: Address): F[List[BoxId]] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
+      (for {
+        uTxInfoL <- txs
+                      .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+                      .chunkN(settings.chunkSize)
+                      .through(mkTransaction)
+                      .to[List]
+      } yield uTxInfoL.flatMap(_.inputs.map(_.boxId))) ||> trans.xa
+    }
 
     def getByErgoTree(ergoTree: ErgoTree, paging: Paging): F[Items[UTransactionInfo]] =
       txs
