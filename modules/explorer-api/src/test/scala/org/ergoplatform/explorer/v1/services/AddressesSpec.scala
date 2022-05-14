@@ -1,15 +1,20 @@
 package org.ergoplatform.explorer.v1.services
 
 import cats.{Monad, Parallel}
+import cats.syntax.option._
 import cats.effect.{Concurrent, ContextShift, IO}
 import dev.profunktor.redis4cats.algebra.RedisCommands
+import doobie.free.connection.ConnectionIO
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.string.ValidByte
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.{Address, ErgoTree}
 import org.ergoplatform.explorer.cache.Redis
+import org.ergoplatform.explorer.commonGenerators.forSingleInstance
 import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.repositories.{
   AssetRepo,
   HeaderRepo,
@@ -29,9 +34,11 @@ import tofu.syntax.monadic._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
-
 import org.ergoplatform.explorer.v1.services.AddressesSpec._
 import org.ergoplatform.explorer.db.models.generators._
+import org.ergoplatform.explorer.http.api.v1.models.AddressInfo
+import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.v1.services.constants.{ReceiverAddressString, SenderAddressString}
 
 trait AddressesSpec
   extends AnyFlatSpec
@@ -48,6 +55,186 @@ class AS_A extends AddressesSpec {
     ErgoAddressEncoder(networkPrefix.value.toByte)
 
   "Address Service" should "" in {}
+}
+
+class AS_C extends AddressesSpec {
+
+  val networkPrefix: String Refined ValidByte = "16" // strictly run test-suite with testnet network prefix
+  implicit val addressEncoder: ErgoAddressEncoder =
+    ErgoAddressEncoder(networkPrefix.value.toByte)
+
+  "Address Service" should "check if address has been used via ErgoTree" in {
+    import tofu.fs2Instances._
+    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
+    val address1S                               = SenderAddressString
+    val address2S                               = ReceiverAddressString
+    val address1T                               = Address.fromString[Try](address1S)
+    val address2T                               = Address.fromString[Try](address2S)
+    lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
+    lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
+    withResources[IO](container.mappedPort(6379))
+      .use { case (settings, utxCache, redis) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
+          address1T.isSuccess should be(true)
+          address2T.isSuccess should be(true)
+          withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, _, _) =>
+            forSingleInstance(
+              balanceOfAddressGen(
+                mainChain = true,
+                address   = address1T.get,
+                address1Tree,
+                values = List((100.toNanoErgo, 1), (200.toNanoErgo, 1))
+              )
+            ) { infoTupleList =>
+              infoTupleList.foreach { case (header, out, tx) =>
+                headerRepo.insert(header).runWithIO()
+                oRepo.insert(out).runWithIO()
+                txRepo.insert(tx).runWithIO()
+              }
+              val hasBeenUsedByErgoTree = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
+              (addr invokePrivate hasBeenUsedByErgoTree(address1Tree)).unsafeRunSync() should be(true)
+              (addr invokePrivate hasBeenUsedByErgoTree(address2Tree)).unsafeRunSync() should be(false)
+            }
+          }
+        }
+      }
+      .unsafeRunSync()
+
+  }
+
+}
+
+class AS_D extends AddressesSpec {
+
+  val networkPrefix: String Refined ValidByte = "16" // strictly run test-suite with testnet network prefix
+  implicit val addressEncoder: ErgoAddressEncoder =
+    ErgoAddressEncoder(networkPrefix.value.toByte)
+
+  "Address Service" should "generate address info for single address" in {
+    import tofu.fs2Instances._
+    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
+    val addressT                                = Address.fromString[Try](SenderAddressString)
+    lazy val addressTree                        = sigma.addressToErgoTreeHex(addressT.get)
+    val addressInfoOf                           = PrivateMethod[IO[(Address, AddressInfo)]]('addressInfoOf)
+    val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
+    withResources[IO](container.mappedPort(6379))
+      .use { case (settings, utxCache, redis) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, mem) =>
+          addressT.isSuccess should be(true)
+          withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, tokenRepo, assetRepo) =>
+            forSingleInstance(
+              balanceOfAddressWithTokenGen(mainChain = true, address = addressT.get, addressTree, 1, 3)
+            ) { infoTupleList =>
+              infoTupleList.foreach { case (header, out, tx, _, token, asset) =>
+                headerRepo.insert(header).runWithIO()
+                oRepo.insert(out).runWithIO()
+                txRepo.insert(tx).runWithIO()
+                tokenRepo.insert(token).runWithIO()
+                assetRepo.insert(asset).runWithIO()
+              }
+
+              val addressInfo =
+                (addr invokePrivate addressInfoOf(addressT.get, mem.hasUnconfirmedBalance _)).unsafeRunSync()._2
+
+              val bFS = addr.confirmedBalanceOf(addressT.get, 0).unsafeRunSync()
+              addressInfo.confirmedBalance should be(bFS)
+
+              val huFS = mem.hasUnconfirmedBalance(ErgoTree(addressTree)).unsafeRunSync()
+              addressInfo.hasUnconfirmedTxs should be(huFS)
+
+              val hbuFS = (addr invokePrivate hasBeenUsedByErgoTree(addressTree)).unsafeRunSync()
+              addressInfo.used should be(hbuFS)
+            }
+          }
+        }
+      }
+      .unsafeRunSync()
+  }
+
+}
+
+class AS_E extends AddressesSpec {
+
+  val networkPrefix: String Refined ValidByte = "16" // strictly run test-suite with testnet network prefix
+  implicit val addressEncoder: ErgoAddressEncoder =
+    ErgoAddressEncoder(networkPrefix.value.toByte)
+
+  "Address Service" should "generate batch address info" in {
+    import tofu.fs2Instances._
+    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
+    val address1S                               = SenderAddressString
+    val address2S                               = ReceiverAddressString
+    val address1T                               = Address.fromString[Try](address1S)
+    val address2T                               = Address.fromString[Try](address2S)
+    lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
+    lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
+    val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
+    withResources[IO](container.mappedPort(6379))
+      .use { case (settings, utxCache, redis) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, mem) =>
+          address1T.isSuccess should be(true)
+          address2T.isSuccess should be(true)
+          withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, tokenRepo, assetRepo) =>
+            forSingleInstance(
+              balanceOfAddressWithTokenGen(mainChain = true, address = address1T.get, address1Tree, 1, 3)
+            ) { infoTupleList =>
+              infoTupleList.foreach { case (header, out, tx, _, token, asset) =>
+                headerRepo.insert(header).runWithIO()
+                oRepo.insert(out).runWithIO()
+                txRepo.insert(tx).runWithIO()
+                tokenRepo.insert(token).runWithIO()
+                assetRepo.insert(asset).runWithIO()
+              }
+              forSingleInstance(
+                balanceOfAddressWithTokenGen(mainChain = true, address = address2T.get, address2Tree, 1, 3)
+              ) { infoTupleList2 =>
+                infoTupleList.foreach { case (header, out, tx, _, token, asset) =>
+                  headerRepo.insert(header).runWithIO()
+                  oRepo.insert(out).runWithIO()
+                  txRepo.insert(tx).runWithIO()
+                  tokenRepo.insert(token).runWithIO()
+                  assetRepo.insert(asset).runWithIO()
+                }
+
+                infoTupleList2.foreach { case (header, out, tx, _, token, asset) =>
+                  headerRepo.insert(header).runWithIO()
+                  oRepo.insert(out).runWithIO()
+                  txRepo.insert(tx).runWithIO()
+                  tokenRepo.insert(token).runWithIO()
+                  assetRepo.insert(asset).runWithIO()
+                }
+                // batch addressInfo Data:
+                val batchInfoResult =
+                  addr.addressInfoOf(List(address1T, address2T).map(_.get), mem.hasUnconfirmedBalance).unsafeRunSync()
+
+                batchInfoResult should not be empty
+                batchInfoResult.contains(address1T.get) should be(true)
+                batchInfoResult.contains(address2T.get) should be(true)
+
+                // batchInfoResult(address1)
+                val b1FS         = addr.confirmedBalanceOf(address1T.get, 0).unsafeRunSync()
+                val hu1FS        = mem.hasUnconfirmedBalance(ErgoTree(address1Tree)).unsafeRunSync()
+                val hbu1FS       = (addr invokePrivate hasBeenUsedByErgoTree(address1Tree)).unsafeRunSync()
+                val AddressInfo1 = AddressInfo(address = address1T.get, hasUnconfirmedTxs = hu1FS, hbu1FS, b1FS)
+
+                // batchInfoResult(address2)
+                val b2FS         = addr.confirmedBalanceOf(address2T.get, 0).unsafeRunSync()
+                val hu2FS        = mem.hasUnconfirmedBalance(ErgoTree(address2Tree)).unsafeRunSync()
+                val hbu2FS       = (addr invokePrivate hasBeenUsedByErgoTree(address2Tree)).unsafeRunSync()
+                val AddressInfo2 = AddressInfo(address = address2T.get, hasUnconfirmedTxs = hu2FS, hbu2FS, b2FS)
+
+                batchInfoResult.get(address1T.get) should be(AddressInfo1.some)
+                batchInfoResult.get(address2T.get) should be(AddressInfo2.some)
+
+              }
+            }
+          }
+        }
+      }
+      .unsafeRunSync()
+
+  }
+
 }
 
 object AddressesSpec {
