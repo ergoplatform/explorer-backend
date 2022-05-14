@@ -16,7 +16,8 @@ import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
-import org.ergoplatform.explorer.http.api.v1.models.{OutputInfo, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{Balance, OutputInfo, TotalBalance, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.utils.BuildUnconfirmedBalance
 import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
 import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
@@ -40,6 +41,8 @@ trait Mempool[F[_]] {
     address: Address,
     paging: Paging
   ): F[Items[UTransactionInfo]]
+
+  def getTotalBalance(address: Address, confirmedBalanceOf: (Address, Int) => F[Balance]): F[TotalBalance]
 
   def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
 
@@ -74,6 +77,35 @@ object Mempool {
         .countByErgoTree(ergoTree.value)
         .map(_ > 0)
         .thrushK(trans.xa)
+
+    private def getUnconfirmedBalanceByAddress(
+      address: Address,
+      confirmedBalance: Balance
+    ): F[Balance] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
+      txs
+        .countByErgoTree(ergoTree.value)
+        .flatMap { total =>
+          txs
+            .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+            .chunkN(settings.chunkSize)
+            .through(mkTransaction)
+            .to[List]
+            .map { poolItems =>
+              total match {
+                case 0 => Balance.empty
+                case _ => BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
+              }
+            }
+        }
+        .thrushK(trans.xa)
+    }
+
+    def getTotalBalance(address: Address, confirmedBalanceOf: (Address, Int) => F[Balance]): F[TotalBalance] =
+      for {
+        confirmed   <- confirmedBalanceOf(address, 0)
+        unconfirmed <- getUnconfirmedBalanceByAddress(address, confirmed)
+      } yield TotalBalance(confirmed, unconfirmed)
 
     def getByErgoTree(ergoTree: ErgoTree, paging: Paging): F[Items[UTransactionInfo]] =
       txs

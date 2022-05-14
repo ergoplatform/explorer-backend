@@ -38,7 +38,7 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
 
   private def getTotalBalanceR =
     interpreter.toRoutes(defs.getTotalBalanceDef) { addr =>
-      addresses.totalBalanceOf(addr).adaptThrowable.value
+      mempool.getTotalBalance(addr, addresses.confirmedBalanceOf).adaptThrowable.value
     }
 }
 
