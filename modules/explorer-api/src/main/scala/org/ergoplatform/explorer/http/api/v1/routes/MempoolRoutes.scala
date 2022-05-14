@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.http.api.v1.routes
 
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
-import org.ergoplatform.explorer.http.api.ApiErr
+import org.ergoplatform.explorer.http.api.{ApiErr, streaming}
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v1.defs.MempoolEndpointDefs
@@ -14,9 +14,9 @@ final class MempoolRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
 ](service: Mempool[F])(implicit opts: Http4sServerOptions[F, F]) {
 
-  val defs = new MempoolEndpointDefs()
+  val defs = new MempoolEndpointDefs[F]
 
-  val routes: HttpRoutes[F] = sendTransactionR <+> getTransactionsByAddressR
+  val routes: HttpRoutes[F] = sendTransactionR <+> getTransactionsByAddressR <+> streamUnspentOutputsR
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -28,6 +28,11 @@ final class MempoolRoutes[
   private def getTransactionsByAddressR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getTransactionsByAddressDef) { case (address, paging) =>
       service.getByAddress(address, paging).adaptThrowable.value
+    }
+
+  private def streamUnspentOutputsR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.streamUnspentOutputsDef) { _ =>
+      streaming.bytesStream(service.streamUnspentOutputs)
     }
 }
 

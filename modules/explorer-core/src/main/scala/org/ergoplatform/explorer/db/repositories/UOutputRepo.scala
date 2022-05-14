@@ -33,7 +33,11 @@ trait UOutputRepo[D[_], S[_[_], _]] {
 
   /** Get all outputs containing in unconfirmed transactions.
     */
-  def getAll(offset: Int, limit: Int): S[D, ExtendedUOutput]
+  def streamAll(offset: Int, limit: Int): S[D, ExtendedUOutput]
+
+  /** Get all unspent outputs containing in unconfirmed transactions.
+    */
+  def streamAllUnspent(offset: Int, limit: Int): S[D, UOutput]
 
   /** Get all unconfirmed outputs related to transaction with a given `txId`.
     */
@@ -77,8 +81,11 @@ object UOutputRepo {
     def getByBoxId(boxId: BoxId): D[Option[ExtendedUOutput]] =
       QS.get(boxId).option.liftConnectionIO
 
-    def getAll(offset: Int, limit: Int): Stream[D, ExtendedUOutput] =
+    def streamAll(offset: Int, limit: Int): Stream[D, ExtendedUOutput] =
       QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
+
+    def streamAllUnspent(offset: Int, limit: Int): Stream[D, UOutput] =
+      QS.getAllUnspent(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def getAllByTxId(txId: TxId): D[List[ExtendedUOutput]] =
       QS.getAllByTxId(txId).to[List].liftConnectionIO

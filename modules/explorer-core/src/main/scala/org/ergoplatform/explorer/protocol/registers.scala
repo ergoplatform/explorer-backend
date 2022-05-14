@@ -14,9 +14,9 @@ object registers {
   @inline def expand(registers: Map[RegisterId, HexString]): Map[RegisterId, ExpandedRegister] = {
     val expanded =
       for {
-        (idSig, serializedValue)        <- registers.toList
-        RegisterValue(valueType, value) <- RegistersParser[Try].parseAny(serializedValue).toOption
-      } yield idSig -> ExpandedRegister(serializedValue, valueType, value)
+        (idSig, serializedValue) <- registers.toList
+        rv = RegistersParser[Try].parseAny(serializedValue).toOption
+      } yield idSig -> ExpandedRegister(serializedValue, rv.map(_.sigmaType), rv.map(_.value))
     expanded.toMap
   }
 

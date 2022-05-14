@@ -7,7 +7,12 @@ import io.circe.Codec
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.TxId
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedUAsset, ExtendedUDataInput, ExtendedUInput, ExtendedUOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{
+  ExtendedUAsset,
+  ExtendedUDataInput,
+  ExtendedUInput,
+  ExtendedUOutput
+}
 import org.ergoplatform.explorer.db.models.UTransaction
 import sttp.tapir.{Schema, Validator}
 
@@ -38,11 +43,11 @@ object UTransactionInfo {
   implicit val validator: Validator[UTransactionInfo] = schema.validator
 
   def apply(
-             tx: UTransaction,
-             ins: List[ExtendedUInput],
-             dataIns: List[ExtendedUDataInput],
-             outs: List[ExtendedUOutput],
-             assets: List[ExtendedUAsset]
+    tx: UTransaction,
+    ins: List[ExtendedUInput],
+    dataIns: List[ExtendedUDataInput],
+    outs: List[ExtendedUOutput],
+    assets: List[ExtendedUAsset]
   ): UTransactionInfo = {
     val inputsInfo     = UInputInfo.batch(ins)
     val dataInputsInfo = UDataInputInfo.batch(dataIns)
@@ -51,25 +56,25 @@ object UTransactionInfo {
   }
 
   def batch(
-             txs: List[UTransaction],
-             ins: List[ExtendedUInput],
-             dataIns: List[ExtendedUDataInput],
-             outs: List[ExtendedUOutput],
-             assets: List[ExtendedUAsset]
+    txs: List[UTransaction],
+    ins: List[ExtendedUInput],
+    dataIns: List[ExtendedUDataInput],
+    outs: List[ExtendedUOutput],
+    assets: List[ExtendedUAsset]
   ): List[UTransactionInfo] = {
     val assetsByBox    = assets.groupBy(_.boxId)
     val inputsByTx     = ins.groupBy(_.input.txId)
     val dataInputsByTx = dataIns.groupBy(_.input.txId)
-    val outsByTx       = outs.groupBy(_.txId)
+    val outsByTx       = outs.groupBy(_.output.txId)
     txs
       .traverse { tx =>
         for {
           inputs <- inputsByTx.get(tx.id).map(_.sortBy(_.input.index))
           dataInputs = dataInputsByTx.get(tx.id).toList.flatten
-          outputs <- outsByTx.get(tx.id).map(_.sortBy(_.index))
+          outputs <- outsByTx.get(tx.id).map(_.sortBy(_.output.index))
           assets = outputs
                      .foldLeft(List.empty[ExtendedUAsset]) { (acc, o) =>
-                       assetsByBox.get(o.boxId).toList.flatten ++ acc
+                       assetsByBox.get(o.output.boxId).toList.flatten ++ acc
                      }
         } yield apply(tx, inputs, dataInputs, outputs, assets)
       }

@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v1.services
 
 import cats.data.OptionT
 import cats.effect.Sync
+import cats.syntax.traverse._
 import cats.syntax.list._
 import cats.{FlatMap, Monad}
 import fs2.{Chunk, Pipe, Stream}
@@ -32,13 +33,16 @@ trait Transactions[F[_]] {
 
   def getByAddress(
     address: Address,
-    paging: Paging
+    paging: Paging,
+    concise: Boolean
   ): F[Items[TransactionInfo]]
 
   def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo]
 }
 
 object Transactions {
+
+  val MaxIdsPerRequest = scala.Short.MaxValue / 4
 
   def apply[
     F[_]: Sync,
@@ -88,7 +92,7 @@ object Transactions {
           transactions
             .getByInputsScriptTemplate(template, paging.offset, paging.limit, ordering.value)
             .chunkN(serviceSettings.chunkSize)
-            .through(makeTransaction)
+            .through(makeTransaction(None))
             .to[List]
             .map(Items(_, total))
         }
@@ -96,15 +100,17 @@ object Transactions {
 
     def getByAddress(
       address: Address,
-      paging: Paging
+      paging: Paging,
+      concise: Boolean
     ): F[Items[TransactionInfo]] =
       transactions
         .countRelatedToAddress(address)
         .flatMap { total =>
+          val narrowBy = if (concise) Some(address) else None
           transactions
             .streamRelatedToAddress(address, paging.offset, paging.limit)
             .chunkN(serviceSettings.chunkSize)
-            .through(makeTransaction)
+            .through(makeTransaction(narrowBy))
             .to[List]
             .map(Items(_, total))
         }
@@ -114,20 +120,20 @@ object Transactions {
       transactions
         .streamTransactions(minGix, limit)
         .chunkN(serviceSettings.chunkSize)
-        .through(makeTransaction)
+        .through(makeTransaction(None))
         .thrushK(trans.xas)
 
-    private def makeTransaction: Pipe[D, Chunk[Transaction], TransactionInfo] =
+    private def makeTransaction(narrowByAddress: Option[Address]): Pipe[D, Chunk[Transaction], TransactionInfo] =
       for {
         chunk      <- _
         txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
-        ins        <- Stream.eval(inputs.getFullByTxIds(txIds))
+        ins        <- Stream.eval(inputs.getFullByTxIds(txIds, narrowByAddress))
         inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
+        inAssets   <- Stream.eval(inIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds))
         dataIns    <- Stream.eval(dataInputs.getFullByTxIds(txIds))
-        outs       <- Stream.eval(outputs.getAllByTxIds(txIds))
+        outs       <- Stream.eval(outputs.getAllByTxIds(txIds, narrowByAddress))
         outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-        outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
+        outAssets  <- Stream.eval(outIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds))
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
         txInfo <-

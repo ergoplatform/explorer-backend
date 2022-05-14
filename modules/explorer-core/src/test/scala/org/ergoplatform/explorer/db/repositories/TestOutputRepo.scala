@@ -85,7 +85,8 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
   ): F[scala.List[ExtendedOutput]] = ???
 
   override def getAllByTxIds(
-    txsId: NonEmptyList[TxId]
+    txsId: NonEmptyList[TxId],
+    narrowByAddress: Option[Address]
   ): F[scala.List[ExtendedOutput]] = ???
 
   override def getAllLike(

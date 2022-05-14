@@ -14,7 +14,6 @@ import org.ergoplatform.explorer.settings.ApiSettings
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server}
-import org.http4s.syntax.kleisli._
 import sttp.tapir.server.http4s.Http4sServerOptions
 import tofu.Throws
 
@@ -39,7 +38,7 @@ object HttpApi {
       v0 <- Resource.eval(RoutesV0Bundle(settings.protocol, settings.utxCache, redis)(trans))
       v1 <- Resource.eval(RoutesV1Bundle(settings.service, settings.requests, settings.utxCache, redis)(trans))
       routes     = v0.routes <+> v1.routes
-      corsRoutes = CORS(routes)
+      corsRoutes = CORS.policy.withAllowOriginAll(routes)
       http <- BlazeServerBuilder[F](ec)
                 .bindHttp(settings.http.port, settings.http.host)
                 .withHttpApp(Router("/" -> corsRoutes).orNotFound)
