@@ -44,8 +44,9 @@ trait ChainIndexer[F[_]] {
 
 object ChainIndexer {
 
-  val SyncQSize      = 16
-  val PrefetchBlocks = 12
+  val SyncQSize           = 16
+  val PrefetchBlocks      = 12
+  val FastForwardMinDelta = 256
 
   def apply[F[_]: Concurrent: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
@@ -104,14 +105,18 @@ object ChainIndexer {
       for {
         networkHeight <- Stream.eval(network.getBestHeight)
         localHeight   <- Stream.eval(getLastGrabbedBlockHeight)
+        delta = networkHeight - localHeight
+        (upperHeight, ff) = if (delta > FastForwardMinDelta) networkHeight - FastForwardMinDelta -> true
+                            else networkHeight -> false
         lowerHeight = (localHeight + 1) max startHeight
         _ <- Stream.eval(info"Current network height : $networkHeight")
+        _ <- if (ff) Stream.eval(info"Using FastForward mode until $upperHeight") else Stream.empty
         _ <- Stream.eval(info"Current explorer height: $localHeight")
         prefetch = Stream
-                     .range(lowerHeight, networkHeight + 1, PrefetchBlocks)
+                     .range(lowerHeight, upperHeight + 1, PrefetchBlocks)
                      .flatMap(i => prefetchBlocks(i, i + PrefetchBlocks - 1))
-        pull    = Stream.eval(pullBlocks(lowerHeight, networkHeight))
-        process = syncQueue.dequeue.evalMap { case (best, orphans) => index(best, orphans) }
+        pull    = Stream.eval(pullBlocks(lowerHeight, upperHeight))
+        process = syncQueue.dequeue.evalMap { case (best, orphans) => index(best, orphans, ff) }
         _ <- Stream.emits(List(prefetch, pull, process)).parJoinUnbounded
       } yield ()
 
@@ -144,19 +149,20 @@ object ChainIndexer {
         _ <- if (lower < upper) pullBlocks(lower + 1, upper) else unit[F]
       } yield ()
 
-    private def index(best: ApiFullBlock, orphaned: List[ApiFullBlock]): F[Unit] = {
+    private def index(best: ApiFullBlock, orphaned: List[ApiFullBlock], fastForward: Boolean): F[Unit] = {
       val applyBlocks =
         for {
           _ <- info"Processing best block [${best.header.id}] at height [${best.header.height}]"
           _ <- info"Processing orphaned blocks [${orphaned.map(_.header.id).mkString(", ")}]"
-          _ <- applyBestBlock(best)
-          _ <- orphaned.traverse(applyOrphanedBlock)
+          _ <- applyBestBlock(best, fastForward)
+          _ <- if (!fastForward) orphaned.traverse(applyOrphanedBlock) else unit[F]
           _ <- bestHeightR.set(Some(best.header.height))
         } yield ()
-      applyBlocks.guarantee(commitChainUpdates)
+      if (fastForward) applyBlocks
+      else applyBlocks.guarantee(commitChainUpdates)
     }
 
-    private def applyBestBlock(block: ApiFullBlock): F[Unit] = {
+    private def applyBestBlock(block: ApiFullBlock, fastForward: Boolean): F[Unit] = {
       val id           = block.header.id
       val height       = block.header.height
       val parentId     = block.header.parentId
@@ -171,20 +177,21 @@ object ChainIndexer {
             info"Parent block [$parentId] needs to be downloaded" >>
               network.getFullBlockById(parentId).flatMap {
                 case Some(parentBlock) =>
-                  applyBestBlock(parentBlock)
+                  applyBestBlock(parentBlock, fastForward)
                 case None =>
                   InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]")
                     .raise[F, Unit]
               }
         }
       for {
-        _             <- info"Applying best block [$id] at height [$height]"
+        _             <- info"Applying best block [$id] at height [$height] ${if (fastForward) "[FastForward]" else ""}"
         _             <- checkParentF
         prevBlockInfo <- getBlockInfo(parentId)
-        flatBlock     <- scan(block, prevBlockInfo)
-        _             <- insertBlock(flatBlock)
-        _             <- markAsMain(id, height)
-        _             <- memoize(flatBlock)
+        flatBlock0    <- scan(block, prevBlockInfo)
+        flatBlock = if (fastForward) FlatBlock.asMain(flatBlock0) else flatBlock0
+        _ <- insertBlock(flatBlock)
+        _ <- if (!fastForward) markAsMain(id, height) else unit[F]
+        _ <- memoize(flatBlock)
       } yield ()
     }
 
@@ -213,7 +220,7 @@ object ChainIndexer {
         case None =>
           info"Parent block [$parentId] needs to be downloaded" >>
             network.getFullBlockById(parentId).flatMap {
-              case Some(parentBlock) => applyBestBlock(parentBlock).void
+              case Some(parentBlock) => applyBestBlock(parentBlock, fastForward = false).void
               case None =>
                 val parentHeight = block.height - 1
                 InconsistentNodeView(s"Failed to pull best block [$parentId] at height [$parentHeight]").raise[F, Unit]

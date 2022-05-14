@@ -19,3 +19,15 @@ final case class FlatBlock(
   tokens: List[Token],
   constants: List[ScriptConstant]
 )
+
+object FlatBlock {
+  def asMain(b: FlatBlock): FlatBlock =
+    b.copy(
+      header = b.header.copy(mainChain = true),
+      info = b.info.copy(mainChain = true),
+      txs = b.txs.map(_.copy(mainChain = true)),
+      inputs = b.inputs.map(_.copy(mainChain = true)),
+      dataInputs = b.dataInputs.map(_.copy(mainChain = true)),
+      outputs = b.outputs.map(_.copy(mainChain = true))
+    )
+}

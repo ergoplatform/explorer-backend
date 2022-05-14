@@ -34,6 +34,7 @@ class ChainGrabberSpec
   private lazy val settings =
     IndexerSettings(
       pollInterval = 1.second,
+      epochPollInterval = 1.second,
       writeOrphans = true,
       network      = NetworkSettings(mainnetNodes, selfCheckIntervalRequests = 5),
       db           = dbSettings,
