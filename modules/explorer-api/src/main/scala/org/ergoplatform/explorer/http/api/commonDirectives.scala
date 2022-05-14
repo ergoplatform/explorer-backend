@@ -5,7 +5,7 @@ import cats.instances.option._
 import cats.syntax.flatMap._
 import cats.syntax.option._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
-import org.ergoplatform.explorer.http.api.models.{HeightRange, Paging, Sorting}
+import org.ergoplatform.explorer.http.api.models.{HeightRange, InclusionHeightRangeOp, Paging, Sorting}
 import sttp.tapir.{query, EndpointInput, ValidationError, Validator}
 
 import java.util.concurrent.TimeUnit
@@ -23,6 +23,11 @@ object commonDirectives {
       .map { input =>
         Paging(input._1.getOrElse(0), input._2.getOrElse(20))
       } { case Paging(offset, limit) => offset.some -> limit.some }
+
+  def inclusionHeight: EndpointInput[InclusionHeightRangeOp] =
+    (query[Option[Int]]("fromHeight").validateOption(Validator.min(0)) and
+      query[Option[Int]]("toHeight").validateOption(Validator.min(1)))
+      .map(in => InclusionHeightRangeOp(in._1, in._2))(epochs => epochs.fromHeight -> epochs.toHeight)
 
   val confirmations: EndpointInput[Int] =
     query[Option[Int]]("minConfirmations").map(_.getOrElse(0))(_.some)

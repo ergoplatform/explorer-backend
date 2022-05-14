@@ -56,11 +56,25 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, Transaction]
 
+  /** Get transactions related to a given `address` between given inclusion height range
+    */
+  def streamRelatedToAddress(
+    address: Address,
+    offset: Int,
+    limit: Int,
+    fromHeight: Int,
+    toHeight: Int
+  ): S[D, Transaction]
+
   def streamTransactions(minGix: Long, limit: Int): S[D, Transaction]
 
   /** Get total number of transactions related to a given `address`.
     */
   def countRelatedToAddress(address: Address): D[Int]
+
+  /** Get total number of transactions related to a given `address` between given inclusion-height range
+    */
+  def countRelatedToAddress(address: Address, fromHeight: Int, toHeight: Int): D[Int]
 
   /** Get total number of transactions appeared in the main chain after a given timestamp `ts`.
     */
@@ -144,8 +158,20 @@ object TransactionRepo {
     def streamTransactions(minGix: Long, limit: Int): Stream[D, Transaction] =
       QS.getAll(minGix, limit).stream.translate(liftK)
 
+    def streamRelatedToAddress(
+      address: Address,
+      offset: Int,
+      limit: Int,
+      fromHeight: Int,
+      toHeight: Int
+    ): Stream[D, Transaction] =
+      QS.getAllRelatedToAddress(address, offset, limit, fromHeight, toHeight).stream.translate(liftK)
+
     def countRelatedToAddress(address: Address): D[Int] =
       QS.countRelatedToAddress(address).unique.liftConnectionIO
+
+    def countRelatedToAddress(address: Address, fromHeight: Int, toHeight: Int): D[Int] =
+      QS.countRelatedToAddress(address, fromHeight, toHeight).unique.liftConnectionIO
 
     def countMainSince(ts: Long): D[Int] =
       QS.countMainSince(ts).unique.liftConnectionIO
