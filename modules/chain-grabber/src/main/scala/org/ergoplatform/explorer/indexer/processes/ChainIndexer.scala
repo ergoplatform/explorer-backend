@@ -141,7 +141,7 @@ object ChainIndexer {
         _          <- info"Pulling blocks from height $lower"
         blocksPart <- blocksBufferR.getAndUpdate(_ - lower).map(_.get(lower))
         keys       <- blocksBufferR.get.map(_.keys.toSet)
-        _          <- debug"Blocks buffer: MIN: ${keys.min}, MAX: ${keys.max}, N: ${keys.size}"
+        _          <- debug"Blocks buffer: MIN: ${keys.headOption}, MAX: ${keys.lastOption}, N: ${keys.size}"
         _ <- blocksPart match {
                case Some((List(best), others)) => syncQueue.enqueue1((best, others))
                case _                          => Timer[F].sleep(2.seconds) >> pullBlocks(lower, upper) // wait until block is available
