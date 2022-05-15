@@ -142,7 +142,7 @@ object ChainIndexer {
         blocksPart <- blocksBufferR.getAndUpdate(_ - lower).map(_.get(lower))
         _ <- blocksPart match {
                case Some((List(best), others)) => syncQueue.enqueue1((best, others))
-               case _                          => Timer[F].sleep(2.seconds) >> pullBlocks(lower, upper) // wait until block is available
+               case _                          => unit[F]
              }
         numBlocks = blocksPart.map(_._2.size + 1).getOrElse(0)
         _ <- info"$numBlocks block(s) grabbed from height $lower"
