@@ -1,12 +1,12 @@
 package org.ergoplatform.explorer.indexer.processes
 
 import cats.data.OptionT
-import cats.effect.concurrent.Ref
+import cats.effect.concurrent.{Ref, Semaphore}
 import cats.effect.syntax.bracket._
-import cats.effect.{Bracket, Concurrent, Sync, Timer}
-import cats.syntax.option._
+import cats.effect.{Bracket, Concurrent, Timer}
 import cats.instances.list._
 import cats.syntax.foldable._
+import cats.syntax.option._
 import cats.syntax.parallel._
 import cats.syntax.traverse._
 import cats.{Monad, Parallel}
@@ -15,7 +15,7 @@ import fs2.concurrent.Queue
 import mouse.anyf._
 import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.BuildFrom.syntax._
-import org.ergoplatform.explorer.Err.ProcessingErr.{InconsistentNodeView, NoBlocksWritten}
+import org.ergoplatform.explorer.Err.ProcessingErr.InconsistentNodeView
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
@@ -44,8 +44,9 @@ trait ChainIndexer[F[_]] {
 
 object ChainIndexer {
 
-  val SyncQSize           = 16
-  val PrefetchBlocks      = 12
+  val SyncQSize           = 32
+  val PrefetchFactor      = 4
+  val PrefetchMax         = 32
   val FastForwardMinDelta = 256
 
   def apply[F[_]: Concurrent: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
@@ -57,8 +58,8 @@ object ChainIndexer {
         updatesRef     <- makeRef.refOf(List.empty[(BlockId, Int)])
         lastBlockCache <- makeRef.refOf(List.empty[(Header, BlockStats)])
         bestHeightRef  <- makeRef.refOf(none[Int])
-        blocksBufferR  <- makeRef.refOf(Map.empty[Int, (List[ApiFullBlock], List[ApiFullBlock])])
         syncQueue      <- Queue.bounded[F, (ApiFullBlock, List[ApiFullBlock])](SyncQSize)
+        blockCache     <- BlockCache.make(PrefetchMax)
         repos          <- RepoBundle[F, D]
       } yield new Live[F, D](
         settings,
@@ -66,8 +67,8 @@ object ChainIndexer {
         updatesRef,
         lastBlockCache,
         bestHeightRef,
-        blocksBufferR,
         syncQueue,
+        blockCache,
         repos
       )(trans)
     }
@@ -81,8 +82,8 @@ object ChainIndexer {
     pendingChainUpdates: Ref[F, List[(BlockId, Int)]],
     lastBlockCache: Ref[F, List[(Header, BlockStats)]],
     bestHeightR: Ref[F, Option[Int]],
-    blocksBufferR: Ref[F, Map[Int, (List[ApiFullBlock], List[ApiFullBlock])]],
     syncQueue: Queue[F, (ApiFullBlock, List[ApiFullBlock])],
+    blockCache: BlockCache[F],
     repos: RepoBundle[D]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
@@ -106,17 +107,15 @@ object ChainIndexer {
         networkHeight <- Stream.eval(network.getBestHeight)
         localHeight   <- Stream.eval(getLastGrabbedBlockHeight)
         delta = networkHeight - localHeight
-        (upperHeight, ff) = if (delta > FastForwardMinDelta) networkHeight - FastForwardMinDelta -> true
-                            else networkHeight -> false
+        (upperHeight, fastf) = if (delta > FastForwardMinDelta) networkHeight - FastForwardMinDelta -> true
+                               else networkHeight -> false
         lowerHeight = (localHeight + 1) max startHeight
         _ <- Stream.eval(info"Current network height : $networkHeight")
-        _ <- if (ff) Stream.eval(info"Using FastForward mode until $upperHeight") else Stream.empty
+        _ <- if (fastf) Stream.eval(info"Using FastForward mode until $upperHeight") else Stream.empty
         _ <- Stream.eval(info"Current explorer height: $localHeight")
-        prefetch = Stream
-                     .range(lowerHeight, upperHeight + 1, PrefetchBlocks)
-                     .flatMap(i => prefetchBlocks(i, i + PrefetchBlocks - 1))
-        pull    = Stream.eval(pullBlocks(lowerHeight, upperHeight))
-        process = syncQueue.dequeue.evalMap { case (best, orphans) => index(best, orphans, ff) }
+        prefetch = prefetchBlocks(lowerHeight, upperHeight)
+        pull     = Stream.eval(pullBlocks(lowerHeight, upperHeight))
+        process  = syncQueue.dequeue.evalMap { case (best, orphans) => index(best, orphans, fastf) }
         _ <- Stream.emits(List(prefetch, pull, process)).parJoinUnbounded
       } yield ()
 
@@ -124,24 +123,20 @@ object ChainIndexer {
       Stream
         .range(lower, upper + 1)
         .covary[F]
-        .map { height =>
-          val prefetch = for {
+        .parEvalMap(PrefetchFactor) { height =>
+          for {
             ids     <- network.getBlockIdsAtHeight(height)
             blocks0 <- ids.parTraverse(network.getFullBlockById)
-            blocks     = blocks0.flatten
-            blocksPart = blocks.partition(b => ids.headOption.contains(b.header.id))
-            _ <- blocksBufferR.update(_.updated(height, blocksPart))
+            blocks          = blocks0.flatten
+            (best, orphans) = blocks.partition(b => ids.headOption.contains(b.header.id))
+            _ <- blockCache.put(height, best, orphans)
           } yield ()
-          Stream.eval(prefetch)
         }
-        .parJoinUnbounded
 
     private def pullBlocks(lower: Int, upper: Int): F[Unit] =
       for {
         _          <- info"Pulling blocks from height $lower"
-        blocksPart <- blocksBufferR.getAndUpdate(_ - lower).map(_.get(lower))
-        keys       <- blocksBufferR.get.map(_.keys.toSet)
-        _          <- debug"Blocks buffer: $keys"
+        blocksPart <- blockCache.pull(lower)
         _ <- blocksPart match {
                case Some((List(best), others)) => syncQueue.enqueue1((best, others))
                case _                          => Timer[F].sleep(2.seconds) >> pullBlocks(lower, upper) // wait until block is available
@@ -335,5 +330,26 @@ object ChainIndexer {
         (if (settings.indexes.boxRegisters) repos.constants.insertMany(block.constants) else unit[D])
       insertAll ||> trans.xa
     }
+  }
+
+  final class BlockCache[F[_]: Monad](
+    blocksBufferR: Ref[F, Map[Int, (List[ApiFullBlock], List[ApiFullBlock])]],
+    permits: Semaphore[F]
+  ) {
+
+    def put(height: Int, bestBlocks: List[ApiFullBlock], orphans: List[ApiFullBlock]): F[Unit] =
+      permits.acquire *> blocksBufferR.update(_.updated(height, bestBlocks -> orphans))
+
+    def pull(height: Int): F[Option[(List[ApiFullBlock], List[ApiFullBlock])]] =
+      blocksBufferR.getAndUpdate(_ - height).map(_.get(height)) <* permits.release
+  }
+
+  object BlockCache {
+
+    def make[F[_]: Concurrent](maxSize: Long)(implicit makeRef: MakeRef[F, F]): F[BlockCache[F]] =
+      for {
+        blocksBufferR <- makeRef.refOf(Map.empty[Int, (List[ApiFullBlock], List[ApiFullBlock])])
+        permits       <- Semaphore[F](maxSize)
+      } yield new BlockCache(blocksBufferR, permits)
   }
 }
