@@ -31,10 +31,10 @@ trait QuerySet {
     insertNoConflict.updateMany(xs)
 
   private def insert[M: Write](implicit lh: LogHandler): Update[M] =
-    Update[M](s"insert into $tableName ($fieldsString) values ($holdersString)")
+    Update[M](s"insert into $tableName ($fieldsString) values ($holdersString)", None, lh)
 
   private def insertNoConflict[M: Write](implicit lh: LogHandler): Update[M] =
-    Update[M](s"insert into $tableName ($fieldsString) values ($holdersString) on conflict do nothing")
+    Update[M](s"insert into $tableName ($fieldsString) values ($holdersString) on conflict do nothing", None, lh)
 
   private def fieldsString: String =
     fields.mkString(", ")
