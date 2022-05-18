@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.indexer.processes
 import cats.data.OptionT
 import cats.effect.concurrent.{Ref, Semaphore}
 import cats.effect.syntax.bracket._
-import cats.effect.{Bracket, Concurrent, Timer}
+import cats.effect.{Bracket, Clock, Concurrent, Timer}
 import cats.instances.list._
 import cats.syntax.foldable._
 import cats.syntax.option._
@@ -33,6 +33,7 @@ import tofu.syntax.monadic._
 import tofu.syntax.raise._
 import tofu.{Context, MonadThrow, WithContext}
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.DurationInt
 
 /** Synchronizes local view with the Ergo network.
@@ -155,9 +156,20 @@ object ChainIndexer {
           _ <- if (!fastForward) orphaned.traverse(applyOrphanedBlock) else unit[F]
           _ <- bestHeightR.set(Some(best.header.height))
         } yield ()
-      if (fastForward) applyBlocks
-      else applyBlocks.guarantee(commitChainUpdates)
+      val indexF =
+        if (fastForward) applyBlocks
+        else applyBlocks.guarantee(commitChainUpdates)
+      measure(indexF).flatMap { case (_, t) =>
+        debug"Applied block [${best.header.id}] at height [${best.header.height}]. Time elapsed [${t}ms]"
+      }
     }
+
+    def measure[A](fa: F[A]): F[(A, Long)] =
+      for {
+        t0 <- Clock[F].realTime(TimeUnit.MILLISECONDS)
+        a  <- fa
+        t1 <- Clock[F].realTime(TimeUnit.MILLISECONDS)
+      } yield a -> (t1 - t0)
 
     private def applyBestBlock(block: ApiFullBlock, fastForward: Boolean): F[Unit] = {
       val id           = block.header.id
