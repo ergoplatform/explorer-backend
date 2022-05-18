@@ -193,14 +193,15 @@ object ChainIndexer {
               }
         }
       for {
-        _             <- info"Applying best block [$id] at height [$height] ${if (fastForward) "[FastForward]" else ""}"
-        _             <- checkParentF
-        prevBlockInfo <- getBlockInfo(parentId)
-        flatBlock0    <- scan(block, prevBlockInfo)
+        _                   <- info"Applying best block [$id] at height [$height] ${if (fastForward) "[FastForward]" else ""}"
+        _                   <- checkParentF
+        (prevBlockInfo, tx) <- measure(getBlockInfo(parentId))
+        (flatBlock0, ty)    <- measure(scan(block, prevBlockInfo))
         flatBlock = if (fastForward) FlatBlock.asMain(flatBlock0) else flatBlock0
-        _ <- insertBlock(flatBlock)
-        _ <- if (!fastForward) markAsMain(id, height) else unit[F]
-        _ <- memoize(flatBlock)
+        (_, tz) <- measure(insertBlock(flatBlock))
+        _       <- if (!fastForward) markAsMain(id, height) else unit[F]
+        _       <- memoize(flatBlock)
+        _       <- debug"GetBlockInfo(Parent)[${tx}ms], Scan(Block)[${ty}ms], Insert(Block)[${tz}ms]"
       } yield ()
     }
 
