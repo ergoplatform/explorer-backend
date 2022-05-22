@@ -26,8 +26,8 @@ services:
     build:
       context: ..
       dockerfile: modules/chain-grabber/Dockerfile
-#    volumes:
-#      - ./modules/chain-grabber/src/main/resources:/explorer-backend/modules/chain-grabber/src/main/resources
+    volumes:
+      - ../modules/chain-grabber/src/main:/explorer-backend/modules/chain-grabber/src/main
     depends_on:
       - explorer-postgres
       - explorer-redis
@@ -36,8 +36,8 @@ services:
     build:
       context: ..
       dockerfile: modules/utx-broadcaster/Dockerfile
-#    volumes:
-#      - ./modules/utx-broadcaster/src/main/resources:/explorer-backend/modules/utx-broadcaster/src/main/resources
+    volumes:
+      - ../modules/utx-broadcaster/src/main:/explorer-backend/modules/utx-broadcaster/src/main
     depends_on:
       - explorer-postgres
       - explorer-redis
@@ -46,8 +46,8 @@ services:
     build:
       context: ..
       dockerfile: modules/utx-tracker/Dockerfile
-#    volumes:
-#      - ./modules/utx-tracker/src/main/resources:/explorer-backend/modules/utx-tracker/src/main/resources
+    volumes:
+      - ../modules/utx-tracker/src/main:/explorer-backend/modules/utx-tracker/src/main
     depends_on:
       - explorer-postgres
       - explorer-redis
@@ -56,9 +56,8 @@ services:
     build:
       context: ..
       dockerfile: modules/explorer-api/Dockerfile
-#    volumes:
-#      - ./modules/explorer-api/src/main/resources:/explorer-backend/modules/explorer-api/src/main/resources
-#      - ./modules/explorer-api/src/main/scala/org/ergoplatform/explorer:/explorer-backend/modules/explorer-api/src/main/scala/org/ergoplatform/explorer
+    volumes:
+      - ../modules/explorer-api/src/main:/explorer-backend/modules/explorer-api/src/main
     depends_on:
       - explorer-postgres
       - explorer-redis

@@ -21,7 +21,7 @@ CREATE DATABASE explorer;
 
 \echo 'LOADING ERGO DATABASE - CLEAN'
 
-CREATE TABLE node_headers
+ CREATE TABLE node_headers
 (
     id                VARCHAR(64) PRIMARY KEY,
     parent_id         VARCHAR(64) NOT NULL,
@@ -312,6 +312,20 @@ CREATE TABLE tokens
 );
 
 CREATE INDEX "tokens__box_id" ON tokens (box_id);
+
+CREATE TABLE genuine_tokens
+(
+    token_id        VARCHAR(64)   PRIMARY KEY,
+    token_name      VARCHAR      NOT NULL,
+    unique_name     BOOLEAN      NOT NULL,
+    issuer          VARCHAR
+);
+
+CREATE TABLE blocked_tokens
+(
+    token_id        VARCHAR(64)   PRIMARY KEY,
+    token_name      VARCHAR      NOT NULL
+);
 
 CREATE TABLE epochs_parameters
 (
