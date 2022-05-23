@@ -12,6 +12,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Mempool}
+import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.settings.{RedisSettings, ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.testContainers.RedisTest
 import org.scalatest.{PrivateMethodTester, TryValues}
@@ -70,12 +71,14 @@ object MempoolSpec {
     redis: Option[RedisCommands[F, String, String]]
   )(body: (Mempool[F], Addresses[F]) => Any)(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
     for {
+      memprops <- MempoolProps(settings, utxCacheSettings, redis)(trans)
       mempool <- Mempool[F, D](
                    settings,
                    utxCacheSettings,
-                   redis
+                   redis,
+                   memprops
                  )(trans)
-      addresses <- Addresses[F, D](trans)
+      addresses <- Addresses[F, D](memprops)(trans)
       _ = body(mempool, addresses)
     } yield ()
 
