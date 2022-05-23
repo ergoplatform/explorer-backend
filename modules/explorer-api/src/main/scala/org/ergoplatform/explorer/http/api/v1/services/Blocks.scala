@@ -8,17 +8,18 @@ import cats.syntax.functor._
 import cats.syntax.list._
 import cats.syntax.traverse._
 import cats.{Functor, Monad}
-import fs2.Stream
+import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.Transaction
+import org.ergoplatform.explorer.db.models.{Header, Transaction}
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.{BlockReferencesInfo, BlockSummary, FullBlockInfo}
-import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo, BlockSummaryV1, FullBlockInfoV1}
+import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{BlockId, CRaise}
 import tofu.syntax.raise._
@@ -34,10 +35,14 @@ trait Blocks[F[_]] {
     */
   def getBlockSummaryById(id: BlockId): F[Option[BlockSummary]]
 
+  /** Stream summary for blocks with given `IDs`.
+    */
+  def streamBlockSummaries(paging: Paging, sorting: Sorting): Stream[F, BlockSummaryV1]
+
   /** Stream blocks
     */
   def streamBlocks(minGix: Long, limit: Int): Stream[F, BlockInfo]
-  
+
   /** Get a slice of block header items.
     */
   def getBlockHeaders(paging: Paging, sorting: Sorting): F[Items[BlockHeader]]
@@ -48,7 +53,7 @@ object Blocks {
   def apply[
     F[_]: Sync,
     D[_]: Monad: LiftConnectionIO: CRaise[*[_], InconsistentDbData]: CompileStream
-  ](trans: D Trans F): F[Blocks[F]] =
+  ](serviceSettings: ServiceSettings)(trans: D Trans F): F[Blocks[F]] =
     (
       HeaderRepo[F, D],
       BlockInfoRepo[F, D],
@@ -60,14 +65,15 @@ object Blocks {
       OutputRepo[F, D],
       AssetRepo[F, D]
     ).mapN {
-      new Live[F, D](_, _, _, _, _, _, _, _, _)(trans)
+      new Live[F, D](serviceSettings, _, _, _, _, _, _, _, _, _)(trans)
     }
 
   final private class Live[
     F[_]: Functor,
     D[_]: CRaise[*[_], InconsistentDbData]: Monad: CompileStream
   ](
-    headerRepo: HeaderRepo[D],
+    serviceSettings: ServiceSettings,
+    headerRepo: HeaderRepo[D, Stream],
     blockInfoRepo: BlockInfoRepo[D],
     transactionRepo: TransactionRepo[D, Stream],
     blockExtensionRepo: BlockExtensionRepo[D],
@@ -108,13 +114,53 @@ object Blocks {
     def streamBlocks(minGix: Long, limit: Int): Stream[F, BlockInfo] =
       blockInfoRepo.stream(minGix, limit).map(BlockInfo(_)).thrushK(trans.xas)
 
-    def getBlockHeaders(paging: Paging, sorting: Sorting): F[Items[BlockHeader]] = {
+    def getBlockHeaders(paging: Paging, sorting: Sorting): F[Items[BlockHeader]] =
       headerRepo.getBestHeight.flatMap { total =>
-        headerRepo.getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
+        headerRepo
+          .getMany(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
           .map(_.map(BlockHeader(_)))
           .map(Items(_, total))
       } ||> trans.xa
-    }
+
+    def streamBlockSummaries(paging: Paging, sorting: Sorting): Stream[F, BlockSummaryV1] =
+      headerRepo
+        .streamHeaders(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
+        .chunkN(serviceSettings.chunkSize)
+        .through(makeBlockSummaries)
+        .thrushK(trans.xas)
+
+    private def makeBlockSummaries: Pipe[D, Chunk[Header], BlockSummaryV1] =
+      for {
+        chunk      <- _
+        blockIds   <- Stream.emit(chunk.map(_.id).toNel).unNone
+        txs        <- transactionRepo.getAllByBlockIds(blockIds).fold[List[Transaction]](List.empty[Transaction])(_ :+ _)
+        blockSizes <- blockInfoRepo.getBlockSizes(blockIds).asStream
+        bestHeight <- headerRepo.getBestHeight.asStream
+        txIdsNel   <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream
+        inputs     <- inputRepo.getAllByTxIds(txIdsNel).asStream
+        dataInputs <- dataInputRepo.getAllByTxIds(txIdsNel).asStream
+        outputs    <- outputRepo.getAllByTxIds(txIdsNel, None).asStream
+        boxIdsNel  <- outputs.map(_.output.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs")).asStream
+        assets     <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
+        ancestors  <- headerRepo.getByParentIds(blockIds).asStream
+        blockInfos = (blockSizes zip chunk.toList).map { case (size, header) =>
+                       val numConfirmations = bestHeight - header.height + 1
+                       FullBlockInfoV1(
+                         header,
+                         txs,
+                         numConfirmations,
+                         inputs,
+                         dataInputs,
+                         outputs,
+                         assets,
+                         size
+                       )
+                     }
+        refs = (blockInfos zip ancestors).map { case (blockInfo, ancestor) =>
+                 (blockInfo, BlockReferencesInfo(blockInfo.header.parentId, Some(ancestor.id)))
+               }
+        summary <- Stream.emits(refs.map { case (info, ref) => BlockSummaryV1(info, ref) })
+      } yield summary
 
     private def getFullBlockInfo(id: BlockId): Stream[D, Option[FullBlockInfo]] =
       for {

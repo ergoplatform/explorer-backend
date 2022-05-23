@@ -1,12 +1,12 @@
 package org.ergoplatform.explorer.db.repositories
 
 import cats.Functor
-import cats.effect.{IO, Sync, SyncIO}
+import cats.effect.IO
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
-import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.{repositories, RealDbTest}
+import org.ergoplatform.explorer.db.{RealDbTest, repositories}
+import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -32,7 +32,7 @@ class AdProofRepoSpec
   }
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Functor](
-    body: (HeaderRepo[D], AdProofRepo[D]) => Any
+    body: (HeaderRepo[D, fs2.Stream], AdProofRepo[D]) => Any
   ): Any =
     body(
       repositories.HeaderRepo[IO, D].unsafeRunSync(),

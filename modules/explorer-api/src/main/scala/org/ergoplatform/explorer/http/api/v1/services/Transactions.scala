@@ -60,7 +60,7 @@ object Transactions {
     dataInputs: DataInputRepo[D],
     outputs: OutputRepo[D, Stream],
     transactions: TransactionRepo[D, Stream],
-    headers: HeaderRepo[D]
+    headers: HeaderRepo[D, Stream]
   )(trans: D Trans F)
     extends Transactions[F] {
 

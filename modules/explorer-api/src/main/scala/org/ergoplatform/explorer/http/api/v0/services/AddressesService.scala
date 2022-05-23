@@ -54,7 +54,7 @@ object AddressesService {
     F[_],
     D[_]: CRaise[*[_], AddressDecodingFailed]: CRaise[*[_], RefinementFailed]: Monad
   ](
-    headerRepo: HeaderRepo[D],
+    headerRepo: HeaderRepo[D, Stream],
     txRepo: TransactionRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],

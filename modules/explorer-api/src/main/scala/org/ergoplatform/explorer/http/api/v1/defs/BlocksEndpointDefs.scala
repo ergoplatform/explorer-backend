@@ -7,7 +7,7 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives.{limit, minGlobalIndex, paging, sorting}
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.v0.models.BlockSummary
-import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo, BlockSummaryV1}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir.json.circe.jsonBody
@@ -19,7 +19,7 @@ class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
   private val PathPrefix = "blocks"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    getBlocksDef :: getBlockSummaryByIdDef :: getBlockHeadersDef :: streamBlocksDef :: Nil
+    getBlocksDef :: getBlockSummaryByIdDef :: getBlockHeadersDef :: streamBlocksDef :: streamBlocksSummaryDef :: Nil
 
   def getBlocksDef: Endpoint[(Paging, Sorting), ApiErr, Items[BlockInfo], Any] =
     baseEndpointDef.get
@@ -35,6 +35,14 @@ class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(limit(settings.maxEntitiesPerRequest))
       .out(streamBody(Fs2Streams[F])(Schema.derived[List[BlockInfo]], CodecFormat.Json(), None))
       .description("Get a stream of blocks ordered by global index (height)")
+
+  def streamBlocksSummaryDef: Endpoint[(Paging, Sorting), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    baseEndpointDef.get
+      .in(PathPrefix / "stream" / "summary")
+      .in(paging(settings.maxBlocksPerRequest))
+      .in(sorting(allowedBlockSortingFields))
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[BlockSummaryV1]], CodecFormat.Json(), None))
+      .description("Get a stream of block summaries ordered by global index (height)")
 
   def getBlockSummaryByIdDef: Endpoint[BlockId, ApiErr, BlockSummary, Any] =
     baseEndpointDef.get

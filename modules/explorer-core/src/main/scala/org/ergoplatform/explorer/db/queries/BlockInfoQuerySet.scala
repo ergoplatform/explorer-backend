@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.db.queries
 
-import doobie.LogHandler
+import cats.data.NonEmptyList
+import doobie.{Fragments, LogHandler}
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.fragment.Fragment
@@ -208,6 +209,11 @@ object BlockInfoQuerySet extends QuerySet {
          |left join node_headers nh on bi.header_id = nh.id
          |where bi.header_id like ${s"%$q%"}
          |""".stripMargin.query[ExtendedBlockInfo]
+
+  def getBlocksSize(blockIds: NonEmptyList[BlockId])(implicit lh: LogHandler): Query0[Int] = {
+    val q = sql"""select block_size from blocks_info """.stripMargin
+    (q ++ Fragments.in(fr"where header_id", blockIds)).query[Int]
+  }
 
   def getBlockSize(id: BlockId)(implicit lh: LogHandler): Query0[Int] =
     sql"select block_size from blocks_info where header_id = $id".query[Int]

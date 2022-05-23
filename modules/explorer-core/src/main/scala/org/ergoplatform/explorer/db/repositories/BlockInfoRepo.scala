@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.syntax.functor._
 import doobie.free.implicits._
@@ -49,6 +50,8 @@ trait BlockInfoRepo[D[_]] {
   /** Get size in bytes of the block with the given `id`.
     */
   def getBlockSize(id: BlockId): D[Option[Int]]
+
+  def getBlockSizes(blockIds: NonEmptyList[BlockId]): D[List[Int]]
 
   def getLastStats: D[Option[BlockStats]]
 
@@ -127,6 +130,9 @@ object BlockInfoRepo {
 
     def getBlockSize(id: BlockId): D[Option[Int]] =
       QS.getBlockSize(id).option.liftConnectionIO
+
+    def getBlockSizes(blockIds: NonEmptyList[BlockId]): D[List[Int]] =
+      QS.getBlocksSize(blockIds).to[List].liftConnectionIO
 
     def getLastStats: D[Option[BlockStats]] =
       QS.getLastStats.option.liftConnectionIO
