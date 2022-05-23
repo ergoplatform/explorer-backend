@@ -44,9 +44,7 @@ trait Boxes[F[_]] {
 
   def `getUnspent&UnconfirmedOutputsMergedByAddress`(
     address: Address,
-    ord: SortOrder,
-    getUSpentBoxes: Address => F[List[BoxId]],
-    getUOutputs: Address => F[List[UOutputInfo]]
+    ord: SortOrder
   ): F[List[MOutputInfo]]
 
   /** Get unspent outputs with the given `address` in proposition.
@@ -181,12 +179,10 @@ object Boxes {
 
     def `getUnspent&UnconfirmedOutputsMergedByAddress`(
       address: Address,
-      ord: SortOrder,
-      getUSpentBoxes: Address => F[List[BoxId]],
-      getUOutputs: Address => F[List[UOutputInfo]]
+      ord: SortOrder
     ): F[List[MOutputInfo]] = for {
-      spentBoxIds    <- getUSpentBoxes(address)
-      mempoolOutputs <- getUOutputs(address)
+      spentBoxIds    <- memprops.getBoxesSpentInMempool(address)
+      mempoolOutputs <- memprops.getUOutputsByAddress(address)
       unspentBoxes   <- getUnspentOutputsByAddressF(address, ord, spentBoxIds.toNel)
     } yield MOutputInfo.fromUOutputList(mempoolOutputs) <+> MOutputInfo.fromOutputList(unspentBoxes)
 

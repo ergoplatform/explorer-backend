@@ -44,10 +44,6 @@ trait Mempool[F[_]] {
 
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 
-  def getUOutputsByAddress(address: Address): F[List[UOutputInfo]]
-
-  def getBoxesSpentInMempool(address: Address): F[List[BoxId]]
-
   def streamUnspentOutputs: Stream[F, UOutputInfo]
 }
 
@@ -80,7 +76,7 @@ object Mempool {
         uTxInfoL <- txs
                       .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
                       .chunkN(settings.chunkSize)
-                      .through(mkTransaction)
+                      .through(memprops.mkTransaction)
                       .to[List]
       } yield uTxInfoL.flatMap(_.outputs.filter(_.ergoTree == ergoTree.value))) ||> trans.xa
     }
@@ -91,7 +87,7 @@ object Mempool {
         uTxInfoL <- txs
                       .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
                       .chunkN(settings.chunkSize)
-                      .through(mkTransaction)
+                      .through(memprops.mkTransaction)
                       .to[List]
       } yield uTxInfoL.flatMap(_.inputs.map(_.boxId))) ||> trans.xa
     }

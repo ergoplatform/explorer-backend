@@ -143,9 +143,7 @@ class BS_B extends BoxSpec {
                   val data = box
                     .`getUnspent&UnconfirmedOutputsMergedByAddress`(
                       address1T.get,
-                      Desc,
-                      mem.getBoxesSpentInMempool,
-                      mem.getUOutputsByAddress
+                      Desc
                     )
                     .unsafeRunSync()
                     .map(_.boxId)

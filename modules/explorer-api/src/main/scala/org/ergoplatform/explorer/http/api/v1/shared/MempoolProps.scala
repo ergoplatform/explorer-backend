@@ -13,14 +13,19 @@ import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.{UOutputInfo, UTransactionInfo}
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
-import org.ergoplatform.explorer.ErgoTree
+import org.ergoplatform.explorer.{Address, BoxId, ErgoTree}
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
 import org.ergoplatform.explorer.syntax.stream._
 import tofu.Throws
 import tofu.syntax.monadic._
+import tofu.syntax.streams.compile._
+import tofu.syntax.raise._
 
 trait MempoolProps[F[_], D[_]] {
   def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
+  def getUOutputsByAddress(address: Address): F[List[UOutputInfo]]
+  def getBoxesSpentInMempool(address: Address): F[List[BoxId]]
   def mkUnspentOutputInfo: Pipe[D, Chunk[UOutput], UOutputInfo]
   def mkTransaction: Pipe[D, Chunk[UTransaction], UTransactionInfo]
 }
@@ -42,6 +47,28 @@ object MempoolProps {
     extends MempoolProps[F, D] {
 
     import repo._
+
+    def getUOutputsByAddress(address: Address): F[List[UOutputInfo]] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
+      (for {
+        uTxInfoL <- txs
+                      .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+                      .chunkN(settings.chunkSize)
+                      .through(mkTransaction)
+                      .to[List]
+      } yield uTxInfoL.flatMap(_.outputs.filter(_.ergoTree == ergoTree.value))) ||> trans.xa
+    }
+
+    def getBoxesSpentInMempool(address: Address): F[List[BoxId]] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
+      (for {
+        uTxInfoL <- txs
+                      .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+                      .chunkN(settings.chunkSize)
+                      .through(mkTransaction)
+                      .to[List]
+      } yield uTxInfoL.flatMap(_.inputs.map(_.boxId))) ||> trans.xa
+    }
 
     def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
       txs

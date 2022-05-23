@@ -129,9 +129,7 @@ final class BoxesRoutes[
       service
         .`getUnspent&UnconfirmedOutputsMergedByAddress`(
           address,
-          sorting,
-          mempool.getBoxesSpentInMempool,
-          mempool.getUOutputsByAddress
+          sorting
         )
         .adaptThrowable
         .value
