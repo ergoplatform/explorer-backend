@@ -34,6 +34,7 @@ import tofu.syntax.monadic._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
+import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.v1.services.AddressesSpec._
 import org.ergoplatform.explorer.db.models.generators._
 import org.ergoplatform.explorer.http.api.v1.models.AddressInfo
@@ -256,11 +257,13 @@ object AddressesSpec {
     redis: Option[RedisCommands[F, String, String]]
   )(body: (Addresses[F], Mempool[F]) => Any)(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
     for {
-      addresses <- Addresses[F, D](trans)
+      memprops  <- MempoolProps(settings, utxCacheSettings, redis)(trans)
+      addresses <- Addresses[F, D](memprops)(trans)
       mempool <- Mempool[F, D](
                    settings,
                    utxCacheSettings,
-                   redis
+                   redis,
+                   memprops
                  )(trans)
       _ = body(addresses, mempool)
     } yield ()

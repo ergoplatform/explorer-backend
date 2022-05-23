@@ -11,6 +11,7 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, Balance, TokenAmount, TotalBalance}
+import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.protocol.sigma
 import tofu.syntax.monadic._
 
@@ -25,13 +26,14 @@ trait Addresses[F[_]] {
 
 object Addresses {
 
-  def apply[F[_]: Sync: Monad: Parallel, D[_]: Monad: LiftConnectionIO](trans: D Trans F)(implicit
-    e: ErgoAddressEncoder
+  def apply[F[_]: Sync: Monad: Parallel, D[_]: Monad: LiftConnectionIO](memprops: MempoolProps[F, D])(trans: D Trans F)(
+    implicit e: ErgoAddressEncoder
   ): F[Addresses[F]] =
     (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
-      .mapN(new Live(_, _, _, _, _)(trans))
+      .mapN(new Live(memprops, _, _, _, _, _)(trans))
 
   final class Live[F[_]: Monad: Parallel, D[_]: Monad](
+    memprops: MempoolProps[F, D],
     headerRepo: HeaderRepo[D],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
