@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableE
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
 import org.ergoplatform.explorer.http.api.v1.defs.BoxesEndpointDefs
-import org.ergoplatform.explorer.http.api.v1.services.{Boxes, Mempool}
+import org.ergoplatform.explorer.http.api.v1.services.Boxes
 import org.ergoplatform.explorer.http.api.{streaming, ApiErr}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import org.http4s.HttpRoutes
@@ -16,7 +16,7 @@ import sttp.tapir.server.http4s._
 
 final class BoxesRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](settings: RequestsSettings, service: Boxes[F], mempool: Mempool[F])(implicit
+](settings: RequestsSettings, service: Boxes[F])(implicit
   opts: Http4sServerOptions[F, F],
   e: ErgoAddressEncoder
 ) {
@@ -157,8 +157,7 @@ object BoxesRoutes {
 
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     settings: RequestsSettings,
-    service: Boxes[F],
-    mempool: Mempool[F]
+    service: Boxes[F]
   )(implicit opts: Http4sServerOptions[F, F], e: ErgoAddressEncoder): HttpRoutes[F] =
-    new BoxesRoutes[F](settings, service, mempool).routes
+    new BoxesRoutes[F](settings, service).routes
 }

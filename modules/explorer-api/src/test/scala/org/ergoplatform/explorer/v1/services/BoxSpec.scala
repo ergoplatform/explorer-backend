@@ -31,9 +31,9 @@ import org.scalatest.matchers.should
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 import tofu.syntax.monadic._
-
 import org.ergoplatform.explorer.v1.services.BoxSpec._
 import org.ergoplatform.explorer.db.models.generators._
+import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 
 trait BoxSpec
   extends AnyFlatSpec
@@ -188,12 +188,14 @@ object BoxSpec {
     redis: Option[RedisCommands[F, String, String]]
   )(body: (Mempool[F], Boxes[F]) => Any)(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
     for {
+      memprops <- MempoolProps(settings, utxCacheSettings, redis)(trans)
       mempool <- Mempool[F, D](
                    settings,
                    utxCacheSettings,
-                   redis
+                   redis,
+                   memprops
                  )(trans)
-      boxes <- Boxes[F, D](settings)(trans)
+      boxes <- Boxes[F, D](settings, memprops)(trans)
       _ = body(mempool, boxes)
     } yield ()
 

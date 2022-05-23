@@ -19,6 +19,7 @@ import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, MOutputInfo, OutputInfo, UOutputInfo}
+import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.protocol.sigma._
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
@@ -121,14 +122,17 @@ object Boxes {
   def apply[
     F[_]: Sync: Monad,
     D[_]: Monad: Throws: LiftConnectionIO: CompileStream
-  ](serviceSettings: ServiceSettings)(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[Boxes[F]] =
-    (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D]).mapN(new Live(serviceSettings, _, _, _)(trans))
+  ](serviceSettings: ServiceSettings, memprops: MempoolProps[F, D])(trans: D Trans F)(implicit
+    e: ErgoAddressEncoder
+  ): F[Boxes[F]] =
+    (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D]).mapN(new Live(serviceSettings, memprops, _, _, _)(trans))
 
   final private class Live[
     F[_]: Functor: CompileStream: Monad,
     D[_]: Monad: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: CompileStream
   ](
     serviceSettings: ServiceSettings,
+    memprops: MempoolProps[F, D],
     headers: HeaderRepo[D],
     outputs: OutputRepo[D, Stream],
     assets: AssetRepo[D, Stream]
