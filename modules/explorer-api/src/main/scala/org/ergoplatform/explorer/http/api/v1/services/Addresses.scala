@@ -21,7 +21,7 @@ trait Addresses[F[_]] {
 
   def totalBalanceOf(address: Address): F[TotalBalance]
 
-  def addressInfoOf(batch: List[Address], hasUnconfirmedTxs: ErgoTree => F[Boolean]): F[Map[Address, AddressInfo]]
+  def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo]]
 }
 
 object Addresses {
@@ -68,20 +68,19 @@ object Addresses {
       outputRepo.nodeOutputCount(ergoTree).map(_ > 0) ||> trans.xa
 
     private def addressInfoOf(
-      address: Address,
-      hasUnconfirmedTxs: ErgoTree => F[Boolean]
+      address: Address
     ): F[(Address, AddressInfo)] = {
       val tree = sigma.addressToErgoTreeNewtype(address)
       for {
         balance <- confirmedBalanceOf(address, 0)
-        hUTxs   <- hasUnconfirmedTxs(tree)
+        hUTxs   <- memprops.hasUnconfirmedBalance(tree)
         used    <- hasBeenUsedByErgoTree(tree.value)
       } yield (address, AddressInfo(address = address, hasUnconfirmedTxs = hUTxs, used = used, balance))
     }
 
-    def addressInfoOf(batch: List[Address], hasUnconfirmedTxs: ErgoTree => F[Boolean]): F[Map[Address, AddressInfo]] =
+    def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo]] =
       batch.distinct
-        .map(addressInfoOf(_, hasUnconfirmedTxs))
+        .map(addressInfoOf)
         .grouped(10)
         .map(_.parSequence)
         .toList

@@ -75,7 +75,7 @@ class AS_C extends AddressesSpec {
     lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
     withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
-        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _, _) =>
           address1T.isSuccess should be(true)
           address2T.isSuccess should be(true)
           withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, _, _) =>
@@ -120,7 +120,7 @@ class AS_D extends AddressesSpec {
     val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
     withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
-        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, mem) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _, memprop) =>
           addressT.isSuccess should be(true)
           withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, tokenRepo, assetRepo) =>
             forSingleInstance(
@@ -135,12 +135,12 @@ class AS_D extends AddressesSpec {
               }
 
               val addressInfo =
-                (addr invokePrivate addressInfoOf(addressT.get, mem.hasUnconfirmedBalance _)).unsafeRunSync()._2
+                (addr invokePrivate addressInfoOf(addressT.get)).unsafeRunSync()._2
 
               val bFS = addr.confirmedBalanceOf(addressT.get, 0).unsafeRunSync()
               addressInfo.confirmedBalance should be(bFS)
 
-              val huFS = mem.hasUnconfirmedBalance(ErgoTree(addressTree)).unsafeRunSync()
+              val huFS = memprop.hasUnconfirmedBalance(ErgoTree(addressTree)).unsafeRunSync()
               addressInfo.hasUnconfirmedTxs should be(huFS)
 
               val hbuFS = (addr invokePrivate hasBeenUsedByErgoTree(addressTree)).unsafeRunSync()
@@ -172,7 +172,7 @@ class AS_E extends AddressesSpec {
     val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
     withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
-        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, mem) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _, memprop) =>
           address1T.isSuccess should be(true)
           address2T.isSuccess should be(true)
           withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, tokenRepo, assetRepo) =>
@@ -206,7 +206,9 @@ class AS_E extends AddressesSpec {
                 }
                 // batch addressInfo Data:
                 val batchInfoResult =
-                  addr.addressInfoOf(List(address1T, address2T).map(_.get), mem.hasUnconfirmedBalance).unsafeRunSync()
+                  addr
+                    .addressInfoOf(List(address1T, address2T).map(_.get))
+                    .unsafeRunSync()
 
                 batchInfoResult should not be empty
                 batchInfoResult.contains(address1T.get) should be(true)
@@ -214,13 +216,13 @@ class AS_E extends AddressesSpec {
 
                 // batchInfoResult(address1)
                 val b1FS         = addr.confirmedBalanceOf(address1T.get, 0).unsafeRunSync()
-                val hu1FS        = mem.hasUnconfirmedBalance(ErgoTree(address1Tree)).unsafeRunSync()
+                val hu1FS        = memprop.hasUnconfirmedBalance(ErgoTree(address1Tree)).unsafeRunSync()
                 val hbu1FS       = (addr invokePrivate hasBeenUsedByErgoTree(address1Tree)).unsafeRunSync()
                 val AddressInfo1 = AddressInfo(address = address1T.get, hasUnconfirmedTxs = hu1FS, hbu1FS, b1FS)
 
                 // batchInfoResult(address2)
                 val b2FS         = addr.confirmedBalanceOf(address2T.get, 0).unsafeRunSync()
-                val hu2FS        = mem.hasUnconfirmedBalance(ErgoTree(address2Tree)).unsafeRunSync()
+                val hu2FS        = memprop.hasUnconfirmedBalance(ErgoTree(address2Tree)).unsafeRunSync()
                 val hbu2FS       = (addr invokePrivate hasBeenUsedByErgoTree(address2Tree)).unsafeRunSync()
                 val AddressInfo2 = AddressInfo(address = address2T.get, hasUnconfirmedTxs = hu2FS, hbu2FS, b2FS)
 
@@ -255,7 +257,9 @@ object AddressesSpec {
     settings: ServiceSettings,
     utxCacheSettings: UtxCacheSettings,
     redis: Option[RedisCommands[F, String, String]]
-  )(body: (Addresses[F], Mempool[F]) => Any)(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
+  )(
+    body: (Addresses[F], Mempool[F], MempoolProps[F, D]) => Any
+  )(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
     for {
       memprops  <- MempoolProps(settings, utxCacheSettings, redis)(trans)
       addresses <- Addresses[F, D](memprops)(trans)
@@ -265,7 +269,7 @@ object AddressesSpec {
                    redis,
                    memprops
                  )(trans)
-      _ = body(addresses, mempool)
+      _ = body(addresses, mempool, memprops)
     } yield ()
 
   def withLiveRepos[D[_]: LiftConnectionIO: Sync](
