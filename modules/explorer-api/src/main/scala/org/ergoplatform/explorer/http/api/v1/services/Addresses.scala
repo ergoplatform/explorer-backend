@@ -63,7 +63,7 @@ object Addresses {
     }
 
     private def hasBeenUsedByErgoTree(ergoTree: HexString): F[Boolean] =
-      (for { used <- outputRepo.nodeOutputCount(ergoTree) } yield used > 0) ||> trans.xa
+      outputRepo.nodeOutputCount(ergoTree).map(_ > 0) ||> trans.xa
 
     private def addressInfoOf(
       address: Address,
