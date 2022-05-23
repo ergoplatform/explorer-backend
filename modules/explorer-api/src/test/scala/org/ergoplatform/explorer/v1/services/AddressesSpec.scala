@@ -39,6 +39,7 @@ import org.ergoplatform.explorer.db.models.generators._
 import org.ergoplatform.explorer.http.api.v1.models.TokenAmount
 import org.ergoplatform.explorer.protocol.sigma
 import org.ergoplatform.explorer.v1.services.constants.SenderAddressString
+import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 
 trait AddressesSpec
   extends AnyFlatSpec
@@ -151,11 +152,13 @@ object AddressesSpec {
     redis: Option[RedisCommands[F, String, String]]
   )(body: (Addresses[F], Mempool[F]) => Any)(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
     for {
-      addresses <- Addresses[F, D](trans)
+      memprops  <- MempoolProps(settings, utxCacheSettings, redis)(trans)
+      addresses <- Addresses[F, D](memprops)(trans)
       mempool <- Mempool[F, D](
                    settings,
                    utxCacheSettings,
-                   redis
+                   redis,
+                   memprops
                  )(trans)
       _ = body(addresses, mempool)
     } yield ()

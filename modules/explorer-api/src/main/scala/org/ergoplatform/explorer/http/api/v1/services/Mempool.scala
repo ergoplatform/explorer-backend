@@ -17,6 +17,7 @@ import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
 import org.ergoplatform.explorer.http.api.v1.models.{Balance, OutputInfo, TotalBalance, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.http.api.v1.utils.BuildUnconfirmedBalance
 import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
@@ -44,8 +45,6 @@ trait Mempool[F[_]] {
 
   def getTotalBalance(address: Address, confirmedBalanceOf: (Address, Int) => F[Balance]): F[TotalBalance]
 
-  def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
-
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 
   def streamUnspentOutputs: Stream[F, UOutputInfo]
@@ -56,27 +55,23 @@ object Mempool {
   def apply[F[_]: Concurrent, D[_]: Monad: CompileStream: LiftConnectionIO](
     settings: ServiceSettings,
     utxCacheSettings: UtxCacheSettings,
-    redis: Option[RedisCommands[F, String, String]]
+    redis: Option[RedisCommands[F, String, String]],
+    memprops: MempoolProps[F, D]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder): F[Mempool[F]] = {
     val validation = PartialSemanticValidation
     UtxRepoBundle[F, D](utxCacheSettings, redis)
-      .map(bundle => new Live(settings, bundle, validation)(trans))
+      .map(bundle => new Live(settings, bundle, validation, memprops)(trans))
   }
 
   final class Live[F[_]: Monad: Throws, D[_]: Monad: CompileStream](
     settings: ServiceSettings,
     repo: UtxRepoBundle[F, D, Stream],
-    semanticValidation: TxValidation
+    semanticValidation: TxValidation,
+    memprops: MempoolProps[F, D]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends Mempool[F] {
 
     import repo._
-
-    def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
-      txs
-        .countByErgoTree(ergoTree.value)
-        .map(_ > 0)
-        .thrushK(trans.xa)
 
     private def getUnconfirmedBalanceByAddress(
       address: Address,
@@ -114,7 +109,7 @@ object Mempool {
           txs
             .streamRelatedToErgoTree(ergoTree, paging.offset, paging.limit)
             .chunkN(settings.chunkSize)
-            .through(mkTransaction)
+            .through(memprops.mkTransaction)
             .to[List]
             .map(Items(_, total))
         }
@@ -157,34 +152,7 @@ object Mempool {
       outputs
         .streamAllUnspent(0, Int.MaxValue)
         .chunkN(settings.chunkSize)
-        .through(mkUnspentOutputInfo)
+        .through(memprops.mkUnspentOutputInfo)
         .thrushK(trans.xas)
-
-    private def mkUnspentOutputInfo: Pipe[D, Chunk[UOutput], UOutputInfo] =
-      for {
-        outs   <- _
-        outIds <- Stream.emit(outs.toList.map(_.boxId).toNel).unNone
-        assets <- assets.getAllByBoxIds(outIds).map(_.groupBy(_.boxId)).asStream
-        outsInfo = outs.map(out => UOutputInfo.unspent(out, assets.getOrElse(out.boxId, Nil)))
-        flattened <- Stream.emits(outsInfo.toList)
-      } yield flattened
-
-    private def mkTransaction: Pipe[D, Chunk[UTransaction], UTransactionInfo] =
-      for {
-        chunk        <- _
-        txIds        <- Stream.emit(chunk.map(_.id).toNel).unNone
-        ins          <- Stream.eval(inputs.getAllByTxIds(txIds))
-        inIds        <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets     <- Stream.eval(assets.getAllByBoxIds(inIds))
-        confInAssets <- Stream.eval(confirmedAssets.getAllByBoxIds(inIds))
-        dataIns      <- Stream.eval(dataInputs.getAllByTxIds(txIds))
-        outs         <- Stream.eval(outputs.getAllByTxIds(txIds))
-        outIds       <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-        outAssets    <- Stream.eval(assets.getAllByBoxIds(outIds))
-        txInfo <-
-          Stream.emits(
-            UTransactionInfo.unFlattenBatch(chunk.toList, ins, dataIns, outs, inAssets, confInAssets, outAssets)
-          )
-      } yield txInfo
   }
 }
