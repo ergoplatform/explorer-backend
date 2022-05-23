@@ -61,7 +61,7 @@ class MS_A extends MempoolSpec {
       lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
       withResources[IO](container.mappedPort(6379))
         .use { case (settings, utxCache, redis) =>
-          withServices[IO, ConnectionIO](settings, utxCache, redis) { (mem, addr) =>
+          withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, addr) =>
             address1T.isSuccess should be(true)
             withLiveRepos[ConnectionIO] { (hRepo, txRepo, outRepo, _, _, _) =>
               forSingleInstance(
@@ -77,7 +77,7 @@ class MS_A extends MempoolSpec {
                   outRepo.insert(out).runWithIO()
                   txRepo.insert(tx).runWithIO()
                 }
-                val tb = mem.getTotalBalance(address1T.get, addr.confirmedBalanceOf).unsafeRunSync()
+                val tb = addr.totalBalanceOf_(address1T.get).unsafeRunSync()
                 tb.confirmed.nanoErgs should be(600.toNanoErgo)
               }
             }

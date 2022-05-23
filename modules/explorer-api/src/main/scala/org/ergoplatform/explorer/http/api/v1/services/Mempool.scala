@@ -43,8 +43,6 @@ trait Mempool[F[_]] {
     paging: Paging
   ): F[Items[UTransactionInfo]]
 
-  def getTotalBalance(address: Address, confirmedBalanceOf: (Address, Int) => F[Balance]): F[TotalBalance]
-
   def submit(tx: ErgoLikeTransaction): F[TxIdResponse]
 
   def streamUnspentOutputs: Stream[F, UOutputInfo]
@@ -72,35 +70,6 @@ object Mempool {
     extends Mempool[F] {
 
     import repo._
-
-    private def getUnconfirmedBalanceByAddress(
-      address: Address,
-      confirmedBalance: Balance
-    ): F[Balance] = {
-      val ergoTree = addressToErgoTreeNewtype(address)
-      txs
-        .countByErgoTree(ergoTree.value)
-        .flatMap { total =>
-          txs
-            .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
-            .chunkN(settings.chunkSize)
-            .through(mkTransaction)
-            .to[List]
-            .map { poolItems =>
-              total match {
-                case 0 => Balance.empty
-                case _ => BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
-              }
-            }
-        }
-        .thrushK(trans.xa)
-    }
-
-    def getTotalBalance(address: Address, confirmedBalanceOf: (Address, Int) => F[Balance]): F[TotalBalance] =
-      for {
-        confirmed   <- confirmedBalanceOf(address, 0)
-        unconfirmed <- getUnconfirmedBalanceByAddress(address, confirmed)
-      } yield TotalBalance(confirmed, unconfirmed)
 
     def getByErgoTree(ergoTree: ErgoTree, paging: Paging): F[Items[UTransactionInfo]] =
       txs
