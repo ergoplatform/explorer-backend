@@ -118,7 +118,7 @@ trait Boxes[F[_]] {
 object Boxes {
 
   def apply[
-    F[_]: Sync: Monad,
+    F[_]: Sync,
     D[_]: Monad: Throws: LiftConnectionIO: CompileStream
   ](serviceSettings: ServiceSettings, memprops: MempoolProps[F, D])(trans: D Trans F)(implicit
     e: ErgoAddressEncoder
@@ -126,7 +126,7 @@ object Boxes {
     (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D]).mapN(new Live(serviceSettings, memprops, _, _, _)(trans))
 
   final private class Live[
-    F[_]: Functor: CompileStream: Monad,
+    F[_]: Monad: CompileStream,
     D[_]: Monad: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: CompileStream
   ](
     serviceSettings: ServiceSettings,
