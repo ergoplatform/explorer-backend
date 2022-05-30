@@ -8,7 +8,6 @@ import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, Balance, Total
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.tapir.json.circe._
 import sttp.tapir.{path, _}
-import org.ergoplatform.explorer.http.api.v1.implictis.BatchAddressInfo._
 
 class AddressesEndpointDefs(settings: RequestsSettings) {
 

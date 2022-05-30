@@ -26,7 +26,7 @@ trait Addresses[F[_]] {
 
 object Addresses {
 
-  def apply[F[_]: Sync: Monad: Parallel, D[_]: Monad: LiftConnectionIO](memprops: MempoolProps[F, D])(trans: D Trans F)(
+  def apply[F[_]: Sync: Parallel, D[_]: Monad: LiftConnectionIO](memprops: MempoolProps[F, D])(trans: D Trans F)(
     implicit e: ErgoAddressEncoder
   ): F[Addresses[F]] =
     (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
