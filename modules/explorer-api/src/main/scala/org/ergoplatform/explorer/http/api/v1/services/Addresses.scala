@@ -78,14 +78,16 @@ object Addresses {
       } yield (address, AddressInfo(address = address, hasUnconfirmedTxs = hUTxs, used = used, balance))
     }
 
-    def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo]] =
+    def addressInfoOf(batch: List[Address]): F[Map[Address, AddressInfo]] = {
+      val groupSize = 10
       batch.distinct
         .map(addressInfoOf)
-        .grouped(10)
+        .grouped(size = groupSize)
         .map(_.parSequence)
         .toList
         .parSequence
         .map(_.flatten)
         .map(_.foldLeft(Map[Address, AddressInfo]()) { case (m, t) => m + t })
+    }
   }
 }
