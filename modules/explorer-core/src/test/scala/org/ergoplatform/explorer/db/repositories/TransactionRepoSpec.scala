@@ -110,9 +110,9 @@ class TransactionRepoSpec extends AnyFlatSpec with should.Matchers with TryValue
         }
 
         txRepo.countRelatedToAddress(addressT.get).runWithIO() should be(11)
-        txRepo.countRelatedToAddress(addressT.get, 10, 20).runWithIO() should be(11)
-        txRepo.countRelatedToAddress(addressT.get, 10, 15).runWithIO() should be(6)
-        txRepo.countRelatedToAddress(addressT.get, 15, 18).runWithIO() should be(4)
+        txRepo.countRelatedToAddress(addressT.get, Some((10, 20))).runWithIO() should be(11)
+        txRepo.countRelatedToAddress(addressT.get, Some((10, 15))).runWithIO() should be(6)
+        txRepo.countRelatedToAddress(addressT.get, Some((15, 18))).runWithIO() should be(4)
       }
     }
   }
@@ -135,12 +135,12 @@ class TransactionRepoSpec extends AnyFlatSpec with should.Matchers with TryValue
 
         txRepo.countRelatedToAddress(addressT.get).runWithIO() should be(11)
         txRepo
-          .streamRelatedToAddress(addressT.get, 0, Int.MaxValue, 10, 20)
+          .streamRelatedToAddress(addressT.get, 0, Int.MaxValue, Some((10, 20)))
           .compile
           .toList
           .runWithIO() should contain theSameElementsAs hTxList.map(_._2)
         txRepo
-          .streamRelatedToAddress(addressT.get, 0, Int.MaxValue, 12, 18)
+          .streamRelatedToAddress(addressT.get, 0, Int.MaxValue, Some((12, 18)))
           .compile
           .toList
           .runWithIO() should contain theSameElementsAs hTxList

@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.v1.services
 
 import cats.{Monad, Parallel}
 import cats.effect.IO
+import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
@@ -55,7 +56,7 @@ class TransactionSpec extends AnyFlatSpec with should.Matchers with TryValues wi
               addressT.get,
               Paging(0, Int.MaxValue),
               concise = false,
-              InclusionHeightRange(fromHeight = 10, toHeight = 20)
+              InclusionHeightRange(fromHeight = 10, toHeight = 20).some
             )
             .unsafeRunSync()
 

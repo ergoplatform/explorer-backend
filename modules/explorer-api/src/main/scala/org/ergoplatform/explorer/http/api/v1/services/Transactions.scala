@@ -34,14 +34,8 @@ trait Transactions[F[_]] {
   def getByAddress(
     address: Address,
     paging: Paging,
-    concise: Boolean
-  ): F[Items[TransactionInfo]]
-
-  def getByAddress(
-    address: Address,
-    paging: Paging,
     concise: Boolean,
-    inclusionHeightRange: InclusionHeightRange
+    inclusionHeightRange: Option[InclusionHeightRange] = None
   ): F[Items[TransactionInfo]]
 
   def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo]
@@ -108,29 +102,11 @@ object Transactions {
     def getByAddress(
       address: Address,
       paging: Paging,
-      concise: Boolean
-    ): F[Items[TransactionInfo]] =
-      transactions
-        .countRelatedToAddress(address)
-        .flatMap { total =>
-          val narrowBy = if (concise) Some(address) else None
-          transactions
-            .streamRelatedToAddress(address, paging.offset, paging.limit)
-            .chunkN(serviceSettings.chunkSize)
-            .through(makeTransaction(narrowBy))
-            .to[List]
-            .map(Items(_, total))
-        }
-        .thrushK(trans.xa)
-
-    def getByAddress(
-      address: Address,
-      paging: Paging,
       concise: Boolean,
-      inclusionHeightRange: InclusionHeightRange
+      inclusionHeightRange: Option[InclusionHeightRange]
     ): F[Items[TransactionInfo]] =
       transactions
-        .countRelatedToAddress(address, inclusionHeightRange.fromHeight, inclusionHeightRange.toHeight)
+        .countRelatedToAddress(address, inclusionHeightRange.map(x => (x.fromHeight, x.toHeight)))
         .flatMap { total =>
           val narrowBy = if (concise) Some(address) else None
           transactions
@@ -138,8 +114,7 @@ object Transactions {
               address,
               paging.offset,
               paging.limit,
-              inclusionHeightRange.fromHeight,
-              inclusionHeightRange.toHeight
+              inclusionHeightRange.map(x => (x.fromHeight, x.toHeight))
             )
             .chunkN(serviceSettings.chunkSize)
             .through(makeTransaction(narrowBy))
