@@ -72,7 +72,7 @@ object Addresses {
     ): F[(Address, AddressInfo)] = {
       val tree = sigma.addressToErgoTreeNewtype(address)
       for {
-        balance <- confirmedBalanceOf(address, 0)
+        balance <- confirmedBalanceOf(address, minConfirmations = 0)
         hUTxs   <- memprops.hasUnconfirmedBalance(tree)
         used    <- hasBeenUsedByErgoTree(tree.value)
       } yield (address, AddressInfo(address = address, hasUnconfirmedTxs = hUTxs, used = used, balance))
