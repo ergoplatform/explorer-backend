@@ -23,7 +23,7 @@ trait Addresses[F[_]] {
 
   /** Get TotalBalance of address with consideration of mempool data
     */
-  def totalBalanceOf_(address: Address): F[TotalBalance]
+  def totalBalanceWithConsiderationOfMempoolFor(address: Address): F[TotalBalance]
 }
 
 object Addresses {
@@ -66,7 +66,7 @@ object Addresses {
       )) ||> trans.xa
     }
 
-    def totalBalanceOf_(address: Address): F[TotalBalance] =
+    def totalBalanceWithConsiderationOfMempoolFor(address: Address): F[TotalBalance] =
       for {
         confirmed   <- confirmedBalanceOf(address, 0)
         unconfirmed <- memprops.getUnconfirmedBalanceByAddress(address, confirmed)

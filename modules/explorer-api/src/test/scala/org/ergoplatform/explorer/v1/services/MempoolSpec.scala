@@ -77,7 +77,7 @@ class MS_A extends MempoolSpec {
                   outRepo.insert(out).runWithIO()
                   txRepo.insert(tx).runWithIO()
                 }
-                val tb = addr.totalBalanceOf_(address1T.get).unsafeRunSync()
+                val tb = addr.totalBalanceWithConsiderationOfMempoolFor(address1T.get).unsafeRunSync()
                 tb.confirmed.nanoErgs should be(600.toNanoErgo)
               }
             }
