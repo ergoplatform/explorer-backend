@@ -59,7 +59,7 @@ class MS_A extends MempoolSpec {
       val address1S                               = SenderAddressString
       val address1T                               = Address.fromString[Try](address1S)
       lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
-      withResources[IO](container.mappedPort(6379))
+      withResources[IO](container.mappedPort(redisTestPort))
         .use { case (settings, utxCache, redis) =>
           withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, addr) =>
             address1T.isSuccess should be(true)

@@ -58,7 +58,7 @@ class AS_A extends AddressesSpec {
   "Address Service" should "get confirmed Balance (nanoErgs) of address" in {
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
     import tofu.fs2Instances._
-    withResources[IO](container.mappedPort(6379))
+    withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
           val addressT = Address.fromString[Try](SenderAddressString)
@@ -100,7 +100,7 @@ class AS_B extends AddressesSpec {
   "Address Service" should "get confirmed balance (tokens) of address" in {
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
     import tofu.fs2Instances._
-    withResources[IO](container.mappedPort(6379))
+    withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
           val addressT = Address.fromString[Try](SenderAddressString)
