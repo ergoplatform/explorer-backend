@@ -13,7 +13,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
-import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{InclusionHeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
 import org.ergoplatform.explorer.settings.ServiceSettings
@@ -34,7 +34,8 @@ trait Transactions[F[_]] {
   def getByAddress(
     address: Address,
     paging: Paging,
-    concise: Boolean
+    concise: Boolean,
+    inclusionHeightRange: Option[InclusionHeightRange] = None
   ): F[Items[TransactionInfo]]
 
   def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo]
@@ -101,20 +102,28 @@ object Transactions {
     def getByAddress(
       address: Address,
       paging: Paging,
-      concise: Boolean
-    ): F[Items[TransactionInfo]] =
+      concise: Boolean,
+      inclusionHeightRange: Option[InclusionHeightRange]
+    ): F[Items[TransactionInfo]] = {
+      val inHTuple = inclusionHeightRange.map(x => (x.fromHeight, x.toHeight))
       transactions
-        .countRelatedToAddress(address)
+        .countRelatedToAddress(address, inHTuple)
         .flatMap { total =>
           val narrowBy = if (concise) Some(address) else None
           transactions
-            .streamRelatedToAddress(address, paging.offset, paging.limit)
+            .streamRelatedToAddress(
+              address,
+              paging.offset,
+              paging.limit,
+              inHTuple
+            )
             .chunkN(serviceSettings.chunkSize)
             .through(makeTransaction(narrowBy))
             .to[List]
             .map(Items(_, total))
         }
         .thrushK(trans.xa)
+    }
 
     def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo] =
       transactions
