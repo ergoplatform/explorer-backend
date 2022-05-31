@@ -9,10 +9,8 @@ import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.v0.models.BlockSummary
 import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo, BlockSummaryV1}
 import org.ergoplatform.explorer.settings.RequestsSettings
-import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir._
-import sttp.tapir.json.circe._
 
 class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
 

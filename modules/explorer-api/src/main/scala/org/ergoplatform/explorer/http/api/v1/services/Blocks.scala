@@ -23,6 +23,7 @@ import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{BlockId, CRaise}
 import tofu.syntax.raise._
+import tofu.fs2Instances._
 import tofu.syntax.streams.compile._
 
 trait Blocks[F[_]] {
