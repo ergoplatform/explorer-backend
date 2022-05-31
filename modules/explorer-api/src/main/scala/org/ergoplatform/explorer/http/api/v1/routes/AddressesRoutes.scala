@@ -9,7 +9,7 @@ import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableE
 import org.ergoplatform.explorer.http.api.models.InclusionHeightRange
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v1.defs.AddressesEndpointDefs
-import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Mempool, Transactions}
+import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Transactions}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s._
@@ -17,8 +17,7 @@ import sttp.tapir.server.http4s._
 final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]](
   settings: RequestsSettings,
   transactions: Transactions[F],
-  addresses: Addresses[F],
-  mempool: Mempool[F]
+  addresses: Addresses[F]
 )(implicit opts: Http4sServerOptions[F, F], e: ErgoAddressEncoder) {
 
   val defs = new AddressesEndpointDefs(settings)
@@ -49,8 +48,7 @@ object AddressesRoutes {
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     settings: RequestsSettings,
     transactions: Transactions[F],
-    addresses: Addresses[F],
-    mempool: Mempool[F]
+    addresses: Addresses[F]
   )(implicit opts: Http4sServerOptions[F, F], e: ErgoAddressEncoder): HttpRoutes[F] =
-    new AddressesRoutes[F](settings, transactions, addresses, mempool).routes
+    new AddressesRoutes[F](settings, transactions, addresses).routes
 }
