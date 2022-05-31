@@ -104,9 +104,10 @@ object Transactions {
       paging: Paging,
       concise: Boolean,
       inclusionHeightRange: Option[InclusionHeightRange]
-    ): F[Items[TransactionInfo]] =
+    ): F[Items[TransactionInfo]] = {
+      val inHTuple = inclusionHeightRange.map(x => (x.fromHeight, x.toHeight))
       transactions
-        .countRelatedToAddress(address, inclusionHeightRange.map(x => (x.fromHeight, x.toHeight)))
+        .countRelatedToAddress(address, inHTuple)
         .flatMap { total =>
           val narrowBy = if (concise) Some(address) else None
           transactions
@@ -114,7 +115,7 @@ object Transactions {
               address,
               paging.offset,
               paging.limit,
-              inclusionHeightRange.map(x => (x.fromHeight, x.toHeight))
+              inHTuple
             )
             .chunkN(serviceSettings.chunkSize)
             .through(makeTransaction(narrowBy))
@@ -122,6 +123,7 @@ object Transactions {
             .map(Items(_, total))
         }
         .thrushK(trans.xa)
+    }
 
     def streamAll(minGix: Long, limit: Int): Stream[F, TransactionInfo] =
       transactions
