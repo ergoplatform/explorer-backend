@@ -131,10 +131,12 @@ object Blocks {
 
     private def makeBlockSummaries: Pipe[D, Chunk[Header], BlockSummaryV1] =
       for {
-        chunk      <- _
-        blockIds   <- Stream.emit(chunk.map(_.id).toNel).unNone
-        txs        <- transactionRepo.getAllByBlockIds(blockIds).fold[List[Transaction]](List.empty[Transaction])(_ :+ _)
+        chunk    <- _
+        blockIds <- Stream.emit(chunk.map(_.id).toNel).unNone
+        txs      <- transactionRepo.getAllByBlockIds(blockIds).fold[List[Transaction]](List.empty[Transaction])(_ :+ _)
+        groupedTxs = txs.groupBy(_.headerId)
         blockSizes <- blockInfoRepo.getBlockSizes(blockIds).asStream
+        sizes = blockSizes.map(bs => bs.headerId -> bs.size).toMap
         bestHeight <- headerRepo.getBestHeight.asStream
         txIdsNel   <- txs.map(_.id).toNel.orRaise[D](InconsistentDbData("Empty txs")).asStream
         inputs     <- inputRepo.getAllByTxIds(txIdsNel).asStream
@@ -142,24 +144,22 @@ object Blocks {
         outputs    <- outputRepo.getAllByTxIds(txIdsNel, None).asStream
         boxIdsNel  <- outputs.map(_.output.boxId).toNel.orRaise[D](InconsistentDbData("Empty outputs")).asStream
         assets     <- assetRepo.getAllByBoxIds(boxIdsNel).asStream
-        ancestors  <- headerRepo.getByParentIds(blockIds).asStream
-        blockInfos = (blockSizes zip chunk.toList).map { case (size, header) =>
+        groupedAssets = assets.groupBy(_.headerId)
+        blockInfos = chunk.map { header =>
                        val numConfirmations = bestHeight - header.height + 1
+                       val trans            = groupedTxs.getOrElse(header.id, List.empty)
                        FullBlockInfoV1(
                          header,
-                         txs,
+                         trans,
                          numConfirmations,
-                         inputs,
-                         dataInputs,
-                         outputs,
-                         assets,
-                         size
+                         inputs.filter(inp => trans.exists(_.id == inp.input.txId)),
+                         dataInputs.filter(inp => trans.exists(_.id == inp.input.txId)),
+                         outputs.filter(out => trans.exists(_.id == out.output.txId)),
+                         groupedAssets.getOrElse(header.id, List.empty),
+                         sizes.getOrElse(header.id, 0)
                        )
                      }
-        refs = (blockInfos zip ancestors).map { case (blockInfo, ancestor) =>
-                 (blockInfo, BlockReferencesInfo(blockInfo.header.parentId, Some(ancestor.id)))
-               }
-        summary <- Stream.emits(refs.map { case (info, ref) => BlockSummaryV1(info, ref) })
+        summary <- Stream.emits(blockInfos.map(BlockSummaryV1(_)).toList)
       } yield summary
 
     private def getFullBlockInfo(id: BlockId): Stream[D, Option[FullBlockInfo]] =

@@ -11,7 +11,7 @@ import org.ergoplatform.explorer.constraints.{OrderingSpec, OrderingString}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockStats
-import org.ergoplatform.explorer.db.models.aggregates.{ExtendedBlockInfo, MinerStats, TimePoint}
+import org.ergoplatform.explorer.db.models.aggregates.{BlockSize, ExtendedBlockInfo, MinerStats, TimePoint}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 
 /** [[BlockStats]] data access operations.
@@ -51,7 +51,7 @@ trait BlockInfoRepo[D[_]] {
     */
   def getBlockSize(id: BlockId): D[Option[Int]]
 
-  def getBlockSizes(blockIds: NonEmptyList[BlockId]): D[List[Int]]
+  def getBlockSizes(blockIds: NonEmptyList[BlockId]): D[List[BlockSize]]
 
   def getLastStats: D[Option[BlockStats]]
 
@@ -131,7 +131,7 @@ object BlockInfoRepo {
     def getBlockSize(id: BlockId): D[Option[Int]] =
       QS.getBlockSize(id).option.liftConnectionIO
 
-    def getBlockSizes(blockIds: NonEmptyList[BlockId]): D[List[Int]] =
+    def getBlockSizes(blockIds: NonEmptyList[BlockId]): D[List[BlockSize]] =
       QS.getBlocksSize(blockIds).to[List].liftConnectionIO
 
     def getLastStats: D[Option[BlockStats]] =

@@ -9,9 +9,9 @@ import org.ergoplatform.explorer.http.api.v0.models.{HeaderInfo, TransactionInfo
 import sttp.tapir.{Schema, Validator}
 
 final case class FullBlockInfoV1(
-                                header: HeaderInfo,
-                                blockTransactions: List[TxInf],
-                              )
+  header: HeaderInfo,
+  blockTransactions: List[TxInf]
+)
 
 object FullBlockInfoV1 {
 
@@ -24,17 +24,17 @@ object FullBlockInfoV1 {
   implicit val validator: Validator[FullBlockInfoV1] = schema.validator
 
   def apply(
-             h: Header,
-             txs: List[Transaction],
-             numConfirmations: Int,
-             inputs: List[ExtendedInput],
-             dataInputs: List[ExtendedDataInput],
-             outputs: List[ExtendedOutput],
-             assets: List[ExtendedAsset],
-             blockSize: Int
-           ): FullBlockInfoV1 = {
-    val txsInfo            = TxInf.batch(txs.map(_ -> numConfirmations), inputs, dataInputs, outputs, assets)
-    val headerInfo         = HeaderInfo(h, blockSize)
+    h: Header,
+    txs: List[Transaction],
+    numConfirmations: Int,
+    inputs: List[ExtendedInput],
+    dataInputs: List[ExtendedDataInput],
+    outputs: List[ExtendedOutput],
+    assets: List[ExtendedAsset],
+    blockSize: Int
+  ): FullBlockInfoV1 = {
+    val txsInfo    = TxInf.batch(txs.map(_ -> numConfirmations), inputs, dataInputs, outputs, assets)
+    val headerInfo = HeaderInfo(h, blockSize)
     new FullBlockInfoV1(headerInfo, txsInfo)
   }
 }
