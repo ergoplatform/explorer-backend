@@ -55,7 +55,7 @@ class BS_A extends BoxSpec {
     val address1T                               = Address.fromString[Try](address1S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     val getUnspentOutputsByAddressF             = PrivateMethod[IO[List[OutputInfo]]]('getUnspentOutputsByAddressF)
-    withResources[IO](container.mappedPort(6379))
+    withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, box) =>
           address1T.isSuccess should be(true)
@@ -113,7 +113,7 @@ class BS_B extends BoxSpec {
     val address1S                               = SenderAddressString
     val address1T                               = Address.fromString[Try](address1S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
-    withResources[IO](container.mappedPort(6379))
+    withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, box) =>
           address1T.isSuccess should be(true)
