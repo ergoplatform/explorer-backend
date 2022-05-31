@@ -7,7 +7,9 @@ import org.testcontainers.containers.wait.strategy.Wait
 trait RedisTest extends ForAllTestContainer {
   self: TestSuite =>
 
+  val redisTestPort = 6379
+
   override val container: GenericContainer =
-    GenericContainer("redis:5.0.3", exposedPorts = Seq(6379), waitStrategy = Wait.forListeningPort())
+    GenericContainer("redis:5.0.3", exposedPorts = Seq(redisTestPort), waitStrategy = Wait.forListeningPort())
 
 }
