@@ -70,17 +70,6 @@ object Mempool {
 
     import repo._
 
-    def getUOutputsByAddress(address: Address): F[List[UOutputInfo]] = {
-      val ergoTree = addressToErgoTreeNewtype(address)
-      (for {
-        uTxInfoL <- txs
-                      .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
-                      .chunkN(settings.chunkSize)
-                      .through(memprops.mkTransaction)
-                      .to[List]
-      } yield uTxInfoL.flatMap(_.outputs.filter(_.ergoTree == ergoTree.value))) ||> trans.xa
-    }
-
     def getByErgoTree(ergoTree: ErgoTree, paging: Paging): F[Items[UTransactionInfo]] =
       txs
         .countByErgoTree(ergoTree.value)
