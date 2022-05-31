@@ -7,7 +7,7 @@ import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
 import fs2.Stream
-import org.ergoplatform.explorer.TxId
+import org.ergoplatform.explorer.{BoxId, ErgoTree, TxId}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UInput
@@ -38,6 +38,8 @@ trait UInputRepo[D[_], S[_[_], _]] {
   /** Get all inputs related to transaction with a given list of `txId`.
     */
   def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedUInput]]
+
+  def getAllUInputBoxIdsByErgoTree(ergoTree: ErgoTree): D[List[BoxId]]
 }
 
 object UInputRepo {
@@ -47,8 +49,7 @@ object UInputRepo {
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler)
-    extends UInputRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends UInputRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{UInputQuerySet => QS}
 
@@ -66,5 +67,8 @@ object UInputRepo {
 
     def getAllByTxIds(txIds: NonEmptyList[TxId]): D[List[ExtendedUInput]] =
       QS.getAllByTxIds(txIds).to[List].liftConnectionIO
+
+    override def getAllUInputBoxIdsByErgoTree(ergoTree: ErgoTree): D[List[BoxId]] =
+      QS.getAllUInputBoxIdsByErgoTree(ergoTree.value).to[List].liftConnectionIO
   }
 }

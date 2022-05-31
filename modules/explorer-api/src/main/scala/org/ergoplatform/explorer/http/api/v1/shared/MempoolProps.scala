@@ -51,24 +51,21 @@ object MempoolProps {
 
     def getUOutputsByAddress(address: Address): F[List[UOutputInfo]] = {
       val ergoTree = addressToErgoTreeNewtype(address)
-      (for {
-        uOutInfoL <- txs
-                       .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
-                       .chunkN(settings.chunkSize)
-                       .through(mkUOutput)
-                       .to[List]
-      } yield uOutInfoL) ||> trans.xa
+      (
+        for {
+          uOut <- outputs
+                    .streamAllRelatedToErgoTree(ergoTree)
+                    .chunkN(settings.chunkSize)
+                    .through(mkUnspentOutputInfo)
+                    .to[List]
+        } yield uOut
+      ) ||> trans.xa
     }
 
     def getBoxesSpentInMempool(address: Address): F[List[BoxId]] = {
       val ergoTree = addressToErgoTreeNewtype(address)
-      (for {
-        uInsL <- txs
-                   .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
-                   .chunkN(settings.chunkSize)
-                   .through(mkUInput)
-                   .to[List]
-      } yield uInsL.map(_.boxId)) ||> trans.xa
+      inputs
+        .getAllUInputBoxIdsByErgoTree(ergoTree) ||> trans.xa
     }
 
     def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
@@ -103,69 +100,5 @@ object MempoolProps {
             UTransactionInfo.unFlattenBatch(chunk.toList, ins, dataIns, outs, inAssets, confInAssets, outAssets)
           )
       } yield txInfo
-
-    private def mkUOutput: Pipe[D, Chunk[UTransaction], UOutputInfo] =
-      for {
-        chunk     <- _
-        txIds     <- Stream.emit(chunk.map(_.id).toNel).unNone
-        outs      <- Stream.eval(outputs.getAllByTxIds(txIds))
-        outIds    <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-        outAssets <- Stream.eval(assets.getAllByBoxIds(outIds))
-        txInfo <-
-          Stream.emits(
-            unFlattenBatchUOutputInfo(chunk.toList, outs, outAssets)
-          )
-      } yield txInfo
-
-    private def unFlattenBatchUOutputInfo(
-      txs: List[UTransaction],
-      outputs: List[ExtendedUOutput],
-      outAssets: List[ExtendedUAsset]
-    ): List[UOutputInfo] = {
-      val groupedOutAssets = outAssets.groupBy(_.boxId)
-      txs.flatMap { tx =>
-        outputs
-          .filter(_.output.txId == tx.id)
-          .sortBy(_.output.index)
-          .map { out =>
-            val relAssets = groupedOutAssets.get(out.output.boxId).toList.flatten
-            UOutputInfo(out, relAssets)
-          }
-      }
-    }
-
-    private def mkUInput: Pipe[D, Chunk[UTransaction], UInputInfo] =
-      for {
-        chunk        <- _
-        txIds        <- Stream.emit(chunk.map(_.id).toNel).unNone
-        ins          <- Stream.eval(inputs.getAllByTxIds(txIds))
-        inIds        <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets     <- Stream.eval(assets.getAllByBoxIds(inIds))
-        confInAssets <- Stream.eval(confirmedAssets.getAllByBoxIds(inIds))
-        txInfo <-
-          Stream.emits(
-            unFlattenBatchUInputInfo(chunk.toList, ins, inAssets, confInAssets)
-          )
-      } yield txInfo
-
-    private def unFlattenBatchUInputInfo(
-      txs: List[UTransaction],
-      inputs: List[ExtendedUInput],
-      inAssets: List[ExtendedUAsset],
-      confInAssets: List[ExtendedAsset]
-    ): List[UInputInfo] = {
-      val groupedInAssets     = inAssets.groupBy(_.boxId)
-      val groupedConfInAssets = confInAssets.groupBy(_.boxId)
-      txs.flatMap { tx =>
-        inputs
-          .filter(_.input.txId == tx.id)
-          .sortBy(_.input.index)
-          .map { in =>
-            val relAssets     = groupedInAssets.get(in.input.boxId).toList.flatten
-            val relConfAssets = groupedConfInAssets.get(in.input.boxId).toList.flatten
-            UInputInfo(in, relAssets, relConfAssets)
-          }
-      }
-    }
   }
 }

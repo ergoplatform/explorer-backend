@@ -115,7 +115,7 @@ class BS_B extends BoxSpec {
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     withResources[IO](container.mappedPort(6379))
       .use { case (settings, utxCache, redis) =>
-        withServices[IO, ConnectionIO](settings, utxCache, redis) { (mem, box) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, box) =>
           address1T.isSuccess should be(true)
           withLiveRepos[ConnectionIO] { (hRepo, txRepo, outRepo, uoutRepo, uinRepo, uTxRepo) =>
             forSingleInstance(`unconfirmedTransactionWithUInput&UOutputGen`(address1T.get, address1Tree)) {

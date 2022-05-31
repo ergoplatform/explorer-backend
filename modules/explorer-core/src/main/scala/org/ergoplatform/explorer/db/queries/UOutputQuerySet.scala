@@ -123,6 +123,31 @@ object UOutputQuerySet extends QuerySet {
     in(q, txIds).query[ExtendedUOutput]
   }
 
+  def streamAllRelatedToErgoTree(ergoTree: HexString)(implicit
+    lh: LogHandler
+  ): Query0[UOutput] =
+    fr"""
+        |select distinct on (o.box_id)
+        |  o.box_id,
+        |  o.tx_id,
+        |  o.value,
+        |  o.creation_height,
+        |  o.index,
+        |  o.ergo_tree,
+        |  o.ergo_tree_template_hash,
+        |  o.address,
+        |  o.additional_registers,
+        |  i.tx_id
+        |from node_u_outputs o
+        |left join node_u_inputs i on i.box_id = o.box_id
+        |where o.tx_id in
+        | (select distinct on (t.id) t.id from node_u_transactions t
+        |    left join node_u_inputs ui on ui.tx_id = t.id
+        |    left join node_u_outputs uo on uo.tx_id = t.id
+        |    left join node_outputs o on o.box_id = ui.box_id
+        |    where uo.ergo_tree = $ergoTree or o.ergo_tree = $ergoTree)
+        |""".stripMargin.query[UOutput]
+
   def getAllByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[ExtendedUOutput] =
     sql"""
          |select distinct on (o.box_id)
