@@ -73,7 +73,7 @@ class AS_C extends AddressesSpec {
     val address2T                               = Address.fromString[Try](address2S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
-    withResources[IO](container.mappedPort(6379))
+    withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _, _) =>
           address1T.isSuccess should be(true)
@@ -118,7 +118,7 @@ class AS_D extends AddressesSpec {
     lazy val addressTree                        = sigma.addressToErgoTreeHex(addressT.get)
     val addressInfoOf                           = PrivateMethod[IO[(Address, AddressInfo)]]('addressInfoOf)
     val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
-    withResources[IO](container.mappedPort(6379))
+    withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _, memprop) =>
           addressT.isSuccess should be(true)
@@ -170,7 +170,7 @@ class AS_E extends AddressesSpec {
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
     val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
-    withResources[IO](container.mappedPort(6379))
+    withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _, memprop) =>
           address1T.isSuccess should be(true)
