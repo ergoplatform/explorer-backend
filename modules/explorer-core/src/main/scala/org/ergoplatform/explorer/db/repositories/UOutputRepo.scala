@@ -88,7 +88,7 @@ object UOutputRepo {
       QS.getAll(offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def streamAllRelatedToErgoTree(ergoTree: ErgoTree): Stream[D, UOutput] =
-      QS.streamAllRelatedToErgoTree(ergoTree.value)
+      QS.getAllRelatedToErgoTree(ergoTree.value)
         .stream
         .translate(LiftConnectionIO[D].liftConnectionIOK)
 

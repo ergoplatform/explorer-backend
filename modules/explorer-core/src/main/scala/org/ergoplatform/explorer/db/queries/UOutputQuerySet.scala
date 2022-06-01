@@ -123,7 +123,7 @@ object UOutputQuerySet extends QuerySet {
     in(q, txIds).query[ExtendedUOutput]
   }
 
-  def streamAllRelatedToErgoTree(ergoTree: HexString)(implicit
+  def getAllRelatedToErgoTree(ergoTree: HexString)(implicit
     lh: LogHandler
   ): Query0[UOutput] =
     fr"""
