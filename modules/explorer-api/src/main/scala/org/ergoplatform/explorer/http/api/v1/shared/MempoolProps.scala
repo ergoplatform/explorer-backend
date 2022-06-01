@@ -25,8 +25,10 @@ import tofu.syntax.raise._
 
 trait MempoolProps[F[_], D[_]] {
   def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
+  // todo: delete methods
   def getUOutputsByAddress(address: Address): F[List[UOutputInfo]]
   def getBoxesSpentInMempool(address: Address): F[List[BoxId]]
+  // todo: delete methods
   def mkUnspentOutputInfo: Pipe[D, Chunk[UOutput], UOutputInfo]
   def mkTransaction: Pipe[D, Chunk[UTransaction], UTransactionInfo]
 }

@@ -54,7 +54,7 @@ class BS_A extends BoxSpec {
     val address1S                               = SenderAddressString
     val address1T                               = Address.fromString[Try](address1S)
     lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
-    val getUnspentOutputsByAddressF             = PrivateMethod[IO[List[OutputInfo]]]('getUnspentOutputsByAddressF)
+    val getUnspentOutputsByAddressD             = PrivateMethod[ConnectionIO[List[OutputInfo]]]('getUnspentOutputsByAddressD)
     withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, box) =>
@@ -82,12 +82,12 @@ class BS_A extends BoxSpec {
                     txRepo.insert(tx).runWithIO()
                   }
                   box.getOutputsByAddress(address1T.get, Paging(0, Int.MaxValue)).unsafeRunSync().total should be(3)
-                  (box invokePrivate getUnspentOutputsByAddressF(
+                  (box invokePrivate getUnspentOutputsByAddressD(
                     address1T.get,
                     Desc,
                     List(out_.boxId).map(x => BoxId(x.value)).toNel
                   ))
-                    .unsafeRunSync()
+                    .runWithIO()
                     .map(_.boxId) should not contain theSameElementsAs(List(out_.boxId))
                 }
             }
