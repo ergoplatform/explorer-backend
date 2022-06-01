@@ -5,6 +5,12 @@ import org.ergoplatform.explorer.{RegisterId, TokenId}
 
 package object queries {
 
+  @inline def inclusionHeightFilter(range: (Int, Int)): String =
+    s"""
+       | and t.inclusion_height >= ${range._1}
+       | and t.inclusion_height <= ${range._2}
+       |""".stripMargin
+
   @inline def innerJoinAllOfConstants(
     as: String,
     tableAlias: String,
