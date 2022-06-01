@@ -368,7 +368,7 @@ object ChainIndexer {
     def pull(height: Int): F[Option[(List[ApiFullBlock], List[ApiFullBlock])]] =
       blocksBufferR.getAndUpdate(_ - height).map(_.get(height)) <* permits.release
 
-    def size: F[Int] = blocksBufferR.get >>= (_.size)
+    def size: F[Int] = blocksBufferR.get map (_.size)
   }
 
   object BlockCache {
