@@ -126,24 +126,36 @@ object ChainIndexer {
         .covary[F]
         .parEvalMap(PrefetchFactor) { height =>
           for {
-            ids     <- network.getBlockIdsAtHeight(height)
-            blocks0 <- ids.parTraverse(network.getFullBlockById)
-            blocks          = blocks0.flatten
-            (best, orphans) = blocks.partition(b => ids.headOption.contains(b.header.id))
-            _ <- blockCache.put(height, best, orphans)
+            (best, orphans) <- fetchHeight(height)
+            _               <- blockCache.put(height, best, orphans)
           } yield ()
         }
+
+    private def fetchHeight(height: Int): F[(List[ApiFullBlock], List[ApiFullBlock])] =
+      for {
+        ids     <- network.getBlockIdsAtHeight(height)
+        blocks0 <- ids.parTraverse(network.getFullBlockById)
+        blocks = blocks0.flatten
+      } yield blocks.partition(b => ids.headOption.contains(b.header.id))
+
+    private def getHeight(height: Int): F[(List[ApiFullBlock], List[ApiFullBlock])] =
+      blockCache.pull(height).flatMap {
+        case Some(x) => x.pure[F]
+        case _       => fetchHeight(height)
+      }
 
     private def pullBlocks(lower: Int, upper: Int): F[Unit] =
       for {
         _          <- info"Pulling blocks from height $lower"
-        blocksPart <- blockCache.pull(lower)
+        blocksPart <- getHeight(lower)
         _ <- blocksPart match {
-               case Some((List(best), others)) => syncQueue.enqueue1((best, others))
-               case _                          => Timer[F].sleep(2.seconds) >> pullBlocks(lower, upper) // wait until block is available
+               case (List(best), others) => syncQueue.enqueue1((best, others))
+               case _                    => Timer[F].sleep(2.seconds) >> pullBlocks(lower, upper) // wait until block is available
              }
-        numBlocks = blocksPart.map(_._2.size + 1).getOrElse(0)
+        numBlocks = blocksPart._2.size + 1
         _ <- info"$numBlocks block(s) grabbed from height $lower"
+        s <- blockCache.size
+        _ <- info"$s pre-cached blocks left"
         _ <- if (lower < upper) pullBlocks(lower + 1, upper) else unit[F]
       } yield ()
 
@@ -355,6 +367,8 @@ object ChainIndexer {
 
     def pull(height: Int): F[Option[(List[ApiFullBlock], List[ApiFullBlock])]] =
       blocksBufferR.getAndUpdate(_ - height).map(_.get(height)) <* permits.release
+
+    def size: F[Int] = blocksBufferR.get >>= (_.size)
   }
 
   object BlockCache {
