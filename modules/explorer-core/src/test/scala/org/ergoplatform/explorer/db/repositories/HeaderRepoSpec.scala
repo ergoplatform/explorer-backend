@@ -46,7 +46,7 @@ class HeaderRepoSpec
   }
 
   private def withHeaderRepo[D[_]: LiftConnectionIO: Sync](
-    body: HeaderRepo[D] => Any
+    body: HeaderRepo[D, fs2.Stream] => Any
   ): Any =
     body(repositories.HeaderRepo[IO, D].unsafeRunSync())
 }
