@@ -1,20 +1,20 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.Monad
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
-import doobie.free.implicits._
-import doobie.refined.implicits._
+import doobie.implicits._
 import doobie.util.log.LogHandler
 import fs2.Stream
-import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.doobieInstances._
 import org.ergoplatform.explorer.db.models.Output
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
+import org.ergoplatform.explorer.{Address, BlockId, BoxId, ErgoTreeTemplateHash, HexString, RegisterId, TokenId, TxId}
 
 /** [[Output]] and [[ExtendedOutput]] data access operations.
   */
@@ -48,9 +48,9 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long]
 
-  /** check if wallet is in use
+  /** Get total amount of all unspent main-chain outputs with given `ergoTree`(s).
     */
-  def nodeOutputCount(ergoTree: HexString): D[Long]
+  def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): D[List[(HexString, Long)]]
 
   /** Get balances of all addresses in the network.
     */
@@ -67,6 +67,10 @@ trait OutputRepo[D[_], S[_[_], _]] {
   /** Count outputs with a given `ergoTree` from persistence.
     */
   def countAllByErgoTree(ergoTree: HexString): D[Int]
+
+  /** Count outputs with a given `ergoTree`(s) from persistence.
+    */
+  def getUsedStateByErgoTree(ergoTree: NonEmptyList[HexString]): D[List[(HexString, Boolean)]]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
@@ -215,12 +219,12 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
 object OutputRepo {
 
-  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[OutputRepo[D, Stream]] =
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO: Monad]: F[OutputRepo[D, Stream]] =
     DoobieLogHandler.create[F].map { implicit lh =>
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends OutputRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO: Monad](implicit lh: LogHandler) extends OutputRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{OutputQuerySet => QS}
 
@@ -243,6 +247,12 @@ object OutputRepo {
     def countAllByErgoTree(ergoTree: HexString): D[Int] =
       QS.countAllByErgoTree(ergoTree).unique.liftConnectionIO
 
+    def getUsedStateByErgoTree(ergoTrees: NonEmptyList[HexString]): D[List[(HexString, Boolean)]] =
+      ergoTrees.toList.map(tree => getUsedStateByErgoTree(tree)).sequence
+
+    private def getUsedStateByErgoTree(ergoTree: HexString): D[(HexString, Boolean)] =
+      QS.getUsedStateByErgoTree(ergoTree).map((ergoTree, _)).unique.liftConnectionIO
+
     def streamAllByErgoTree(
       ergoTree: HexString,
       offset: Int,
@@ -260,6 +270,9 @@ object OutputRepo {
 
     def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
       QS.sumUnspentByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
+
+    def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): D[List[(HexString, Long)]] =
+      QS.sumUnspentByErgoTree(ergoTrees, maxHeight).to[List].liftConnectionIO
 
     def balanceStatsMain(offset: Int, limit: Int): D[List[(Address, Long)]] =
       QS.balanceStatsMain(offset, limit).to[List].liftConnectionIO
@@ -411,8 +424,5 @@ object OutputRepo {
 
     def countUnspentByAssetsUnion(templateHash: ErgoTreeTemplateHash, assets: List[TokenId]): D[Int] =
       QS.countUnspentByAssetsUnion(templateHash, assets).unique.liftConnectionIO
-
-    def nodeOutputCount(ergoTree: HexString): D[Long] =
-      QS.nodeOutputCount(ergoTree).unique.liftConnectionIO
   }
 }

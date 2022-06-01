@@ -111,55 +111,6 @@ class AS_D extends AddressesSpec {
   implicit val addressEncoder: ErgoAddressEncoder =
     ErgoAddressEncoder(networkPrefix.value.toByte)
 
-  "Address Service" should "generate address info for single address" in {
-    import tofu.fs2Instances._
-    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
-    val addressT                                = Address.fromString[Try](SenderAddressString)
-    lazy val addressTree                        = sigma.addressToErgoTreeHex(addressT.get)
-    val addressInfoOf                           = PrivateMethod[IO[(Address, AddressInfo)]]('addressInfoOf)
-    val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
-    withResources[IO](container.mappedPort(redisTestPort))
-      .use { case (settings, utxCache, redis) =>
-        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _, memprop) =>
-          addressT.isSuccess should be(true)
-          withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, tokenRepo, assetRepo) =>
-            forSingleInstance(
-              balanceOfAddressWithTokenGen(mainChain = true, address = addressT.get, addressTree, 1, 3)
-            ) { infoTupleList =>
-              infoTupleList.foreach { case (header, out, tx, _, token, asset) =>
-                headerRepo.insert(header).runWithIO()
-                oRepo.insert(out).runWithIO()
-                txRepo.insert(tx).runWithIO()
-                tokenRepo.insert(token).runWithIO()
-                assetRepo.insert(asset).runWithIO()
-              }
-
-              val addressInfo =
-                (addr invokePrivate addressInfoOf(addressT.get)).unsafeRunSync()._2
-
-              val bFS = addr.confirmedBalanceOf(addressT.get, 0).unsafeRunSync()
-              addressInfo.confirmedBalance should be(bFS)
-
-              val huFS = memprop.hasUnconfirmedBalance(ErgoTree(addressTree)).unsafeRunSync()
-              addressInfo.hasUnconfirmedTxs should be(huFS)
-
-              val hbuFS = (addr invokePrivate hasBeenUsedByErgoTree(addressTree)).unsafeRunSync()
-              addressInfo.used should be(hbuFS)
-            }
-          }
-        }
-      }
-      .unsafeRunSync()
-  }
-
-}
-
-class AS_E extends AddressesSpec {
-
-  val networkPrefix: String Refined ValidByte = "16" // strictly run test-suite with testnet network prefix
-  implicit val addressEncoder: ErgoAddressEncoder =
-    ErgoAddressEncoder(networkPrefix.value.toByte)
-
   "Address Service" should "generate batch address info" in {
     import tofu.fs2Instances._
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
@@ -262,7 +213,7 @@ object AddressesSpec {
   )(implicit encoder: ErgoAddressEncoder, trans: D Trans F): F[Unit] =
     for {
       memprops  <- MempoolProps(settings, utxCacheSettings, redis)(trans)
-      addresses <- Addresses[F, D](memprops)(trans)
+      addresses <- Addresses[F, D](settings, memprops)(trans)
       mempool <- Mempool[F, D](
                    settings,
                    utxCacheSettings,

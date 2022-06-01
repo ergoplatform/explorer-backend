@@ -42,7 +42,7 @@ object RoutesV1Bundle {
       memprops                  <- MempoolProps(serviceSettings, utxCacheSettings, redis)(trans)
       mempool                   <- Mempool(serviceSettings, utxCacheSettings, redis, memprops)(trans)
       boxes                     <- Boxes(serviceSettings, memprops)(trans)
-      addresses                 <- Addresses(memprops)(trans)
+      addresses                 <- Addresses(serviceSettings, memprops)(trans)
       infos                     <- Networks(trans)
       tokens                    <- Tokens(trans)
       assets                    <- Assets(trans)

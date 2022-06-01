@@ -42,7 +42,7 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
 
   private def getBatchAddressInfo =
     interpreter.toRoutes(defs.getBatchAddressInfo) { batch =>
-      addresses.addressInfoOf(batch).adaptThrowable.value
+      addresses.addressInfoOf(batch.distinct).adaptThrowable.value
     }
 }
 

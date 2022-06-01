@@ -164,9 +164,13 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
     ord: OrderingString
   ): fs2.Stream[F, ExtendedOutput] = ???
 
-  /** check if wallet is in use
+  /** Get total amount of all unspent main-chain outputs with given `ergoTree`(s).
     */
-  override def nodeOutputCount(ergoTree: HexString): F[Long] = ???
+  override def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): F[List[(Address, Long)]] = ???
+
+  /** Count outputs with a given `ergoTree`(s) from persistence.
+    */
+  override def getUsedStateByErgoTree(ergoTree: NonEmptyList[HexString]): F[List[Boolean]] = ???
 }
 
 object TestOutputRepo {

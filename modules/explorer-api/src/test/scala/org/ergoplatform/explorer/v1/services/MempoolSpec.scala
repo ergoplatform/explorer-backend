@@ -78,7 +78,7 @@ object MempoolSpec {
                    redis,
                    memprops
                  )(trans)
-      addresses <- Addresses[F, D](memprops)(trans)
+      addresses <- Addresses[F, D](settings, memprops)(trans)
       _ = body(mempool, addresses)
     } yield ()
 

@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.Monad
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
@@ -37,6 +38,11 @@ trait AssetRepo[D[_], S[_[_], _]] {
 
   def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[AggregatedAsset]]
 
+  def aggregateUnspentByErgoTree(
+    ergoTree: NonEmptyList[HexString],
+    maxHeight: Int
+  ): D[List[List[(HexString, AggregatedAsset)]]]
+
   /** Get all addresses holding an asset with a given `assetId`.
     */
   def getAllHoldingAddresses(
@@ -70,12 +76,12 @@ trait AssetRepo[D[_], S[_[_], _]] {
 
 object AssetRepo {
 
-  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[AssetRepo[D, Stream]] =
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO: Monad]: F[AssetRepo[D, Stream]] =
     DoobieLogHandler.create[F].map { implicit lh =>
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends AssetRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO: Monad](implicit lh: LogHandler) extends AssetRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{AssetQuerySet => QS}
 
@@ -96,6 +102,18 @@ object AssetRepo {
 
     def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[AggregatedAsset]] =
       QS.aggregateUnspentByErgoTree(ergoTree, maxHeight).to[List].liftConnectionIO
+
+    def aggregateUnspentByErgoTree(
+      ergoTree: NonEmptyList[HexString],
+      maxHeight: Int
+    ): D[List[List[(HexString, AggregatedAsset)]]] =
+      ergoTree.toList.map(aggregateUnspentByErgoTreeH(_, maxHeight)).sequence
+
+    private def aggregateUnspentByErgoTreeH(
+      ergoTree: HexString,
+      maxHeight: Int
+    ): D[List[(HexString, AggregatedAsset)]] =
+      QS.aggregateUnspentByErgoTree(ergoTree, maxHeight).to[List].map(_.map((ergoTree, _))).liftConnectionIO
 
     def getAllHoldingAddresses(
       tokenId: TokenId,
