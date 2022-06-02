@@ -69,7 +69,7 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
   /** Check if there are unconfirmed transactions for given 'ergoTree'(s)
     */
 
-  def getUnconfirmedTransactionsState(ergoTree: NonEmptyList[HexString]): D[List[(HexString, Boolean)]]
+  def getUnconfirmedTransactionsState(ergoTree: NonEmptyList[HexString]): D[Map[HexString, Boolean]]
 }
 
 object UTransactionRepo {
@@ -126,8 +126,8 @@ object UTransactionRepo {
 
     /** Check if there are unconfirmed transactions for given 'ergoTree'(s)
       */
-    def getUnconfirmedTransactionsState(ergoTrees: NonEmptyList[HexString]): D[List[(HexString, Boolean)]] =
-      ergoTrees.toList.map(tree => getUnconfirmedTransactionsState(tree)).sequence
+    def getUnconfirmedTransactionsState(ergoTrees: NonEmptyList[HexString]): D[Map[HexString, Boolean]] =
+      ergoTrees.toList.map(tree => getUnconfirmedTransactionsState(tree)).sequence.map(_.toMap)
 
     private def getUnconfirmedTransactionsState(ergoTree: HexString): D[(HexString, Boolean)] =
       QS.getUnconfirmedTransactionsState(ergoTree).map((ergoTree, _)).unique.liftConnectionIO

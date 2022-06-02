@@ -86,7 +86,7 @@ object Addresses {
           .chunkN(settings.chunkSize)
           .through(mkBatch(maxHeight = mH))
           .to[List]
-          .map(_.foldLeft(Map[Address, AddressInfo]()) { case (m, t) => m + t })
+          .map(_.toMap)
       } ||> trans.xa
 
     private def mkBatch(maxHeight: Int): Pipe[D, Chunk[Address], (Address, AddressInfo)] =

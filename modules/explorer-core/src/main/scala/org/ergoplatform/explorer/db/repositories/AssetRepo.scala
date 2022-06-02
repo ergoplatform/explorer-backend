@@ -41,7 +41,7 @@ trait AssetRepo[D[_], S[_[_], _]] {
   def aggregateUnspentByErgoTree(
     ergoTree: NonEmptyList[HexString],
     maxHeight: Int
-  ): D[List[List[(HexString, AggregatedAsset)]]]
+  ): D[Map[HexString, List[AggregatedAsset]]]
 
   /** Get all addresses holding an asset with a given `assetId`.
     */
@@ -103,17 +103,19 @@ object AssetRepo {
     def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[AggregatedAsset]] =
       QS.aggregateUnspentByErgoTree(ergoTree, maxHeight).to[List].liftConnectionIO
 
+    // change to Map[HextString, List[AA]]
+    // write test for Repos
     def aggregateUnspentByErgoTree(
       ergoTree: NonEmptyList[HexString],
       maxHeight: Int
-    ): D[List[List[(HexString, AggregatedAsset)]]] =
-      ergoTree.toList.map(aggregateUnspentByErgoTreeH(_, maxHeight)).sequence
+    ): D[Map[HexString, List[AggregatedAsset]]] =
+      ergoTree.toList.map(aggregateUnspentByErgoTreeH(_, maxHeight)).sequence.map(_.flatten.toMap)
 
-    private def aggregateUnspentByErgoTreeH(
+    private def aggregateUnspentByErgoTreeH( //
       ergoTree: HexString,
       maxHeight: Int
-    ): D[List[(HexString, AggregatedAsset)]] =
-      QS.aggregateUnspentByErgoTree(ergoTree, maxHeight).to[List].map(_.map((ergoTree, _))).liftConnectionIO
+    ): D[Map[HexString, List[AggregatedAsset]]] =
+      QS.aggregateUnspentByErgoTree(ergoTree, maxHeight).to[List].map(x => Map((ergoTree, x))).liftConnectionIO
 
     def getAllHoldingAddresses(
       tokenId: TokenId,

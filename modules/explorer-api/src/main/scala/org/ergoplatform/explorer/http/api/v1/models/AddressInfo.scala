@@ -53,25 +53,21 @@ object AddressInfo {
 
   implicit val validatorBatchAddressInfo: Validator[Map[Address, AddressInfo]] = schemaBatchAddressInfo.validator
 
-  def empty(address: Address) = AddressInfo(address, hasUnconfirmedTxs = false, used = false, Balance.empty)
+  def empty(address: Address): AddressInfo =
+    AddressInfo(address, hasUnconfirmedTxs = false, used = false, Balance.empty)
 
   def makeInfo(
     batch: List[(Address, HexString)],
-    batchUnspentSums: List[(HexString, Long)],
-    batchAssets: List[List[(HexString, AggregatedAsset)]],
-    batchUsedState: List[(HexString, Boolean)],
-    batchUTxState: List[(HexString, Boolean)]
-  ): List[(Address, AddressInfo)] = {
-    val groupedBatchUnSpentSums = batchUnspentSums.foldLeft(Map[HexString, Long]()) { case (m, t) => m + t }
-    val groupedBatchAssets      = batchAssets.flatten.groupBy(_._1).map(x => (x._1, x._2.map(x => x._2)))
-    val groupedBatchUsedState   = batchUsedState.foldLeft(Map[HexString, Boolean]()) { case (m, t) => m + t }
-    val groupedBatchUtxState    = batchUTxState.foldLeft(Map[HexString, Boolean]()) { case (m, t) => m + t }
-
+    batchUnspentSums: Map[HexString, Long],
+    batchAssets: Map[HexString, List[AggregatedAsset]],
+    batchUsedState: Map[HexString, Boolean],
+    batchUTxState: Map[HexString, Boolean]
+  ): List[(Address, AddressInfo)] =
     batch.map { case (addr, hex) =>
-      val sums             = groupedBatchUnSpentSums.get(hex)
-      val assets           = groupedBatchAssets.get(hex)
-      val hasBeenUsed      = groupedBatchUsedState.get(hex)
-      val hasUnconfirmedTx = groupedBatchUtxState.get(hex)
+      val sums             = batchUnspentSums.get(hex)
+      val assets           = batchAssets.get(hex)
+      val hasBeenUsed      = batchUsedState.get(hex)
+      val hasUnconfirmedTx = batchUTxState.get(hex)
 
       val addrInfo =
         (for {
@@ -84,6 +80,5 @@ object AddressInfo {
 
       (addr, addrInfo)
     }
-  }
 
 }

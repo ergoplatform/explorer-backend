@@ -50,7 +50,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get total amount of all unspent main-chain outputs with given `ergoTree`(s).
     */
-  def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): D[List[(HexString, Long)]]
+  def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): D[Map[HexString, Long]]
 
   /** Get balances of all addresses in the network.
     */
@@ -70,7 +70,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Count outputs with a given `ergoTree`(s) from persistence.
     */
-  def getUsedStateByErgoTree(ergoTree: NonEmptyList[HexString]): D[List[(HexString, Boolean)]]
+  def getUsedStateByErgoTree(ergoTree: NonEmptyList[HexString]): D[Map[HexString, Boolean]]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence.
     */
@@ -247,8 +247,8 @@ object OutputRepo {
     def countAllByErgoTree(ergoTree: HexString): D[Int] =
       QS.countAllByErgoTree(ergoTree).unique.liftConnectionIO
 
-    def getUsedStateByErgoTree(ergoTrees: NonEmptyList[HexString]): D[List[(HexString, Boolean)]] =
-      ergoTrees.toList.map(tree => getUsedStateByErgoTree(tree)).sequence
+    def getUsedStateByErgoTree(ergoTrees: NonEmptyList[HexString]): D[Map[HexString, Boolean]] =
+      ergoTrees.toList.map(tree => getUsedStateByErgoTree(tree)).sequence.map(_.toMap)
 
     private def getUsedStateByErgoTree(ergoTree: HexString): D[(HexString, Boolean)] =
       QS.getUsedStateByErgoTree(ergoTree).map((ergoTree, _)).unique.liftConnectionIO
@@ -271,8 +271,8 @@ object OutputRepo {
     def sumUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[Long] =
       QS.sumUnspentByErgoTree(ergoTree, maxHeight).unique.liftConnectionIO
 
-    def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): D[List[(HexString, Long)]] =
-      QS.sumUnspentByErgoTree(ergoTrees, maxHeight).to[List].liftConnectionIO
+    def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): D[Map[HexString, Long]] =
+      QS.sumUnspentByErgoTree(ergoTrees, maxHeight).to[List].map(_.toMap).liftConnectionIO
 
     def balanceStatsMain(offset: Int, limit: Int): D[List[(Address, Long)]] =
       QS.balanceStatsMain(offset, limit).to[List].liftConnectionIO
