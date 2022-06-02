@@ -54,18 +54,17 @@ object MempoolProps {
       val ergoTree = addressToErgoTreeNewtype(address)
       txs
         .countByErgoTree(ergoTree.value)
-        .flatMap { total =>
-          txs
-            .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
-            .chunkN(settings.chunkSize)
-            .through(mkTransaction)
-            .to[List]
-            .map { poolItems =>
-              total match {
-                case 0 => Balance.empty
-                case _ => BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
+        .flatMap {
+          case 0 => Balance.empty.pure[D]
+          case _ =>
+            txs
+              .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+              .chunkN(settings.chunkSize)
+              .through(mkTransaction)
+              .to[List]
+              .map { poolItems =>
+                BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
               }
-            }
         }
         .thrushK(trans.xa)
     }
