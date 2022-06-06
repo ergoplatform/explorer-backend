@@ -1,9 +1,9 @@
 version: '3.4'
 
 services:
-  explorer-postgres:
+  postgres:
     image: postgres:11-alpine
-    container_name: explorer-postgres
+    container_name: postgres
     shm_size: 4g
     environment:
       POSTGRES_PASSWORD: 1234
@@ -12,13 +12,13 @@ services:
     volumes:
       - ./sql:/docker-entrypoint-initdb.d
       - ./data/postgres:/var/lib/postgresql/data:rw
-  explorer-redis:
-    image: redis:latest
-    container_name: explorer-redis
+  redis:
+    image: redis
+    container_name: redis
     restart: always
     command: ["redis-server"]
     ports:
-       - "127.0.0.1:6379:6379"
+       - "6379:6379"
     volumes:
       - ./data/redis:/usr/local/etc/redis
   chain-grabber:
@@ -29,8 +29,8 @@ services:
     volumes:
       - ../modules/chain-grabber/src/main:/explorer-backend/modules/chain-grabber/src/main
     depends_on:
-      - explorer-postgres
-      - explorer-redis
+      - postgres
+      - redis
   utx-broadcaster:
     container_name: utx-broadcaster
     build:
@@ -39,8 +39,8 @@ services:
     volumes:
       - ../modules/utx-broadcaster/src/main:/explorer-backend/modules/utx-broadcaster/src/main
     depends_on:
-      - explorer-postgres
-      - explorer-redis
+      - postgres
+      - redis
   utx-tracker:
     container_name: utx-tracker
     build:
@@ -49,15 +49,19 @@ services:
     volumes:
       - ../modules/utx-tracker/src/main:/explorer-backend/modules/utx-tracker/src/main
     depends_on:
-      - explorer-postgres
-      - explorer-redis
+      - postgres
+      - redis
   explorer-api:
     container_name: explorer-api
     build:
       context: ..
       dockerfile: modules/explorer-api/Dockerfile
     volumes:
+      - ../modules/explorer-api/src/main/resources/application.conf:/application.conf
+      - ../modules/explorer-api/src/main/resources/logback.xml:/logback.xml
       - ../modules/explorer-api/src/main:/explorer-backend/modules/explorer-api/src/main
     depends_on:
-      - explorer-postgres
-      - explorer-redis
+      - postgres
+      - redis
+    command:
+      - /application.conf
