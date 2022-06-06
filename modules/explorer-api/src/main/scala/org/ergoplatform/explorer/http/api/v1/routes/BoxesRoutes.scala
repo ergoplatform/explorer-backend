@@ -41,7 +41,8 @@ final class BoxesRoutes[
     getUnspentOutputsByErgoTreeTemplateHashR <+>
     getOutputsByAddressR <+>
     getUnspentOutputsByAddressR <+>
-    getOutputByIdR
+    getOutputByIdR <+>
+    `getUnspent&UnconfirmedOutputsMergedByAddressR`
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -122,6 +123,17 @@ final class BoxesRoutes[
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getUnspentOutputsByAddressDef) { case (address, paging, ord) =>
       service.getUnspentOutputsByAddress(address, paging, ord).adaptThrowable.value
+    }
+
+  private def `getUnspent&UnconfirmedOutputsMergedByAddressR`: HttpRoutes[F] =
+    interpreter.toRoutes(defs.`getUnspent&UnconfirmedOutputsMergedByAddressDef`) { case (address, sorting) =>
+      service
+        .`getUnspent&UnconfirmedOutputsMergedByAddress`(
+          address,
+          sorting
+        )
+        .adaptThrowable
+        .value
     }
 
   private def searchOutputsR: HttpRoutes[F] =

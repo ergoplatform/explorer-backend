@@ -7,7 +7,7 @@ import doobie.Fragments.in
 import doobie.LogHandler
 import doobie.util.fragment.Fragment
 import doobie.util.query.Query0
-import org.ergoplatform.explorer.TxId
+import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 import org.ergoplatform.explorer.db.models.UInput
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUInput
 
@@ -92,4 +92,20 @@ object UInputQuerySet extends QuerySet {
           |""".stripMargin
     in(queryFr, txIds).query[ExtendedUInput]
   }
+
+  def getAllUInputBoxIdsByErgoTree(ergoTree: HexString): Query0[BoxId] =
+    fr"""
+        |select distinct on (i.box_id, i.tx_id)
+        |  i.box_id
+        |from node_u_inputs i
+        |left join node_outputs o on i.box_id = o.box_id
+        |left join node_u_outputs ou on i.box_id = ou.box_id
+        |where (o.box_id is not null or ou.box_id is not null) and i.tx_id in
+        | ( select distinct on (t.id) t.id from node_u_transactions t
+        |    left join node_u_inputs ui on ui.tx_id = t.id
+        |    left join node_u_outputs uo on uo.tx_id = t.id
+        |    left join node_outputs o on o.box_id = ui.box_id
+        |    where uo.ergo_tree = $ergoTree or o.ergo_tree = $ergoTree)    
+        |""".stripMargin
+      .query[BoxId]
 }

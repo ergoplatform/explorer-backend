@@ -164,6 +164,15 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
     ord: OrderingString
   ): fs2.Stream[F, ExtendedOutput] = ???
 
+  /** Get unspent main-chain outputs with a given `ergoTree` from persistence
+    * & filter out outputs spent in mempool (for unconfirmed transactions)
+    */
+  override def streamUnspentByErgoTree(
+    ergoTree: HexString,
+    ordering: OrderingString,
+    excludedBoxes: Option[NonEmptyList[BoxId]]
+  ): fs2.Stream[F, ExtendedOutput] = ???
+
   /** Get total amount of all unspent main-chain outputs with given `ergoTree`(s).
     */
   override def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): F[Map[HexString, Long]] = ???

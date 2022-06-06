@@ -24,7 +24,7 @@ import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
-
+import org.ergoplatform.explorer.syntax.stream._
 import tofu.Throws
 import tofu.syntax.monadic._
 import tofu.syntax.raise._

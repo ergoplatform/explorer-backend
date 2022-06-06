@@ -85,6 +85,16 @@ trait OutputRepo[D[_], S[_[_], _]] {
     */
   def countUnspentByErgoTree(ergoTree: HexString): D[Int]
 
+  /** Get unspent main-chain outputs with a given `ergoTree` from persistence
+    * & filter out outputs spent in mempool (for unconfirmed transactions)
+    */
+
+  def streamUnspentByErgoTree(
+    ergoTree: HexString,
+    ordering: OrderingString,
+    excludedBoxes: Option[NonEmptyList[BoxId]] // boxes spent in unconfirmed transactions
+  ): Stream[D, ExtendedOutput]
+
   /** Get all main-chain outputs that are protected with given ergo tree template.
     */
   def streamAllByErgoTreeTemplateHash(
@@ -297,6 +307,17 @@ object OutputRepo {
       limit: Int
     ): Stream[D, ExtendedOutput] =
       QS.getAllByErgoTreeTemplateHash(hash, offset, limit).stream.translate(liftK)
+
+    def streamUnspentByErgoTree(
+      ergoTree: HexString,
+      ordering: OrderingString,
+      excludedBoxes: Option[NonEmptyList[BoxId]] // boxes spent in unconfirmed transactions
+    ): Stream[D, ExtendedOutput] =
+      excludedBoxes match {
+        case Some(eBoxes) =>
+          QS.getMainUnspentByErgoTreeFiltered(ergoTree, 0, Int.MaxValue, ordering, eBoxes).stream.translate(liftK)
+        case None => QS.getMainUnspentByErgoTree(ergoTree, 0, Int.MaxValue, ordering).stream.translate(liftK)
+      }
 
     def countAllByErgoTreeTemplateHash(hash: ErgoTreeTemplateHash): D[Int] =
       QS.countAllByErgoTreeTemplateHash(hash).unique.liftConnectionIO
