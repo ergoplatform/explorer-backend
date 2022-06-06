@@ -3,13 +3,14 @@ package org.ergoplatform.explorer.http.api.v1.services
 import cats.effect.Sync
 import cats.{FlatMap, Monad}
 import mouse.anyf._
-import org.ergoplatform.explorer.{CRaise, TokenId, TokenSymbol}
+import org.ergoplatform.explorer.{CRaise, TokenId, TokenName, TokenSymbol}
 import org.ergoplatform.explorer.Err.RequestProcessingErr.InconsistentDbData
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
+import org.ergoplatform.explorer.http.api.v1.TokenStatus
 import org.ergoplatform.explorer.http.api.v1.models.{CheckTokenInfo, GenuineTokenInfo, TokenInfo}
 import org.ergoplatform.explorer.http.api.v1.utils.TokenVerificationOptionT
 import tofu.syntax.monadic._
@@ -33,7 +34,7 @@ trait Tokens[F[_]] {
 
   /** Check token verification status
     */
-  def checkToken(tokenId: TokenId, tokenName: String): F[CheckTokenInfo]
+  def checkToken(tokenId: TokenId, tokenName: TokenName): F[CheckTokenInfo]
 
   /** Get all genuine tokens (Eip0021)
     */
@@ -88,14 +89,14 @@ object Tokens {
         }
         .thrushK(trans.xa)
 
-    def checkToken(tokenId: TokenId, tokenName: String): F[CheckTokenInfo] =
+    def checkToken(tokenId: TokenId, tokenName: TokenName): F[CheckTokenInfo] =
       (
         for {
           genuineT  <- genuineTokenRepo.get(tokenId)
           blockedT  <- blockedTokenRepo.get(tokenId)
           genuineTs <- genuineTokenRepo.getByNameAndUniqueOP(tokenName, unique = true)
           ops = TokenVerificationOptionT(genuineT, blockedT, genuineTs)
-        } yield CheckTokenInfo(ops.getOrElse(0), genuineT.map(GenuineTokenInfo(_)))
+        } yield CheckTokenInfo(ops.getOrElse(TokenStatus.parse(0)), genuineT.map(GenuineTokenInfo(_)))
       ) ||> trans.xa
 
     def getGenuineTokenList(paging: Paging): F[Items[GenuineTokenInfo]] =
@@ -110,15 +111,4 @@ object Tokens {
         bts   <- blockedTokenRepo.getAll(paging.offset, paging.limit).map(_.map(_.tokenName))
       } yield Items(bts, total)) ||> trans.xa
   }
-
-  /*
-     ## Token authenticity verification algorithm
-     The verification algorithm relies on a list of blocked tokens and a list of genuine tokens that can have a unique name.
-     The token to test is checked as follows:
-     - Is the token id listed in verified tokens? If yes, the token is **verified**.
-     - Is the token id listed in blocked tokens? If yes, the token is **blocked**.
-     - Is the token id not listed, but its name is the name of a verified token with unique name? If yes, the token is **suspicious**.
-     - If nothing applies, the token authenticity is **unknown**.
-   */
-
 }

@@ -3,6 +3,8 @@ package org.ergoplatform.explorer.v1.utils
 import cats.effect.{IO, Sync}
 import cats.syntax.option._
 import doobie.free.connection.ConnectionIO
+import org.ergoplatform.explorer.TokenName
+import org.ergoplatform.explorer.http.api.v1.TokenStatus.TokenStatus.{Blocked, Suspicious, Unknown, Verified}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockedToken, GenuineToken}
 import org.ergoplatform.explorer.db.repositories.{BlockedTokenRepo, GenuineTokenRepo}
@@ -24,7 +26,7 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
         repo.insert(genuineToken).runWithIO()
         val gtOps = repo.get(genuineToken.id).runWithIO()
         gtOps should be(Some(genuineToken))
-        isVerified(gtOps) should be(Some(verified))
+        isVerified(gtOps) should be(Verified.some)
       }
     }
   }
@@ -35,7 +37,7 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
         repo.insert(blockedToken).runWithIO()
         val btOPs = repo.get(blockedToken.tokenId).runWithIO()
         btOPs should be(Some(blockedToken))
-        isBlocked(btOPs) should be(blocked.some)
+        isBlocked(btOPs) should be(Blocked.some)
       }
     }
   }
@@ -47,8 +49,8 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
       forSingleInstance(genuineTokenGen(tokenName, uniqueName = true)) { genuineToken =>
         repo.insert(genuineToken).runWithIO()
         repo.get(genuineToken.id).runWithIO() should be(Some(genuineToken))
-        val gTsOps = repo.getByNameAndUnique(tokenName, unique = true).runWithIO()
-        isSus(gTsOps.some) should be(sus.some)
+        val gTsOps = repo.getByNameAndUnique(TokenName(tokenName), unique = true).runWithIO()
+        isSuspicious(gTsOps.some) should be(Suspicious.some)
       }
     }
   }
@@ -68,9 +70,9 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
         val genuineT: Option[GenuineToken] = genuineTokenRepo.get(t1.id).runWithIO()
         val blockedT: Option[BlockedToken] = blockedTokenRepo.get(t1.id).runWithIO()
         val genuineTs: Option[List[GenuineToken]] =
-          genuineTokenRepo.getByNameAndUnique(token1Name, unique = true).runWithIO().some
+          genuineTokenRepo.getByNameAndUnique(TokenName(token1Name), unique = true).runWithIO().some
 
-        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Some(verified))
+        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Verified.some)
       }
     }
   }
@@ -88,9 +90,9 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
         val genuineT: Option[GenuineToken] = genuineTokenRepo.get(bT.tokenId).runWithIO()
         val blockedT: Option[BlockedToken] = blockedTokenRepo.get(bT.tokenId).runWithIO()
         val genuineTs: Option[List[GenuineToken]] =
-          genuineTokenRepo.getByNameAndUnique(bT.tokenName, unique = true).runWithIO().some
+          genuineTokenRepo.getByNameAndUnique(TokenName(bT.tokenName), unique = true).runWithIO().some
 
-        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Some(blocked))
+        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Blocked.some)
       }
     }
   }
@@ -111,9 +113,9 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
         val genuineT: Option[GenuineToken] = genuineTokenRepo.get(t1.id).runWithIO()
         val blockedT: Option[BlockedToken] = blockedTokenRepo.get(t1.id).runWithIO()
         val genuineTs: Option[List[GenuineToken]] =
-          genuineTokenRepo.getByNameAndUnique(token1Name, unique = true).runWithIO().some
+          genuineTokenRepo.getByNameAndUnique(TokenName(token1Name), unique = true).runWithIO().some
 
-        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Some(blocked))
+        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Blocked.some)
       }
     }
   }
@@ -133,9 +135,9 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
         val genuineT: Option[GenuineToken] = genuineTokenRepo.get(sT._1).runWithIO()
         val blockedT: Option[BlockedToken] = blockedTokenRepo.get(sT._1).runWithIO()
         val genuineTs: Option[List[GenuineToken]] =
-          genuineTokenRepo.getByNameAndUnique(sT._2, unique = true).runWithIO().some
+          genuineTokenRepo.getByNameAndUnique(TokenName(sT._2), unique = true).runWithIO().some
 
-        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Some(sus))
+        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Suspicious.some)
       }
     }
   }
@@ -154,13 +156,13 @@ class TokenVerificationSpec extends AnyFlatSpec with should.Matchers with RealDb
         val genuineT: Option[GenuineToken] = genuineTokenRepo.get(sT._1).runWithIO()
         val blockedT: Option[BlockedToken] = blockedTokenRepo.get(sT._1).runWithIO()
         val genuineTs: Option[List[GenuineToken]] =
-          genuineTokenRepo.getByNameAndUniqueOP(sT._2, unique = true).runWithIO()
+          genuineTokenRepo.getByNameAndUniqueOP(TokenName(sT._2), unique = true).runWithIO()
 
         println(s"genuineT: $genuineT")
         println(s"blockedT: $blockedT")
         println(s"genuineTs: $genuineTs")
 
-        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Some(unknown))
+        TokenVerificationOptionT(genuineT, blockedT, genuineTs) should be(Unknown.some)
       }
     }
   }

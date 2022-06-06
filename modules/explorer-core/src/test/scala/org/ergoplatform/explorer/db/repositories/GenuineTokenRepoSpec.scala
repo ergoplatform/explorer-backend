@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.db.repositories
 
 import cats.effect.{IO, Sync}
 import doobie.free.connection.ConnectionIO
+import org.ergoplatform.explorer.TokenName
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.GenuineToken
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
@@ -42,8 +43,8 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
         genuineTokens.foreach(repo.insert(_).runWithIO())
 
         repo.get(tkT.id).runWithIO() should be(None)
-        repo.getByNameAndUnique("TOKEN#1A", unique = false).runWithIO() should be(tkF)
-        repo.getByNameAndUnique("TOKEN#1A", unique = true).runWithIO() should be(List())
+        repo.getByNameAndUnique(TokenName("TOKEN#1A"), unique = false).runWithIO() should be(tkF)
+        repo.getByNameAndUnique(TokenName("TOKEN#1A"), unique = true).runWithIO() should be(List())
       }
     }
   }
@@ -66,8 +67,8 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
         genuineTokens.foreach(repo.insert(_).runWithIO())
 
         repo.get(tkT.id).runWithIO() should be(Some(tkT))
-        repo.getByNameAndUnique("TOKEN#1B", unique = true).runWithIO() should be(tksT)
-        repo.getByNameAndUnique("TOKEN#1B", unique = false).runWithIO() should be(List())
+        repo.getByNameAndUnique(TokenName("TOKEN#1B"), unique = true).runWithIO() should be(tksT)
+        repo.getByNameAndUnique(TokenName("TOKEN#1B"), unique = false).runWithIO() should be(List())
       }
     }
   }
@@ -76,7 +77,7 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
     withGenuineTokenRepo[ConnectionIO] { repo =>
       forSingleInstance(genuineTokenGen("TOKEN#1C", uniqueName = true)) { genuineToken =>
         repo.insertUnsafe(genuineToken).runWithIO()
-        repo.getByNameAndUnique("TOKEN#1C", unique = true).runWithIO() should be(List(genuineToken))
+        repo.getByNameAndUnique(TokenName("TOKEN#1C"), unique = true).runWithIO() should be(List(genuineToken))
       }
     }
   }
@@ -97,9 +98,9 @@ class GenuineTokenRepoSpec extends AnyFlatSpec with should.Matchers with RealDbT
         val tk2 = genuineTokens.filter(_.tokenName == "TOKEN#2D")
         genuineTokens.foreach(repo.insertUnsafe(_).runWithIO())
 
-        repo.getByNameAndUnique("TOKEN#1D", unique = true).runWithIO() should be(List.empty[GenuineToken])
-        repo.getByNameAndUnique("TOKEN#1D", unique = false).runWithIO() should be(tk1)
-        repo.getByNameAndUnique("TOKEN#2D", unique = true).runWithIO() should be(tk2)
+        repo.getByNameAndUnique(TokenName("TOKEN#1D"), unique = true).runWithIO() should be(List.empty[GenuineToken])
+        repo.getByNameAndUnique(TokenName("TOKEN#1D"), unique = false).runWithIO() should be(tk1)
+        repo.getByNameAndUnique(TokenName("TOKEN#2D"), unique = true).runWithIO() should be(tk2)
       }
     }
   }

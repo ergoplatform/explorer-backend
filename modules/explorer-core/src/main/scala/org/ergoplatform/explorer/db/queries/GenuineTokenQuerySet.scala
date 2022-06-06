@@ -4,7 +4,7 @@ import doobie.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.log.LogHandler
 import doobie.util.query.Query0
-import org.ergoplatform.explorer.TokenId
+import org.ergoplatform.explorer.{TokenId, TokenName}
 import org.ergoplatform.explorer.db.models.GenuineToken
 
 object GenuineTokenQuerySet extends QuerySet {
@@ -41,7 +41,7 @@ object GenuineTokenQuerySet extends QuerySet {
          |where LOWER(gt.token_name) = LOWER($name)
          |""".stripMargin.query[GenuineToken]
 
-  def get(name: String, unique: Boolean): Query0[GenuineToken] =
+  def get(name: TokenName, unique: Boolean): Query0[GenuineToken] =
     sql"""
          |select gt.token_id, gt.token_name, gt.unique_name, gt.issuer from genuine_tokens gt
          |where LOWER(gt.token_name) = LOWER($name)

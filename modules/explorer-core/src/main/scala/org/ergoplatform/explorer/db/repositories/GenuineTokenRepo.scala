@@ -7,7 +7,7 @@ import derevo.derive
 import doobie.ConnectionIO
 import doobie.free.implicits._
 import doobie.util.log.LogHandler
-import org.ergoplatform.explorer.TokenId
+import org.ergoplatform.explorer.{TokenId, TokenName}
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.GenuineToken
@@ -29,9 +29,9 @@ trait GenuineTokenRepo[D[_]] {
 
   def getByName(tokenName: String): D[List[GenuineToken]]
 
-  def getByNameAndUnique(tokenName: String, unique: Boolean): D[List[GenuineToken]]
+  def getByNameAndUnique(tokenName: TokenName, unique: Boolean): D[List[GenuineToken]]
 
-  def getByNameAndUniqueOP(tokenName: String, unique: Boolean): D[Option[List[GenuineToken]]]
+  def getByNameAndUniqueOP(tokenName: TokenName, unique: Boolean): D[Option[List[GenuineToken]]]
 
   def getAll(offset: Int, limit: Int): D[List[GenuineToken]]
 
@@ -74,10 +74,10 @@ object GenuineTokenRepo {
     override def countAll: ConnectionIO[Int] = QS.countAll.unique
 
     // can only be one genuine token with a tokenName and uniqueName=true
-    override def getByNameAndUnique(tokenName: String, unique: Boolean): ConnectionIO[List[GenuineToken]] =
+    override def getByNameAndUnique(tokenName: TokenName, unique: Boolean): ConnectionIO[List[GenuineToken]] =
       QS.get(tokenName, unique).to[List]
 
-    override def getByNameAndUniqueOP(tokenName: String, unique: Boolean): ConnectionIO[Option[List[GenuineToken]]] =
+    override def getByNameAndUniqueOP(tokenName: TokenName, unique: Boolean): ConnectionIO[Option[List[GenuineToken]]] =
       QS.get(tokenName, unique).to[List].map {
         case Nil     => None
         case List()  => None

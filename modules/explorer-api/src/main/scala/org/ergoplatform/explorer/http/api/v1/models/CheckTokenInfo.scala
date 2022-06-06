@@ -2,11 +2,12 @@ package org.ergoplatform.explorer.http.api.v1.models
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import org.ergoplatform.explorer.http.api.v1.TokenStatus
 import sttp.tapir.Schema
 
 @derive(encoder, decoder)
 final case class CheckTokenInfo(
-  genuine: Int,
+  genuine: TokenStatus,
   token: Option[GenuineTokenInfo]
 )
 
