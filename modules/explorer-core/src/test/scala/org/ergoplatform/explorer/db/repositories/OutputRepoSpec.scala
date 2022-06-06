@@ -162,7 +162,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (
-      HeaderRepo[D],
+      HeaderRepo[D, fs2.Stream],
       TransactionRepo[D, fs2.Stream],
       OutputRepo[D, fs2.Stream],
       AssetRepo[D, fs2.Stream]

@@ -19,7 +19,8 @@ final class BlocksRoutes[
 
   val defs = new BlocksEndpointDefs[F](settings)
 
-  val routes: HttpRoutes[F] = streamBlocksR <+> getBlocksR <+> getBlockSummaryByIdR <+> getBlockHeadersR
+  val routes: HttpRoutes[F] =
+    streamBlocksR <+> getBlocksR <+> getBlockSummaryByIdR <+> getBlockHeadersR <+> streamBlocksSummaryR
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -36,6 +37,11 @@ final class BlocksRoutes[
       streaming.bytesStream(blocks.streamBlocks(gix, limit))
     }
 
+  private def streamBlocksSummaryR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.streamBlocksSummaryDef) { case (paging, sorting) =>
+      streaming.bytesStream(blocks.streamBlockSummaries(paging, sorting))
+    }
+
   private def getBlockSummaryByIdR: HttpRoutes[F] =
     interpreter.toRoutes(defs.getBlockSummaryByIdDef) { id =>
       blocks
@@ -46,7 +52,7 @@ final class BlocksRoutes[
     }
 
   private def getBlockHeadersR: HttpRoutes[F] =
-    interpreter.toRoutes(defs.getBlockHeadersDef) { case (paging, sorting)  =>
+    interpreter.toRoutes(defs.getBlockHeadersDef) { case (paging, sorting) =>
       blocks
         .getBlockHeaders(paging, sorting)
         .adaptThrowable

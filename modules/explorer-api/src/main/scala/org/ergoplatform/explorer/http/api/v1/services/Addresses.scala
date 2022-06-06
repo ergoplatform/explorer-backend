@@ -30,7 +30,7 @@ object Addresses {
       .mapN(new Live(_, _, _, _, _)(trans))
 
   final class Live[F[_], D[_]: Monad](
-    headerRepo: HeaderRepo[D],
+    headerRepo: HeaderRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],

@@ -90,7 +90,7 @@ class TransactionRepoSpec extends PropSpec with Matchers with RealDbTest with Sc
   }
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
-    body: (HeaderRepo[D], TransactionRepo[D, fs2.Stream]) => Any
+    body: (HeaderRepo[D, fs2.Stream], TransactionRepo[D, fs2.Stream]) => Any
   ): Any =
     body(
       repositories.HeaderRepo[IO, D].unsafeRunSync(),

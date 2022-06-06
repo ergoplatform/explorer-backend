@@ -117,7 +117,7 @@ object Boxes {
     D[_]: Monad: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: CompileStream
   ](
     serviceSettings: ServiceSettings,
-    headers: HeaderRepo[D],
+    headers: HeaderRepo[D, Stream],
     outputs: OutputRepo[D, Stream],
     assets: AssetRepo[D, Stream]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
