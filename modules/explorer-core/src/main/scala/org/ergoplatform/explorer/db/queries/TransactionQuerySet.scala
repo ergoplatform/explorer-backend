@@ -1,13 +1,12 @@
 package org.ergoplatform.explorer.db.queries
 
-import doobie.LogHandler
+import cats.data.NonEmptyList
+import doobie._
 import doobie.implicits._
-import doobie.refined.implicits._
-import doobie.util.fragment.Fragment
 import doobie.util.query.Query0
 import doobie.util.update.Update0
 import org.ergoplatform.explorer.constraints.OrderingString
-import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, BlockId, TxId}
+import org.ergoplatform.explorer.{Address, BlockId, ErgoTreeTemplateHash, TxId}
 import org.ergoplatform.explorer.db.models.Transaction
 
 /** A set of queries for doobie implementation of [TransactionRepo].
@@ -49,6 +48,14 @@ object TransactionQuerySet extends QuerySet {
          |order by t.index asc
          |""".stripMargin.query[Transaction]
 
+  def getAllByBlockIds(blockIds: NonEmptyList[BlockId])(implicit lh: LogHandler): Query0[Transaction] = {
+    val q =
+      sql"""
+           |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain from node_transactions t
+           |""".stripMargin
+    (q ++ Fragments.in(fr"where t.header_id", blockIds) ++ sql"order by t.index asc").query[Transaction]
+  }
+
   def getRecentIds(implicit lh: LogHandler): Query0[TxId] =
     sql"""
          |select t.id from node_transactions t
@@ -60,23 +67,29 @@ object TransactionQuerySet extends QuerySet {
   def getAllRelatedToAddress(
     address: Address,
     offset: Int,
-    limit: Int
+    limit: Int,
+    inclusionHeightRangeOp: Option[(Int, Int)] = None
   )(implicit lh: LogHandler): Query0[Transaction] =
-    sql"""
-         |select distinct t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain
-         |from node_transactions t
-         |inner join (
-         |  select os.tx_id from node_outputs os
-         |  where os.main_chain = true and os.address = $address
-         |  union
-         |  select i.tx_id from node_outputs os
-         |  left join node_inputs i on (i.box_id = os.box_id and i.main_chain = true)
-         |  where os.main_chain = true and os.address = $address
-         |) as os on os.tx_id = t.id
-         |where t.main_chain = true
-         |order by t.timestamp desc
-         |offset ${offset.toLong} limit ${limit.toLong}
-         |""".stripMargin.query[Transaction]
+    Fragment
+      .const(
+        s"""
+          |select distinct t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain
+          |from node_transactions t
+          |inner join (
+          |  select os.tx_id from node_outputs os
+          |  where os.main_chain = true and os.address = '$address'
+          |  union
+          |  select i.tx_id from node_outputs os
+          |  left join node_inputs i on (i.box_id = os.box_id and i.main_chain = true)
+          |  where os.main_chain = true and os.address = '$address'
+          |) as os on os.tx_id = t.id
+          |where t.main_chain = true
+          |${inclusionHeightRangeOp.map(range => inclusionHeightFilter(range)).getOrElse("")}
+          |order by t.timestamp desc
+          |offset ${offset.toLong} limit ${limit.toLong}
+          |""".stripMargin
+      )
+      .query[Transaction]
 
   def getAll(minGix: Long, limit: Int)(implicit lh: LogHandler): Query0[Transaction] =
     sql"""
@@ -87,19 +100,25 @@ object TransactionQuerySet extends QuerySet {
          |order by t.global_index asc
          |""".stripMargin.query[Transaction]
 
-  def countRelatedToAddress(address: Address)(implicit lh: LogHandler): Query0[Int] =
-    sql"""
-         |select count(distinct t.id) from node_transactions t
-         |inner join (
-         |  select os.tx_id from node_outputs os
-         |  where os.main_chain = true and os.address = $address
-         |  union
-         |  select i.tx_id from node_outputs os
-         |  left join node_inputs i on (i.box_id = os.box_id and i.main_chain = true)
-         |  where os.main_chain = true and os.address = $address
-         |) as os on os.tx_id = t.id
-         |where t.main_chain = true
-         |""".stripMargin.query[Int]
+  def countRelatedToAddress(address: Address, inclusionHeightRangeOp: Option[(Int, Int)] = None)(implicit
+    lh: LogHandler
+  ): Query0[Int] =
+    Fragment
+      .const(
+        s"""
+           |select count(distinct t.id) from node_transactions t
+           |inner join (
+           |  select os.tx_id from node_outputs os
+           |  where os.main_chain = true and os.address = '$address'
+           |  union
+           |  select i.tx_id from node_outputs os
+           |  left join node_inputs i on (i.box_id = os.box_id and i.main_chain = true)
+           |  where os.main_chain = true and os.address = '$address') as os on os.tx_id = t.id
+           |where t.main_chain = true
+           |${inclusionHeightRangeOp.map(range => inclusionHeightFilter(range)).getOrElse("")}
+           |""".stripMargin
+      )
+      .query[Int]
 
   def countMainSince(ts: Long): Query0[Int] =
     sql"select count(id) from node_transactions where timestamp >= $ts".query[Int]

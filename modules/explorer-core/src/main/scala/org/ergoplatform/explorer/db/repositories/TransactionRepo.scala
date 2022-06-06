@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
 import doobie.free.implicits._
@@ -36,6 +37,10 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     */
   def getAllByBlockId(id: BlockId): S[D, Transaction]
 
+  /** Get all transactions from blocks with given `ids`.
+    */
+  def getAllByBlockIds(blockIds: NonEmptyList[BlockId]): S[D, Transaction]
+
   /** Get transaction ids from latest block from main-chain.
     */
   def getRecentIds: D[List[TxId]]
@@ -56,11 +61,24 @@ trait TransactionRepo[D[_], S[_[_], _]] {
     limit: Int
   ): S[D, Transaction]
 
+  /** Get transactions related to a given `address` between given inclusion height range
+    */
+  def streamRelatedToAddress(
+    address: Address,
+    offset: Int,
+    limit: Int,
+    inclusionHeightRangeOp: Option[(Int, Int)]
+  ): S[D, Transaction]
+
   def streamTransactions(minGix: Long, limit: Int): S[D, Transaction]
 
   /** Get total number of transactions related to a given `address`.
     */
   def countRelatedToAddress(address: Address): D[Int]
+
+  /** Get total number of transactions related to a given `address` between given inclusion-height range
+    */
+  def countRelatedToAddress(address: Address, inclusionHeightRangeOp: Option[(Int, Int)]): D[Int]
 
   /** Get total number of transactions appeared in the main chain after a given timestamp `ts`.
     */
@@ -124,6 +142,9 @@ object TransactionRepo {
     def getAllByBlockId(id: BlockId): Stream[D, Transaction] =
       QS.getAllByBlockId(id).stream.translate(liftK)
 
+    def getAllByBlockIds(blockIds: NonEmptyList[BlockId]): Stream[D, Transaction] =
+      QS.getAllByBlockIds(blockIds).stream.translate(liftK)
+
     def getRecentIds: D[List[TxId]] =
       QS.getRecentIds.to[List].liftConnectionIO
 
@@ -144,8 +165,19 @@ object TransactionRepo {
     def streamTransactions(minGix: Long, limit: Int): Stream[D, Transaction] =
       QS.getAll(minGix, limit).stream.translate(liftK)
 
+    def streamRelatedToAddress(
+      address: Address,
+      offset: Int,
+      limit: Int,
+      inclusionHeightRangeOp: Option[(Int, Int)]
+    ): Stream[D, Transaction] =
+      QS.getAllRelatedToAddress(address, offset, limit, inclusionHeightRangeOp).stream.translate(liftK)
+
     def countRelatedToAddress(address: Address): D[Int] =
       QS.countRelatedToAddress(address).unique.liftConnectionIO
+
+    def countRelatedToAddress(address: Address, inclusionHeightRangeOp: Option[(Int, Int)]): D[Int] =
+      QS.countRelatedToAddress(address, inclusionHeightRangeOp).unique.liftConnectionIO
 
     def countMainSince(ts: Long): D[Int] =
       QS.countMainSince(ts).unique.liftConnectionIO

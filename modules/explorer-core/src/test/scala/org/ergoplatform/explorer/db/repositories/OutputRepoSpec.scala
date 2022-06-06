@@ -164,7 +164,7 @@ class OutputRepoSpec extends AnyFlatSpec with should.Matchers with RealDbTest {
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (
-      HeaderRepo[D],
+      HeaderRepo[D, fs2.Stream],
       TransactionRepo[D, fs2.Stream],
       OutputRepo[D, fs2.Stream],
       AssetRepo[D, fs2.Stream]

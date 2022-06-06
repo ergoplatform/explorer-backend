@@ -32,7 +32,7 @@ object Addresses {
 
   final class Live[F[_], D[_]: Monad](
     memprops: MempoolProps[F, D],
-    headerRepo: HeaderRepo[D],
+    headerRepo: HeaderRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],

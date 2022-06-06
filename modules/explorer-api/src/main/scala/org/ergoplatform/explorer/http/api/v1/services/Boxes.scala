@@ -133,7 +133,7 @@ object Boxes {
   ](
     serviceSettings: ServiceSettings,
     memprops: MempoolProps[F, D],
-    headers: HeaderRepo[D],
+    headers: HeaderRepo[D, Stream],
     outputs: OutputRepo[D, Stream],
     assets: AssetRepo[D, Stream],
     uoutputs: UOutputRepo[D, Stream],
