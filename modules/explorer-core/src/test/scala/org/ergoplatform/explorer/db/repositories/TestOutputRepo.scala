@@ -166,11 +166,11 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
 
   /** Get total amount of all unspent main-chain outputs with given `ergoTree`(s).
     */
-  override def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): F[List[(Address, Long)]] = ???
+  override def sumUnspentByErgoTree(ergoTrees: NonEmptyList[HexString], maxHeight: Int): F[Map[HexString, Long]] = ???
 
   /** Count outputs with a given `ergoTree`(s) from persistence.
     */
-  override def getUsedStateByErgoTree(ergoTree: NonEmptyList[HexString]): F[List[Boolean]] = ???
+  override def getUsedStateByErgoTree(ergoTree: NonEmptyList[HexString]): F[Map[HexString, Boolean]] = ???
 }
 
 object TestOutputRepo {
