@@ -82,7 +82,7 @@ object BoxSpec {
 
   def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (
-      HeaderRepo[D],
+      HeaderRepo[D, fs2.Stream],
       TransactionRepo[D, fs2.Stream],
       OutputRepo[D, fs2.Stream],
       UOutputRepo[D, fs2.Stream],

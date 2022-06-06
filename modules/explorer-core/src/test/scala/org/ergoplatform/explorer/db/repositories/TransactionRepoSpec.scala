@@ -8,8 +8,12 @@ import eu.timepit.refined.auto._
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalatest._
+import flatspec._
+import matchers._
+import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.Address
+import org.ergoplatform.explorer.protocol.sigma
 
 import scala.util.Try
 

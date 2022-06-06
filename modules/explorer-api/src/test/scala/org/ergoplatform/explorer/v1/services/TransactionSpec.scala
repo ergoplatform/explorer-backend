@@ -81,7 +81,7 @@ object TransactionSpec {
     } yield ()
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
-    body: (HeaderRepo[D], TransactionRepo[D, fs2.Stream], OutputRepo[D, fs2.Stream], InputRepo[D]) => Any
+    body: (HeaderRepo[D, fs2.Stream], TransactionRepo[D, fs2.Stream], OutputRepo[D, fs2.Stream], InputRepo[D]) => Any
   ): Any =
     body(
       repositories.HeaderRepo[IO, D].unsafeRunSync(),

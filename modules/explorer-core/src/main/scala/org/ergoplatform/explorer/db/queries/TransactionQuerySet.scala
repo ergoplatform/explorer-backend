@@ -1,8 +1,7 @@
 package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
-import doobie.{Fragments, LogHandler}
-import doobie.LogHandler
+import doobie._
 import doobie.implicits._
 import doobie.util.query.Query0
 import doobie.util.update.Update0
