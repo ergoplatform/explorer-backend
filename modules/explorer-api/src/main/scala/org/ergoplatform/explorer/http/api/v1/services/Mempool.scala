@@ -16,15 +16,16 @@ import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.TxIdResponse
-import org.ergoplatform.explorer.http.api.v1.models.{OutputInfo, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{Balance, OutputInfo, TotalBalance, UOutputInfo, UTransactionInfo}
 import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
+import org.ergoplatform.explorer.http.api.v1.utils.BuildUnconfirmedBalance
 import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
 import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}
-
+import org.ergoplatform.explorer.syntax.stream._
 import tofu.Throws
 import tofu.syntax.monadic._
 import tofu.syntax.raise._

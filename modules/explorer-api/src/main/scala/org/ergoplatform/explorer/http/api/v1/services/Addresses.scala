@@ -20,6 +20,10 @@ trait Addresses[F[_]] {
   def confirmedBalanceOf(address: Address, minConfirmations: Int): F[Balance]
 
   def totalBalanceOf(address: Address): F[TotalBalance]
+
+  /** Get TotalBalance of address with consideration of mempool data
+    */
+  def totalBalanceWithConsiderationOfMempoolFor(address: Address): F[TotalBalance]
 }
 
 object Addresses {
@@ -30,7 +34,7 @@ object Addresses {
     (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D], UOutputRepo[F, D], UAssetRepo[F, D])
       .mapN(new Live(memprops, _, _, _, _, _)(trans))
 
-  final class Live[F[_], D[_]: Monad](
+  final class Live[F[_]: Monad, D[_]: Monad](
     memprops: MempoolProps[F, D],
     headerRepo: HeaderRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream],
@@ -61,5 +65,11 @@ object Addresses {
         unconfirmed = Balance(offChainBalance, offChainAssets.map(TokenAmount(_)))
       )) ||> trans.xa
     }
+
+    def totalBalanceWithConsiderationOfMempoolFor(address: Address): F[TotalBalance] =
+      for {
+        confirmed   <- confirmedBalanceOf(address, 0)
+        unconfirmed <- memprops.getUnconfirmedBalanceByAddress(address, confirmed)
+      } yield TotalBalance(confirmed, unconfirmed)
   }
 }

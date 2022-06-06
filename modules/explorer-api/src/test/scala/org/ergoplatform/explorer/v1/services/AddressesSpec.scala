@@ -3,13 +3,18 @@ package org.ergoplatform.explorer.v1.services
 import cats.{Monad, Parallel}
 import cats.effect.{Concurrent, ContextShift, IO}
 import dev.profunktor.redis4cats.algebra.RedisCommands
+import doobie.free.connection.ConnectionIO
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.string.ValidByte
 import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.Address
 import org.ergoplatform.explorer.cache.Redis
+import org.ergoplatform.explorer.commonGenerators.forSingleInstance
 import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.testSyntax.runConnectionIO._
+import org.ergoplatform.explorer.db.models.aggregates.AggregatedAsset
 import org.ergoplatform.explorer.db.repositories.{
   AssetRepo,
   HeaderRepo,
@@ -31,6 +36,9 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 import org.ergoplatform.explorer.v1.services.AddressesSpec._
 import org.ergoplatform.explorer.db.models.generators._
+import org.ergoplatform.explorer.http.api.v1.models.TokenAmount
+import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.v1.services.constants.SenderAddressString
 import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 
 trait AddressesSpec
@@ -47,7 +55,82 @@ class AS_A extends AddressesSpec {
   implicit val addressEncoder: ErgoAddressEncoder =
     ErgoAddressEncoder(networkPrefix.value.toByte)
 
-  "Address Service" should "" in {}
+  "Address Service" should "get confirmed Balance (nanoErgs) of address" in {
+    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
+    import tofu.fs2Instances._
+    withResources[IO](container.mappedPort(redisTestPort))
+      .use { case (settings, utxCache, redis) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
+          val addressT = Address.fromString[Try](SenderAddressString)
+          addressT.isSuccess should be(true)
+          val addressTree = sigma.addressToErgoTreeHex(addressT.get)
+          val boxValues   = List((100.toNanoErgo, 1), (200.toNanoErgo, 1))
+          withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, _, _) =>
+            forSingleInstance(
+              balanceOfAddressGen(
+                mainChain = true,
+                address   = addressT.get,
+                addressTree,
+                values = boxValues
+              )
+            ) { infoTupleList =>
+              infoTupleList.foreach { case (header, out, tx) =>
+                headerRepo.insert(header).runWithIO()
+                oRepo.insert(out).runWithIO()
+                txRepo.insert(tx).runWithIO()
+              }
+              val balance = addr.confirmedBalanceOf(addressT.get, 0).unsafeRunSync().nanoErgs
+              balance should be(300.toNanoErgo)
+            }
+          }
+
+        }
+      }
+      .unsafeRunSync()
+  }
+
+}
+
+class AS_B extends AddressesSpec {
+
+  val networkPrefix: String Refined ValidByte = "16" // strictly run test-suite with testnet network prefix
+  implicit val addressEncoder: ErgoAddressEncoder =
+    ErgoAddressEncoder(networkPrefix.value.toByte)
+
+  "Address Service" should "get confirmed balance (tokens) of address" in {
+    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
+    import tofu.fs2Instances._
+    withResources[IO](container.mappedPort(redisTestPort))
+      .use { case (settings, utxCache, redis) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _) =>
+          val addressT = Address.fromString[Try](SenderAddressString)
+          addressT.isSuccess should be(true)
+          val addressTree = sigma.addressToErgoTreeHex(addressT.get)
+          withLiveRepos[ConnectionIO] { (headerRepo, txRepo, oRepo, _, tokenRepo, assetRepo) =>
+            forSingleInstance(
+              balanceOfAddressWithTokenGen(mainChain = true, address = addressT.get, addressTree, 1, 5)
+            ) { infoTupleList =>
+              infoTupleList.foreach { case (header, out, tx, _, token, asset) =>
+                headerRepo.insert(header).runWithIO()
+                oRepo.insert(out).runWithIO()
+                txRepo.insert(tx).runWithIO()
+                tokenRepo.insert(token).runWithIO()
+                assetRepo.insert(asset).runWithIO()
+              }
+              val tokeAmount = infoTupleList.map { x =>
+                val tk  = x._5
+                val ase = x._6
+                TokenAmount(AggregatedAsset(tk.id, ase.amount, tk.name, tk.decimals, tk.`type`))
+              }
+              val tokenBalance = addr.confirmedBalanceOf(addressT.get, 0).unsafeRunSync().tokens
+              tokenBalance should contain theSameElementsAs tokeAmount
+            }
+          }
+        }
+      }
+      .unsafeRunSync()
+  }
+
 }
 
 object AddressesSpec {
