@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.db.queries
 
-import doobie.LogHandler
+import cats.data.NonEmptyList
+import doobie.{Fragments, LogHandler}
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.fragment.Fragment
@@ -105,6 +106,33 @@ object HeaderQuerySet extends QuerySet {
          |  main_chain
          |from node_headers where parent_id = $parentId and main_chain = true
          |""".stripMargin.query[Header]
+
+  def getByParentIds(parentIds: NonEmptyList[BlockId])(implicit lh: LogHandler): Query0[Header] = {
+    val q =
+      sql"""
+         |select
+         |  id,
+         |  parent_id,
+         |  version,
+         |  height,
+         |  n_bits,
+         |  difficulty,
+         |  timestamp,
+         |  state_root,
+         |  ad_proofs_root,
+         |  transactions_root,
+         |  extension_hash,
+         |  miner_pk,
+         |  w,
+         |  n,
+         |  d,
+         |  votes,
+         |  main_chain
+         |from node_headers where main_chain = true
+         |""".stripMargin
+
+    (q ++ Fragments.in(fr"and parent_id", parentIds)).query[Header]
+  }
 
   def getAllByHeight(height: Int)(implicit lh: LogHandler): Query0[Header] =
     sql"""

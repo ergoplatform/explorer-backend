@@ -47,7 +47,7 @@ object RoutesV1Bundle {
       tokens                    <- Tokens(trans)
       assets                    <- Assets(trans)
       epochs                    <- Epochs(trans)
-      blocks                    <- Blocks(trans)
+      blocks                    <- Blocks(serviceSettings)(trans)
       transactions              <- Transactions(serviceSettings)(trans)
       infoRoutes      = StatsRoutes(infos)
       boxesRoutes     = BoxesRoutes(requestsSettings, boxes)

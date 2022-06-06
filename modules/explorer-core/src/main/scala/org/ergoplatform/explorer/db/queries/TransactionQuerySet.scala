@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.db.queries
 
-import doobie.LogHandler
+import cats.data.NonEmptyList
 import doobie._
 import doobie.implicits._
 import doobie.util.query.Query0
@@ -47,6 +47,14 @@ object TransactionQuerySet extends QuerySet {
          |where t.header_id = $id
          |order by t.index asc
          |""".stripMargin.query[Transaction]
+
+  def getAllByBlockIds(blockIds: NonEmptyList[BlockId])(implicit lh: LogHandler): Query0[Transaction] = {
+    val q =
+      sql"""
+           |select t.id, t.header_id, t.inclusion_height, t.coinbase, t.timestamp, t.size, t.index, t.global_index, t.main_chain from node_transactions t
+           |""".stripMargin
+    (q ++ Fragments.in(fr"where t.header_id", blockIds) ++ sql"order by t.index asc").query[Transaction]
+  }
 
   def getRecentIds(implicit lh: LogHandler): Query0[TxId] =
     sql"""

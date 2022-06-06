@@ -29,7 +29,7 @@ class AdProofRepoSpec extends AnyFlatSpec with should.Matchers with RealDbTest {
   }
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Functor](
-    body: (HeaderRepo[D], AdProofRepo[D]) => Any
+    body: (HeaderRepo[D, fs2.Stream], AdProofRepo[D]) => Any
   ): Any =
     body(
       repositories.HeaderRepo[IO, D].unsafeRunSync(),

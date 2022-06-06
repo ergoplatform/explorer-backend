@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.db.repositories._
 import tofu.syntax.monadic._
 
 final case class RepoBundle[D[_]](
-  headers: HeaderRepo[D],
+  headers: HeaderRepo[D, Stream],
   blocksInfo: BlockInfoRepo[D],
   blockExtensions: BlockExtensionRepo[D],
   adProofs: AdProofRepo[D],

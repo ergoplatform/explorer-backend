@@ -27,7 +27,7 @@ class BlockExtensionRepoSpec extends AnyFlatSpec with should.Matchers with RealD
   }
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
-    body: (HeaderRepo[D], BlockExtensionRepo[D]) => Any
+    body: (HeaderRepo[D, fs2.Stream], BlockExtensionRepo[D]) => Any
   ): Any =
     body(
       repositories.HeaderRepo[IO, D].unsafeRunSync(),

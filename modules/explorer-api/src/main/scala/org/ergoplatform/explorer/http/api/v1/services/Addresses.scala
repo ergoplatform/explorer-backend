@@ -42,7 +42,7 @@ object Addresses {
   final class Live[F[_]: Monad: Parallel, D[_]: Monad: CompileStream](
     settings: ServiceSettings,
     memprops: MempoolProps[F, D],
-    headerRepo: HeaderRepo[D],
+    headerRepo: HeaderRepo[D, Stream],
     outputRepo: OutputRepo[D, Stream],
     assetRepo: AssetRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],
