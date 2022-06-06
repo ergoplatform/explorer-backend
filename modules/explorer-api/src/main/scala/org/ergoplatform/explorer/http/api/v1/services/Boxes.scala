@@ -38,10 +38,6 @@ trait Boxes[F[_]] {
     */
   def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]]
 
-  /** Return combination of unspent boxes (with consideration to the Mempool) &
-    * unconfirmed boxes in Mempool
-    */
-
   def `getUnspent&UnconfirmedOutputsMergedByAddress`(
     address: Address,
     ord: SortOrder

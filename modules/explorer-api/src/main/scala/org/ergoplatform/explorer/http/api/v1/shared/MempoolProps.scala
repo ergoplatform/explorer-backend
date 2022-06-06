@@ -25,10 +25,6 @@ import tofu.syntax.raise._
 
 trait MempoolProps[F[_], D[_]] {
   def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
-  // todo: delete methods
-  def getUOutputsByAddress(address: Address): F[List[UOutputInfo]]
-  def getBoxesSpentInMempool(address: Address): F[List[BoxId]]
-  // todo: delete methods
   def mkUnspentOutputInfo: Pipe[D, Chunk[UOutput], UOutputInfo]
   def mkTransaction: Pipe[D, Chunk[UTransaction], UTransactionInfo]
 }
@@ -50,25 +46,6 @@ object MempoolProps {
     extends MempoolProps[F, D] {
 
     import repo._
-
-    def getUOutputsByAddress(address: Address): F[List[UOutputInfo]] = {
-      val ergoTree = addressToErgoTreeNewtype(address)
-      (
-        for {
-          uOut <- outputs
-                    .streamAllRelatedToErgoTree(ergoTree)
-                    .chunkN(settings.chunkSize)
-                    .through(mkUnspentOutputInfo)
-                    .to[List]
-        } yield uOut
-      ) ||> trans.xa
-    }
-
-    def getBoxesSpentInMempool(address: Address): F[List[BoxId]] = {
-      val ergoTree = addressToErgoTreeNewtype(address)
-      inputs
-        .getAllUInputBoxIdsByErgoTree(ergoTree) ||> trans.xa
-    }
 
     def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
       txs

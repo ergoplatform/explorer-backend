@@ -41,7 +41,8 @@ final class BoxesRoutes[
     getUnspentOutputsByErgoTreeTemplateHashR <+>
     getOutputsByAddressR <+>
     getUnspentOutputsByAddressR <+>
-    getOutputByIdR <+> `getUnspent&UnconfirmedOutputsMergedByAddressR`
+    getOutputByIdR <+>
+    `getUnspent&UnconfirmedOutputsMergedByAddressR`
 
   private def interpreter = Http4sServerInterpreter(opts)
 
