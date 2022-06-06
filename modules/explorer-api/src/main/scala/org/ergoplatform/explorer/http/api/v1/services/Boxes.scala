@@ -2,6 +2,7 @@ package org.ergoplatform.explorer.http.api.v1.services
 
 import cats.data.{NonEmptyList, OptionT}
 import cats.effect.Sync
+import cats.syntax.semigroupk._
 import cats.syntax.list._
 import cats.{Functor, Monad}
 import fs2.{Chunk, Pipe, Stream}
@@ -13,11 +14,11 @@ import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputRepo}
+import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputRepo, UInputRepo, UOutputRepo}
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, OutputInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, MOutputInfo, OutputInfo, UOutputInfo}
 import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.protocol.sigma._
 import org.ergoplatform.explorer.settings.ServiceSettings
@@ -36,6 +37,11 @@ trait Boxes[F[_]] {
   /** Get all outputs with the given `address` in proposition.
     */
   def getOutputsByAddress(address: Address, paging: Paging): F[Items[OutputInfo]]
+
+  def `getUnspent&UnconfirmedOutputsMergedByAddress`(
+    address: Address,
+    ord: SortOrder
+  ): F[List[MOutputInfo]]
 
   /** Get unspent outputs with the given `address` in proposition.
     */
@@ -113,17 +119,21 @@ object Boxes {
   ](serviceSettings: ServiceSettings, memprops: MempoolProps[F, D])(trans: D Trans F)(implicit
     e: ErgoAddressEncoder
   ): F[Boxes[F]] =
-    (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D]).mapN(new Live(serviceSettings, memprops, _, _, _)(trans))
+    (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D], UOutputRepo[F, D], UInputRepo[F, D]).mapN(
+      new Live(serviceSettings, memprops, _, _, _, _, _)(trans)
+    )
 
   final private class Live[
-    F[_]: Functor: CompileStream,
+    F[_]: Monad: CompileStream,
     D[_]: Monad: CRaise[*[_], RequestProcessingErr]: CRaise[*[_], RefinementFailed]: CompileStream
   ](
     serviceSettings: ServiceSettings,
     memprops: MempoolProps[F, D],
     headers: HeaderRepo[D, Stream],
     outputs: OutputRepo[D, Stream],
-    assets: AssetRepo[D, Stream]
+    assets: AssetRepo[D, Stream],
+    uoutputs: UOutputRepo[D, Stream],
+    uinputs: UInputRepo[D, Stream]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends Boxes[F] {
 
@@ -146,6 +156,37 @@ object Boxes {
             .map(Items(_, total))
         }
         .thrushK(trans.xa)
+    }
+
+    /** Get all outputs with the given `address` in proposition & filter outputs spent in the mempool (for unconfirmed transactions)
+      */
+    private def getUnspentOutputsByAddressD(
+      ergoTree: HexString,
+      ord: SortOrder,
+      excludedBoxes: Option[NonEmptyList[BoxId]]
+    ): D[List[OutputInfo]] =
+      for {
+        unspentOuts <- outputs
+                         .streamUnspentByErgoTree(ergoTree, ord.value, excludedBoxes)
+                         .chunkN(serviceSettings.chunkSize)
+                         .through(toOutputInfo)
+                         .to[List]
+      } yield unspentOuts
+
+    def `getUnspent&UnconfirmedOutputsMergedByAddress`(
+      address: Address,
+      ord: SortOrder
+    ): F[List[MOutputInfo]] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
+      (for {
+        spentBoxIds <- uinputs.getAllUInputBoxIdsByErgoTree(ergoTree)
+        mempoolOutputs <- uoutputs
+                            .streamAllRelatedToErgoTree(ergoTree)
+                            .chunkN(serviceSettings.chunkSize)
+                            .through(memprops.mkUnspentOutputInfo)
+                            .to[List]
+        unspentBoxes <- getUnspentOutputsByAddressD(ergoTree.value, ord, spentBoxIds.toNel)
+      } yield MOutputInfo.fromUOutputList(mempoolOutputs) <+> MOutputInfo.fromOutputList(unspentBoxes)) ||> trans.xa
     }
 
     def getUnspentOutputsByAddress(address: Address, paging: Paging, ord: SortOrder): F[Items[OutputInfo]] = {

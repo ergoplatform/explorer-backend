@@ -8,16 +8,20 @@ import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedUAsset, ExtendedUInput, ExtendedUOutput}
 import org.ergoplatform.explorer.db.models.{UOutput, UTransaction}
 import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.{UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{UInputInfo, UOutputInfo, UTransactionInfo}
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
-import org.ergoplatform.explorer.ErgoTree
-import org.ergoplatform.ErgoAddressEncoder
+import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
+import org.ergoplatform.{explorer, ErgoAddressEncoder}
+import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
 import org.ergoplatform.explorer.syntax.stream._
 import tofu.Throws
 import tofu.syntax.monadic._
+import tofu.syntax.streams.compile._
+import tofu.syntax.raise._
 
 trait MempoolProps[F[_], D[_]] {
   def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
