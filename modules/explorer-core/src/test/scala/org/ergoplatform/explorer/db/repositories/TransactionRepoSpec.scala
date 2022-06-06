@@ -8,12 +8,8 @@ import eu.timepit.refined.auto._
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
-import org.scalatest._
-import flatspec._
-import matchers._
-import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.Address
-import org.ergoplatform.explorer.protocol.sigma
+import org.scalatest.{Matchers, PropSpec}
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.Try
 
@@ -151,7 +147,7 @@ class TransactionRepoSpec extends AnyFlatSpec with should.Matchers with TryValue
   }
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
-    body: (HeaderRepo[D], TransactionRepo[D, fs2.Stream], OutputRepo[D, fs2.Stream], InputRepo[D]) => Any
+    body: (HeaderRepo[D, fs2.Stream], TransactionRepo[D, fs2.Stream], OutputRepo[D, fs2.Stream], InputRepo[D]) => Any
   ): Any =
     body(
       repositories.HeaderRepo[IO, D].unsafeRunSync(),

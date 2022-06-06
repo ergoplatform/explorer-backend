@@ -76,7 +76,7 @@ object BlockChainService {
     F[_]: Sync: Logger,
     D[_]: CRaise[*[_], InconsistentDbData]: Monad
   ](
-    headerRepo: HeaderRepo[D],
+    headerRepo: HeaderRepo[D, Stream],
     blockInfoRepo: BlockInfoRepo[D],
     transactionRepo: TransactionRepo[D, Stream],
     blockExtensionRepo: BlockExtensionRepo[D],

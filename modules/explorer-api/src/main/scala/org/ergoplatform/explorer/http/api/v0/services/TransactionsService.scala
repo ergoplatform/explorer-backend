@@ -62,7 +62,7 @@ object TransactionsService {
     }
 
   final private class Live[F[_]: Logger: FlatMap, D[_]: Monad](
-    headerRepo: HeaderRepo[D],
+    headerRepo: HeaderRepo[D, Stream],
     transactionRepo: TransactionRepo[D, Stream],
     inputRepo: InputRepo[D],
     dataInputRepo: DataInputRepo[D],

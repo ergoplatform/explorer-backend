@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
 import doobie.free.implicits._
@@ -35,6 +36,10 @@ trait TransactionRepo[D[_], S[_[_], _]] {
   /** Get all transactions from block with a given `id`.
     */
   def getAllByBlockId(id: BlockId): S[D, Transaction]
+
+  /** Get all transactions from blocks with given `ids`.
+    */
+  def getAllByBlockIds(blockIds: NonEmptyList[BlockId]): S[D, Transaction]
 
   /** Get transaction ids from latest block from main-chain.
     */
@@ -136,6 +141,9 @@ object TransactionRepo {
 
     def getAllByBlockId(id: BlockId): Stream[D, Transaction] =
       QS.getAllByBlockId(id).stream.translate(liftK)
+
+    def getAllByBlockIds(blockIds: NonEmptyList[BlockId]): Stream[D, Transaction] =
+      QS.getAllByBlockIds(blockIds).stream.translate(liftK)
 
     def getRecentIds: D[List[TxId]] =
       QS.getRecentIds.to[List].liftConnectionIO
