@@ -47,7 +47,7 @@ object Addresses {
     assetRepo: AssetRepo[D, Stream],
     uOutputRepo: UOutputRepo[D, Stream],
     uAssetRepo: UAssetRepo[D],
-    UTransactionRepo: UTransactionRepo[D, Stream]
+    uTransactionRepo: UTransactionRepo[D, Stream]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends Addresses[F] {
 
@@ -91,13 +91,13 @@ object Addresses {
 
     private def mkBatch(maxHeight: Int): Pipe[D, Chunk[Address], (Address, AddressInfo)] =
       for {
-        chunk            <- _
-        chunkL           <- Stream.emit(chunk.map(c => (c, sigma.addressToErgoTreeHex(c))).toList)
+        chunk <- _
+        chunkL = chunk.map(c => (c, sigma.addressToErgoTreeHex(c))).toList
         chunkHex         <- Stream.emit(chunk.map(sigma.addressToErgoTreeHex(_)).toNel).unNone
         batchUnspentSums <- Stream.eval(outputRepo.sumUnspentByErgoTree(chunkHex, maxHeight))
         batchAssets      <- Stream.eval(assetRepo.aggregateUnspentByErgoTree(chunkHex, maxHeight))
         batchUsedState   <- Stream.eval(outputRepo.getUsedStateByErgoTree(chunkHex))
-        batchUTxState    <- Stream.eval(UTransactionRepo.getUnconfirmedTransactionsState(chunkHex))
+        batchUTxState    <- Stream.eval(uTransactionRepo.getUnconfirmedTransactionsState(chunkHex))
         batchInfo <- Stream.emits(
                        AddressInfo.makeInfo(
                          chunkL,

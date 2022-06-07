@@ -103,15 +103,13 @@ object AssetRepo {
     def aggregateUnspentByErgoTree(ergoTree: HexString, maxHeight: Int): D[List[AggregatedAsset]] =
       QS.aggregateUnspentByErgoTree(ergoTree, maxHeight).to[List].liftConnectionIO
 
-    // change to Map[HextString, List[AA]]
-    // write test for Repos
     def aggregateUnspentByErgoTree(
       ergoTree: NonEmptyList[HexString],
       maxHeight: Int
     ): D[Map[HexString, List[AggregatedAsset]]] =
       ergoTree.toList.map(aggregateUnspentByErgoTreeH(_, maxHeight)).sequence.map(_.flatten.toMap)
 
-    private def aggregateUnspentByErgoTreeH( //
+    private def aggregateUnspentByErgoTreeH(
       ergoTree: HexString,
       maxHeight: Int
     ): D[Map[HexString, List[AggregatedAsset]]] =
