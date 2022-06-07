@@ -442,4 +442,25 @@ object generators {
         outputGen(mainChain = true).map(_.copy(boxId = boxId, ergoTree = tree, address = address, txId = txId))
     } yield (out, uout, uin, uTx, header, tx)
 
+  //  Gen[List[GenuineToken]]
+  def genuineTokenListGen(gtList: Iterable[(String, Boolean)]): Gen[List[GenuineToken]] =
+    Gen.sequence[List[GenuineToken], GenuineToken](gtList.map { case (name, unique) => genuineTokenGen(name, unique) })
+
+  def genuineTokenGen(tokenName: String, uniqueName: Boolean): Gen[GenuineToken] =
+    for {
+      id     <- assetIdGen
+      issuer <- Gen.oneOf[Option[String]](Some("ISSUER#1"), Some("ISSUER#2"), None)
+    } yield GenuineToken(id, tokenName, uniqueName, issuer)
+
+  def `tokenName&IDGen`(tokenName: String): Gen[(TokenId, String)] =
+    for {
+      id <- assetIdGen
+    } yield (id, tokenName)
+
+  def blockedTokenGen: Gen[BlockedToken] =
+    for {
+      id        <- assetIdGen
+      tokenName <- Gen.oneOf("BLOCKED#1", "BLOCKED#2", "BLOCKED#3")
+    } yield BlockedToken(id, tokenName)
+
 }

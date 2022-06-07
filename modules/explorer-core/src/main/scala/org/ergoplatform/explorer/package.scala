@@ -164,6 +164,32 @@ package object explorer {
     def fromStringUnsafe(s: String): TokenId = unsafeWrap(HexString.fromStringUnsafe(s))
   }
 
+  @newtype case class TokenName(value: String)
+
+  object TokenName {
+    // doobie instances
+    implicit def get: Get[TokenName] = deriving
+    implicit def put: Put[TokenName] = deriving
+
+    // circe instances
+    implicit def encoder: Encoder[TokenName] = deriving
+    implicit def decoder: Decoder[TokenName] = deriving
+
+    // tapir instances
+    implicit def plainCodec: Codec.PlainCodec[TokenName] = deriving
+
+    implicit def jsonCodec: Codec.JsonCodec[TokenName] =
+      implicitly[Codec.JsonCodec[String]].map(TokenName(_))(_.value)
+
+    implicit def schema: Schema[TokenName] =
+      Schema.schemaForString.description("Token Name").asInstanceOf[Schema[TokenName]]
+
+    implicit def validator: Validator[TokenName] =
+      Schema.schemaForString.validator.contramap[TokenName](_.value)
+
+    def fromStringUnsafe(tokenName: String): TokenName = TokenName(tokenName)
+  }
+
   @newtype case class TokenSymbol(value: String)
 
   object TokenSymbol {
