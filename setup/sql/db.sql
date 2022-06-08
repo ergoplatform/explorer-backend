@@ -21,7 +21,7 @@ CREATE DATABASE explorer;
 
 \echo 'LOADING ERGO DATABASE - CLEAN'
 
- CREATE TABLE node_headers
+CREATE TABLE node_headers
 (
     id                VARCHAR(64) PRIMARY KEY,
     parent_id         VARCHAR(64) NOT NULL,
@@ -201,8 +201,8 @@ CREATE TABLE box_registers
     id               VARCHAR(2)    NOT NULL,
     box_id           VARCHAR(64)   NOT NULL,
     value_type       VARCHAR(128)  NOT NULL,
-    serialized_value VARCHAR(8192) NOT NULL,
-    rendered_value   VARCHAR(8192) NOT NULL,
+    serialized_value VARCHAR       NOT NULL,
+    rendered_value   VARCHAR       NOT NULL,
     PRIMARY KEY (id, box_id)
 );
 
@@ -214,8 +214,8 @@ CREATE TABLE script_constants
     index            INTEGER       NOT NULL,
     box_id           VARCHAR(64)   NOT NULL,
     value_type       VARCHAR(128)  NOT NULL,
-    serialized_value VARCHAR(8192) NOT NULL,
-    rendered_value   VARCHAR(8192) NOT NULL,
+    serialized_value VARCHAR       NOT NULL,
+    rendered_value   VARCHAR       NOT NULL,
     PRIMARY KEY (index, box_id)
 );
 
@@ -312,20 +312,6 @@ CREATE TABLE tokens
 );
 
 CREATE INDEX "tokens__box_id" ON tokens (box_id);
-
-CREATE TABLE genuine_tokens
-(
-    token_id        VARCHAR(64)   PRIMARY KEY,
-    token_name      VARCHAR      NOT NULL,
-    unique_name     BOOLEAN      NOT NULL,
-    issuer          VARCHAR
-);
-
-CREATE TABLE blocked_tokens
-(
-    token_id        VARCHAR(64)   PRIMARY KEY,
-    token_name      VARCHAR      NOT NULL
-);
 
 CREATE TABLE epochs_parameters
 (
