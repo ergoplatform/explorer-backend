@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
 import doobie.free.implicits._
@@ -12,10 +13,11 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.models.Header
 import org.ergoplatform.explorer.protocol.constants
+import fs2.Stream
 
 /** [[Header]] data access operations.
   */
-trait HeaderRepo[D[_]] {
+trait HeaderRepo[D[_], S[_[_], _]] {
 
   /** Put a given `h` to persistence.
     */
@@ -32,6 +34,10 @@ trait HeaderRepo[D[_]] {
   /** Get header with a given `parentId`.
     */
   def getByParentId(parentId: BlockId): D[Option[Header]]
+
+  /** Get headers with given `parentIds`.
+    */
+  def getByParentIds(parentIds: NonEmptyList[BlockId]): D[List[Header]]
 
   /** Get all headers at the given `height`.
     */
@@ -58,16 +64,23 @@ trait HeaderRepo[D[_]] {
     order: OrderingString,
     sortBy: String
   ): D[List[Header]]
+
+  def streamHeaders(
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString,
+    orderBy: String
+  ): S[D, Header]
 }
 
 object HeaderRepo {
 
-  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[HeaderRepo[D]] =
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[HeaderRepo[D, Stream]] =
     DoobieLogHandler.create[F].map { implicit lh =>
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends HeaderRepo[D] {
+  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends HeaderRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{HeaderQuerySet => QS}
 
@@ -82,6 +95,9 @@ object HeaderRepo {
 
     def getByParentId(parentId: BlockId): D[Option[Header]] =
       QS.getByParentId(parentId).option.liftConnectionIO
+
+    def getByParentIds(parentIds: NonEmptyList[BlockId]): D[List[Header]] =
+      QS.getByParentIds(parentIds).to[List].liftConnectionIO
 
     def getAllByHeight(height: Int): D[List[Header]] =
       QS.getAllByHeight(height).to[List].liftConnectionIO
@@ -104,5 +120,13 @@ object HeaderRepo {
       orderBy: String
     ): D[List[Header]] =
       QS.getMany(offset, limit, ordering, orderBy).to[List].liftConnectionIO
+
+    def streamHeaders(
+      offset: Int,
+      limit: Int,
+      ordering: OrderingString,
+      orderBy: String
+    ): Stream[D, Header] =
+      QS.getMany(offset, limit, ordering, orderBy).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
   }
 }

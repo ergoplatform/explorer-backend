@@ -43,7 +43,7 @@ object RoutesV1Bundle {
       tokens                    <- Tokens(trans)
       assets                    <- Assets(trans)
       epochs                    <- Epochs(trans)
-      blocks                    <- Blocks(trans)
+      blocks                    <- Blocks(serviceSettings)(trans)
       transactions              <- Transactions(serviceSettings)(trans)
       addresses                 <- Addresses(trans)
       mempool                   <- Mempool(serviceSettings, utxCacheSettings, redis)(trans)
