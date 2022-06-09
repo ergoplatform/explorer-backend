@@ -5,14 +5,9 @@ TestNet configuration for explorer backend modules
 ```app.conf
 #TestNet Master Node
 network.master-nodes = ["http://195.201.82.115:9052"]
-#TestNet Master Node
 
 #TestNet DB
-db.url = "http://195.201.82.115:8082/?pgsql=postgres&username=ergo_admin&db=explorer&ns=public" 
-db.user = "postgres"
-db.pass = "iJolMnx1wsRinlk9muNidEYe3Q2Rei4LoJ5iPaus7"
-db.cp-size = 8
-#TestNet DB
+To be granted access to TestNet DB ask @ilya oskin on the community disocrd :)
 
 #TestNet Protocol
 protocol.network-prefix = 16
