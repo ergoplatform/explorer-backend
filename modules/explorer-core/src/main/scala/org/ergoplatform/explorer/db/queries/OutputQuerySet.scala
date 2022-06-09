@@ -97,6 +97,15 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
 
+  def getUsedStateByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[Boolean] =
+    sql"""
+         |select (count(distinct o.box_id) > 0)
+         |from node_outputs o
+         |where o.main_chain = true and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Boolean]
+
   def getMainByErgoTree(
     ergoTree: HexString,
     offset: Int,
@@ -157,6 +166,28 @@ object OutputQuerySet extends QuerySet {
          |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
+
+  def sumUnspentByErgoTree(
+    ergoTrees: NonEmptyList[HexString],
+    maxHeight: Int
+  )(implicit lh: LogHandler): Query0[(HexString, Long)] = {
+    val q = sql"""
+         |select sq_one.ergo_tree, sq_one.csum from 
+         | (
+         |    select o.ergo_tree as ergo_tree, coalesce(cast(sum(o.value) as bigint), 0) as csum
+         |      from node_outputs o
+         |        left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |        left join node_transactions tx on tx.id = o.tx_id
+         |      where tx.main_chain = true
+         |        and tx.inclusion_height <= $maxHeight
+         |        and o.main_chain = true
+         |        and i.box_id is null
+         |      group by o.ergo_tree, o.address
+         | ) as sq_one
+         |""".stripMargin
+
+    (q ++ Fragments.in(fr"where sq_one.ergo_tree", ergoTrees)).query[(HexString, Long)]
+  }
 
   def getAllMainUnspentIdsByErgoTree(
     ergoTree: HexString

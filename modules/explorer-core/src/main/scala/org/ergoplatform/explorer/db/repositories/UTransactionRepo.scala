@@ -1,5 +1,6 @@
 package org.ergoplatform.explorer.db.repositories
 
+import cats.Monad
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
@@ -64,16 +65,21 @@ trait UTransactionRepo[D[_], S[_[_], _]] {
   /** Count unconfirmed transactions related to the given `ergoTree`.
     */
   def countByErgoTree(ergoTree: HexString): D[Int]
+
+  /** Check if there are unconfirmed transactions for given 'ergoTree'(s)
+    */
+
+  def getUnconfirmedTransactionsState(ergoTree: NonEmptyList[HexString]): D[Map[HexString, Boolean]]
 }
 
 object UTransactionRepo {
 
-  def apply[F[_]: Sync, D[_]: LiftConnectionIO]: F[UTransactionRepo[D, Stream]] =
+  def apply[F[_]: Sync, D[_]: LiftConnectionIO: Monad]: F[UTransactionRepo[D, Stream]] =
     DoobieLogHandler.create[F].map { implicit lh =>
       new Live[D]
     }
 
-  final private class Live[D[_]: LiftConnectionIO](implicit lh: LogHandler) extends UTransactionRepo[D, Stream] {
+  final private class Live[D[_]: LiftConnectionIO: Monad](implicit lh: LogHandler) extends UTransactionRepo[D, Stream] {
 
     import org.ergoplatform.explorer.db.queries.{UTransactionQuerySet => QS}
 
@@ -117,5 +123,14 @@ object UTransactionRepo {
 
     def countByErgoTree(ergoTree: HexString): D[Int] =
       QS.countByErgoTree(ergoTree).unique.liftConnectionIO
+
+    /** Check if there are unconfirmed transactions for given 'ergoTree'(s)
+      */
+    def getUnconfirmedTransactionsState(ergoTrees: NonEmptyList[HexString]): D[Map[HexString, Boolean]] =
+      ergoTrees.toList.map(tree => getUnconfirmedTransactionsState(tree)).sequence.map(_.toMap)
+
+    private def getUnconfirmedTransactionsState(ergoTree: HexString): D[(HexString, Boolean)] =
+      QS.getUnconfirmedTransactionsState(ergoTree).map((ergoTree, _)).unique.liftConnectionIO
+
   }
 }
