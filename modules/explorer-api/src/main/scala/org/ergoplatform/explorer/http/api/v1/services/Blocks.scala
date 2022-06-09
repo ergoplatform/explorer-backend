@@ -18,7 +18,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging, Sorting}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v0.models.{BlockReferencesInfo, BlockSummary, FullBlockInfo}
-import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo, BlockSummaryV1, FullBlockInfoV1}
+import org.ergoplatform.explorer.http.api.v1.models.{BlockHeader, BlockInfo, BlockSummaryV1}
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{BlockId, CRaise}
@@ -149,7 +149,7 @@ object Blocks {
         blockInfos = chunk.map { header =>
                        val numConfirmations = bestHeight - header.height + 1
                        val trans            = groupedTxs.getOrElse(header.id, List.empty)
-                       FullBlockInfoV1(
+                       BlockSummaryV1(
                          header,
                          trans,
                          numConfirmations,
@@ -160,7 +160,7 @@ object Blocks {
                          sizes.getOrElse(header.id, 0)
                        )
                      }
-        summary <- Stream.emits(blockInfos.map(BlockSummaryV1(_)).toList)
+        summary <- Stream.emits(blockInfos.toList)
       } yield summary
 
     private def getFullBlockInfo(id: BlockId): Stream[D, Option[FullBlockInfo]] =
