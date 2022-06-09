@@ -46,6 +46,6 @@ trait RealDbTest extends CatsInstances with BeforeAndAfter with BeforeAndAfterAl
          |truncate script_constants;
          |truncate node_inputs;
          |truncate node_outputs;
-         |truncate node_headers, node_extensions, node_ad_proofs, blocks_info, node_transactions, node_assets;
+         |truncate node_headers, node_extensions, node_ad_proofs, blocks_info, node_transactions, node_assets, blocked_tokens, genuine_tokens;
          |""".stripMargin.update.run.transact(xa).unsafeRunSync()
 }

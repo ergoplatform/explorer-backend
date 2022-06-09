@@ -27,7 +27,7 @@ trait TokenRepo[D[_]] {
 
   def getAll(offset: Int, limit: Int, ordering: OrderingString, hideNfts: Boolean): D[List[Token]]
 
-  def countAll(hideNfts: Boolean): D[Int]
+  def countAll(hideNfts: Boolean = false): D[Int]
 
   /** Get all tokens matching a given `idSubstring`.
     */

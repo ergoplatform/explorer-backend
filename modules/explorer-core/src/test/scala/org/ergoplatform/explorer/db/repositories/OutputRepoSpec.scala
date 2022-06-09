@@ -9,31 +9,33 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
 import org.ergoplatform.explorer.protocol.dex
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+
+import org.scalatest._
+import flatspec._
+import matchers._
 
 import scala.util.Try
 
-class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCheckDrivenPropertyChecks {
+class OutputRepoSpec extends AnyFlatSpec with should.Matchers with RealDbTest {
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.db.models.generators._
 
-  property("insert/getByBoxId") {
+  "OutputRepo" should "insert/getByBoxId" in {
     withLiveRepos[ConnectionIO] { (hRepo, txRepo, oRepo, _) =>
       forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) { case (header, tx, outputs) =>
         hRepo.insert(header).runWithIO()
         txRepo.insert(tx).runWithIO()
         outputs.foreach { extOut =>
-          oRepo.getByBoxId(extOut.output.boxId).runWithIO() shouldBe None
+          oRepo.getByBoxId(extOut.output.boxId).runWithIO() should be(None)
           oRepo.insert(extOut.output).runWithIO()
-          oRepo.getByBoxId(extOut.output.boxId).runWithIO() shouldBe Some(extOut)
+          oRepo.getByBoxId(extOut.output.boxId).runWithIO() should be(Some(extOut))
         }
       }
     }
   }
 
-  property("getAllByAddress/getAllByErgoTree") {
+  it should "getAllByAddress/getAllByErgoTree" in {
     withLiveRepos[ConnectionIO] { (hRepo, txRepo, oRepo, _) =>
       forSingleInstance(hexStringRGen.flatMap(hex => addressGen.map(_ -> hex))) { case (address, ergoTree) =>
         forSingleInstance(extOutputsWithTxWithHeaderGen(mainChain = true)) { case (header, tx, outputs) =>
@@ -60,7 +62,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
     }
   }
 
-  ignore("insert/getUnspentSellOrders") {
+  ignore should "insert/getUnspentSellOrders" in { // TODO: IGNORED TEST 2
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, assetRepo) =>
       forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
         val contractTemplate = dex.sellContractTemplateHash
@@ -74,7 +76,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
           )
           .compile
           .toList
-          .runWithIO() shouldBe empty
+          .runWithIO() should be(empty)
 
         sellOrders.foreach { case (out, asset) =>
           assetRepo.insert(asset).runWithIO()
@@ -104,12 +106,12 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
           )
           .compile
           .toList
-          .runWithIO() shouldBe empty
+          .runWithIO() should be(empty)
       }
     }
   }
 
-  ignore("insert/getUnspentBuyOrders") {
+  ignore should "insert/getUnspentBuyOrders" in { // TODO: IGNORED TEST 3
     withLiveRepos[ConnectionIO] { (_, _, outputRepo, _) =>
       forSingleInstance(dexBuyOrderGen) { buyOrder =>
         val contractTemplate = dex.buyContractTemplateHash
@@ -123,7 +125,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
           )
           .compile
           .toList
-          .runWithIO() shouldBe empty
+          .runWithIO() should be(empty)
 
         outputRepo.insert(buyOrder).runWithIO()
 
@@ -155,7 +157,7 @@ class OutputRepoSpec extends PropSpec with Matchers with RealDbTest with ScalaCh
           )
           .compile
           .toList
-          .runWithIO() shouldBe empty
+          .runWithIO() should be(empty)
       }
     }
   }

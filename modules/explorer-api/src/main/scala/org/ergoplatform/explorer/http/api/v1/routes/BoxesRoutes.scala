@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.routes
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
+import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.syntax.routes._
@@ -15,7 +16,10 @@ import sttp.tapir.server.http4s._
 
 final class BoxesRoutes[
   F[_]: Concurrent: ContextShift: Timer: AdaptThrowableEitherT[*[_], ApiErr]
-](settings: RequestsSettings, service: Boxes[F])(implicit opts: Http4sServerOptions[F, F]) {
+](settings: RequestsSettings, service: Boxes[F])(implicit
+  opts: Http4sServerOptions[F, F],
+  e: ErgoAddressEncoder
+) {
 
   val defs = new BoxesEndpointDefs[F](settings)
 
@@ -37,7 +41,8 @@ final class BoxesRoutes[
     getUnspentOutputsByErgoTreeTemplateHashR <+>
     getOutputsByAddressR <+>
     getUnspentOutputsByAddressR <+>
-    getOutputByIdR
+    getOutputByIdR <+>
+    `getUnspent&UnconfirmedOutputsMergedByAddressR`
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -120,6 +125,17 @@ final class BoxesRoutes[
       service.getUnspentOutputsByAddress(address, paging, ord).adaptThrowable.value
     }
 
+  private def `getUnspent&UnconfirmedOutputsMergedByAddressR`: HttpRoutes[F] =
+    interpreter.toRoutes(defs.`getUnspent&UnconfirmedOutputsMergedByAddressDef`) { case (address, sorting) =>
+      service
+        .`getUnspent&UnconfirmedOutputsMergedByAddress`(
+          address,
+          sorting
+        )
+        .adaptThrowable
+        .value
+    }
+
   private def searchOutputsR: HttpRoutes[F] =
     interpreter.toRoutes(defs.searchOutputsDef) { case (query, paging) =>
       service.searchAll(query, paging).adaptThrowable.value
@@ -141,6 +157,6 @@ object BoxesRoutes {
   def apply[F[_]: Concurrent: ContextShift: Timer: Logger](
     settings: RequestsSettings,
     service: Boxes[F]
-  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F], e: ErgoAddressEncoder): HttpRoutes[F] =
     new BoxesRoutes[F](settings, service).routes
 }

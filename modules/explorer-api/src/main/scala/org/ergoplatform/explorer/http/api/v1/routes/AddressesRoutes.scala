@@ -3,8 +3,10 @@ package org.ergoplatform.explorer.http.api.v1.routes
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
 import io.chrisdavenport.log4cats.Logger
+import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.algebra.AdaptThrowable.AdaptThrowableEitherT
+import org.ergoplatform.explorer.http.api.models.InclusionHeightRange
 import org.ergoplatform.explorer.http.api.syntax.adaptThrowable._
 import org.ergoplatform.explorer.http.api.v1.defs.AddressesEndpointDefs
 import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Transactions}
@@ -16,17 +18,18 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
   settings: RequestsSettings,
   transactions: Transactions[F],
   addresses: Addresses[F]
-)(implicit opts: Http4sServerOptions[F, F]) {
+)(implicit opts: Http4sServerOptions[F, F], e: ErgoAddressEncoder) {
 
   val defs = new AddressesEndpointDefs(settings)
 
-  val routes: HttpRoutes[F] = getTxsByAddressR <+> getConfirmedBalanceR <+> getTotalBalanceR
+  val routes: HttpRoutes[F] = getTxsByAddressR <+> getConfirmedBalanceR <+> getTotalBalanceR <+> getBatchAddressInfo
 
   private def interpreter = Http4sServerInterpreter(opts)
 
   private def getTxsByAddressR =
-    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging, concise) =>
-      transactions.getByAddress(addr, paging, concise).adaptThrowable.value
+    interpreter.toRoutes(defs.getTxsByAddressDef) { case (addr, paging, concise, inH) =>
+      transactions.getByAddress(addr, paging, concise, inH).adaptThrowable.value
+
     }
 
   private def getConfirmedBalanceR =
@@ -38,6 +41,11 @@ final class AddressesRoutes[F[_]: Concurrent: ContextShift: Timer: AdaptThrowabl
     interpreter.toRoutes(defs.getTotalBalanceDef) { addr =>
       addresses.totalBalanceOf(addr).adaptThrowable.value
     }
+
+  private def getBatchAddressInfo =
+    interpreter.toRoutes(defs.getBatchAddressInfo) { batch =>
+      addresses.addressInfoOf(batch.distinct).adaptThrowable.value
+    }
 }
 
 object AddressesRoutes {
@@ -46,6 +54,6 @@ object AddressesRoutes {
     settings: RequestsSettings,
     transactions: Transactions[F],
     addresses: Addresses[F]
-  )(implicit opts: Http4sServerOptions[F, F]): HttpRoutes[F] =
+  )(implicit opts: Http4sServerOptions[F, F], e: ErgoAddressEncoder): HttpRoutes[F] =
     new AddressesRoutes[F](settings, transactions, addresses).routes
 }

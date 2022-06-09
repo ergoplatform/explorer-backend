@@ -14,19 +14,17 @@ import org.ergoplatform.explorer.settings.{IndexerSettings, NetworkSettings}
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalacheck.ScalacheckShapeless._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import tofu.concurrent.MakeRef
 import tofu.logging.Logs
 
+import org.scalatest._
+import flatspec._
+import matchers._
+
 import scala.concurrent.duration._
 
-class ChainGrabberSpec
-  extends PropSpec
-  with ScalaCheckDrivenPropertyChecks
-  with RealDbTest
-  with MainNetConfiguration
-  with Matchers {
+@Ignore
+class ChainGrabberSpec extends AnyFlatSpec with RealDbTest with MainNetConfiguration with should.Matchers {
 
   import org.ergoplatform.explorer.commonGenerators._
   import org.ergoplatform.explorer.testConstants._
@@ -43,14 +41,14 @@ class ChainGrabberSpec
   implicit val logs: Logs[IO, IO]       = Logs.sync[IO, IO]
   implicit val makeRef: MakeRef[IO, IO] = MakeRef.syncInstance
 
-  ignore("Network scanning") {
+  "ChainGrabber" should "perform Network scanning" in { // TODO: IGNORED TEST 1
     forSingleInstance(consistentChainGen(12)) { apiBlocks =>
       withLiveRepo[ConnectionIO] { repo =>
         val networkService = new GrabberTestNetwork[IO](Source(apiBlocks))
         ChainIndexer[IO, ConnectionIO](settings, networkService)(Trans.fromDoobie(xa))
           .flatMap(_.run.take(11L).compile.drain)
           .unsafeRunSync()
-        repo.getBestHeight.runWithIO() shouldBe 11
+        repo.getBestHeight.runWithIO() should be(11)
       }
     }
   }

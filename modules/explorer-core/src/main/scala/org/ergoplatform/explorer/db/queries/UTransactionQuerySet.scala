@@ -2,8 +2,8 @@ package org.ergoplatform.explorer.db.queries
 
 import cats.data.NonEmptyList
 import doobie.implicits._
-import doobie.refined.implicits._
 import doobie.util.query.Query0
+import doobie._
 import doobie.Fragments.in
 import doobie.LogHandler
 import doobie.util.fragment.Fragment
@@ -74,4 +74,13 @@ object UTransactionQuerySet extends QuerySet {
          |left join node_outputs o on o.box_id = ui.box_id
          |where uo.ergo_tree = $ergoTree or o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
+
+  def getUnconfirmedTransactionsState(ergoTree: HexString)(implicit lh: LogHandler): Query0[Boolean] =
+    sql"""
+         |select (count(distinct t.id) > 0) from node_u_transactions t
+         |left join node_u_inputs ui on ui.tx_id = t.id
+         |left join node_u_outputs uo on uo.tx_id = t.id
+         |left join node_outputs o on o.box_id = ui.box_id
+         |where uo.ergo_tree = $ergoTree or o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Boolean]
 }

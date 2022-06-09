@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.util.fragments.notIn
 import doobie.util.query.Query0
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.constraints.OrderingString
@@ -96,6 +97,15 @@ object OutputQuerySet extends QuerySet {
          |where o.main_chain = true and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
 
+  def getUsedStateByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[Boolean] =
+    sql"""
+         |select (count(distinct o.box_id) > 0)
+         |from node_outputs o
+         |where o.main_chain = true and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Boolean]
+
   def getMainByErgoTree(
     ergoTree: HexString,
     offset: Int,
@@ -156,6 +166,28 @@ object OutputQuerySet extends QuerySet {
          |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
+
+  def sumUnspentByErgoTree(
+    ergoTrees: NonEmptyList[HexString],
+    maxHeight: Int
+  )(implicit lh: LogHandler): Query0[(HexString, Long)] = {
+    val q = sql"""
+         |select sq_one.ergo_tree, sq_one.csum from 
+         | (
+         |    select o.ergo_tree as ergo_tree, coalesce(cast(sum(o.value) as bigint), 0) as csum
+         |      from node_outputs o
+         |        left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |        left join node_transactions tx on tx.id = o.tx_id
+         |      where tx.main_chain = true
+         |        and tx.inclusion_height <= $maxHeight
+         |        and o.main_chain = true
+         |        and i.box_id is null
+         |      group by o.ergo_tree, o.address
+         | ) as sq_one
+         |""".stripMargin
+
+    (q ++ Fragments.in(fr"where sq_one.ergo_tree", ergoTrees)).query[(HexString, Long)]
+  }
 
   def getAllMainUnspentIdsByErgoTree(
     ergoTree: HexString
@@ -221,6 +253,42 @@ object OutputQuerySet extends QuerySet {
     val ord = Fragment.const(s"order by o.global_index $ordering")
     val lim = Fragment.const(s"offset $offset limit $limit")
     (q ++ ord ++ lim).query
+  }
+
+  def getMainUnspentByErgoTreeFiltered(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString,
+    excludedBoxes: NonEmptyList[BoxId]
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val q   = sql"""
+                   |select distinct on (o.box_id, o.global_index)
+                   |  o.box_id,
+                   |  o.tx_id,
+                   |  o.header_id,
+                   |  o.value,
+                   |  o.creation_height,
+                   |  o.settlement_height,
+                   |  o.index,
+                   |  o.global_index,
+                   |  o.ergo_tree,
+                   |  o.ergo_tree_template_hash,
+                   |  o.address,
+                   |  o.additional_registers,
+                   |  o.timestamp,
+                   |  o.main_chain,
+                   |  null
+                   |from node_outputs o
+                   |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+                   |where o.main_chain = true
+                   |  and i.box_id is null
+                   |  and o.ergo_tree = $ergoTree
+                   |  and o.box_id
+                   |""".stripMargin
+    val ord = Fragment.const(s"order by o.global_index $ordering")
+    val lim = Fragment.const(s"offset $offset limit $limit")
+    (notIn(q, excludedBoxes) ++ ord ++ lim).query
   }
 
   def countUnspentByErgoTree(

@@ -5,29 +5,33 @@ import org.ergoplatform.contracts.{DexBuyerContractParameters, DexLimitOrderCont
 import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.commonGenerators.assetIdGen
 import org.ergoplatform.explorer.protocol.dex.{getTokenInfoFromBuyContractTree, getTokenPriceFromSellContractTree}
-import org.scalacheck.Gen
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.hash.Digest32
 import scorex.util.encode.Base16
 import sigmastate.Values.ErgoTree
 import sigmastate.basics.DLogProtocol.ProveDlog
 
-class DexContractsSpec extends PropSpec with Matchers with ScalaCheckDrivenPropertyChecks {
+import org.scalacheck.Gen
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-  property("getTokenPriceFromSellOrderTree") {
+import org.scalatest._
+import flatspec._
+import matchers._
+
+class DexContractsSpec extends AnyFlatSpec with should.Matchers with ScalaCheckDrivenPropertyChecks {
+
+  "DexContract/Protocol" should "Get token price from sell order tree" in { // getTokenPriceFromSellOrderTree
     forAll(Gen.posNum[Long]) { tokenPrice =>
       whenever(tokenPrice > 1) {
         val extractedTokenPrice =
           getTokenPriceFromSellContractTree[IO](sellContractInstance(tokenPrice))
             .unsafeRunSync()
 
-        extractedTokenPrice shouldBe tokenPrice
+        extractedTokenPrice should be(tokenPrice)
       }
     }
   }
 
-  property("Buy orders (enrich ExtendedOutput with token info)") {
+  it should "Buy orders (enrich ExtendedOutput with token info)" in {
     forAll(assetIdGen, Gen.posNum[Long]) { case (tokenId, tokenAmount) =>
       whenever(tokenAmount > 1) {
         val extractedTokenInfo =
@@ -35,7 +39,7 @@ class DexContractsSpec extends PropSpec with Matchers with ScalaCheckDrivenPrope
             .unsafeRunSync()
 
         val expectedTokenInfo = (tokenId, tokenAmount)
-        extractedTokenInfo shouldEqual expectedTokenInfo
+        extractedTokenInfo should equal(expectedTokenInfo)
       }
     }
   }
