@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, BuildFrom, CRaise}
-import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoScriptPredef, Pay2SAddress}
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -106,13 +106,32 @@ final class BlockInfoBuildFrom[
   private def minerRewardAndFee(
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): (Long, Long) = {
-    val emission = protocolSettings.emission.emissionAtHeight(apiBlock.header.height.toLong)
-    val reward   = math.min(constants.TeamTreasuryThreshold, emission)
+    val emission          = protocolSettings.emission.emissionAtHeight(apiBlock.header.height.toLong)
+    val reward            = math.min(constants.TeamTreasuryThreshold, emission)
+    val nanoErgMultiplier = constants.CoinsInOneErgo
+    val eipReward = {
+      val upperEipBound    = 15 * nanoErgMultiplier
+      val upperEipBoundFee = 12 * nanoErgMultiplier
+      val lowerEipBound    = 3 * nanoErgMultiplier
+      if (reward >= upperEipBound) reward - upperEipBoundFee
+      else if (lowerEipBound < reward && reward < upperEipBound)
+        reward - (reward - lowerEipBound)
+      else reward
+    }
     val fee = apiBlock.transactions.transactions
       .flatMap(_.outputs.toList)
       .filter(_.ergoTree.unwrapped == constants.FeePropositionScriptHex)
       .map(_.value)
       .sum
-    (reward, fee)
+    val mainnetEipBorder = 777217
+    val testnetEipBorder = 188001
+    protocolSettings.networkPrefix.value.toByte match {
+      case ErgoAddressEncoder.MainnetNetworkPrefix if apiBlock.header.height >= mainnetEipBorder =>
+        (eipReward, fee)
+      case ErgoAddressEncoder.TestnetNetworkPrefix if apiBlock.header.height >= testnetEipBorder =>
+        (eipReward, fee)
+      case _ =>
+        (reward, fee)
+    }
   }
 }
