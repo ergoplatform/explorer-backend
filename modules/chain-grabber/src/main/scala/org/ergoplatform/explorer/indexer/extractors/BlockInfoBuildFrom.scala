@@ -106,30 +106,24 @@ final class BlockInfoBuildFrom[
   private def minerRewardAndFee(
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): (Long, Long) = {
-    val emission          = protocolSettings.emission.emissionAtHeight(apiBlock.header.height.toLong)
-    val reward            = math.min(constants.TeamTreasuryThreshold, emission)
-    val nanoErgMultiplier = constants.CoinsInOneErgo
-    val eipReward = {
-      val upperEipBound    = 15 * nanoErgMultiplier
-      val upperEipBoundFee = 12 * nanoErgMultiplier
-      val lowerEipBound    = 3 * nanoErgMultiplier
-      if (reward >= upperEipBound) reward - upperEipBoundFee
-      else if (lowerEipBound < reward && reward < upperEipBound)
-        reward - (reward - lowerEipBound)
+    val emission = protocolSettings.emission.emissionAtHeight(apiBlock.header.height.toLong)
+    val reward   = math.min(constants.TeamTreasuryThreshold, emission)
+    val eip27Reward =
+      if (reward >= constants.Eip27UpperPoint) reward - constants.Eip27DefaultReEmission
+      else if (constants.Eip27LowerPoint < reward) reward - (reward - constants.Eip27ResidualEmission)
       else reward
-    }
     val fee = apiBlock.transactions.transactions
       .flatMap(_.outputs.toList)
       .filter(_.ergoTree.unwrapped == constants.FeePropositionScriptHex)
       .map(_.value)
       .sum
-    val mainnetEipBorder = 777217
-    val testnetEipBorder = 188001
     protocolSettings.networkPrefix.value.toByte match {
-      case ErgoAddressEncoder.MainnetNetworkPrefix if apiBlock.header.height >= mainnetEipBorder =>
-        (eipReward, fee)
-      case ErgoAddressEncoder.TestnetNetworkPrefix if apiBlock.header.height >= testnetEipBorder =>
-        (eipReward, fee)
+      case ErgoAddressEncoder.MainnetNetworkPrefix
+          if apiBlock.header.height >= constants.MainnetEip27ActivationHeight =>
+        (eip27Reward, fee)
+      case ErgoAddressEncoder.TestnetNetworkPrefix
+          if apiBlock.header.height >= constants.TestnetEip27ActivationHeight =>
+        (eip27Reward, fee)
       case _ =>
         (reward, fee)
     }

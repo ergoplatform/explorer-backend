@@ -32,4 +32,11 @@ object constants {
 
   val ErgoDecimalPlacesNum: Int = 9
 
+  val Eip27UpperPoint        = 15 * CoinsInOneErgo
+  val Eip27DefaultReEmission = 12 * CoinsInOneErgo
+  val Eip27LowerPoint        = 3 * CoinsInOneErgo
+  val Eip27ResidualEmission  = 3 * CoinsInOneErgo
+
+  val MainnetEip27ActivationHeight = 777217
+  val TestnetEip27ActivationHeight = 188001
 }
