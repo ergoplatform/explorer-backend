@@ -6,7 +6,7 @@ import io.circe.Json
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
-import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
+import org.ergoplatform.explorer.http.api.models.{AssetInstanceInfo, PrettyErgoTree}
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 @derive(encoder, decoder)
@@ -20,6 +20,8 @@ final case class OutputInfo(
   creationHeight: Int,
   settlementHeight: Int,
   ergoTree: HexString,
+  ergoTreeConstants: String,
+  ergoTreeScript: String,
   address: Address,
   assets: List[AssetInstanceInfo],
   additionalRegisters: Json,
@@ -56,7 +58,8 @@ object OutputInfo {
   def apply(
     o: ExtendedOutput,
     assets: List[ExtendedAsset]
-  ): OutputInfo =
+  ): OutputInfo = {
+    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.humanErgoTree(o.output.ergoTree)
     OutputInfo(
       o.output.boxId,
       o.output.txId,
@@ -67,17 +70,21 @@ object OutputInfo {
       o.output.creationHeight,
       o.output.settlementHeight,
       o.output.ergoTree,
+      ergoTreeConstants,
+      ergoTreeScript,
       o.output.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       o.output.additionalRegisters,
       o.spentByOpt,
       o.output.mainChain
     )
+  }
 
   def unspent(
     o: Output,
     assets: List[ExtendedAsset]
-  ): OutputInfo =
+  ): OutputInfo = {
+    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.humanErgoTree(o.ergoTree)
     OutputInfo(
       o.boxId,
       o.txId,
@@ -88,10 +95,13 @@ object OutputInfo {
       o.creationHeight,
       o.settlementHeight,
       o.ergoTree,
+      ergoTreeConstants,
+      ergoTreeScript,
       o.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       o.additionalRegisters,
       None,
       o.mainChain
     )
+  }
 }
