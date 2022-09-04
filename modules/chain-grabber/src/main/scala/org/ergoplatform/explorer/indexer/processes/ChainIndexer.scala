@@ -20,6 +20,7 @@ import org.ergoplatform.explorer.db.models.{BlockStats, Header}
 import org.ergoplatform.explorer.indexer.extractors._
 import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData, TotalStats}
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
+import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetwork
@@ -60,6 +61,11 @@ object ChainIndexer {
     repos: RepoBundle[D]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
+
+    implicit val ctx: WithContext[F, ProtocolSettings] = Context.const(settings.protocol)
+
+    private val startHeight    = settings.startHeight.getOrElse(constants.GenesisHeight)
+    private val preStartHeight = startHeight - 1
 
     def run: Stream[F, Unit] =
       Stream(()).repeat
@@ -143,7 +149,7 @@ object ChainIndexer {
       info"Updating best block [$id] at height [$height]" >>
       getBlock(parentId).flatMap {
         case Some(parentBlock) if parentBlock.mainChain => unit[F]
-        case None if block.height == GenesisHeight      => unit[F]
+        case None if block.height == startHeight        => unit[F]
         case Some(parentBlock) =>
           info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
         case None =>
@@ -157,13 +163,11 @@ object ChainIndexer {
       } >> markAsMain(block.id, block.height) >> updateBlockInfo(block.parentId, block.id)
     }
 
-    private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockStats]): F[FlatBlock] = {
-      implicit val ctx: F WithContext ProtocolSettings = Context.const(settings.protocol)
+    private def scan(apiFullBlock: ApiFullBlock, prevBlockInfoOpt: Option[BlockStats]): F[FlatBlock] =
       SlotData(apiFullBlock, prevBlockInfoOpt).intoF[F, FlatBlock]
-    }
 
     private def getLastGrabbedBlockHeight: F[Int] =
-      repos.headers.getBestHeight ||> trans.xa
+      repos.headers.getBestHeight.map(math.max(_, preStartHeight)) ||> trans.xa
 
     private def getHeaderIdsAtHeight(height: Int): D[List[BlockId]] =
       repos.headers.getAllByHeight(height).map(_.map(_.id))
@@ -182,9 +186,8 @@ object ChainIndexer {
         _                 <- OptionT.liftF(info"Updating stats of block $blockId")
         prevBlockStats    <- OptionT(getBlockInfo(prevBlockId))
         currentBlockStats <- OptionT(getBlockInfo(blockId))
-        implicit0(ctx: WithContext[F, ProtocolSettings]) = Context.const[F, ProtocolSettings](settings.protocol)
-        totalStats <- OptionT.liftF(blockStats.recalculateStats[F](currentBlockStats, prevBlockStats))
-        _          <- OptionT.liftF(updateBlockStats(blockId, totalStats) ||> trans.xa)
+        totalStats        <- OptionT.liftF(blockStats.recalculateStats[F](currentBlockStats, prevBlockStats))
+        _                 <- OptionT.liftF(updateBlockStats(blockId, totalStats) ||> trans.xa)
       } yield ()).value.void
 
     private def commitChainUpdates: F[Unit] =
@@ -217,7 +220,8 @@ object ChainIndexer {
 
     private def updateChainStatus(blockId: BlockId, mainChain: Boolean): D[Unit] =
       repos.headers.updateChainStatusById(blockId, mainChain) >>
-      repos.blocksInfo.updateChainStatusByHeaderId(blockId, mainChain) >>
+      (if (settings.indexes.blockStats) repos.blocksInfo.updateChainStatusByHeaderId(blockId, mainChain)
+       else unit[D]) >>
       repos.txs.updateChainStatusByHeaderId(blockId, mainChain) >>
       repos.outputs.updateChainStatusByHeaderId(blockId, mainChain) >>
       repos.inputs.updateChainStatusByHeaderId(blockId, mainChain) >>
@@ -226,17 +230,17 @@ object ChainIndexer {
     private def insertBlock(block: FlatBlock): F[Unit] = {
       val insertAll =
         repos.headers.insert(block.header) >>
-        repos.blocksInfo.insert(block.info) >>
-        repos.blockExtensions.insert(block.extension) >>
-        block.adProofOpt.map(repos.adProofs.insert).getOrElse(unit[D]) >>
+        (if (settings.indexes.blockStats) repos.blocksInfo.insert(block.info) else unit[D]) >>
+        (if (settings.indexes.blockExtensions) repos.blockExtensions.insert(block.extension) else unit[D]) >>
+        (if (settings.indexes.adProofs) block.adProofOpt.map(repos.adProofs.insert).getOrElse(unit[D]) else unit[D]) >>
         repos.txs.insertMany(block.txs) >>
         repos.inputs.insetMany(block.inputs) >>
         repos.dataInputs.insetMany(block.dataInputs) >>
         repos.outputs.insertMany(block.outputs) >>
         repos.assets.insertMany(block.assets) >>
-        repos.registers.insertMany(block.registers) >>
+        (if (settings.indexes.boxRegisters) repos.registers.insertMany(block.registers) else unit[D]) >>
         repos.tokens.insertMany(block.tokens) >>
-        repos.constants.insertMany(block.constants)
+        (if (settings.indexes.boxRegisters) repos.constants.insertMany(block.constants) else unit[D])
       insertAll ||> trans.xa
     }
   }

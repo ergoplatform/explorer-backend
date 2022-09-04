@@ -157,7 +157,6 @@ CREATE INDEX "node_outputs__address" ON node_outputs using hash (address);
 CREATE INDEX "node_outputs__ergo_tree" ON node_outputs using hash (ergo_tree);
 CREATE INDEX "node_outputs__ergo_tree_template_hash" ON node_outputs (ergo_tree_template_hash);
 CREATE INDEX "node_outputs__timestamp" ON node_outputs (timestamp);
-CREATE INDEX "node_outputs__main_chain" ON node_outputs (main_chain);
 
 CREATE TABLE node_assets
 (

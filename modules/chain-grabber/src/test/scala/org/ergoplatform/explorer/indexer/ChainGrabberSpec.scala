@@ -10,13 +10,12 @@ import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
 import org.ergoplatform.explorer.indexer.GrabberTestNetwork.Source
 import org.ergoplatform.explorer.indexer.processes.ChainIndexer
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
-import org.ergoplatform.explorer.settings.{IndexerSettings, NetworkSettings}
+import org.ergoplatform.explorer.settings.{EnabledIndexes, IndexerSettings, NetworkSettings}
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalacheck.ScalacheckShapeless._
 import org.scalacheck.{Arbitrary, Gen}
 import tofu.concurrent.MakeRef
 import tofu.logging.Logs
-
 import org.scalatest._
 import flatspec._
 import matchers._
@@ -35,7 +34,15 @@ class ChainGrabberSpec extends AnyFlatSpec with RealDbTest with MainNetConfigura
       writeOrphans = true,
       network      = NetworkSettings(mainnetNodes, selfCheckIntervalRequests = 5),
       db           = dbSettings,
-      protocol     = protocolSettings
+      protocol     = protocolSettings,
+      indexes = EnabledIndexes(
+        boxRegisters    = true,
+        scriptConstants = true,
+        blockExtensions = true,
+        adProofs        = true,
+        blockStats      = true
+      ),
+      startHeight = None
     )
 
   implicit val logs: Logs[IO, IO]       = Logs.sync[IO, IO]
