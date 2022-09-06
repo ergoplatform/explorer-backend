@@ -117,8 +117,8 @@ object ChainIndexer {
       val parentHeight = block.header.height - 1
       val checkParentF =
         getBlock(parentId).flatMap {
-          case Some(parentBlock) if parentBlock.mainChain   => unit[F]
-          case None if block.header.height == GenesisHeight => unit[F]
+          case Some(parentBlock) if parentBlock.mainChain => unit[F]
+          case None if block.header.height == startHeight => unit[F]
           case Some(parentBlock) =>
             info"Parent block [$parentId] needs to be updated" >> updateBestBlock(parentBlock)
           case None =>
