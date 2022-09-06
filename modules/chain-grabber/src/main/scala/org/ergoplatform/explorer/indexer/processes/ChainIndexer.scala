@@ -70,7 +70,7 @@ object ChainIndexer {
     def run: Stream[F, Unit] =
       Stream(()).repeat
         .covary[F]
-        .metered(settings.pollInterval)
+        .metered(settings.chainPollInterval)
         .flatMap { _ =>
           Stream.eval(info"Starting sync job ..") >> sync.handleErrorWith { e =>
             Stream.eval(

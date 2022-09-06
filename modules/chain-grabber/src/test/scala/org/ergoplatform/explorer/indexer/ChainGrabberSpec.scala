@@ -30,7 +30,7 @@ class ChainGrabberSpec extends AnyFlatSpec with RealDbTest with MainNetConfigura
 
   private lazy val settings =
     IndexerSettings(
-      pollInterval = 1.second,
+      chainPollInterval = 1.second,
       writeOrphans = true,
       network      = NetworkSettings(mainnetNodes, selfCheckIntervalRequests = 5),
       db           = dbSettings,

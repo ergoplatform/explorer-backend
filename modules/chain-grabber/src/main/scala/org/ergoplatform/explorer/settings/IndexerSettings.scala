@@ -11,7 +11,8 @@ final case class EnabledIndexes(
 )
 
 final case class IndexerSettings(
-  pollInterval: FiniteDuration,
+  chainPollInterval: FiniteDuration,
+  epochPollInterval: FiniteDuration,
   writeOrphans: Boolean,
   network: NetworkSettings,
   db: DbSettings,
