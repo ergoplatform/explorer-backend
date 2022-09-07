@@ -16,6 +16,7 @@ import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{InclusionHeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
+import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeHex
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, TxId}
 import tofu.syntax.monadic._
@@ -43,7 +44,7 @@ trait Transactions[F[_]] {
 
 object Transactions {
 
-  val MaxIdsPerRequest = scala.Short.MaxValue / 4
+  private val MaxIdsPerRequest = scala.Short.MaxValue / 4
 
   def apply[
     F[_]: Sync,
@@ -62,7 +63,7 @@ object Transactions {
     outputs: OutputRepo[D, Stream],
     transactions: TransactionRepo[D, Stream],
     headers: HeaderRepo[D, Stream]
-  )(trans: D Trans F)
+  )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
     extends Transactions[F] {
 
     def get(id: TxId): F[Option[TransactionInfo]] = {
@@ -105,14 +106,15 @@ object Transactions {
       concise: Boolean,
       inclusionHeightRange: Option[InclusionHeightRange]
     ): F[Items[TransactionInfo]] = {
+      val ergoTree = addressToErgoTreeHex(address)
       val inHTuple = inclusionHeightRange.map(x => (x.fromHeight, x.toHeight))
       transactions
-        .countRelatedToAddress(address, inHTuple)
+        .countRelatedToErgoTree(ergoTree, inHTuple)
         .flatMap { total =>
           val narrowBy = if (concise) Some(address) else None
           transactions
-            .streamRelatedToAddress(
-              address,
+            .streamRelatedToErgoTree(
+              ergoTree,
               paging.offset,
               paging.limit,
               inHTuple

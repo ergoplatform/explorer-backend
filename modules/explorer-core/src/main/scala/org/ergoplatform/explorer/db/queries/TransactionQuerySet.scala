@@ -6,7 +6,7 @@ import doobie.implicits._
 import doobie.util.query.Query0
 import doobie.util.update.Update0
 import org.ergoplatform.explorer.constraints.OrderingString
-import org.ergoplatform.explorer.{Address, BlockId, ErgoTreeTemplateHash, TxId}
+import org.ergoplatform.explorer.{Address, BlockId, ErgoTreeTemplateHash, HexString, TxId}
 import org.ergoplatform.explorer.db.models.Transaction
 
 /** A set of queries for doobie implementation of [TransactionRepo].
@@ -64,8 +64,8 @@ object TransactionQuerySet extends QuerySet {
          |) as h on h.id = t.header_id
          |""".stripMargin.query[TxId]
 
-  def getAllRelatedToAddress(
-    address: Address,
+  def getAllRelatedToErgoTree(
+    ergoTree: HexString,
     offset: Int,
     limit: Int,
     inclusionHeightRangeOp: Option[(Int, Int)] = None
@@ -77,11 +77,11 @@ object TransactionQuerySet extends QuerySet {
           |from node_transactions t
           |inner join (
           |  select os.tx_id from node_outputs os
-          |  where os.main_chain = true and os.address = '$address'
+          |  where os.main_chain = true and os.ergo_tree = '$ergoTree'
           |  union
           |  select i.tx_id from node_outputs os
           |  left join node_inputs i on (i.box_id = os.box_id and i.main_chain = true)
-          |  where os.main_chain = true and os.address = '$address'
+          |  where os.main_chain = true and os.ergo_tree = '$ergoTree'
           |) as os on os.tx_id = t.id
           |where t.main_chain = true
           |${inclusionHeightRangeOp.map(range => inclusionHeightFilter(range)).getOrElse("")}
@@ -100,7 +100,7 @@ object TransactionQuerySet extends QuerySet {
          |order by t.global_index asc
          |""".stripMargin.query[Transaction]
 
-  def countRelatedToAddress(address: Address, inclusionHeightRangeOp: Option[(Int, Int)] = None)(implicit
+  def countRelatedToErgoTree(ergoTree: HexString, inclusionHeightRangeOp: Option[(Int, Int)] = None)(implicit
     lh: LogHandler
   ): Query0[Int] =
     Fragment
@@ -109,11 +109,11 @@ object TransactionQuerySet extends QuerySet {
            |select count(distinct t.id) from node_transactions t
            |inner join (
            |  select os.tx_id from node_outputs os
-           |  where os.main_chain = true and os.address = '$address'
+           |  where os.main_chain = true and os.ergo_tree = '$ergoTree'
            |  union
            |  select i.tx_id from node_outputs os
            |  left join node_inputs i on (i.box_id = os.box_id and i.main_chain = true)
-           |  where os.main_chain = true and os.address = '$address') as os on os.tx_id = t.id
+           |  where os.main_chain = true and os.ergo_tree = '$ergoTree') as os on os.tx_id = t.id
            |where t.main_chain = true
            |${inclusionHeightRangeOp.map(range => inclusionHeightFilter(range)).getOrElse("")}
            |""".stripMargin

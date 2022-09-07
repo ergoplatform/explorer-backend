@@ -148,7 +148,6 @@ CREATE TABLE node_outputs
 CREATE INDEX "node_outputs__box_id" ON node_outputs (box_id);
 CREATE INDEX "node_outputs__tx_id" ON node_outputs (tx_id);
 CREATE INDEX "node_outputs__header_id" ON node_outputs (header_id);
-CREATE INDEX "node_outputs__address" ON node_outputs using hash (address);
 CREATE INDEX "node_outputs__ergo_tree" ON node_outputs using hash (ergo_tree);
 CREATE INDEX "node_outputs__ergo_tree_template_hash" ON node_outputs (ergo_tree_template_hash);
 CREATE INDEX "node_outputs__timestamp" ON node_outputs (timestamp);
@@ -179,6 +178,8 @@ CREATE TABLE box_registers
 
 CREATE INDEX "box_registers__id" ON box_registers (id);
 CREATE INDEX "box_registers__box_id" ON box_registers (box_id);
+/* Uncomment this is you want to search by box registers */
+/* CREATE INDEX "box_registers__rendered_value" ON box_registers (rendered_value); */
 
 CREATE TABLE script_constants
 (
@@ -191,7 +192,8 @@ CREATE TABLE script_constants
 );
 
 CREATE INDEX "script_constants__box_id" ON script_constants (box_id);
-CREATE INDEX "script_constants__rendered_value" ON script_constants using hash (rendered_value);
+/* Uncomment this is you want to search by constants */
+/* CREATE INDEX "script_constants__rendered_value" ON script_constants using hash (rendered_value); */
 
 /* Unconfirmed transactions.
  */
@@ -247,7 +249,6 @@ CREATE TABLE node_u_outputs
 
 CREATE INDEX "node_u_outputs__box_id" ON node_u_outputs (box_id);
 CREATE INDEX "node_u_outputs__tx_id" ON node_u_outputs (tx_id);
-CREATE INDEX "node_u_outputs__address" ON node_u_outputs using hash (address);
 CREATE INDEX "node_u_outputs__ergo_tree_template_hash" ON node_u_outputs (ergo_tree_template_hash);
 
 /* Inputs containing in unconfirmed outputs.

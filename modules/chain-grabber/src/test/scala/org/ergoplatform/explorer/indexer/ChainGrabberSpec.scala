@@ -31,10 +31,11 @@ class ChainGrabberSpec extends AnyFlatSpec with RealDbTest with MainNetConfigura
   private lazy val settings =
     IndexerSettings(
       chainPollInterval = 1.second,
-      writeOrphans = true,
-      network      = NetworkSettings(mainnetNodes, selfCheckIntervalRequests = 5),
-      db           = dbSettings,
-      protocol     = protocolSettings,
+      epochPollInterval = 10.seconds,
+      writeOrphans      = true,
+      network           = NetworkSettings(mainnetNodes, selfCheckIntervalRequests = 5),
+      db                = dbSettings,
+      protocol          = protocolSettings,
       indexes = EnabledIndexes(
         boxRegisters    = true,
         scriptConstants = true,
