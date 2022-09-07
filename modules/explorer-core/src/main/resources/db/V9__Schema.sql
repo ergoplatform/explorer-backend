@@ -22,7 +22,6 @@ CREATE TABLE node_headers
 CREATE INDEX "node_headers__parent_id" ON node_headers (parent_id);
 CREATE INDEX "node_headers__height" ON node_headers (height);
 CREATE INDEX "node_headers__ts" ON node_headers (timestamp);
-CREATE INDEX "node_headers__main_chain" ON node_headers (main_chain);
 CREATE INDEX "node_headers__d" ON node_headers (d);
 
 CREATE TABLE node_extensions
@@ -72,7 +71,6 @@ CREATE TABLE blocks_info
  */
 CREATE INDEX "blocks_info__height" ON blocks_info (height);
 CREATE INDEX "blocks_info__ts" ON blocks_info (timestamp);
-CREATE INDEX "blocks_info__main_chain" ON blocks_info (main_chain);
 
 CREATE TABLE node_transactions
 (
@@ -91,7 +89,6 @@ CREATE TABLE node_transactions
 CREATE INDEX "node_transactions__header_id" ON node_transactions (header_id);
 CREATE INDEX "node_transactions__timestamp" ON node_transactions (timestamp);
 CREATE INDEX "node_transactions__inclusion_height" ON node_transactions (inclusion_height);
-CREATE INDEX "node_transactions__main_chain" ON node_transactions (main_chain);
 
 /* Table that represents inputs in ergo transactions.
  * Has tx_id field that point to the tx where this input was spent.
@@ -111,7 +108,6 @@ CREATE TABLE node_inputs
 CREATE INDEX "node_inputs__tx_id" ON node_inputs (tx_id);
 CREATE INDEX "node_inputs__box_id" ON node_inputs (box_id);
 CREATE INDEX "node_inputs__header_id" ON node_inputs (header_id);
-CREATE INDEX "node_inputs__main_chain" ON node_inputs (main_chain);
 
 CREATE TABLE node_data_inputs
 (
@@ -126,7 +122,6 @@ CREATE TABLE node_data_inputs
 CREATE INDEX "node_data_inputs__tx_id" ON node_data_inputs (tx_id);
 CREATE INDEX "node_data_inputs__box_id" ON node_data_inputs (box_id);
 CREATE INDEX "node_data_inputs__header_id" ON node_data_inputs (header_id);
-CREATE INDEX "node_data_inputs__main_chain" ON node_data_inputs (main_chain);
 
 /* Table that represents outputs in ergo transactions.
  * Has tx_id field pointing to the tx which created this output.
@@ -157,7 +152,6 @@ CREATE INDEX "node_outputs__address" ON node_outputs using hash (address);
 CREATE INDEX "node_outputs__ergo_tree" ON node_outputs using hash (ergo_tree);
 CREATE INDEX "node_outputs__ergo_tree_template_hash" ON node_outputs (ergo_tree_template_hash);
 CREATE INDEX "node_outputs__timestamp" ON node_outputs (timestamp);
-CREATE INDEX "node_outputs__main_chain" ON node_outputs (main_chain);
 
 CREATE TABLE node_assets
 (

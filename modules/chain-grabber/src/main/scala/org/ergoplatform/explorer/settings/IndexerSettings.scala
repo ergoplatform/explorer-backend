@@ -1,15 +1,24 @@
 package org.ergoplatform.explorer.settings
 
-import pureconfig.generic.auto._
-
 import scala.concurrent.duration.FiniteDuration
 
+final case class EnabledIndexes(
+  boxRegisters: Boolean,
+  scriptConstants: Boolean,
+  blockExtensions: Boolean,
+  adProofs: Boolean,
+  blockStats: Boolean
+)
+
 final case class IndexerSettings(
-  pollInterval: FiniteDuration,
+  chainPollInterval: FiniteDuration,
+  epochPollInterval: FiniteDuration,
   writeOrphans: Boolean,
   network: NetworkSettings,
   db: DbSettings,
-  protocol: ProtocolSettings
+  protocol: ProtocolSettings,
+  indexes: EnabledIndexes,
+  startHeight: Option[Int]
 )
 
 object IndexerSettings extends SettingCompanion[IndexerSettings]

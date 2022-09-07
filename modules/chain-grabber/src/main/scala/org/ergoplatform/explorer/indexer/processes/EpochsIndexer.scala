@@ -13,7 +13,6 @@ import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.settings.IndexerSettings
 import tofu.MonadThrow
-import tofu.concurrent.MakeRef
 import tofu.logging.{Logging, Logs}
 import tofu.syntax.logging._
 import tofu.syntax.monadic._
@@ -28,7 +27,7 @@ object EpochsIndexer {
   def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
     network: ErgoNetwork[F]
-  )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[EpochsIndexer[F]] =
+  )(trans: Trans[D, F])(implicit logs: Logs[F, F]): F[EpochsIndexer[F]] =
     logs.forService[EpochsIndexer[F]].flatMap { implicit log =>
       RepoBundle[F, D].map(new Live[F, D](settings, network, _)(trans))
     }
@@ -44,7 +43,7 @@ object EpochsIndexer {
     override def run: Stream[F, Unit] =
       Stream(()).repeat
         .covary[F]
-        .metered(settings.pollInterval)
+        .metered(settings.epochPollInterval)
         .flatMap { _ =>
           Stream.eval(info"Starting epochs sync job ..") >> Stream.eval(sync).handleErrorWith { e =>
             Stream.eval(
