@@ -1,0 +1,81 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:11-alpine
+    container_name: postgres
+    shm_size: 4g
+    environment:
+      POSTGRES_PASSWORD: 1234
+    expose:
+      - "5432"
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+      - ./data/postgres:/var/lib/postgresql/data:rw
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    command: ["redis-server"]
+    expose:
+      - "6379"
+    volumes:
+      - ./data/redis:/usr/local/etc/redis
+  chain-grabber:
+    container_name: chain-grabber
+    build:
+      context: ..
+      dockerfile: modules/chain-grabber/Dockerfile
+    volumes:
+      - ../modules/chain-grabber/src/main/resources/application.conf:/application.conf
+      - ../modules/chain-grabber/src/main/resources/logback.xml:/logback.xml
+      - ../modules/chain-grabber/src/main:/explorer-backend/modules/chain-grabber/src/main
+    depends_on:
+      - postgres
+      - redis
+    command:
+      - /application.conf
+  utx-broadcaster:
+    container_name: utx-broadcaster
+    build:
+      context: ..
+      dockerfile: modules/utx-broadcaster/Dockerfile
+    volumes:
+      - ../modules/utx-broadcaster/src/main/resources/application.conf:/application.conf
+      - ../modules/utx-broadcaster/src/main/resources/logback.xml:/logback.xml
+      - ../modules/utx-broadcaster/src/main:/explorer-backend/modules/utx-broadcaster/src/main
+    depends_on:
+      - postgres
+      - redis
+    command:
+      - /application.conf
+  utx-tracker:
+    container_name: utx-tracker
+    build:
+      context: ..
+      dockerfile: modules/utx-tracker/Dockerfile
+    volumes:
+      - ../modules/utx-tracker/src/main/resources/application.conf:/application.conf
+      - ../modules/utx-tracker/src/main/resources/logback.xml:/logback.xml
+      - ../modules/utx-tracker/src/main:/explorer-backend/modules/utx-tracker/src/main
+    depends_on:
+      - postgres
+      - redis
+    command:
+      - /application.conf
+  explorer-api:
+    container_name: explorer-api
+    build:
+      context: ..
+      dockerfile: modules/explorer-api/Dockerfile
+    volumes:
+      - ../modules/explorer-api/src/main/resources/application.conf:/application.conf
+      - ../modules/explorer-api/src/main/resources/logback.xml:/logback.xml
+      - ../modules/explorer-api/src/main:/explorer-backend/modules/explorer-api/src/main
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    command:
+      - /application.conf

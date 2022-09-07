@@ -49,6 +49,18 @@ Service JAR can be build with `sbt <service-name>/assembly`, assembly will appea
 
 Config samples can be found in `modules/<service-name>/src/main/resources/application.conf`
 
+### TestNet Configuration
+
+To establish TestNet Connection modify .conf parameters in modules to:
+
+```application.conf
+ network.master-nodes = ["http://195.201.82.115:9052"]
+ 
+ protocol.network-prefix = 16
+ protocol.genesis-address = "AfYgQf5PappexKq8Vpig4vwEuZLjrq7gV97BWBVcKymTYqRzCoJLE9cDBpGHvtAAkAgQf8Yyv7NQUjSphKSjYxk3dB3W8VXzHzz5MuCcNbqqKHnMDZAa6dbHH1uyMScq5rXPLFD5P8MWkD5FGE6RbHKrKjANcr6QZHcBpppdjh9r5nra4c7dsCgULFZfWYTaYqHpx646BUHhhp8jDCHzzF33G8XfgKYo93ABqmdqagbYRzrqCgPHv5kxRmFt7Y99z26VQTgXoEmXJ2aRu6LoB59rKN47JxWGos27D79kKzJRiyYNEVzXU8MYCxtAwV"
+
+```
+
 ## Run
 
 SBT project:
