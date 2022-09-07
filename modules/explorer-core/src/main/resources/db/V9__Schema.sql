@@ -249,6 +249,7 @@ CREATE TABLE node_u_outputs
 
 CREATE INDEX "node_u_outputs__box_id" ON node_u_outputs (box_id);
 CREATE INDEX "node_u_outputs__tx_id" ON node_u_outputs (tx_id);
+CREATE INDEX "node_u_outputs__ergo_tree" ON node_u_outputs (ergo_tree);
 CREATE INDEX "node_u_outputs__ergo_tree_template_hash" ON node_u_outputs (ergo_tree_template_hash);
 
 /* Inputs containing in unconfirmed outputs.
