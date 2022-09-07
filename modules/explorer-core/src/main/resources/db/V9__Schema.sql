@@ -148,8 +148,10 @@ CREATE TABLE node_outputs
 CREATE INDEX "node_outputs__box_id" ON node_outputs (box_id);
 CREATE INDEX "node_outputs__tx_id" ON node_outputs (tx_id);
 CREATE INDEX "node_outputs__header_id" ON node_outputs (header_id);
-CREATE INDEX "node_outputs__ergo_tree" ON node_outputs using hash (ergo_tree);
-CREATE INDEX "node_outputs__ergo_tree_template_hash" ON node_outputs (ergo_tree_template_hash);
+CREATE INDEX "node_outputs__ergo_tree" ON node_outputs using hash (ergo_tree)
+    WHERE NOT ergo_tree = '1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304';
+CREATE INDEX "node_outputs__ergo_tree_template_hash" ON node_outputs (ergo_tree_template_hash)
+    WHERE NOT ergo_tree_template_hash = 'd19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304';
 CREATE INDEX "node_outputs__timestamp" ON node_outputs (timestamp);
 
 CREATE TABLE node_assets
@@ -249,8 +251,10 @@ CREATE TABLE node_u_outputs
 
 CREATE INDEX "node_u_outputs__box_id" ON node_u_outputs (box_id);
 CREATE INDEX "node_u_outputs__tx_id" ON node_u_outputs (tx_id);
-CREATE INDEX "node_u_outputs__ergo_tree" ON node_u_outputs (ergo_tree);
-CREATE INDEX "node_u_outputs__ergo_tree_template_hash" ON node_u_outputs (ergo_tree_template_hash);
+CREATE INDEX "node_u_outputs__ergo_tree" ON node_u_outputs (ergo_tree)
+    WHERE NOT ergo_tree = '1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304';
+CREATE INDEX "node_u_outputs__ergo_tree_template_hash" ON node_u_outputs (ergo_tree_template_hash)
+    WHERE NOT ergo_tree_template_hash = 'd19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304';
 
 /* Inputs containing in unconfirmed outputs.
  */
