@@ -109,10 +109,10 @@ class TransactionRepoSpec extends AnyFlatSpec with should.Matchers with TryValue
           inputRepo.insert(in).runWithIO()
         }
 
-        txRepo.countRelatedToAddress(addressT.get).runWithIO() should be(11)
-        txRepo.countRelatedToAddress(addressT.get, Some((10, 20))).runWithIO() should be(11)
-        txRepo.countRelatedToAddress(addressT.get, Some((10, 15))).runWithIO() should be(6)
-        txRepo.countRelatedToAddress(addressT.get, Some((15, 18))).runWithIO() should be(4)
+        txRepo.countRelatedToErgoTree(addressTree).runWithIO() should be(11)
+        txRepo.countRelatedToErgoTree(addressTree, Some((10, 20))).runWithIO() should be(11)
+        txRepo.countRelatedToErgoTree(addressTree, Some((10, 15))).runWithIO() should be(6)
+        txRepo.countRelatedToErgoTree(addressTree, Some((15, 18))).runWithIO() should be(4)
       }
     }
   }
@@ -133,14 +133,14 @@ class TransactionRepoSpec extends AnyFlatSpec with should.Matchers with TryValue
           inputRepo.insert(in).runWithIO()
         }
 
-        txRepo.countRelatedToAddress(addressT.get).runWithIO() should be(11)
+        txRepo.countRelatedToErgoTree(addressTree).runWithIO() should be(11)
         txRepo
-          .streamRelatedToAddress(addressT.get, 0, Int.MaxValue, Some((10, 20)))
+          .streamRelatedToErgoTree(addressTree, 0, Int.MaxValue, Some((10, 20)))
           .compile
           .toList
           .runWithIO() should contain theSameElementsAs hTxList.map(_._2)
         txRepo
-          .streamRelatedToAddress(addressT.get, 0, Int.MaxValue, Some((12, 18)))
+          .streamRelatedToErgoTree(addressTree, 0, Int.MaxValue, Some((12, 18)))
           .compile
           .toList
           .runWithIO() should contain theSameElementsAs hTxList

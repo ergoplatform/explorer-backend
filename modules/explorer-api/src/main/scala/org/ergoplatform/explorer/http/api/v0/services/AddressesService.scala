@@ -73,7 +73,7 @@ object AddressesService {
         assets          <- assetRepo.aggregateUnspentByErgoTree(ergoTree, maxHeight)
         offChainBalance <- uOutputRepo.sumUnspentByErgoTree(ergoTree)
         offChainAssets  <- uAssetRepo.aggregateUnspentByErgoTree(ergoTree)
-        txsQty          <- txRepo.countRelatedToAddress(address)
+        txsQty          <- txRepo.countRelatedToErgoTree(ergoTree)
       } yield {
         val totalBalance = balance + offChainBalance
         val tokensBalanceInfo =
