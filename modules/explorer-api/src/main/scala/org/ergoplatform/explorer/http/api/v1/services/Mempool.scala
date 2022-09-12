@@ -4,7 +4,7 @@ import cats.Monad
 import cats.effect.Concurrent
 import cats.syntax.list._
 import cats.syntax.traverse._
-import dev.profunktor.redis4cats.algebra.RedisCommands
+import dev.profunktor.redis4cats.RedisCommands
 import fs2.{Chunk, Pipe, Stream}
 import io.estatico.newtype.ops.toCoercibleIdOps
 import mouse.anyf._

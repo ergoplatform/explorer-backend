@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.v1.shared
 import cats.Monad
 import cats.effect.Concurrent
 import cats.syntax.list._
-import dev.profunktor.redis4cats.algebra.RedisCommands
+import dev.profunktor.redis4cats.RedisCommands
 import fs2.{Chunk, Pipe, Stream}
 import mouse.anyf._
 import org.ergoplatform.explorer.db.Trans

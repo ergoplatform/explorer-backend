@@ -20,7 +20,7 @@ object versions {
   val MonocleVersion                 = "2.0.0"
   val TofuVersion                    = "0.10.0"
   val DerevoVersion                  = "0.11.4"
-  val CatsRedisVersion               = "0.9.3"
+  val CatsRedisVersion               = "0.10.2"
 
   val SimulacrumVersion = "0.19.0"
 
