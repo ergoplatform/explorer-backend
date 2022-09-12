@@ -7,7 +7,8 @@ final case class ApiSettings(
   utxCache: UtxCacheSettings,
   redis: RedisSettings,
   service: ServiceSettings,
-  requests: RequestsSettings
+  requests: RequestsSettings,
+  enableBroadcast: Boolean
 )
 
 object ApiSettings extends SettingCompanion[ApiSettings]

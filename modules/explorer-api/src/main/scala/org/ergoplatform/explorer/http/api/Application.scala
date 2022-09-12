@@ -3,6 +3,7 @@ package org.ergoplatform.explorer.http.api
 import cats.effect.{ExitCode, Resource}
 import cats.free.Free.catsFreeMonadForFree
 import cats.syntax.functor._
+import cats.syntax.option._
 import cats.syntax.traverse._
 import doobie.free.connection.ConnectionIO
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -27,7 +28,7 @@ object Application extends TaskApp {
     resources(args.headOption).use { case (logger, conf, xa, redis, middleware) =>
       implicit val e: ErgoAddressEncoder = conf.protocol.addressEncoder
       logger.info("Starting ExplorerApi service ..") >>
-      HttpApi[Task, ConnectionIO](conf, redis, middleware)(
+      HttpApi[Task, ConnectionIO](conf, if (conf.enableBroadcast) redis.some else none, middleware)(
         Trans.fromDoobie(xa)
       ).use(_ => Task.never)
         .as(ExitCode.Success)

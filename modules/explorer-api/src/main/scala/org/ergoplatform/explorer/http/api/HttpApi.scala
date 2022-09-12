@@ -30,7 +30,7 @@ object HttpApi {
     D[_]: Monad: Throws: LiftConnectionIO: CompileStream
   ](
     settings: ApiSettings,
-    redis: RedisCommands[F, String, String],
+    redis: Option[RedisCommands[F, String, String]],
     cache: CachingMiddleware[F]
   )(trans: D Trans F)(implicit
     ec: ExecutionContext,
@@ -38,8 +38,8 @@ object HttpApi {
     opts: Http4sServerOptions[F, F]
   ): Resource[F, Server] =
     for {
-      v0 <- Resource.eval(RoutesV0Bundle(settings.protocol, settings.utxCache, redis.some)(trans))
-      v1 <- Resource.eval(RoutesV1Bundle(settings.service, settings.requests, settings.utxCache, redis.some)(trans))
+      v0 <- Resource.eval(RoutesV0Bundle(settings.protocol, settings.utxCache, redis)(trans))
+      v1 <- Resource.eval(RoutesV1Bundle(settings.service, settings.requests, settings.utxCache, redis)(trans))
       routes     = cache.middleware(v0.routes <+> v1.routes)
       corsRoutes = CORS.policy.withAllowOriginAll(routes)
       http <- BlazeServerBuilder[F](ec)
