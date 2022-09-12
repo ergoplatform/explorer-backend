@@ -12,10 +12,10 @@ object types {
   case class RequestHash32(value: String)
 
   object RequestHash32 {
-    implicit val show: Show[RequestHash32] = deriving
+    implicit val show: Show[RequestHash32]         = deriving
     implicit val loggable: Loggable[RequestHash32] = Loggable.show
 
-    def apply[F[_] : Sync](request: Request[F]): RequestHash32 =
+    def apply[F[_]: Sync](request: Request[F]): RequestHash32 =
       RequestHash32(
         request.method.toString ++ request.uri.toString ++ request.body.compile.toString
       )

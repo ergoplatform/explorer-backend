@@ -1,6 +1,5 @@
 package org.ergoplatform.explorer.http.api.cache
 
-import cats.Monad
 import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
 import fs2.{Chunk, Stream}
@@ -8,19 +7,19 @@ import org.ergoplatform.explorer.http.api.cache.models.CachedResponse
 import org.ergoplatform.explorer.http.api.cache.types.RequestHash32
 import org.http4s.{HttpRoutes, Request, Response}
 import org.typelevel.vault.Vault
-import scodec.bits.ByteVector
 import tofu.syntax.monadic._
 
 import scala.concurrent.duration.DurationInt
 
 object CachingMiddleware {
 
-  def make[F[_] : Sync](implicit
-                                caching: ApiQueryCache[F]
-                               ): CachingMiddleware[F] =
+  def make[F[_]: Sync](
+    caching: ApiQueryCache[F]
+  ): CachingMiddleware[F] =
     new CachingMiddleware[F](caching)
 
-  final class CachingMiddleware[F[_] : Sync](cache: ApiQueryCache[F]) {
+  final class CachingMiddleware[F[_]: Sync](cache: ApiQueryCache[F]) {
+
     def middleware(routes: HttpRoutes[F]) = Kleisli { req: Request[F] =>
       val key = RequestHash32(req)
       OptionT(cache.get(key).map { respOpt =>
@@ -30,7 +29,7 @@ object CachingMiddleware {
           val value = fromResponse(response)
           OptionT.liftF {
             if (response.status.isSuccess) cache.put(key, value, 2.minutes).as(response)
-            else unit
+            else response.pure
           }
         }
       }
@@ -53,6 +52,5 @@ object CachingMiddleware {
         resp.body.compile.toString
       )
   }
-
 
 }
