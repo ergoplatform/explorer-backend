@@ -7,8 +7,10 @@ import fs2.Stream
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.eval.{Task, TaskApp}
+import org.ergoplatform.explorer.cache.Redis
 import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.db.{DoobieTrans, Trans}
+import org.ergoplatform.explorer.indexer.cache.ApiQueryCache
 import org.ergoplatform.explorer.indexer.processes.{ChainIndexer, EpochsIndexer}
 import org.ergoplatform.explorer.settings.pureConfigInstances._
 import org.ergoplatform.explorer.settings.IndexerSettings
@@ -28,35 +30,36 @@ object Application extends TaskApp {
   implicit val makeRef: MakeRef[Task, Task] = MakeRef.syncInstance
 
   def run(args: List[String]): Task[ExitCode] =
-    resources(args.headOption).use[Task, ExitCode] { case (logger, settings, client, trans) =>
+    resources(args.headOption).use[Task, ExitCode] { case (logger, settings, client, trans, redis) =>
       logger.info("Starting Indexers ..") >>
         ErgoNetwork[Task](client, settings.network)
           .flatMap { ns =>
-            mkProgram(ns, settings, trans).compile.drain as ExitCode.Success
+            val cache = ApiQueryCache.make(redis)
+            mkProgram(ns, settings, trans, cache).compile.drain as ExitCode.Success
           }
           .guarantee(logger.info("Stopping Chain Indexer ..."))
     }
 
-  private def resources(
-    configPathOpt: Option[String]
-  ): Resource[Task, (SelfAwareStructuredLogger[Task], IndexerSettings, Client[Task], Trans[ConnectionIO, Task])] =
+  private def resources(configPathOpt: Option[String]) =
     for {
       logger   <- Resource.eval(Slf4jLogger.create)
       settings <- Resource.eval(IndexerSettings.load[Task](configPathOpt))
       client   <- BlazeClientBuilder[Task](global).resource
       xa       <- DoobieTrans[Task]("IndexerPool", settings.db)
       trans = Trans.fromDoobie(xa)
-    } yield (logger, settings, client, trans)
+      redis <- Redis[Task](settings.redisCache)
+    } yield (logger, settings, client, trans, redis)
 
   private def mkProgram(
     network: ErgoNetwork[Task],
     settings: IndexerSettings,
-    trans: ConnectionIO Trans Task
+    trans: ConnectionIO Trans Task,
+    cache: ApiQueryCache[Task]
   ): Stream[Task, Unit] =
     Stream
       .emits(
         List(
-          Stream.eval(ChainIndexer[Task, ConnectionIO](settings, network)(trans)).flatMap(_.run),
+          Stream.eval(ChainIndexer[Task, ConnectionIO](settings, network, cache)(trans)).flatMap(_.run),
           Stream.eval(EpochsIndexer[Task, ConnectionIO](settings, network)(trans)).flatMap(_.run)
         )
       )

@@ -28,7 +28,7 @@ object Application extends TaskApp {
     resources(args.headOption).use { case (logger, conf, xa, redis, middleware) =>
       implicit val e: ErgoAddressEncoder = conf.protocol.addressEncoder
       logger.info("Starting ExplorerApi service ..") >>
-      HttpApi[Task, ConnectionIO](conf, if (conf.enableBroadcast) redis.some else none, middleware)(
+      HttpApi[Task, ConnectionIO](conf, redis, middleware)(
         Trans.fromDoobie(xa)
       ).use(_ => Task.never)
         .as(ExitCode.Success)
@@ -37,11 +37,12 @@ object Application extends TaskApp {
 
   private def resources(configPathOpt: Option[String]) =
     for {
-      logger   <- Resource.eval(Slf4jLogger.create)
-      settings <- Resource.eval(ApiSettings.load(configPathOpt))
-      tr       <- DoobieTrans[Task]("ApiPool", settings.db)
-      redis    <- Redis[Task](settings.redis)
-      cache    <- Resource.eval(ApiQueryCache.make(redis))
+      logger     <- Resource.eval(Slf4jLogger.create)
+      settings   <- Resource.eval(ApiSettings.load(configPathOpt))
+      tr         <- DoobieTrans[Task]("ApiPool", settings.db)
+      redis      <- settings.redis.map(Redis[Task]).sequence
+      redisCache <- Redis[Task](settings.redisCache)
+      cache      <- Resource.eval(ApiQueryCache.make(redisCache))
       middleware = CachingMiddleware.make(cache)
     } yield (logger, settings, tr, redis, middleware)
 }

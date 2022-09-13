@@ -5,10 +5,10 @@ final case class ApiSettings(
   db: DbSettings,
   protocol: ProtocolSettings,
   utxCache: UtxCacheSettings,
-  redis: RedisSettings,
+  redis: Option[RedisSettings],
+  redisCache: RedisSettings,
   service: ServiceSettings,
-  requests: RequestsSettings,
-  enableBroadcast: Boolean
+  requests: RequestsSettings
 )
 
 object ApiSettings extends SettingCompanion[ApiSettings]

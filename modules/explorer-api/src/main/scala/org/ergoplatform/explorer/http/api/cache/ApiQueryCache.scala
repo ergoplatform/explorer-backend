@@ -3,7 +3,6 @@ package org.ergoplatform.explorer.http.api.cache
 import cats.Monad
 import cats.effect.Sync
 import dev.profunktor.redis4cats.RedisCommands
-import dev.profunktor.redis4cats.effects.ScriptOutputType
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.parser.parse
@@ -33,16 +32,11 @@ object ApiQueryCache {
 
     def put(key: RequestHash32, value: CachedResponse, ttl: FiniteDuration): F[Unit] = {
       val k = mkKey(key)
-      Logger[F].info("Going to put key $k into api cache.") >>
+      Logger[F].info(s"Going to put key $k into api cache.") >>
       cmd
-        .eval(
-          """local cur; cur = redis.call("setnx", KEYS[1], ARGV[1]); if cur == 1 then redis.call("expire", KEYS[1], ARGV[2]); end; return cur;""",
-          ScriptOutputType.Integer,
-          List(k),
-          List(value.asJson.noSpaces, ttl.toSeconds.toString)
-        )
+        .setNx(k, value.asJson.noSpaces)
         .flatMap { result =>
-          Logger[F].info("For key $k set result into api cache is: $result.")
+          Logger[F].info(s"For key $k set result into api cache is: $result.")
         }
     }
 
@@ -51,11 +45,11 @@ object ApiQueryCache {
 
     def get(key: RequestHash32): F[Option[CachedResponse]] =
       for {
-        _ <- Logger[F].info("Going to put get $key from api cache.")
+        _ <- Logger[F].info(s"Going to put get $key from api cache.")
         r <- cmd.get(mkKey(key)).map(_.flatMap(parse(_).toOption)).map { jsonOpt =>
                jsonOpt.flatMap(_.as[CachedResponse].toOption)
              }
-        _ <- Logger[F].info("Get key $key result from api cache is $r.")
+        _ <- Logger[F].info(s"Get key $key result from api cache is $r.")
       } yield r
 
   }

@@ -16,13 +16,13 @@ object Redis {
 
   /** Create new Redis client
     */
-  def apply[F[_] : Concurrent : ContextShift](
-                                               settings: RedisSettings
-                                             ): Resource[F, RedisCommands[F, String, String]] =
+  def apply[F[_]: Concurrent: ContextShift](
+    settings: RedisSettings
+  ): Resource[F, RedisCommands[F, String, String]] =
     for {
       implicit0(log: Log[F]) <- Resource.eval(Slf4jLogger.create.map(logInstance(_)))
-      uri <- Resource.eval(RedisURI.make[F](settings.url))
-      client <- RedisClient[F].fromUri(uri)
-      cmd <- RedisI[F].fromClient(client, RedisCodec.Utf8)
+      uri                    <- Resource.eval(RedisURI.make[F](settings.url))
+      client                 <- RedisClient[F].fromUri(uri)
+      cmd                    <- RedisI[F].fromClient(client, RedisCodec.Utf8)
     } yield cmd
 }
