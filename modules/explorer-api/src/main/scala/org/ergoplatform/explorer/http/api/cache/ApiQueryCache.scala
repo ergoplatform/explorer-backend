@@ -43,7 +43,7 @@ object ApiQueryCache {
 
     def get(key: RequestHash32): F[Option[CachedResponse]] =
       for {
-        _ <- Logger[F].info(s"Going to put get $key from api cache.")
+        _ <- Logger[F].info(s"Going to get $key from api cache.")
         r <- cmd.get(mkKey(key)).map(_.flatMap(parse(_).toOption)).map { jsonOpt =>
                jsonOpt.flatMap(_.as[CachedResponse].toOption)
              }
