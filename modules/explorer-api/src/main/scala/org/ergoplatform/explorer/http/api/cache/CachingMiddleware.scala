@@ -26,10 +26,11 @@ object CachingMiddleware {
         respOpt.map(toResponse)
       }).orElse {
         routes(req).flatMap { response =>
-          val value = fromResponse(response)
-          OptionT.liftF {
-            if (response.status.isSuccess) cache.put(key, value, 2.minutes).as(response)
-            else response.pure
+          OptionT.liftF(fromResponse(response)).flatMap { value =>
+            OptionT.liftF {
+              if (response.status.isSuccess) cache.put(key, value, 2.minutes).as(response)
+              else response.pure
+            }
           }
         }
       }
@@ -44,13 +45,16 @@ object CachingMiddleware {
         Vault.empty
       )
 
-    def fromResponse(resp: Response[F]): CachedResponse =
-      CachedResponse(
-        resp.status,
-        resp.httpVersion,
-        resp.headers,
-        resp.body.compile.toString
-      )
+    def fromResponse(resp: Response[F]): F[CachedResponse] =
+      resp.body.compile.toList.map { body =>
+        CachedResponse(
+          resp.status,
+          resp.httpVersion,
+          resp.headers,
+          body.map(_.toChar).mkString
+        )
+      }
+
   }
 
 }
