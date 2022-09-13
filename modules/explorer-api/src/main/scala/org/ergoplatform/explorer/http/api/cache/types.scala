@@ -5,6 +5,7 @@ import cats.effect.Sync
 import io.estatico.newtype.macros.newtype
 import org.http4s.Request
 import tofu.logging.Loggable
+import cats.syntax.functor._
 
 object types {
 
@@ -15,9 +16,11 @@ object types {
     implicit val show: Show[RequestHash32]         = deriving
     implicit val loggable: Loggable[RequestHash32] = Loggable.show
 
-    def apply[F[_]: Sync](request: Request[F]): RequestHash32 =
-      RequestHash32(
-        request.method.toString ++ request.uri.toString ++ request.body.compile.toString
-      )
+    def apply[F[_]: Sync](request: Request[F]): F[RequestHash32] =
+      request.body.compile.toList.map { body =>
+        RequestHash32(
+          request.method.toString ++ request.uri.toString ++ body.map(_.toChar).mkString
+        )
+      }
   }
 }

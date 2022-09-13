@@ -11,10 +11,8 @@ import org.ergoplatform.explorer.http.api.cache.models.CachedResponse
 import org.ergoplatform.explorer.http.api.cache.types.RequestHash32
 import tofu.syntax.monadic._
 
-import scala.concurrent.duration.FiniteDuration
-
 trait ApiQueryCache[F[_]] {
-  def put(key: RequestHash32, value: CachedResponse, ttl: FiniteDuration): F[Unit]
+  def put(key: RequestHash32, value: CachedResponse): F[Unit]
 
   def get(key: RequestHash32): F[Option[CachedResponse]]
 }
@@ -30,7 +28,7 @@ object ApiQueryCache {
 
   final private class Live[F[_]: Monad: Logger](val cmd: RedisCommands[F, String, String]) extends ApiQueryCache[F] {
 
-    def put(key: RequestHash32, value: CachedResponse, ttl: FiniteDuration): F[Unit] = {
+    def put(key: RequestHash32, value: CachedResponse): F[Unit] = {
       val k = mkKey(key)
       Logger[F].info(s"Going to put key $k into api cache.") >>
       cmd

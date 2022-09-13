@@ -21,15 +21,16 @@ object CachingMiddleware {
   final class CachingMiddleware[F[_]: Sync](cache: ApiQueryCache[F]) {
 
     def middleware(routes: HttpRoutes[F]) = Kleisli { req: Request[F] =>
-      val key = RequestHash32(req)
-      OptionT(cache.get(key).map { respOpt =>
-        respOpt.map(toResponse)
-      }).orElse {
-        routes(req).flatMap { response =>
-          OptionT.liftF(fromResponse(response)).flatMap { value =>
-            OptionT.liftF {
-              if (response.status.isSuccess) cache.put(key, value, 2.minutes).as(response)
-              else response.pure
+      OptionT.liftF(RequestHash32(req)).flatMap { key =>
+        OptionT(cache.get(key).map { respOpt =>
+          respOpt.map(toResponse)
+        }).orElse {
+          routes(req).flatMap { response =>
+            OptionT.liftF(fromResponse(response)).flatMap { value =>
+              OptionT.liftF {
+                if (response.status.isSuccess) cache.put(key, value).as(response)
+                else response.pure
+              }
             }
           }
         }
