@@ -17,6 +17,7 @@ trait TokenPropsParser[PropsT] {
 object TokenPropsParser {
 
   private val Eip4StringCharset = "UTF-8"
+  private val MaxEip4StringLen  = 1000
 
   def eip4Partial: TokenPropsParser[TokenPropsEip4] =
     new TokenPropsParser[TokenPropsEip4] {
@@ -60,7 +61,7 @@ object TokenPropsParser {
   }
 
   private def toUtf8String(raw: Array[Byte]): Option[String] =
-    if (looksLikeUTF8(raw))
+    if (raw.length <= MaxEip4StringLen && looksLikeUTF8(raw))
       Try(new String(raw, Eip4StringCharset)).toOption
     else None
 }
