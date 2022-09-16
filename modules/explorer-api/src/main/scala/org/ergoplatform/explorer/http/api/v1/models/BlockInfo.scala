@@ -5,6 +5,7 @@ import io.circe.generic.semiauto.deriveCodec
 import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
 import org.ergoplatform.explorer.protocol.blocks
+import org.ergoplatform.explorer.http.api.tapirInstances._
 import sttp.tapir.{Schema, Validator}
 
 final case class BlockInfo(
@@ -16,7 +17,7 @@ final case class BlockInfo(
   transactionsCount: Int,
   miner: MinerInfo,
   size: Int,
-  difficulty: Long,
+  difficulty: BigInt,
   minerReward: Long
 )
 

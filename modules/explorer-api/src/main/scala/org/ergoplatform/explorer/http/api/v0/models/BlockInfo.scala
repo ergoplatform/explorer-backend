@@ -6,6 +6,7 @@ import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.BlockId
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedBlockInfo
 import sttp.tapir.{Schema, Validator}
+import org.ergoplatform.explorer.http.api.tapirInstances._
 
 final case class BlockInfo(
   id: BlockId,
@@ -14,7 +15,7 @@ final case class BlockInfo(
   transactionsCount: Int,
   miner: MinerInfo,
   size: Int,
-  difficulty: Long,
+  difficulty: BigInt,
   minerReward: Long
 )
 

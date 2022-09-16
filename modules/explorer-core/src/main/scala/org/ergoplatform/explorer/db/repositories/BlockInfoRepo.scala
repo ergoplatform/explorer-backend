@@ -13,6 +13,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.BlockStats
 import org.ergoplatform.explorer.db.models.aggregates.{BlockSize, ExtendedBlockInfo, MinerStats, TimePoint}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
+import org.ergoplatform.explorer.db.doobieInstances._
 
 /** [[BlockStats]] data access operations.
   */
@@ -55,7 +56,7 @@ trait BlockInfoRepo[D[_]] {
 
   def getLastStats: D[Option[BlockStats]]
 
-  def totalDifficultySince(ts: Long): D[Long]
+  def totalDifficultySince(ts: Long): D[BigInt]
 
   def circulatingSupplySince(ts: Long): D[Long]
 
@@ -71,7 +72,7 @@ trait BlockInfoRepo[D[_]] {
 
   def avgDifficultiesSince(ts: Long): D[List[TimePoint[Long]]]
 
-  def totalDifficultiesSince(ts: Long): D[List[TimePoint[Long]]]
+  def totalDifficultiesSince(ts: Long): D[List[TimePoint[BigInt]]]
 
   def totalMinerRevenueSince(ts: Long): D[List[TimePoint[Long]]]
 
@@ -137,7 +138,7 @@ object BlockInfoRepo {
     def getLastStats: D[Option[BlockStats]] =
       QS.getLastStats.option.liftConnectionIO
 
-    def totalDifficultySince(ts: Long): D[Long] =
+    def totalDifficultySince(ts: Long): D[BigInt] =
       QS.totalDifficultySince(ts).unique.liftConnectionIO
 
     def circulatingSupplySince(ts: Long): D[Long] =
@@ -161,7 +162,7 @@ object BlockInfoRepo {
     def avgDifficultiesSince(ts: Long): D[List[TimePoint[Long]]] =
       QS.avgDifficultiesSince(ts).to[List].liftConnectionIO
 
-    def totalDifficultiesSince(ts: Long): D[List[TimePoint[Long]]] =
+    def totalDifficultiesSince(ts: Long): D[List[TimePoint[BigInt]]] =
       QS.totalDifficultiesSince(ts).to[List].liftConnectionIO
 
     def totalMinerRevenueSince(ts: Long): D[List[TimePoint[Long]]] =

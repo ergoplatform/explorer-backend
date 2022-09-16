@@ -138,7 +138,7 @@ object StatsService {
 
     def getHashRate(timespan: FiniteDuration): F[List[ChartPoint]] =
       shiftedTs(timespan)(
-        blockInfoRepo.totalDifficultiesSince(_).map(_.map(ChartPoint.apply)) ||> trans.xa
+        blockInfoRepo.totalDifficultiesSince(_).map(_.map(ChartPoint.fromBigIntPoint)) ||> trans.xa
       )
 
     def getHashRateDistribution(timespan: FiniteDuration): F[List[HashRateDistributionSegment]] =

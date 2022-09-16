@@ -4,9 +4,7 @@ import io.circe.{Codec, Decoder, Encoder, Json}
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import sttp.tapir.{Schema, Validator}
-import sttp.tapir.generic.Derived
-
-import scala.math.BigDecimal
+import org.ergoplatform.explorer.http.api.tapirInstances._
 
 final case class StatsSummary(
   blocksCount: Long,
@@ -20,8 +18,8 @@ final case class StatsSummary(
   percentEarnedTransactionsFees: Double,
   percentTransactionVolume: Double,
   costPerTx: Long,
-  lastDifficulty: Long,
-  totalHashrate: Long
+  lastDifficulty: BigInt,
+  totalHashrate: BigInt
 )
 
 object StatsSummary {

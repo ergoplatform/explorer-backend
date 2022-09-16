@@ -4,7 +4,7 @@ import org.ergoplatform.explorer.Address
 
 final case class MinerStats(
   minerAddress: Address,
-  totalDifficulties: Long,
+  totalDifficulties: BigDecimal,
   totalTime: Long,
   blocksMined: Int,
   minerName: Option[String]
