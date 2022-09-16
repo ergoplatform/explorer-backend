@@ -1,15 +1,18 @@
 package org.ergoplatform.explorer.db
 
 import doobie.Meta
-import doobie.util.Read
+import doobie.util.{Read, Write}
 import io.circe.Json
 import io.circe.parser.parse
 import org.postgresql.util.PGobject
 
 object doobieInstances {
 
-  implicit val BigIntGet: Read[BigInt] =
-    Read[Long].map(BigInt(_))
+  implicit val bigIntRead: Read[BigInt] =
+    Read[BigDecimal].map(_.toBigInt())
+
+  implicit val bigIntWrite: Write[BigInt] =
+    Write[BigDecimal].contramap(x => BigDecimal(x.bigInteger))
 
   implicit val JsonMeta: Meta[Json] =
     Meta.Advanced

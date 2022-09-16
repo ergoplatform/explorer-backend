@@ -34,7 +34,7 @@ object stats {
       BigDecimal(result * 100).setScale(8, BigDecimal.RoundingMode.HALF_UP).toDouble
     }
 
-  @inline def dailyHashRate(difficulty: Long): Long = (difficulty / SecondsIn24H) + 1L
+  @inline def dailyHashRate(difficulty: BigInt): BigInt = (difficulty / SecondsIn24H) + 1L
 
   /** Get timestamp millis 24h back.
     */

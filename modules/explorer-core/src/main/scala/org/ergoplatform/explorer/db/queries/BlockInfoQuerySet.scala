@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import doobie.{Fragments, LogHandler}
 import doobie.implicits._
 import doobie.refined.implicits._
+import org.ergoplatform.explorer.db.doobieInstances._
 import doobie.util.fragment.Fragment
 import doobie.util.query.Query0
 import doobie.util.update.Update0
@@ -218,11 +219,11 @@ object BlockInfoQuerySet extends QuerySet {
   def getBlockSize(id: BlockId)(implicit lh: LogHandler): Query0[Int] =
     sql"select block_size from blocks_info where header_id = $id".query[Int]
 
-  def totalDifficultySince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
+  def totalDifficultySince(ts: Long)(implicit lh: LogHandler): Query0[BigInt] =
     sql"""
-         |select coalesce(cast(sum(difficulty) as bigint), 0) from blocks_info
+         |select coalesce(cast(sum(difficulty) as decimal), 0) from blocks_info
          |where timestamp >= $ts
-         |""".stripMargin.query[Long]
+         |""".stripMargin.query[BigInt]
 
   def circulatingSupplySince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
     sql"""
@@ -297,16 +298,16 @@ object BlockInfoQuerySet extends QuerySet {
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
-  def totalDifficultiesSince(ts: Long): Query0[TimePoint[Long]] =
+  def totalDifficultiesSince(ts: Long): Query0[TimePoint[BigInt]] =
     sql"""
          |select
          |  min(timestamp) as t,
-         |  cast(sum(difficulty) as bigint),
+         |  cast(sum(difficulty) as decimal),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
          |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
          |group by date order by t asc
-         |""".stripMargin.query[TimePoint[Long]]
+         |""".stripMargin.query[TimePoint[BigInt]]
 
   def totalMinerRevenueSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
     sql"""
@@ -323,7 +324,7 @@ object BlockInfoQuerySet extends QuerySet {
     sql"""
          |select
          |  bi.miner_address,
-         |  coalesce(cast(sum(bi.difficulty) as bigint), 0),
+         |  coalesce(cast(sum(bi.difficulty) as decimal), 0),
          |  coalesce(cast(sum(bi.block_mining_time) as bigint), 0),
          |  count(*) as count,
          |  m.miner_name

@@ -4,12 +4,13 @@ import io.circe.Codec
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import sttp.tapir.{Schema, Validator}
+import org.ergoplatform.explorer.http.api.tapirInstances._
 
 final case class BlockChainInfo(
   version: String,
   supply: Long,
   transactionAverage: Int, // avg. number of transactions per block.
-  hashRate: Long
+  hashRate: BigInt
 )
 
 object BlockChainInfo {
