@@ -2,7 +2,7 @@ package org.ergoplatform.explorer.v1.services
 
 import cats.{Monad, Parallel}
 import cats.effect.{Concurrent, ContextShift, IO}
-import dev.profunktor.redis4cats.algebra.RedisCommands
+import dev.profunktor.redis4cats.RedisCommands
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.string.ValidByte

@@ -18,7 +18,8 @@ final case class IndexerSettings(
   db: DbSettings,
   protocol: ProtocolSettings,
   indexes: EnabledIndexes,
-  startHeight: Option[Int]
+  startHeight: Option[Int],
+  redisCache: RedisSettings
 )
 
 object IndexerSettings extends SettingCompanion[IndexerSettings]

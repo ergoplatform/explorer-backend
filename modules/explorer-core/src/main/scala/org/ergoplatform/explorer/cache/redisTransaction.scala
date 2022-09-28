@@ -4,6 +4,7 @@ import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.effect.implicits._
 import cats.implicits._
+import dev.profunktor.redis4cats.RedisCommands
 import dev.profunktor.redis4cats.algebra._
 import io.chrisdavenport.log4cats.Logger
 

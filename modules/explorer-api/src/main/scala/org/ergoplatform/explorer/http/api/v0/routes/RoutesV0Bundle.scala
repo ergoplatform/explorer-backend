@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.http.api.v0.routes
 import cats.Monad
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.semigroupk._
-import dev.profunktor.redis4cats.algebra.RedisCommands
+import dev.profunktor.redis4cats.RedisCommands
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.ergoplatform.ErgoAddressEncoder

@@ -9,5 +9,6 @@ object redisInstances {
     new Log[F] {
       def info(msg: => String): F[Unit]  = logger.info(msg)
       def error(msg: => String): F[Unit] = logger.error(msg)
+      def debug(msg: => String): F[Unit] = logger.debug(msg)
     }
 }

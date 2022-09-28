@@ -6,11 +6,11 @@ import monocle.macros.syntax.lens._
 import org.ergoplatform.explorer.MainNetConfiguration
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories.HeaderRepo
-import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
+import org.ergoplatform.explorer.db.{RealDbTest, Trans, repositories}
 import org.ergoplatform.explorer.indexer.GrabberTestNetwork.Source
 import org.ergoplatform.explorer.indexer.processes.ChainIndexer
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, ApiTransaction}
-import org.ergoplatform.explorer.settings.{EnabledIndexes, IndexerSettings, NetworkSettings}
+import org.ergoplatform.explorer.settings.{EnabledIndexes, IndexerSettings, NetworkSettings, RedisSettings}
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.scalacheck.ScalacheckShapeless._
 import org.scalacheck.{Arbitrary, Gen}
@@ -19,6 +19,7 @@ import tofu.logging.Logs
 import org.scalatest._
 import flatspec._
 import matchers._
+import org.ergoplatform.explorer.cache.Redis
 
 import scala.concurrent.duration._
 
@@ -43,7 +44,8 @@ class ChainGrabberSpec extends AnyFlatSpec with RealDbTest with MainNetConfigura
         adProofs        = true,
         blockStats      = true
       ),
-      startHeight = None
+      startHeight = None,
+      RedisSettings("")
     )
 
   implicit val logs: Logs[IO, IO]       = Logs.sync[IO, IO]
@@ -53,7 +55,7 @@ class ChainGrabberSpec extends AnyFlatSpec with RealDbTest with MainNetConfigura
     forSingleInstance(consistentChainGen(12)) { apiBlocks =>
       withLiveRepo[ConnectionIO] { repo =>
         val networkService = new GrabberTestNetwork[IO](Source(apiBlocks))
-        ChainIndexer[IO, ConnectionIO](settings, networkService)(Trans.fromDoobie(xa))
+        ChainIndexer[IO, ConnectionIO](settings, networkService, CacheMock.make)(Trans.fromDoobie(xa))
           .flatMap(_.run.take(11L).compile.drain)
           .unsafeRunSync()
         repo.getBestHeight.runWithIO() should be(11)

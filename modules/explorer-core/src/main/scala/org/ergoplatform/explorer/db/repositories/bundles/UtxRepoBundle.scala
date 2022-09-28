@@ -3,7 +3,7 @@ package org.ergoplatform.explorer.db.repositories.bundles
 import cats.Monad
 import cats.effect.Concurrent
 import cats.syntax.traverse._
-import dev.profunktor.redis4cats.algebra.RedisCommands
+import dev.profunktor.redis4cats.RedisCommands
 import org.ergoplatform.explorer.cache.repositories.ErgoLikeTransactionRepo
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.repositories

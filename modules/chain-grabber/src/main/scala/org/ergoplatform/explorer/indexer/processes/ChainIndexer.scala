@@ -17,6 +17,7 @@ import org.ergoplatform.explorer.Err.ProcessingErr.{InconsistentNodeView, NoBloc
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.{BlockStats, Header}
+import org.ergoplatform.explorer.indexer.cache.ApiQueryCache
 import org.ergoplatform.explorer.indexer.extractors._
 import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData, TotalStats}
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
@@ -43,11 +44,12 @@ object ChainIndexer {
 
   def apply[F[_]: Sync: Parallel: Timer, D[_]: MonadThrow: LiftConnectionIO](
     settings: IndexerSettings,
-    network: ErgoNetwork[F]
+    network: ErgoNetwork[F],
+    cache: ApiQueryCache[F]
   )(trans: Trans[D, F])(implicit logs: Logs[F, F], makeRef: MakeRef[F, F]): F[ChainIndexer[F]] =
     logs.forService[ChainIndexer[F]].flatMap { implicit log =>
       makeRef.refOf(List.empty[(BlockId, Int)]).flatMap { updatesRef =>
-        RepoBundle[F, D].map(new Live[F, D](settings, network, updatesRef, _)(trans))
+        RepoBundle[F, D].map(new Live[F, D](settings, network, updatesRef, _, cache)(trans))
       }
     }
 
@@ -58,7 +60,8 @@ object ChainIndexer {
     settings: IndexerSettings,
     network: ErgoNetwork[F],
     pendingChainUpdates: Ref[F, List[(BlockId, Int)]],
-    repos: RepoBundle[D]
+    repos: RepoBundle[D],
+    cache: ApiQueryCache[F]
   )(trans: Trans[D, F])
     extends ChainIndexer[F] {
 
@@ -105,6 +108,8 @@ object ChainIndexer {
           _ <- info"Best block [${best.headOption.map(_.header.id)}]"
           _ <- info"Orphaned blocks [${orphaned.map(_.header.id).mkString(", ")}]"
           _ <- best.traverse(applyBestBlock)
+          _ <- cache.flushAll
+          _ <- info"Api query cache flushed after applying best block."
           _ <- orphaned.traverse(applyOrphanedBlock)
         } yield blocks.size
       pullBlocks.guarantee(commitChainUpdates)
