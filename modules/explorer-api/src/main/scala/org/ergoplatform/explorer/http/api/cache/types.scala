@@ -7,6 +7,8 @@ import org.http4s.Request
 import tofu.logging.Loggable
 import cats.syntax.functor._
 
+import java.security.MessageDigest
+
 object types {
 
   @newtype
@@ -19,7 +21,13 @@ object types {
     def apply[F[_]: Sync](request: Request[F]): F[RequestHash32] =
       request.body.compile.toList.map { body =>
         RequestHash32(
-          request.method.toString ++ request.uri.toString ++ body.map(_.toChar).mkString
+          new String(
+            MessageDigest
+              .getInstance("SHA-256")
+              .digest(
+                (request.method.toString ++ request.uri.toString ++ body.map(_.toChar).mkString).getBytes
+              )
+          )
         )
       }
   }
