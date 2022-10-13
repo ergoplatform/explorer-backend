@@ -29,6 +29,7 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
     getUnspentOutputsByErgoTreeDef ::
     getUnspentOutputsByErgoTreeTemplateHashDef ::
     getOutputsByAddressDef ::
+    `getUnspent&UnconfirmedOutputsMergedByAddressDef` ::
     getUnspentOutputsByAddressDef ::
     streamOutputsByGixDef ::
     searchUnspentOutputsByTokensUnionDef ::
