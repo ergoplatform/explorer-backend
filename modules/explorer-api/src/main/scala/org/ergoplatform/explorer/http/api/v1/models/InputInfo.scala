@@ -5,7 +5,7 @@ import derevo.derive
 import io.circe.Json
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, FullInput}
-import org.ergoplatform.explorer.http.api.models.{AssetInstanceInfo, PrettyErgoTree}
+import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 @derive(encoder, decoder)
@@ -56,7 +56,10 @@ object InputInfo {
     )
 
   def apply(i: FullInput, assets: List[ExtendedAsset]): InputInfo = {
-    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.humanErgoTree(i.ergoTree)
+    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.fromHexString(i.ergoTree).fold(
+      _ => ("", ""),
+      tree => (tree.constants, tree.script)
+    )
     InputInfo(
       i.input.boxId,
       i.value,

@@ -6,7 +6,7 @@ import io.circe.Json
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
-import org.ergoplatform.explorer.http.api.models.{AssetInstanceInfo, PrettyErgoTree}
+import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 @derive(encoder, decoder)
@@ -59,7 +59,10 @@ object OutputInfo {
     o: ExtendedOutput,
     assets: List[ExtendedAsset]
   ): OutputInfo = {
-    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.humanErgoTree(o.output.ergoTree)
+    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.fromHexString(o.output.ergoTree).fold(
+      _ => ("", ""),
+      tree => (tree.constants, tree.script)
+    )
     OutputInfo(
       o.output.boxId,
       o.output.txId,
@@ -84,7 +87,10 @@ object OutputInfo {
     o: Output,
     assets: List[ExtendedAsset]
   ): OutputInfo = {
-    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.humanErgoTree(o.ergoTree)
+    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.fromHexString(o.ergoTree).fold(
+      _ => ("", ""),
+      tree => (tree.constants, tree.script)
+    )
     OutputInfo(
       o.boxId,
       o.txId,
