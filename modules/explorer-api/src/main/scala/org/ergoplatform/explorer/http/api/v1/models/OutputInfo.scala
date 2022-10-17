@@ -20,6 +20,8 @@ final case class OutputInfo(
   creationHeight: Int,
   settlementHeight: Int,
   ergoTree: HexString,
+  ergoTreeConstants: String,
+  ergoTreeScript: String,
   address: Address,
   assets: List[AssetInstanceInfo],
   additionalRegisters: Json,
@@ -56,7 +58,11 @@ object OutputInfo {
   def apply(
     o: ExtendedOutput,
     assets: List[ExtendedAsset]
-  ): OutputInfo =
+  ): OutputInfo = {
+    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.fromHexString(o.output.ergoTree).fold(
+      _ => ("", ""),
+      tree => (tree.constants, tree.script)
+    )
     OutputInfo(
       o.output.boxId,
       o.output.txId,
@@ -67,17 +73,24 @@ object OutputInfo {
       o.output.creationHeight,
       o.output.settlementHeight,
       o.output.ergoTree,
+      ergoTreeConstants,
+      ergoTreeScript,
       o.output.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       o.output.additionalRegisters,
       o.spentByOpt,
       o.output.mainChain
     )
+  }
 
   def unspent(
     o: Output,
     assets: List[ExtendedAsset]
-  ): OutputInfo =
+  ): OutputInfo = {
+    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.fromHexString(o.ergoTree).fold(
+      _ => ("", ""),
+      tree => (tree.constants, tree.script)
+    )
     OutputInfo(
       o.boxId,
       o.txId,
@@ -88,10 +101,13 @@ object OutputInfo {
       o.creationHeight,
       o.settlementHeight,
       o.ergoTree,
+      ergoTreeConstants,
+      ergoTreeScript,
       o.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       o.additionalRegisters,
       None,
       o.mainChain
     )
+  }
 }

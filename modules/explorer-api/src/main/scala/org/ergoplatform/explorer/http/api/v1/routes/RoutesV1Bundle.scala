@@ -58,8 +58,9 @@ object RoutesV1Bundle {
       assetsRoutes    = AssetsRoutes(requestsSettings, assets, tokens)
       txsRoutes       = TransactionsRoutes(requestsSettings, transactions)
       addressesRoutes = AddressesRoutes(requestsSettings, transactions, addresses)
+      ergoTreeRoutes  = ErgoTreeRoutes()
       docs            = DocsRoutes(requestsSettings)
       routes =
-        infoRoutes <+> txsRoutes <+> boxesRoutes <+> epochsRoutes <+> tokensRoutes <+> assetsRoutes <+> addressesRoutes <+> blocksRoutes <+> mempoolRoutes <+> docs
+        infoRoutes <+> txsRoutes <+> boxesRoutes <+> epochsRoutes <+> tokensRoutes <+> assetsRoutes <+> addressesRoutes <+> blocksRoutes <+> mempoolRoutes <+> ergoTreeRoutes <+> docs
     } yield RoutesV1Bundle(routes)
 }

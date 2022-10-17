@@ -141,7 +141,8 @@ object dependencies {
     Redis ++
     Enums
 
-  lazy val api: List[ModuleID] = Monix
+  lazy val api: List[ModuleID] = Monix ++
+    List("org.scorexfoundation" %% "sigma-state" % "4.0.6-31-e2e0ffa1-SNAPSHOT")
 
   lazy val grabber: List[ModuleID] = Monix
 

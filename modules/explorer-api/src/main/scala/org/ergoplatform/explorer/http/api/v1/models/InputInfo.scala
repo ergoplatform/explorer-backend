@@ -21,6 +21,8 @@ final case class InputInfo(
   outputCreatedAt: Int,
   outputSettledAt: Int,
   ergoTree: HexString,
+  ergoTreeConstants: String,
+  ergoTreeScript: String,
   address: Address,
   assets: List[AssetInstanceInfo],
   additionalRegisters: Json
@@ -53,7 +55,11 @@ object InputInfo {
       )(_ => Map.empty)
     )
 
-  def apply(i: FullInput, assets: List[ExtendedAsset]): InputInfo =
+  def apply(i: FullInput, assets: List[ExtendedAsset]): InputInfo = {
+    val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.fromHexString(i.ergoTree).fold(
+      _ => ("", ""),
+      tree => (tree.constants, tree.script)
+    )
     InputInfo(
       i.input.boxId,
       i.value,
@@ -66,10 +72,13 @@ object InputInfo {
       i.outputCreatedAt,
       i.outputSettledAt,
       i.ergoTree,
+      ergoTreeConstants,
+      ergoTreeScript,
       i.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
       i.additionalRegisters
     )
+  }
 
   def batch(ins: List[FullInput], assets: List[ExtendedAsset]): List[InputInfo] = {
     val groupedAssets = assets.groupBy(_.boxId)
