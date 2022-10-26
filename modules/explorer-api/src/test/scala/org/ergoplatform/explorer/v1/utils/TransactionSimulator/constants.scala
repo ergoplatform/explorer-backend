@@ -62,12 +62,12 @@ object constants {
   case class SimulatedTransaction(sender: TransactionInfoT, receiver: TransactionInfoT)
 
   case class AssetInstanceInfoT(
-                                 tokenId: TokenId,
-                                 index: Int,
-                                 name: Option[String],
-                                 decimals: Option[Int],
-                                 `type`: Option[TokenType]
-                               )
+    tokenId: TokenId,
+    index: Int,
+    name: Option[String],
+    decimals: Option[Int],
+    `type`: Option[TokenType]
+  )
 
   type TestTokens = Map[TokenId, Long]
 

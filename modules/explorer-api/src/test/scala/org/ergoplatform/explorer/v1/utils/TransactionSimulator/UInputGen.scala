@@ -11,11 +11,11 @@ import java.util.UUID.randomUUID
 object UInputGen {
 
   def apply(
-             wallet: WalletT,
-             ergoTree: ErgoTree,
-             address: Address,
-             availableTestTokens: Map[TokenId, AssetInstanceInfoT]
-           ): UInputInfo = UInputInfo(
+    wallet: WalletT,
+    ergoTree: ErgoTree,
+    address: Address,
+    availableTestTokens: Map[TokenId, AssetInstanceInfoT]
+  ): UInputInfo = UInputInfo(
     BoxId(randomUUID().toString),
     wallet.balance,
     0,

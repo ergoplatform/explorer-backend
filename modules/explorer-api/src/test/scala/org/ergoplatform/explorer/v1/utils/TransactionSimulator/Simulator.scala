@@ -14,11 +14,11 @@ import scala.util.Try
 object Simulator {
 
   def apply(
-             sender: WalletT,
-             receiver: WalletT,
-             amountToSend: Long,
-             tokensToSend: Option[Map[TokenId, Long]]
-           ): Try[SimulatedTransaction] = Try {
+    sender: WalletT,
+    receiver: WalletT,
+    amountToSend: Long,
+    tokensToSend: Option[Map[TokenId, Long]]
+  ): Try[SimulatedTransaction] = Try {
 
     if (tokensToSend.isDefined)
       require(

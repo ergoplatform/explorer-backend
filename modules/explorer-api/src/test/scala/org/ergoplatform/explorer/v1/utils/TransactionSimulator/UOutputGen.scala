@@ -10,11 +10,11 @@ import java.util.UUID.randomUUID
 object UOutputGen {
 
   def apply(
-             value: Long,
-             ergoTree: HexString,
-             address: Address,
-             assets: List[AssetInstanceInfo]
-           ): UOutputInfo = UOutputInfo(
+    value: Long,
+    ergoTree: HexString,
+    address: Address,
+    assets: List[AssetInstanceInfo]
+  ): UOutputInfo = UOutputInfo(
     boxId               = BoxId(randomUUID().toString),
     transactionId       = TxId(randomUUID().toString),
     value               = value,

@@ -57,9 +57,9 @@ class MS_D extends MempoolSpec {
   "Mempool Service" should "get Total balance considering mempool transactions" in {
     import tofu.fs2Instances._
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
-    val address1S = SenderAddressString
-    val address1T = Address.fromString[Try](address1S)
-    lazy val address1Tree = sigma.addressToErgoTreeHex(address1T.get)
+    val address1S                               = SenderAddressString
+    val address1T                               = Address.fromString[Try](address1S)
+    lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
     withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, addr) =>

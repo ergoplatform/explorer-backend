@@ -15,7 +15,7 @@ import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.AggregatedAsset
 import org.ergoplatform.explorer.db.models.generators._
 import org.ergoplatform.explorer.db.repositories._
-import org.ergoplatform.explorer.db.{RealDbTest, Trans, repositories}
+import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, TokenAmount}
 import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Mempool}

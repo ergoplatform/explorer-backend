@@ -16,7 +16,7 @@ import org.ergoplatform.explorer.http.api.v1.models.{Balance, UInputInfo, UOutpu
 import org.ergoplatform.explorer.http.api.v1.utils.BuildUnconfirmedBalance
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
-import org.ergoplatform.{ErgoAddressEncoder, explorer}
+import org.ergoplatform.{explorer, ErgoAddressEncoder}
 import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
 import org.ergoplatform.explorer.syntax.stream._
 import tofu.Throws
@@ -50,9 +50,9 @@ object MempoolProps {
     import repo._
 
     def getUnconfirmedBalanceByAddress(
-                                        address: Address,
-                                        confirmedBalance: Balance
-                                      ): F[Balance] = {
+      address: Address,
+      confirmedBalance: Balance
+    ): F[Balance] = {
       val ergoTree = addressToErgoTreeNewtype(address)
       txs
         .countByErgoTree(ergoTree.value)
@@ -70,7 +70,6 @@ object MempoolProps {
         }
         .thrushK(trans.xa)
     }
-
 
     def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
       txs
