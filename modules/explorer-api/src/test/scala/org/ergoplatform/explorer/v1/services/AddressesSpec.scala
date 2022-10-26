@@ -1,52 +1,38 @@
 package org.ergoplatform.explorer.v1.services
 
-import cats.{Monad, Parallel}
-import cats.syntax.option._
 import cats.effect.{Concurrent, ContextShift, IO}
+import cats.syntax.option._
+import cats.{Monad, Parallel}
 import dev.profunktor.redis4cats.RedisCommands
 import doobie.free.connection.ConnectionIO
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.string.ValidByte
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.explorer.{Address, ErgoTree}
 import org.ergoplatform.explorer.cache.Redis
 import org.ergoplatform.explorer.commonGenerators.forSingleInstance
-import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.testSyntax.runConnectionIO._
-import org.ergoplatform.explorer.db.repositories.{
-  AssetRepo,
-  HeaderRepo,
-  InputRepo,
-  OutputRepo,
-  TokenRepo,
-  TransactionRepo
-}
-import org.ergoplatform.explorer.testSyntax.runConnectionIO._
-import org.ergoplatform.explorer.Address
-import org.ergoplatform.explorer.commonGenerators.forSingleInstance
 import org.ergoplatform.explorer.db.models.aggregates.AggregatedAsset
-import org.ergoplatform.explorer.http.api.v1.models.TokenAmount
-import org.ergoplatform.explorer.protocol.sigma
-import org.ergoplatform.explorer.v1.services.constants.SenderAddressString
+import org.ergoplatform.explorer.db.models.generators._
+import org.ergoplatform.explorer.db.repositories._
+import org.ergoplatform.explorer.db.{RealDbTest, Trans, repositories}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
+import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, TokenAmount}
 import org.ergoplatform.explorer.http.api.v1.services.{Addresses, Mempool}
+import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
+import org.ergoplatform.explorer.protocol.sigma
 import org.ergoplatform.explorer.settings.{RedisSettings, ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.testContainers.RedisTest
-import org.scalatest.{PrivateMethodTester, TryValues}
+import org.ergoplatform.explorer.testSyntax.runConnectionIO._
+import org.ergoplatform.explorer.v1.services.AddressesSpec._
+import org.ergoplatform.explorer.v1.services.constants.{ReceiverAddressString, SenderAddressString}
+import org.ergoplatform.explorer.{Address, ErgoTree}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
+import org.scalatest.{PrivateMethodTester, TryValues}
 import tofu.syntax.monadic._
-
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
-import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
-import org.ergoplatform.explorer.v1.services.AddressesSpec._
-import org.ergoplatform.explorer.db.models.generators._
-import org.ergoplatform.explorer.http.api.v1.models.AddressInfo
-import org.ergoplatform.explorer.protocol.sigma
-import org.ergoplatform.explorer.v1.services.constants.{ReceiverAddressString, SenderAddressString}
 
 trait AddressesSpec
   extends AnyFlatSpec
@@ -275,8 +261,9 @@ class AS_D extends AddressesSpec {
 object AddressesSpec {
 
   import cats.effect.Sync
-  import scala.concurrent.duration._
   import cats.syntax.traverse._
+
+  import scala.concurrent.duration._
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   def withResources[F[_]: Sync: Monad: Parallel: Concurrent: ContextShift](port: Int) = for {

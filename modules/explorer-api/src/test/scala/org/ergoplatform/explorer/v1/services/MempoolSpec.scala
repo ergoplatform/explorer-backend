@@ -25,7 +25,6 @@ import eu.timepit.refined.auto._
 import org.scalatest.{PrivateMethodTester, TryValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 import tofu.syntax.monadic._
@@ -48,44 +47,44 @@ class MS_A extends MempoolSpec {
     ErgoAddressEncoder(networkPrefix.value.toByte)
 
   "Mempool Service" should "" in {}
+}
 
-  class MS_D extends MempoolSpec {
-    val networkPrefix: String Refined ValidByte = "16" // strictly run test-suite with testnet network prefix
-    implicit val addressEncoder: ErgoAddressEncoder =
-      ErgoAddressEncoder(networkPrefix.value.toByte)
+class MS_D extends MempoolSpec {
+  val networkPrefix: String Refined ValidByte = "16" // strictly run test-suite with testnet network prefix
+  implicit val addressEncoder: ErgoAddressEncoder =
+    ErgoAddressEncoder(networkPrefix.value.toByte)
 
-    "Mempool Service" should "get Total balance considering mempool transactions" in {
-      import tofu.fs2Instances._
-      implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
-      val address1S = SenderAddressString
-      val address1T = Address.fromString[Try](address1S)
-      lazy val address1Tree = sigma.addressToErgoTreeHex(address1T.get)
-      withResources[IO](container.mappedPort(redisTestPort))
-        .use { case (settings, utxCache, redis) =>
-          withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, addr) =>
-            address1T.isSuccess should be(true)
-            withLiveRepos[ConnectionIO] { (hRepo, txRepo, outRepo, _, _, _) =>
-              forSingleInstance(
-                balanceOfAddressGen(
-                  mainChain = true,
-                  address1T.get,
-                  address1Tree,
-                  (100.toNanoErgo, 1) :: (200.toNanoErgo, 1) :: (300.toNanoErgo, 1) :: List[(Long, Int)]()
-                )
-              ) { infoTupleList =>
-                infoTupleList.foreach { case (header, out, tx) =>
-                  hRepo.insert(header).runWithIO()
-                  outRepo.insert(out).runWithIO()
-                  txRepo.insert(tx).runWithIO()
-                }
-                val tb = addr.totalBalanceWithConsiderationOfMempoolFor(address1T.get).unsafeRunSync()
-                tb.confirmed.nanoErgs should be(600.toNanoErgo)
+  "Mempool Service" should "get Total balance considering mempool transactions" in {
+    import tofu.fs2Instances._
+    implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
+    val address1S = SenderAddressString
+    val address1T = Address.fromString[Try](address1S)
+    lazy val address1Tree = sigma.addressToErgoTreeHex(address1T.get)
+    withResources[IO](container.mappedPort(redisTestPort))
+      .use { case (settings, utxCache, redis) =>
+        withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, addr) =>
+          address1T.isSuccess should be(true)
+          withLiveRepos[ConnectionIO] { (hRepo, txRepo, outRepo, _, _, _) =>
+            forSingleInstance(
+              balanceOfAddressGen(
+                mainChain = true,
+                address1T.get,
+                address1Tree,
+                (100.toNanoErgo, 1) :: (200.toNanoErgo, 1) :: (300.toNanoErgo, 1) :: List[(Long, Int)]()
+              )
+            ) { infoTupleList =>
+              infoTupleList.foreach { case (header, out, tx) =>
+                hRepo.insert(header).runWithIO()
+                outRepo.insert(out).runWithIO()
+                txRepo.insert(tx).runWithIO()
               }
+              val tb = addr.totalBalanceWithConsiderationOfMempoolFor(address1T.get).unsafeRunSync()
+              tb.confirmed.nanoErgs should be(600.toNanoErgo)
             }
           }
         }
-        .unsafeRunSync()
-    }
+      }
+      .unsafeRunSync()
   }
 }
 
