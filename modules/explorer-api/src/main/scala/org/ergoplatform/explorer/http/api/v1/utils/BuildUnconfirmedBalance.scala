@@ -24,11 +24,11 @@ object BuildUnconfirmedBalance {
     * @return
     */
   def apply(
-             items: List[UTransactionInfo],
-             confirmedBalance: Balance,
-             ergoTree: ErgoTree,
-             hexString: HexString
-           ): Balance =
+    items: List[UTransactionInfo],
+    confirmedBalance: Balance,
+    ergoTree: ErgoTree,
+    hexString: HexString
+  ): Balance =
     items.foldLeft(confirmedBalance) { case (balance, transactionInfo) =>
       transactionInfo.inputs.head.ergoTree match {
         case ieT if ieT == ergoTree =>
