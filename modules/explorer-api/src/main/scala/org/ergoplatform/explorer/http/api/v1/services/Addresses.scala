@@ -26,6 +26,10 @@ trait Addresses[F[_]] {
   def totalBalanceOf(address: Address): F[TotalBalance]
 
   def addressInfoOf(batch: List[Address], minConfirmations: Int = 0): F[Map[Address, AddressInfo]]
+
+  /** Get TotalBalance of address with consideration of mempool data
+    */
+  def totalBalanceWithConsiderationOfMempoolFor(address: Address): F[TotalBalance]
 }
 
 object Addresses {
@@ -72,6 +76,12 @@ object Addresses {
         unconfirmed = Balance(offChainBalance, offChainAssets.map(TokenAmount(_)))
       )) ||> trans.xa
     }
+
+    def totalBalanceWithConsiderationOfMempoolFor(address: Address): F[TotalBalance] =
+      for {
+        confirmed   <- confirmedBalanceOf(address, 0)
+        unconfirmed <- memprops.getUnconfirmedBalanceByAddress(address, confirmed)
+      } yield TotalBalance(confirmed, unconfirmed)
 
     private def hasBeenUsedByErgoTree(ergoTree: HexString): F[Boolean] =
       outputRepo.countAllByErgoTree(ergoTree).map(_ > 0) ||> trans.xa

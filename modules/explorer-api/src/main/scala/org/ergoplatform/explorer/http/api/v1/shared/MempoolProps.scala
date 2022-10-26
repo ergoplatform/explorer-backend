@@ -12,10 +12,11 @@ import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedUA
 import org.ergoplatform.explorer.db.models.{UOutput, UTransaction}
 import org.ergoplatform.explorer.db.repositories.bundles.UtxRepoBundle
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.{UInputInfo, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{Balance, UInputInfo, UOutputInfo, UTransactionInfo}
+import org.ergoplatform.explorer.http.api.v1.utils.BuildUnconfirmedBalance
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
-import org.ergoplatform.{explorer, ErgoAddressEncoder}
+import org.ergoplatform.{ErgoAddressEncoder, explorer}
 import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
 import org.ergoplatform.explorer.syntax.stream._
 import tofu.Throws
@@ -27,6 +28,7 @@ trait MempoolProps[F[_], D[_]] {
   def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean]
   def mkUnspentOutputInfo: Pipe[D, Chunk[UOutput], UOutputInfo]
   def mkTransaction: Pipe[D, Chunk[UTransaction], UTransactionInfo]
+  def getUnconfirmedBalanceByAddress(address: Address, confirmedBalance: Balance): F[Balance]
 }
 
 object MempoolProps {
@@ -46,6 +48,29 @@ object MempoolProps {
     extends MempoolProps[F, D] {
 
     import repo._
+
+    def getUnconfirmedBalanceByAddress(
+                                        address: Address,
+                                        confirmedBalance: Balance
+                                      ): F[Balance] = {
+      val ergoTree = addressToErgoTreeNewtype(address)
+      txs
+        .countByErgoTree(ergoTree.value)
+        .flatMap {
+          case 0 => Balance.empty.pure[D]
+          case _ =>
+            txs
+              .streamRelatedToErgoTree(ergoTree, 0, Int.MaxValue)
+              .chunkN(settings.chunkSize)
+              .through(mkTransaction)
+              .to[List]
+              .map { poolItems =>
+                BuildUnconfirmedBalance(poolItems, confirmedBalance, ergoTree, ergoTree.value)
+              }
+        }
+        .thrushK(trans.xa)
+    }
+
 
     def hasUnconfirmedBalance(ergoTree: ErgoTree): F[Boolean] =
       txs
