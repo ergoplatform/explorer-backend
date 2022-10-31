@@ -52,6 +52,20 @@ object UOutputInfo {
   ): UOutputInfo =
     unspent(o.output, assets).copy(spentTransactionId = o.spendingTxId)
 
+  def fromOutputInfo(out: OutputInfo): UOutputInfo =
+    UOutputInfo(
+      out.boxId,
+      out.transactionId,
+      out.value,
+      out.index,
+      out.creationHeight,
+      out.ergoTree,
+      out.address,
+      out.assets,
+      out.additionalRegisters,
+      out.spentTransactionId
+    )
+
   def unspent(
     o: UOutput,
     assets: List[ExtendedUAsset]

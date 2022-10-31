@@ -184,6 +184,27 @@ object UOutputQuerySet extends QuerySet {
          |where i.box_id is null and o.ergo_tree = $ergoTree
          |""".stripMargin.query[ExtendedUOutput]
 
+  def getAllUnspentByErgoTree(ergoTree: HexString, offset: Int, limit: Int)(implicit
+    lh: LogHandler
+  ): Query0[ExtendedUOutput] =
+    sql"""
+         |select distinct on (o.box_id)
+         |  o.box_id,
+         |  o.tx_id,
+         |  o.value,
+         |  o.creation_height,
+         |  o.index,
+         |  o.ergo_tree,
+         |  o.ergo_tree_template_hash,
+         |  o.address,
+         |  o.additional_registers,
+         |  null
+         |from node_u_outputs o
+         |left join node_u_inputs i on i.box_id = o.box_id
+         |where i.box_id is null and o.ergo_tree = $ergoTree
+         |offset $offset limit $limit
+         |""".stripMargin.query[ExtendedUOutput]
+
   def sumUnspentByErgoTree(
     ergoTree: HexString
   )(implicit lh: LogHandler): Query0[Long] =
