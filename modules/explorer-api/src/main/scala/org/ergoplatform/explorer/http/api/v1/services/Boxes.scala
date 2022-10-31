@@ -402,8 +402,11 @@ object Boxes {
                        .through(toOutputInfo)
                        .map(UOutputInfo.fromOutputInfo)
                        .to[List]
-        unconfirmed <- uoutputs
-                         .streamAllUnspentByErgoTree(ergoTree, paging.offset, paging.limit)
+        unconfirmed <- Stream
+                         .evalSeq(
+                           uoutputs
+                             .getAllUnspentByErgoTree(ergoTree)
+                         )
                          .chunkN(serviceSettings.chunkSize)
                          .through(toUOutputInfo)
                          .to[List]

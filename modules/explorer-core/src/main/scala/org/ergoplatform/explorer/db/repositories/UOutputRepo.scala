@@ -59,10 +59,6 @@ trait UOutputRepo[D[_], S[_[_], _]] {
     */
   def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUOutput]]
 
-  /** Stream all unspent unconfirmed outputs belonging to the given `ergoTree`.
-    */
-  def streamAllUnspentByErgoTree(ergoTree: HexString, offset: Int, limit: Int): Stream[D, ExtendedUOutput]
-
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
   def sumUnspentByErgoTree(ergoTree: HexString): D[Long]
@@ -110,9 +106,6 @@ object UOutputRepo {
 
     def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUOutput]] =
       QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
-
-    def streamAllUnspentByErgoTree(ergoTree: HexString, offset: Int, limit: Int): Stream[D, ExtendedUOutput] =
-      QS.getAllUnspentByErgoTree(ergoTree, offset, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
 
     def sumUnspentByErgoTree(ergoTree: HexString): D[Long] =
       QS.sumUnspentByErgoTree(ergoTree).unique.liftConnectionIO
