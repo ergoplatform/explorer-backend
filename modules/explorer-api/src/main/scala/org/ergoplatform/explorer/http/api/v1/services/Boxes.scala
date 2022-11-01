@@ -394,23 +394,14 @@ object Boxes {
     def getAllUnspentOutputs(address: Address, paging: Paging, ord: SortOrder): F[Items[UOutputInfo]] = {
       val ergoTree = addressToErgoTreeHex(address)
       (for {
-        nConfirmed  <- outputs.countUnspentByErgoTree(ergoTree)
-        nUnonfirmed <- uoutputs.sumUnspentByErgoTree(ergoTree)
-        confirmed <- outputs
-                       .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value)
-                       .chunkN(serviceSettings.chunkSize)
-                       .through(toOutputInfo)
-                       .map(UOutputInfo.fromOutputInfo)
-                       .to[List]
-        unconfirmed <- Stream
-                         .evalSeq(
-                           uoutputs
-                             .getAllUnspentByErgoTree(ergoTree)
-                         )
-                         .chunkN(serviceSettings.chunkSize)
-                         .through(toUOutputInfo)
-                         .to[List]
-      } yield Items(confirmed <+> unconfirmed, nConfirmed + nUnonfirmed.toInt)).thrushK(trans.xa)
+        nConfirmed   <- outputs.countUnspentByErgoTree(ergoTree)
+        nUnconfirmed <- uoutputs.countUnspentByErgoTree(ergoTree)
+        boxes <- uoutputs
+                   .streamAllUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value)
+                   .chunkN(serviceSettings.chunkSize)
+                   .through(toUOutputInfo)
+                   .to[List]
+      } yield Items(boxes, nConfirmed + nUnconfirmed)).thrushK(trans.xa)
     }
 
     private def toOutputInfo: Pipe[D, Chunk[ExtendedOutput], OutputInfo] =
