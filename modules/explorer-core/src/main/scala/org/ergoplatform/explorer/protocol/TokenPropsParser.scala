@@ -23,7 +23,7 @@ object TokenPropsParser {
     new TokenPropsParser[TokenPropsEip4] {
       private val p = RegistersParser[Either[Throwable, *]]
 
-      def parse(registers: Map[RegisterId, HexString]): Option[TokenPropsEip4] = {
+      def parse(registers: Map[RegisterId, HexString]): Option[TokenPropsEip4] = Try {
         def parse(raw: HexString) = p.parse[SCollection[SByte.type]](raw).toOption
         val r4                    = registers.get(RegisterId.R4)
         val r5                    = registers.get(RegisterId.R5)
@@ -39,7 +39,7 @@ object TokenPropsParser {
           val (description, decimals) = (descriptionOpt.getOrElse(""), decimalsOpt.getOrElse(0))
           TokenPropsEip4(name, description, decimals)
         }
-      }
+      }.toOption.flatten
     }
 
   private def looksLikeUTF8(utf8: Array[Byte]): Boolean = {
