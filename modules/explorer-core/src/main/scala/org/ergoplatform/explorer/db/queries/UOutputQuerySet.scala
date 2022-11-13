@@ -191,36 +191,36 @@ object UOutputQuerySet extends QuerySet {
     val q   = sql"""
          |select * from (
          |select distinct on (o.box_id)
-         |  o.box_id,
-         |  o.tx_id,
-         |  o.value,
-         |  o.creation_height,
-         |  o.index,
-         |  o.ergo_tree,
-         |  o.ergo_tree_template_hash,
-         |  o.address,
-         |  o.additional_registers,
-         |  null
+         |o.box_id,
+         |o.tx_id,
+         |o.value,
+         |o.creation_height,
+         |o.index,
+         |o.ergo_tree,
+         |o.ergo_tree_template_hash,
+         |o.address,
+         |o.additional_registers,
+         |null
          |from node_u_outputs o
          |left join node_u_inputs i on i.box_id = o.box_id
          |where i.box_id is null and o.ergo_tree = $ergoTree
          |union all
          |select distinct on (o.box_id, o.global_index)
-         |  o.box_id,
-         |  o.tx_id,
-         |  o.value,
-         |  o.creation_height,
-         |  o.index,
-         |  o.ergo_tree,
-         |  o.ergo_tree_template_hash,
-         |  o.address,
-         |  o.additional_registers,
-         |  null
+         |o.box_id,
+         |o.tx_id,
+         |o.value,
+         |o.creation_height,
+         |o.index,
+         |o.ergo_tree,
+         |o.ergo_tree_template_hash,
+         |o.address,
+         |o.additional_registers,
+         |null
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true
-         |  and i.box_id is null
-         |  and o.ergo_tree = $ergoTree
+         |and i.box_id is null
+         |and o.ergo_tree = $ergoTree
          |) sub
          |""".stripMargin
     val ord = Fragment.const(s"order by creation_height $ordering")
