@@ -5,7 +5,13 @@ import org.ergoplatform.explorer.http.api.ApiErr
 import org.ergoplatform.explorer.http.api.commonDirectives._
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
-import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, MOutputInfo, OutputInfo, UOutputInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{
+  AnyOutputInfo,
+  BoxAssetsQuery,
+  BoxQuery,
+  MOutputInfo,
+  OutputInfo
+}
 import org.ergoplatform.explorer.settings.RequestsSettings
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
@@ -171,10 +177,10 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
         "The resulted UTXOs will contain at lest one of the given tokens."
       )
 
-  def getAllUnspentOutputsByAddressDef: Endpoint[(Address, Paging, SortOrder), ApiErr, Items[UOutputInfo], Any] =
+  def getAllUnspentOutputsByAddressDef: Endpoint[(Address, Paging, SortOrder), ApiErr, Items[AnyOutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "unspent" / "all" / "byAddress" / path[Address])
       .in(paging(settings.maxEntitiesPerRequest))
       .in(ordering)
-      .out(jsonBody[Items[UOutputInfo]])
+      .out(jsonBody[Items[AnyOutputInfo]])
 }

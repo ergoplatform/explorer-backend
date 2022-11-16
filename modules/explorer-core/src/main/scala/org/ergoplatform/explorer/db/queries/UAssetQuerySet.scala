@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import doobie.implicits._
 import doobie.util.query.Query0
 import doobie.{Fragments, LogHandler}
-import org.ergoplatform.explorer.db.models.aggregates.{AggregatedAsset, ExtendedUAsset}
+import org.ergoplatform.explorer.db.models.aggregates.{AggregatedAsset, AnyAsset, ExtendedUAsset}
 import org.ergoplatform.explorer.{BoxId, HexString}
 
 object UAssetQuerySet extends QuerySet {
@@ -48,6 +48,36 @@ object UAssetQuerySet extends QuerySet {
            |""".stripMargin ++
       Fragments.in(fr"where a.box_id", boxIds))
       .query[ExtendedUAsset]
+
+  def getConfirmedAndUnconfirmed(boxIds: NonEmptyList[BoxId])(implicit lh: LogHandler): Query0[AnyAsset] =
+    sql"""
+           |select distinct
+           |  a.token_id,
+           |  a.box_id,
+           |  null,
+           |  a.index,
+           |  a.value,
+           |  t.name,
+           |  t.decimals,
+           |  t.type
+           |from node_u_assets a
+           |left join tokens t on a.token_id = t.token_id
+           |${Fragments.in(fr"where a.box_id", boxIds)}
+           |union
+           |select distinct on (a.index, a.token_id, a.box_id)
+           |  a.token_id,
+           |  a.box_id,
+           |  a.header_id,
+           |  a.index,
+           |  a.value,
+           |  t.name,
+           |  t.decimals,
+           |  t.type
+           |from node_assets a
+           |left join tokens t on a.token_id = t.token_id
+           |${Fragments.in(fr"where a.box_id", boxIds)}
+           |""".stripMargin
+      .query[AnyAsset]
 
   def getAllUnspentByErgoTree(ergoTree: HexString)(implicit lh: LogHandler): Query0[ExtendedUAsset] =
     sql"""

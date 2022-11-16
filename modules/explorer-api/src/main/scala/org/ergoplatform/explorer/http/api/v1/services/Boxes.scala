@@ -12,7 +12,7 @@ import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.{Output, UOutput}
+import org.ergoplatform.explorer.db.models.{AnyOutput, Output, UOutput}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedOutput, ExtendedUOutput}
 import org.ergoplatform.explorer.db.repositories.{
   AssetRepo,
@@ -25,7 +25,14 @@ import org.ergoplatform.explorer.db.repositories.{
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, MOutputInfo, OutputInfo, UOutputInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{
+  AnyOutputInfo,
+  BoxAssetsQuery,
+  BoxQuery,
+  MOutputInfo,
+  OutputInfo,
+  UOutputInfo
+}
 import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.protocol.sigma._
 import org.ergoplatform.explorer.settings.ServiceSettings
@@ -119,7 +126,7 @@ trait Boxes[F[_]] {
 
   /** Get both confirmed & unconfirmed outputs with the given `address` in proposition.
     */
-  def getAllUnspentOutputs(address: Address, paging: Paging, ord: SortOrder): F[Items[UOutputInfo]]
+  def getAllUnspentOutputs(address: Address, paging: Paging, ord: SortOrder): F[Items[AnyOutputInfo]]
 }
 
 object Boxes {
@@ -391,7 +398,7 @@ object Boxes {
         .thrushK(trans.xa)
     }
 
-    def getAllUnspentOutputs(address: Address, paging: Paging, ord: SortOrder): F[Items[UOutputInfo]] = {
+    def getAllUnspentOutputs(address: Address, paging: Paging, ord: SortOrder): F[Items[AnyOutputInfo]] = {
       val ergoTree = addressToErgoTreeHex(address)
       (for {
         nConfirmed   <- outputs.countUnspentByErgoTree(ergoTree)
@@ -399,7 +406,7 @@ object Boxes {
         boxes <- uoutputs
                    .streamAllUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value)
                    .chunkN(serviceSettings.chunkSize)
-                   .through(toUOutputInfo)
+                   .through(toAnyOutputInfo)
                    .to[List]
       } yield Items(boxes, nConfirmed + nUnconfirmed)).thrushK(trans.xa)
     }
@@ -413,12 +420,12 @@ object Boxes {
         flattened <- Stream.emits(outsInfo.toList)
       } yield flattened
 
-    private def toUOutputInfo: Pipe[D, Chunk[ExtendedUOutput], UOutputInfo] =
+    private def toAnyOutputInfo: Pipe[D, Chunk[AnyOutput], AnyOutputInfo] =
       for {
         outs   <- _
-        outIds <- Stream.emit(outs.toList.map(_.output.boxId).toNel).unNone
-        assets <- uassets.getAllByBoxIds(outIds).map(_.groupBy(_.boxId)).asStream
-        outsInfo = outs.map(out => UOutputInfo(out, assets.getOrElse(out.output.boxId, Nil)))
+        outIds <- Stream.emit(outs.toList.map(_.boxId).toNel).unNone
+        assets <- uassets.getConfirmedAndUnconfirmed(outIds).map(_.groupBy(_.boxId)).asStream
+        outsInfo = outs.map(out => AnyOutputInfo(out, assets.getOrElse(out.boxId, Nil)))
         flattened <- Stream.emits(outsInfo.toList)
       } yield flattened
 

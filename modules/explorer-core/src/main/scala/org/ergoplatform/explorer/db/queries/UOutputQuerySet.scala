@@ -7,8 +7,8 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
 import org.ergoplatform.explorer.constraints.OrderingString
-import org.ergoplatform.explorer.db.models.UOutput
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUOutput
+import org.ergoplatform.explorer.db.models.{AnyOutput, UOutput}
 import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 
 object UOutputQuerySet extends QuerySet {
@@ -187,19 +187,24 @@ object UOutputQuerySet extends QuerySet {
 
   def streamAllUnspentByErgoTree(ergoTree: HexString, offset: Int, limit: Int, ordering: OrderingString)(implicit
     lh: LogHandler
-  ): Query0[ExtendedUOutput] = {
+  ): Query0[AnyOutput] = {
     val q   = sql"""
          |select * from (
          |select distinct on (o.box_id)
          |o.box_id,
          |o.tx_id,
+         |null,
          |o.value,
          |o.creation_height,
+         |null,
          |o.index,
+         |null,
          |o.ergo_tree,
          |o.ergo_tree_template_hash,
          |o.address,
          |o.additional_registers,
+         |null,
+         |null,
          |null
          |from node_u_outputs o
          |left join node_u_inputs i on i.box_id = o.box_id
@@ -208,13 +213,18 @@ object UOutputQuerySet extends QuerySet {
          |select distinct on (o.box_id, o.global_index)
          |o.box_id,
          |o.tx_id,
+         |o.header_id,
          |o.value,
          |o.creation_height,
+         |o.settlement_height,
          |o.index,
+         |o.global_index,
          |o.ergo_tree,
          |o.ergo_tree_template_hash,
          |o.address,
          |o.additional_registers,
+         |o.timestamp,
+         |o.main_chain,
          |null
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
@@ -225,7 +235,7 @@ object UOutputQuerySet extends QuerySet {
          |""".stripMargin
     val ord = Fragment.const(s"order by creation_height $ordering")
     val lim = Fragment.const(s"offset $offset limit $limit")
-    (q ++ ord ++ lim).query[ExtendedUOutput]
+    (q ++ ord ++ lim).query[AnyOutput]
   }
 
   def sumUnspentByErgoTree(

@@ -13,7 +13,7 @@ import org.ergoplatform.explorer.{BoxId, ErgoTree, HexString, TxId}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.doobieInstances._
-import org.ergoplatform.explorer.db.models.UOutput
+import org.ergoplatform.explorer.db.models.{AnyOutput, UOutput}
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUOutput
 
 /** [[ExtendedUOutput]] data access operations.
@@ -67,7 +67,7 @@ trait UOutputRepo[D[_], S[_[_], _]] {
     offset: Int,
     limit: Int,
     ordering: OrderingString
-  ): S[D, ExtendedUOutput]
+  ): S[D, AnyOutput]
 
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
@@ -126,7 +126,7 @@ object UOutputRepo {
       offset: Int,
       limit: Int,
       ordering: OrderingString
-    ): Stream[D, ExtendedUOutput] =
+    ): Stream[D, AnyOutput] =
       QS.streamAllUnspentByErgoTree(ergoTree, offset, limit, ordering)
         .stream
         .translate(LiftConnectionIO[D].liftConnectionIOK)
