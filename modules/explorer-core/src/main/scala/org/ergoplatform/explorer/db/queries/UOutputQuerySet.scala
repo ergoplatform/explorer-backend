@@ -258,4 +258,23 @@ object UOutputQuerySet extends QuerySet {
          |and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
 
+  def countAllByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |SELECT sum(count) from (
+         |select count(distinct o.box_id)
+         |from node_u_outputs o
+         |left join node_u_inputs i on o.box_id = i.box_id
+         |where i.box_id is null
+         |and o.ergo_tree = $ergoTree
+         |union
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |where o.main_chain = true
+         |and i.box_id is null
+         |and o.ergo_tree = $ergoTree
+         |) sub
+         |""".stripMargin.query[Int]
 }

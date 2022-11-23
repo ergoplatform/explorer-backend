@@ -76,6 +76,10 @@ trait UOutputRepo[D[_], S[_[_], _]] {
   /** Count unspent main-chain outputs with a given `ergoTree`.
     */
   def countUnspentByErgoTree(ergoTree: HexString): D[Int]
+
+  /** Count confirmed + unconfirmed unspent main-chain outputs with a given `ergoTree`.
+    */
+  def countAllByErgoTree(ergoTree: HexString): D[Int]
 }
 
 object UOutputRepo {
@@ -136,5 +140,8 @@ object UOutputRepo {
 
     def countUnspentByErgoTree(ergoTree: HexString): D[Int] =
       QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+
+    def countAllByErgoTree(ergoTree: HexString): D[Int] =
+      QS.countAllByErgoTree(ergoTree).unique.liftConnectionIO
   }
 }

@@ -401,14 +401,13 @@ object Boxes {
     def getAllUnspentOutputs(address: Address, paging: Paging, ord: SortOrder): F[Items[AnyOutputInfo]] = {
       val ergoTree = addressToErgoTreeHex(address)
       (for {
-        nConfirmed   <- outputs.countUnspentByErgoTree(ergoTree)
-        nUnconfirmed <- uoutputs.countUnspentByErgoTree(ergoTree)
+        nUnspent <- uoutputs.countAllByErgoTree(ergoTree)
         boxes <- uoutputs
                    .streamAllUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value)
                    .chunkN(serviceSettings.chunkSize)
                    .through(toAnyOutputInfo)
                    .to[List]
-      } yield Items(boxes, nConfirmed + nUnconfirmed)).thrushK(trans.xa)
+      } yield Items(boxes, nUnspent)).thrushK(trans.xa)
     }
 
     private def toOutputInfo: Pipe[D, Chunk[ExtendedOutput], OutputInfo] =
