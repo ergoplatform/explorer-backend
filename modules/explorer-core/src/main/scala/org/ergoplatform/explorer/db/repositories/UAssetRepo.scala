@@ -8,7 +8,7 @@ import doobie.util.log.LogHandler
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.UAsset
-import org.ergoplatform.explorer.db.models.aggregates.{AggregatedAsset, ExtendedUAsset}
+import org.ergoplatform.explorer.db.models.aggregates.{AggregatedAsset, AnyAsset, ExtendedUAsset}
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.{BoxId, HexString}
 
@@ -31,6 +31,10 @@ trait UAssetRepo[D[_]] {
   /** Get all assets belonging to a given list of `boxId`.
     */
   def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedUAsset]]
+
+  /** Get confirmed + unconfirmed assets belonging to a given list of `boxId`.
+    */
+  def getConfirmedAndUnconfirmed(boxIds: NonEmptyList[BoxId]): D[List[AnyAsset]]
 
   /** Get all unspent assets belonging to a given `address`.
     */
@@ -61,6 +65,9 @@ object UAssetRepo {
 
     def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedUAsset]] =
       QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
+
+    def getConfirmedAndUnconfirmed(boxIds: NonEmptyList[BoxId]): D[List[AnyAsset]] =
+      QS.getConfirmedAndUnconfirmed(boxIds).to[List].liftConnectionIO
 
     def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUAsset]] =
       QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO

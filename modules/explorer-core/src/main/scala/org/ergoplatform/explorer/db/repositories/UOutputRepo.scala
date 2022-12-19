@@ -7,12 +7,13 @@ import cats.implicits._
 import doobie.free.implicits._
 import doobie.refined.implicits._
 import doobie.util.log.LogHandler
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.DoobieLogHandler
 import org.ergoplatform.explorer.{BoxId, ErgoTree, HexString, TxId}
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.syntax.liftConnectionIO._
 import org.ergoplatform.explorer.db.doobieInstances._
-import org.ergoplatform.explorer.db.models.UOutput
+import org.ergoplatform.explorer.db.models.{AnyOutput, UOutput}
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUOutput
 
 /** [[ExtendedUOutput]] data access operations.
@@ -59,9 +60,26 @@ trait UOutputRepo[D[_], S[_[_], _]] {
     */
   def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUOutput]]
 
+  /** Get confirmed + unconfirmed unspent main-chain outputs with a given `ergoTree`.
+    */
+  def streamAllUnspentByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString
+  ): S[D, AnyOutput]
+
   /** Get total amount of all unspent main-chain outputs with a given `ergoTree`.
     */
   def sumUnspentByErgoTree(ergoTree: HexString): D[Long]
+
+  /** Count unspent main-chain outputs with a given `ergoTree`.
+    */
+  def countUnspentByErgoTree(ergoTree: HexString): D[Int]
+
+  /** Count confirmed + unconfirmed unspent main-chain outputs with a given `ergoTree`.
+    */
+  def countAllByErgoTree(ergoTree: HexString): D[Int]
 }
 
 object UOutputRepo {
@@ -107,7 +125,23 @@ object UOutputRepo {
     def getAllUnspentByErgoTree(ergoTree: HexString): D[List[ExtendedUOutput]] =
       QS.getAllUnspentByErgoTree(ergoTree).to[List].liftConnectionIO
 
+    def streamAllUnspentByErgoTree(
+      ergoTree: HexString,
+      offset: Int,
+      limit: Int,
+      ordering: OrderingString
+    ): Stream[D, AnyOutput] =
+      QS.streamAllUnspentByErgoTree(ergoTree, offset, limit, ordering)
+        .stream
+        .translate(LiftConnectionIO[D].liftConnectionIOK)
+
     def sumUnspentByErgoTree(ergoTree: HexString): D[Long] =
       QS.sumUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+
+    def countUnspentByErgoTree(ergoTree: HexString): D[Int] =
+      QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+
+    def countAllByErgoTree(ergoTree: HexString): D[Int] =
+      QS.countAllByErgoTree(ergoTree).unique.liftConnectionIO
   }
 }

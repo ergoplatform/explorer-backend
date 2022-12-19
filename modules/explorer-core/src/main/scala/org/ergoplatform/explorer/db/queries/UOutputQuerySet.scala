@@ -6,8 +6,9 @@ import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.query.Query0
-import org.ergoplatform.explorer.db.models.UOutput
+import org.ergoplatform.explorer.constraints.OrderingString
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUOutput
+import org.ergoplatform.explorer.db.models.{AnyOutput, UOutput}
 import org.ergoplatform.explorer.{BoxId, HexString, TxId}
 
 object UOutputQuerySet extends QuerySet {
@@ -184,6 +185,59 @@ object UOutputQuerySet extends QuerySet {
          |where i.box_id is null and o.ergo_tree = $ergoTree
          |""".stripMargin.query[ExtendedUOutput]
 
+  def streamAllUnspentByErgoTree(ergoTree: HexString, offset: Int, limit: Int, ordering: OrderingString)(implicit
+    lh: LogHandler
+  ): Query0[AnyOutput] = {
+    val q   = sql"""
+         |select * from (
+         |select distinct on (o.box_id)
+         |o.box_id,
+         |o.tx_id,
+         |null,
+         |o.value,
+         |o.creation_height,
+         |null,
+         |o.index,
+         |null,
+         |o.ergo_tree,
+         |o.ergo_tree_template_hash,
+         |o.address,
+         |o.additional_registers,
+         |null,
+         |null,
+         |null
+         |from node_u_outputs o
+         |left join node_u_inputs i on i.box_id = o.box_id
+         |where i.box_id is null and o.ergo_tree = $ergoTree
+         |union all
+         |select distinct on (o.box_id, o.global_index)
+         |o.box_id,
+         |o.tx_id,
+         |o.header_id,
+         |o.value,
+         |o.creation_height,
+         |o.settlement_height,
+         |o.index,
+         |o.global_index,
+         |o.ergo_tree,
+         |o.ergo_tree_template_hash,
+         |o.address,
+         |o.additional_registers,
+         |o.timestamp,
+         |o.main_chain,
+         |null
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |where o.main_chain = true
+         |and i.box_id is null
+         |and o.ergo_tree = $ergoTree
+         |) sub
+         |""".stripMargin
+    val ord = Fragment.const(s"order by creation_height $ordering")
+    val lim = Fragment.const(s"offset $offset limit $limit")
+    (q ++ ord ++ lim).query[AnyOutput]
+  }
+
   def sumUnspentByErgoTree(
     ergoTree: HexString
   )(implicit lh: LogHandler): Query0[Long] =
@@ -192,4 +246,35 @@ object UOutputQuerySet extends QuerySet {
          |left join node_u_inputs i on i.box_id = o.box_id
          |where i.box_id is null and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Long]
+
+  def countUnspentByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(distinct o.box_id)
+         |from node_u_outputs o
+         |left join node_u_inputs i on o.box_id = i.box_id
+         |where i.box_id is null
+         |and o.ergo_tree = $ergoTree
+         |""".stripMargin.query[Int]
+
+  def countAllByErgoTree(
+    ergoTree: HexString
+  )(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |SELECT sum(count) from (
+         |select count(distinct o.box_id)
+         |from node_u_outputs o
+         |left join node_u_inputs i on o.box_id = i.box_id
+         |where i.box_id is null
+         |and o.ergo_tree = $ergoTree
+         |union
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |where o.main_chain = true
+         |and i.box_id is null
+         |and o.ergo_tree = $ergoTree
+         |) sub
+         |""".stripMargin.query[Int]
 }

@@ -42,7 +42,8 @@ final class BoxesRoutes[
     getOutputsByAddressR <+>
     getUnspentOutputsByAddressR <+>
     getOutputByIdR <+>
-    `getUnspent&UnconfirmedOutputsMergedByAddressR`
+    `getUnspent&UnconfirmedOutputsMergedByAddressR` <+>
+    getAllUnspentOutputsR
 
   private def interpreter = Http4sServerInterpreter(opts)
 
@@ -149,6 +150,11 @@ final class BoxesRoutes[
   private def searchUnspentOutputsByAssetsUnionR: HttpRoutes[F] =
     interpreter.toRoutes(defs.searchUnspentOutputsByTokensUnionDef) { case (query, paging) =>
       service.searchUnspentByAssetsUnion(query, paging).adaptThrowable.value
+    }
+
+  private def getAllUnspentOutputsR: HttpRoutes[F] =
+    interpreter.toRoutes(defs.getAllUnspentOutputsByAddressDef) { case (address, paging, ord) =>
+      service.getAllUnspentOutputs(address, paging, ord).adaptThrowable.value
     }
 }
 

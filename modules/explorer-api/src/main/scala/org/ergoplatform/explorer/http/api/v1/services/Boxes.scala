@@ -12,13 +12,27 @@ import org.ergoplatform.explorer.Err.{RefinementFailed, RequestProcessingErr}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.Trans
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
-import org.ergoplatform.explorer.db.models.Output
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
-import org.ergoplatform.explorer.db.repositories.{AssetRepo, HeaderRepo, OutputRepo, UInputRepo, UOutputRepo}
+import org.ergoplatform.explorer.db.models.{AnyOutput, Output, UOutput}
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedOutput, ExtendedUOutput}
+import org.ergoplatform.explorer.db.repositories.{
+  AssetRepo,
+  HeaderRepo,
+  OutputRepo,
+  UAssetRepo,
+  UInputRepo,
+  UOutputRepo
+}
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
-import org.ergoplatform.explorer.http.api.v1.models.{BoxAssetsQuery, BoxQuery, MOutputInfo, OutputInfo, UOutputInfo}
+import org.ergoplatform.explorer.http.api.v1.models.{
+  AnyOutputInfo,
+  BoxAssetsQuery,
+  BoxQuery,
+  MOutputInfo,
+  OutputInfo,
+  UOutputInfo
+}
 import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.protocol.sigma._
 import org.ergoplatform.explorer.settings.ServiceSettings
@@ -109,6 +123,10 @@ trait Boxes[F[_]] {
   /** Get unspent outputs matching a given `boxQuery`.
     */
   def searchUnspentByAssetsUnion(boxQuery: BoxAssetsQuery, paging: Paging): F[Items[OutputInfo]]
+
+  /** Get both confirmed & unconfirmed outputs with the given `address` in proposition.
+    */
+  def getAllUnspentOutputs(address: Address, paging: Paging, ord: SortOrder): F[Items[AnyOutputInfo]]
 }
 
 object Boxes {
@@ -119,8 +137,8 @@ object Boxes {
   ](serviceSettings: ServiceSettings, memprops: MempoolProps[F, D])(trans: D Trans F)(implicit
     e: ErgoAddressEncoder
   ): F[Boxes[F]] =
-    (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D], UOutputRepo[F, D], UInputRepo[F, D]).mapN(
-      new Live(serviceSettings, memprops, _, _, _, _, _)(trans)
+    (HeaderRepo[F, D], OutputRepo[F, D], AssetRepo[F, D], UAssetRepo[F, D], UOutputRepo[F, D], UInputRepo[F, D]).mapN(
+      new Live(serviceSettings, memprops, _, _, _, _, _, _)(trans)
     )
 
   final private class Live[
@@ -132,6 +150,7 @@ object Boxes {
     headers: HeaderRepo[D, Stream],
     outputs: OutputRepo[D, Stream],
     assets: AssetRepo[D, Stream],
+    uassets: UAssetRepo[D],
     uoutputs: UOutputRepo[D, Stream],
     uinputs: UInputRepo[D, Stream]
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
@@ -379,12 +398,33 @@ object Boxes {
         .thrushK(trans.xa)
     }
 
+    def getAllUnspentOutputs(address: Address, paging: Paging, ord: SortOrder): F[Items[AnyOutputInfo]] = {
+      val ergoTree = addressToErgoTreeHex(address)
+      (for {
+        nUnspent <- uoutputs.countAllByErgoTree(ergoTree)
+        boxes <- uoutputs
+                   .streamAllUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value)
+                   .chunkN(serviceSettings.chunkSize)
+                   .through(toAnyOutputInfo)
+                   .to[List]
+      } yield Items(boxes, nUnspent)).thrushK(trans.xa)
+    }
+
     private def toOutputInfo: Pipe[D, Chunk[ExtendedOutput], OutputInfo] =
       for {
         outs   <- _
         outIds <- Stream.emit(outs.toList.map(_.output.boxId).toNel).unNone
         assets <- assets.getAllByBoxIds(outIds).map(_.groupBy(_.boxId)).asStream
         outsInfo = outs.map(out => OutputInfo(out, assets.getOrElse(out.output.boxId, Nil)))
+        flattened <- Stream.emits(outsInfo.toList)
+      } yield flattened
+
+    private def toAnyOutputInfo: Pipe[D, Chunk[AnyOutput], AnyOutputInfo] =
+      for {
+        outs   <- _
+        outIds <- Stream.emit(outs.toList.map(_.boxId).toNel).unNone
+        assets <- uassets.getConfirmedAndUnconfirmed(outIds).map(_.groupBy(_.boxId)).asStream
+        outsInfo = outs.map(out => AnyOutputInfo(out, assets.getOrElse(out.boxId, Nil)))
         flattened <- Stream.emits(outsInfo.toList)
       } yield flattened
 
