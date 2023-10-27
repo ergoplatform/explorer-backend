@@ -8,7 +8,7 @@ import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, BuildFrom, CRaise}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoScriptPredef, Pay2SAddress}
+import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -106,26 +106,13 @@ final class BlockInfoBuildFrom[
   private def minerRewardAndFee(
     apiBlock: ApiFullBlock
   )(protocolSettings: ProtocolSettings): (Long, Long) = {
-    val emission = protocolSettings.emission.emissionAtHeight(apiBlock.header.height.toLong)
+    val emission = protocolSettings.emission.emissionAt(apiBlock.header.height.toLong)
     val reward   = math.min(constants.TeamTreasuryThreshold, emission)
-    val eip27Reward =
-      if (reward >= constants.Eip27UpperPoint) reward - constants.Eip27DefaultReEmission
-      else if (constants.Eip27LowerPoint < reward) reward - (reward - constants.Eip27ResidualEmission)
-      else reward
     val fee = apiBlock.transactions.transactions
       .flatMap(_.outputs.toList)
       .filter(_.ergoTree.unwrapped == constants.FeePropositionScriptHex)
       .map(_.value)
       .sum
-    protocolSettings.networkPrefix.value.toByte match {
-      case ErgoAddressEncoder.MainnetNetworkPrefix
-          if apiBlock.header.height >= constants.MainnetEip27ActivationHeight =>
-        (eip27Reward, fee)
-      case ErgoAddressEncoder.TestnetNetworkPrefix
-          if apiBlock.header.height >= constants.TestnetEip27ActivationHeight =>
-        (eip27Reward, fee)
-      case _ =>
-        (reward, fee)
-    }
+    (reward, fee)
   }
 }

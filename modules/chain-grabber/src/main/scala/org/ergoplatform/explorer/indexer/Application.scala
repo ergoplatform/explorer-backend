@@ -19,6 +19,7 @@ import org.http4s.client.Client
 import pureconfig.generic.auto._
 import tofu.concurrent.MakeRef
 import tofu.logging.Logs
+import cats.effect.IO
 
 import scala.concurrent.ExecutionContext.global
 
