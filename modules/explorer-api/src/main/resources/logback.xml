@@ -10,30 +10,30 @@
         <appender-ref ref="STDOUT"/>
     </appender>
 
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>${logback.file.level:-TRACE}</level>
-        </filter>
-        <file>explorer.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- daily rollover -->
-            <fileNamePattern>explorer.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+<!--    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">-->
+<!--        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
+<!--            <level>${logback.file.level:-TRACE}</level>-->
+<!--        </filter>-->
+<!--        <file>explorer.log</file>-->
+<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+<!--            &lt;!&ndash; daily rollover &ndash;&gt;-->
+<!--            <fileNamePattern>explorer.%d{yyyy-MM-dd}.log.gz</fileNamePattern>-->
 
-            <!-- keep 30 days' worth of history capped at 2GB total size -->
-            <maxHistory>30</maxHistory>
-            <totalSizeCap>2GB</totalSizeCap>
-        </rollingPolicy>
+<!--            &lt;!&ndash; keep 30 days' worth of history capped at 2GB total size &ndash;&gt;-->
+<!--            <maxHistory>30</maxHistory>-->
+<!--            <totalSizeCap>2GB</totalSizeCap>-->
+<!--        </rollingPolicy>-->
 
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{50} - %msg %n</pattern>
-        </encoder>
-    </appender>
+<!--        <encoder>-->
+<!--            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{50} - %msg %n</pattern>-->
+<!--        </encoder>-->
+<!--    </appender>-->
 
     <logger name="org.ergoplatform.explorer" level="TRACE"/>
     <logger name="org.http4s" level="INFO"/>
     <root level="TRACE">
         <appender-ref ref="ASYNCSTDOUT"/>
-        <appender-ref ref="FILE"/>
+<!--        <appender-ref ref="FILE"/>-->
     </root>
 
 </configuration>

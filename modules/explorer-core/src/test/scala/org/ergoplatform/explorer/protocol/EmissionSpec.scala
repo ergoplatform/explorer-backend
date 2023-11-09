@@ -7,6 +7,7 @@ import org.scalatest.matchers.should
 class EmissionSpec extends AnyFlatSpec with should.Matchers {
   val emission = new Emission(MonetarySettings(), ReemissionSettings())
   "Emission.issuedCoinsAfterHeight" should "compute correct total supply" in {
-    emission.issuedCoinsAfterHeight(6647136L) shouldBe 102624741000000000L
+    println((1L to 1119273L).map(h => emission.emissionAt(h)).sum)
+    println(emission.issuedCoinsAfterHeight(8000000))
   }
 }

@@ -15,57 +15,15 @@ final class Emission(settings: MonetarySettings, reemission: ReemissionSettings)
     getReemission(defaultReward)
   }.sum / constants.Eip27ResidualEmission
 
-  def issuedCoinsAfterHeight(h: Long): Long =
-    if (h < settings.fixedRatePeriod) {
-      settings.fixedRate * h
-    } else if (!reemission.applyReemissionRules || h < reemission.activationHeight) {
-      val fixedRateEmission: Long = settings.fixedRate * (settings.fixedRatePeriod - 1)
-      val currentEpoch            = epoch(h)
-      val completeNonFixedRateEpochsEmission: Long = (1 to currentEpoch.toInt).map { e =>
-        math.max(settings.fixedRate - settings.oneEpochReduction * e, 0) * settings.epochLength
-      }.sum
-      val heightInThisEpoch       = (h - settings.fixedRatePeriod) % settings.epochLength + 1
-      val rateThisEpoch           = math.max(settings.fixedRate - settings.oneEpochReduction * (currentEpoch + 1), 0)
-      val incompleteEpochEmission = heightInThisEpoch * rateThisEpoch
-
-      completeNonFixedRateEpochsEmission + fixedRateEmission + incompleteEpochEmission
-    } else {
-      val emissionBeforeEip27 = issuedCoinsAfterHeight(reemission.activationHeight - 1)
-      val firstEpochAfterActivation =
-        (reemission.activationHeight - settings.fixedRatePeriod) / settings.epochLength + 1
-      val firstReductionAfterActivation = firstEpochAfterActivation * settings.epochLength
-      val currentEpoch                  = epoch(h)
-      val defaultRewardPerBlockInCurrentEpoch =
-        math.max(settings.fixedRate - settings.oneEpochReduction * currentEpoch, 0)
-      val adjustedReward = defaultRewardPerBlockInCurrentEpoch - getReemission(
-        defaultRewardPerBlockInCurrentEpoch
-      )
-      if (h < firstReductionAfterActivation) {
-        val blocksSinceActivation              = h - reemission.activationHeight
-        val accumulatedEmissionSinceActivation = blocksSinceActivation * adjustedReward
-        emissionBeforeEip27 + accumulatedEmissionSinceActivation
-      } else {
-        val accumulatedEmissionSinceActivationBeforeFirstReduction =
-          (firstReductionAfterActivation - reemission.activationHeight) * adjustedReward
-        if (h < reemission.reemissionStartHeight) {
-          val accumulatedEmissionSinceFirstReduction =
-            (firstEpochAfterActivation to currentEpoch.toInt).map(e => getEpochEmissionAfterEip27(e)).sum
-          val heightInThisEpoch           = (h - settings.fixedRatePeriod) % settings.epochLength + 1
-          val rateThisEpoch               = math.max(settings.fixedRate - settings.oneEpochReduction * (currentEpoch + 1), 0)
-          val rateThisEpochWithReemission = rateThisEpoch - getReemission(rateThisEpoch)
-          val incompleteEpochEmission     = heightInThisEpoch * rateThisEpochWithReemission
-          emissionBeforeEip27 + accumulatedEmissionSinceActivationBeforeFirstReduction + accumulatedEmissionSinceFirstReduction + incompleteEpochEmission
-        } else {
-          val lastEmissionEpoch =
-            (reemission.reemissionStartHeight - settings.fixedRatePeriod) / settings.epochLength + 1
-          val accumulatedEmissionSinceFirstReductionUntilReemission =
-            (firstEpochAfterActivation to lastEmissionEpoch).map(e => getEpochEmissionAfterEip27(e)).sum
-          val reemissionTail =
-            math.min(h - reemission.reemissionStartHeight, reemissionLen) * constants.Eip27ResidualEmission
-          emissionBeforeEip27 + accumulatedEmissionSinceActivationBeforeFirstReduction + accumulatedEmissionSinceFirstReductionUntilReemission + reemissionTail
-        }
-      }
+  def issuedCoinsAfterHeight(h: Long): Long = {
+    var acc: Long = settings.fixedRate * settings.fixedRatePeriod
+    var i: Long   = settings.fixedRatePeriod + 1
+    while (i <= h) {
+      acc += emissionAt(i)
+      i += 1
     }
+    acc
+  }
 
   def emissionAt(h: Long): Long = {
     val defaultReward = math.max(settings.fixedRate - settings.oneEpochReduction * epoch(h), 0)
@@ -86,8 +44,10 @@ final class Emission(settings: MonetarySettings, reemission: ReemissionSettings)
     1 + (h - settings.fixedRatePeriod) / settings.epochLength
 
   private def getEpochEmissionAfterEip27(e: Int): Long = {
-    val defaultRewardInEpoch = math.max(settings.fixedRate - settings.oneEpochReduction * e, 0) * settings.epochLength
-    defaultRewardInEpoch - getReemission(defaultRewardInEpoch) * settings.epochLength
+    val defaultReward        = math.max(settings.fixedRate - settings.oneEpochReduction * e, 0)
+    val defaultRewardInEpoch = defaultReward * settings.epochLength
+    val reemissionInEpoch    = getReemission(defaultReward) * settings.epochLength
+    defaultRewardInEpoch - reemissionInEpoch
   }
 
   private def getReemission(reward: Long): Long =
