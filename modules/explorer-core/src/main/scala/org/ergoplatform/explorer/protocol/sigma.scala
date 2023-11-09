@@ -27,7 +27,10 @@ object sigma {
   private val constantSerializer: ConstantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
   @inline def deserializeErgoTree[F[_]: Applicative: Throws](raw: HexString): F[Values.ErgoTree] =
-    Base16.decode(raw.unwrapped).map(treeSerializer.deserializeErgoTree).fold(_.raise, _.pure)
+    Base16
+      .decode(raw.unwrapped)
+      .map(treeSerializer.deserializeErgoTree)
+      .fold(_ => Values.ErgoTree.fromProposition(FalseLeaf.toSigmaProp).pure, _.pure)
 
   @inline def extractErgoTreeConstants[F[_]: Applicative: Throws](
     raw: HexString
@@ -68,7 +71,9 @@ object sigma {
   @inline def addressToErgoTreeHex(address: Address)(implicit enc: ErgoAddressEncoder): HexString =
     addressToErgoTree(address) |> (tree => HexString.fromStringUnsafe(Base16.encode(tree.bytes)))
 
-  @inline def addressToErgoTreeNewtype(address: Address)(implicit enc: ErgoAddressEncoder): org.ergoplatform.explorer.ErgoTree =
+  @inline def addressToErgoTreeNewtype(address: Address)(implicit
+    enc: ErgoAddressEncoder
+  ): org.ergoplatform.explorer.ErgoTree =
     addressToErgoTreeHex(address) |> (tree => org.ergoplatform.explorer.ErgoTree(tree))
 
   @inline def hexStringToBytes[
