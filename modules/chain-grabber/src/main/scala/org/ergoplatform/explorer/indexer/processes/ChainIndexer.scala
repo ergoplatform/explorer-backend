@@ -108,8 +108,11 @@ object ChainIndexer {
           _ <- info"Best block [${best.headOption.map(_.header.id)}]"
           _ <- info"Orphaned blocks [${orphaned.map(_.header.id).mkString(", ")}]"
           _ <- best.traverse(applyBestBlock)
-          _ <- cache.flushAll
-          _ <- info"Api query cache flushed after applying best block."
+          currentHeight <- repos.headerRepo.getBestHeight
+          recentBlocksThreshold = currentHeight - 100
+          _ <- cache.invalidateRecentBlocks(recentBlocksThreshold)
+          _ <- cache.invalidateMutableData()
+          _ <- info"Api query cache selectively invalidated after applying best block."
           _ <- orphaned.traverse(applyOrphanedBlock)
         } yield blocks.size
       pullBlocks.guarantee(commitChainUpdates)
@@ -140,12 +143,23 @@ object ChainIndexer {
       checkParentF >> getBlockInfo(parentId) >>= (scan(block, _)) >>= insertBlock >>= (_ => markAsMain(id, height))
     }
 
-    private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] =
+    private def applyOrphanedBlock(block: ApiFullBlock): F[Unit] = {
+      val id = block.header.id
+      val height = block.header.height
+      val invalidateCache =
+        cache.invalidatePattern(s"blocks:id:$id") >>
+        cache.invalidatePattern(s"blocks:height:$height") >>
+        cache.invalidateMutableData() >>
+        info"Cache invalidated for removed block $id at height $height"
+      
       if (settings.writeOrphans)
-        info"Applying orphaned block [${block.header.id}] at height [${block.header.height}]" >>
-        getBlockInfo(block.header.parentId) >>= (scan(block, _) >>= insertBlock)
+        info"Applying orphaned block [$id] at height [$height]" >>
+        getBlockInfo(block.header.parentId) >>= (scan(block, _) >>= insertBlock) >>
+        invalidateCache
       else
-        info"Skipping orphaned block [${block.header.id}] at height [${block.header.height}]"
+        info"Skipping orphaned block [$id] at height [$height]" >>
+        invalidateCache
+    }
 
     private def updateBestBlock(block: Header): F[Unit] = {
       val id       = block.id
