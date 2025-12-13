@@ -44,7 +44,8 @@ trait Transactions[F[_]] {
 
 object Transactions {
 
-  private val MaxIdsPerRequest = scala.Short.MaxValue / 4
+  // Removed MaxIdsPerRequest constant - now handled by QueryConstants in repository layer
+  // This fixes Issue #156: Query bloating with PostgreSQL parameter limits
 
   def apply[
     F[_]: Sync,
@@ -140,11 +141,13 @@ object Transactions {
         txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
         ins        <- Stream.eval(inputs.getFullByTxIds(txIds, narrowByAddress))
         inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets   <- Stream.eval(inIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds))
+        // Repository handles chunking automatically - no need for .grouped() here
+        inAssets   <- Stream.eval(assets.getAllByBoxIds(inIds))
         dataIns    <- Stream.eval(dataInputs.getFullByTxIds(txIds))
         outs       <- Stream.eval(outputs.getAllByTxIds(txIds, narrowByAddress))
         outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-        outAssets  <- Stream.eval(outIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds))
+        // Repository handles chunking automatically - no need for .grouped() here
+        outAssets  <- Stream.eval(assets.getAllByBoxIds(outIds))
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
         txInfo <-
