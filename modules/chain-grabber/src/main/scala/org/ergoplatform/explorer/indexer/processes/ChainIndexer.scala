@@ -240,12 +240,12 @@ object ChainIndexer {
         //
         // This only triggers when mainChain = true (block becoming part of main chain)
         // to avoid unnecessary recalculations when blocks are removed from main chain.
-        headerOpt <- repos.headers.get(blockId).option
+        headerOpt <- repos.headers.get(blockId)
         _ <- headerOpt match {
           case Some(header) if mainChain =>
             // Recalculate globalIndex for all transactions from this height onwards
             // This ensures ORDER BY timestamp = ORDER BY globalIndex invariant
-            repos.txs.recalculateGlobalIndexFromHeight(header.height).run.void
+            repos.txs.recalculateGlobalIndexFromHeight(header.height)
           case _ =>
             // No recalculation needed if block is being marked as non-main-chain
             // or if header not found (shouldn't happen, but defensive programming)
