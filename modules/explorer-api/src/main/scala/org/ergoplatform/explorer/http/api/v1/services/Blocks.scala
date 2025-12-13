@@ -137,7 +137,8 @@ object Blocks {
     def streamFullBlocks(minGix: Long, limit: Int): Stream[F, FullBlockInfo] =
       headerRepo
         .streamHeadersAfterGix(minGix, limit)
-        .evalMap(header => getFullBlockInfo(header.id).map(_.getOrElse(throw InconsistentDbData(s"Block not found: ${header.id}"))))
+        .flatMap(header => getFullBlockInfo(header.id))
+        .unNone
         .thrushK(trans.xas)
 
     private def makeBlockSummaries: Pipe[D, Chunk[Header], BlockSummaryV1] =
