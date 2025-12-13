@@ -47,6 +47,10 @@ trait Blocks[F[_]] {
   /** Get a slice of block header items.
     */
   def getBlockHeaders(paging: Paging, sorting: Sorting): F[Items[BlockHeader]]
+
+  /** Stream full blocks with all details
+    */
+  def streamFullBlocks(minGix: Long, limit: Int): Stream[F, FullBlockInfo]
 }
 
 object Blocks {
@@ -128,6 +132,12 @@ object Blocks {
         .streamHeaders(paging.offset, paging.limit, sorting.order.value, sorting.sortBy)
         .chunkN(serviceSettings.chunkSize)
         .through(makeBlockSummaries)
+        .thrushK(trans.xas)
+
+    def streamFullBlocks(minGix: Long, limit: Int): Stream[F, FullBlockInfo] =
+      headerRepo
+        .streamHeadersAfterGix(minGix, limit)
+        .evalMap(header => getFullBlockInfo(header.id).map(_.getOrElse(throw InconsistentDbData(s"Block not found: ${header.id}"))))
         .thrushK(trans.xas)
 
     private def makeBlockSummaries: Pipe[D, Chunk[Header], BlockSummaryV1] =
