@@ -77,7 +77,7 @@ object TransactionSummary {
     outputs: List[ExtendedOutput],
     assets: List[ExtendedAsset]
   ): TransactionSummary = {
-    val ins     = InputInfo.batch(inputs)
+    val ins     = InputInfo.batch(inputs, assets)
     val dataIns = DataInputInfo.batch(dataInputs)
     val outs    = OutputInfo.batch(outputs, assets)
     apply(tx, numConfirmations, ins, dataIns, outs)

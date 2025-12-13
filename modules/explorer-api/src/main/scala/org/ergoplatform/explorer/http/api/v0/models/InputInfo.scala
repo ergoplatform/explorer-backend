@@ -3,7 +3,8 @@ package org.ergoplatform.explorer.http.api.v0.models
 import io.circe.Codec
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
-import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
+import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedInput}
+import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.{Schema, Validator}
 import sttp.tapir.generic.Derived
@@ -16,7 +17,8 @@ final case class InputInfo(
   transactionId: TxId,
   outputTransactionId: Option[TxId],
   outputIndex: Option[Int],
-  address: Option[Address]
+  address: Option[Address],
+  assets: List[AssetInstanceInfo]
 )
 
 object InputInfo {
@@ -36,10 +38,11 @@ object InputInfo {
       )
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
+      .modify(_.assets)(_.description("Assets (tokens) in the corresponding box"))
 
   implicit val validator: Validator[InputInfo] = schema.validator
 
-  def apply(i: ExtendedInput): InputInfo =
+  def apply(i: ExtendedInput, assets: List[ExtendedAsset]): InputInfo =
     InputInfo(
       i.input.boxId,
       i.value,
@@ -48,9 +51,14 @@ object InputInfo {
       i.input.txId,
       i.outputTxId,
       i.outputIndex,
-      i.address
+      i.address,
+      assets.sortBy(_.index).map(AssetInstanceInfo(_))
     )
 
-  def batch(ins: List[ExtendedInput]): List[InputInfo] =
-    ins.sortBy(_.input.index).map(apply)
+  def batch(ins: List[ExtendedInput], assets: List[ExtendedAsset]): List[InputInfo] = {
+    val groupedAssets = assets.groupBy(_.boxId)
+    ins
+      .sortBy(_.input.index)
+      .map(in => InputInfo(in, groupedAssets.get(in.input.boxId).toList.flatten))
+  }
 }
