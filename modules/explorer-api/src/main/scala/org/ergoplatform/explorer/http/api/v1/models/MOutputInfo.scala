@@ -6,6 +6,7 @@ import derevo.derive
 import io.circe.Json
 import cats.syntax.option._
 import org.ergoplatform.explorer.{Address, BlockId, BoxId, HexString, TxId}
+import org.ergoplatform.explorer.protocol.models.ExpandedRegister
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 /** MOutputInfo is a merge of `UOutputInfo` & `OutputInfo`
@@ -88,7 +89,7 @@ object MOutputInfo {
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
+        Schema.derived[ExpandedRegister]
       )(_ => Map.empty)
     )
 }

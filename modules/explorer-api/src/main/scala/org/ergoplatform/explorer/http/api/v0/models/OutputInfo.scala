@@ -6,6 +6,7 @@ import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
 import org.ergoplatform.explorer.protocol.registers
+import org.ergoplatform.explorer.protocol.models.ExpandedRegister
 import org.ergoplatform.explorer.{Address, BoxId, HexString, TxId}
 import sttp.tapir.{Schema, SchemaType, Validator}
 
@@ -43,7 +44,7 @@ object OutputInfo {
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
+        Schema.derived[ExpandedRegister]
       )(_ => Map.empty)
     )
 
