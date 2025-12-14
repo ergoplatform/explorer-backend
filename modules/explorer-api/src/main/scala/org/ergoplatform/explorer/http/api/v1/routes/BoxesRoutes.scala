@@ -122,8 +122,8 @@ final class BoxesRoutes[
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
-    interpreter.toRoutes(defs.getUnspentOutputsByAddressDef) { case (address, paging, ord) =>
-      service.getUnspentOutputsByAddress(address, paging, ord).adaptThrowable.value
+    interpreter.toRoutes(defs.getUnspentOutputsByAddressDef) { case (address, paging, ord, heightRange) =>
+      service.getUnspentOutputsByAddress(address, paging, ord, heightRange).adaptThrowable.value
     }
 
   private def `getUnspent&UnconfirmedOutputsMergedByAddressR`: HttpRoutes[F] =

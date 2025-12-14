@@ -303,6 +303,60 @@ object OutputQuerySet extends QuerySet {
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin.query[Int]
 
+  def getMainUnspentByErgoTreeFiltered(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    ordering: OrderingString,
+    minHeight: Int,
+    maxHeight: Int
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val ord = Fragment.const(s"order by o.box_id, o.global_index $ordering")
+    val lim = Fragment.const(s"offset $offset limit $limit")
+    (sql"""
+          |select distinct on (o.box_id, o.global_index)
+          |  o.box_id,
+          |  o.tx_id,
+          |  o.header_id,
+          |  o.value,
+          |  o.creation_height,
+          |  o.settlement_height,
+          |  o.index,
+          |  o.global_index,
+          |  o.ergo_tree,
+          |  o.address,
+          |  o.additional_registers,
+          |  o.timestamp,
+          |  o.main_chain,
+          |  t.size,
+          |  i.extension
+          |from node_outputs o
+          |left join node_transactions t on o.tx_id = t.tx_id
+          |left join node_inputs i on o.box_id = i.box_id
+          |where o.main_chain = true
+          |  and (i.box_id is null or i.main_chain = false)
+          |  and o.ergo_tree = $ergoTree
+          |  and o.settlement_height >= $minHeight
+          |  and o.settlement_height <= $maxHeight
+          |""".stripMargin ++ ord ++ lim).query[ExtendedOutput]
+  }
+
+  def countUnspentByErgoTreeFiltered(
+    ergoTree: HexString,
+    minHeight: Int,
+    maxHeight: Int
+  )(implicit lh: LogHandler): Query0[Int] =
+    sql"""
+         |select count(distinct o.box_id)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |where o.main_chain = true
+         |  and i.box_id is null
+         |  and o.ergo_tree = $ergoTree
+         |  and o.settlement_height >= $minHeight
+         |  and o.settlement_height <= $maxHeight
+         |""".stripMargin.query[Int]
+
   def getAllByTxId(txId: TxId)(implicit lh: LogHandler): Query0[ExtendedOutput] =
     sql"""
          |select distinct on (o.index, o.box_id)

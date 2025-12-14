@@ -23,7 +23,7 @@ import org.ergoplatform.explorer.db.repositories.{
   UOutputRepo
 }
 import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
-import org.ergoplatform.explorer.http.api.models.{HeightRange, Items, Paging}
+import org.ergoplatform.explorer.http.api.models.{HeightRange, InclusionHeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.{
   AnyOutputInfo,
@@ -59,7 +59,12 @@ trait Boxes[F[_]] {
 
   /** Get unspent outputs with the given `address` in proposition.
     */
-  def getUnspentOutputsByAddress(address: Address, paging: Paging, ord: SortOrder): F[Items[OutputInfo]]
+  def getUnspentOutputsByAddress(
+    address: Address,
+    paging: Paging,
+    ord: SortOrder,
+    heightRange: Option[InclusionHeightRange]
+  ): F[Items[OutputInfo]]
 
   /** Get all outputs with the given `ergoTree` in proposition.
     */
@@ -208,13 +213,19 @@ object Boxes {
       } yield MOutputInfo.fromUOutputList(mempoolOutputs) <+> MOutputInfo.fromOutputList(unspentBoxes)) ||> trans.xa
     }
 
-    def getUnspentOutputsByAddress(address: Address, paging: Paging, ord: SortOrder): F[Items[OutputInfo]] = {
+    def getUnspentOutputsByAddress(
+      address: Address,
+      paging: Paging,
+      ord: SortOrder,
+      heightRange: Option[InclusionHeightRange]
+    ): F[Items[OutputInfo]] = {
       val ergoTree = addressToErgoTreeHex(address)
+      val inHTuple = heightRange.map(x => (x.fromHeight, x.toHeight))
       outputs
-        .countUnspentByErgoTree(ergoTree)
+        .countUnspentByErgoTree(ergoTree, inHTuple)
         .flatMap { total =>
           outputs
-            .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value)
+            .streamUnspentByErgoTree(ergoTree, paging.offset, paging.limit, ord.value, inHTuple)
             .chunkN(serviceSettings.chunkSize)
             .through(toOutputInfo)
             .to[List]

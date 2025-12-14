@@ -81,9 +81,23 @@ trait OutputRepo[D[_], S[_[_], _]] {
     ord: OrderingString
   ): S[D, ExtendedOutput]
 
+  /** Get unspent main-chain outputs with a given `ergoTree` from persistence with optional height range filtering.
+    */
+  def streamUnspentByErgoTree(
+    ergoTree: HexString,
+    offset: Int,
+    limit: Int,
+    ord: OrderingString,
+    heightRange: Option[(Int, Int)]
+  ): S[D, ExtendedOutput]
+
   /** Count unspent main-chain outputs with a given `ergoTree` from persistence.
     */
   def countUnspentByErgoTree(ergoTree: HexString): D[Int]
+
+  /** Count unspent main-chain outputs with a given `ergoTree` from persistence with optional height range filtering.
+    */
+  def countUnspentByErgoTree(ergoTree: HexString, heightRange: Option[(Int, Int)]): D[Int]
 
   /** Get unspent main-chain outputs with a given `ergoTree` from persistence
     * & filter out outputs spent in mempool (for unconfirmed transactions)
@@ -298,8 +312,30 @@ object OutputRepo {
     ): Stream[D, ExtendedOutput] =
       QS.getMainUnspentByErgoTree(ergoTree, offset, limit, ordering).stream.translate(liftK)
 
+    def streamUnspentByErgoTree(
+      ergoTree: HexString,
+      offset: Int,
+      limit: Int,
+      ordering: OrderingString,
+      heightRange: Option[(Int, Int)]
+    ): Stream[D, ExtendedOutput] =
+      heightRange match {
+        case Some((minH, maxH)) =>
+          QS.getMainUnspentByErgoTreeFiltered(ergoTree, offset, limit, ordering, minH, maxH).stream.translate(liftK)
+        case None =>
+          QS.getMainUnspentByErgoTree(ergoTree, offset, limit, ordering).stream.translate(liftK)
+      }
+
     def countUnspentByErgoTree(ergoTree: HexString): D[Int] =
       QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+
+    def countUnspentByErgoTree(ergoTree: HexString, heightRange: Option[(Int, Int)]): D[Int] =
+      heightRange match {
+        case Some((minH, maxH)) =>
+          QS.countUnspentByErgoTreeFiltered(ergoTree, minH, maxH).unique.liftConnectionIO
+        case None =>
+          QS.countUnspentByErgoTree(ergoTree).unique.liftConnectionIO
+      }
 
     def streamAllByErgoTreeTemplateHash(
       hash: ErgoTreeTemplateHash,
