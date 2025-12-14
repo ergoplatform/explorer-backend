@@ -250,7 +250,7 @@ object OutputQuerySet extends QuerySet {
          |  and i.box_id is null
          |  and o.ergo_tree = $ergoTree
          |""".stripMargin
-    val ord = Fragment.const(s"order by o.global_index $ordering")
+    val ord = Fragment.const(s"order by o.box_id, o.global_index $ordering")
     val lim = Fragment.const(s"offset $offset limit $limit")
     (q ++ ord ++ lim).query
   }
@@ -286,7 +286,7 @@ object OutputQuerySet extends QuerySet {
                    |  and o.ergo_tree = $ergoTree
                    |  and o.box_id
                    |""".stripMargin
-    val ord = Fragment.const(s"order by o.global_index $ordering")
+    val ord = Fragment.const(s"order by o.box_id, o.global_index $ordering")
     val lim = Fragment.const(s"offset $offset limit $limit")
     (notIn(q, excludedBoxes) ++ ord ++ lim).query
   }
