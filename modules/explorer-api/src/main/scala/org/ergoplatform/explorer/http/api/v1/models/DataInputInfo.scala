@@ -41,9 +41,29 @@ object DataInputInfo {
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
+        Schema(
+          SchemaType.SProduct(
+            List(
+              SchemaType.SProductField[Json, String](
+                sttp.tapir.FieldName("serializedValue"),
+                Schema(SchemaType.SString[Json]()).description("Hex-encoded serialized register value"),
+                j => None
+              ),
+              SchemaType.SProductField[Json, Option[String]](
+                sttp.tapir.FieldName("sigmaType"),
+                Schema(SchemaType.SOption(Schema(SchemaType.SString[Json]()))()).description("Sigma type of the register"),
+                j => None
+              ),
+              SchemaType.SProductField[Json, Option[String]](
+                sttp.tapir.FieldName("renderedValue"),
+                Schema(SchemaType.SOption(Schema(SchemaType.SString[Json]()))()).description("Human-readable rendered value"),
+                j => None
+              )
+            )
+          )
+        )
       )(_ => Map.empty)
-    )
+    ).description("Additional registers stored in the box as a map from register ID to register value object")
 
   def apply(i: FullDataInput, assets: List[ExtendedAsset]): DataInputInfo =
     DataInputInfo(
