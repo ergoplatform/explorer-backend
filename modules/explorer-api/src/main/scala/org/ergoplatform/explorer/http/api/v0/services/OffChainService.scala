@@ -58,6 +58,10 @@ trait OffChainService[F[_]] {
   /** Submit a transaction to the network.
     */
   def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse]
+
+  /** Check if a box exists in the unconfirmed outputs.
+    */
+  def boxExistsInMempool(boxId: BoxId): F[Boolean]
 }
 
 object OffChainService {
@@ -77,8 +81,9 @@ object OffChainService {
           UInputRepo[F, D],
           UDataInputRepo[F, D],
           UOutputRepo[F, D],
-          UAssetRepo[F, D]
-        ).mapN(new Live(_, _, _, _, _, _, etxRepo, validation)(trans))
+          UAssetRepo[F, D],
+          OutputRepo[F, D]
+        ).mapN(new Live(_, _, _, _, _, _, _, etxRepo, validation)(trans))
       }
     }
 
@@ -92,6 +97,7 @@ object OffChainService {
     dataInRepo: UDataInputRepo[D, Stream],
     outRepo: UOutputRepo[D, Stream],
     assetRepo: UAssetRepo[D],
+    confirmedOutRepo: OutputRepo[D, Stream],
     ergoLikeTxRepo: Option[ErgoLikeTransactionRepo[F, Stream]],
     validation: TxValidation
   )(trans: D Trans F)(implicit e: ErgoAddressEncoder)
@@ -140,16 +146,41 @@ object OffChainService {
         }
       } ||> trans.xa
 
+    def boxExistsInMempool(boxId: BoxId): F[Boolean] =
+      outRepo.getByBoxId(boxId).map(_.isDefined) ||> trans.xa
+
     def submitTransaction(tx: ErgoLikeTransaction): F[TxIdResponse] =
       ergoLikeTxRepo match {
         case Some(repo) =>
           val errors = validation.validate(tx)
-          if (errors.isEmpty)
-            Logger[F].info(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
-            repo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
-          else
+          if (errors.isEmpty) {
+            // Check if all input boxes exist in the mempool or are confirmed
+            val inputBoxIds = tx.inputs.map(input => input.boxId.toString.coerce[BoxId]).toList
+            
+            inputBoxIds.traverse { boxId =>
+              // First check if box exists in unconfirmed outputs (mempool)
+              (outRepo.getByBoxId(boxId).map(_.isDefined) ||> trans.xa).flatMap { existsInMempool =>
+                if (existsInMempool) {
+                  Monad[F].unit
+                } else {
+                  // If not in mempool, check if box exists in confirmed outputs
+                  (confirmedOutRepo.getByBoxId(boxId).map(_.isDefined) ||> trans.xa).flatMap { existsInConfirmed =>
+                    if (!existsInConfirmed) {
+                      BadRequest(s"Input box ${boxId} not found in mempool or blockchain. Parent transaction may not have been submitted yet.").raise[F, Unit]
+                    } else {
+                      Monad[F].unit
+                    }
+                  }
+                }
+              }
+            }.flatMap { _ =>
+              Logger[F].info(s"Persisting ErgoLikeTransaction with id '${tx.id}'") >>
+              repo.put(tx) as TxIdResponse(tx.id.toString.coerce[TxId])
+            }
+          } else {
             Logger[F].info(s"Rejecting ErgoLikeTransaction with id '${tx.id}'") >>
             BadRequest(s"Transaction is invalid. ${errors.mkString("; ")}").raise
+          }
         case None =>
           BadRequest("Transaction broadcasting is disabled").raise
       }
