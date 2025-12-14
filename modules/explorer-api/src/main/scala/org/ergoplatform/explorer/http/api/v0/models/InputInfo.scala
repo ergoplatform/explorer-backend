@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.Codec
+import io.circe.{Codec, Json}
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedInput
@@ -16,7 +16,8 @@ final case class InputInfo(
   transactionId: TxId,
   outputTransactionId: Option[TxId],
   outputIndex: Option[Int],
-  address: Option[Address]
+  address: Option[Address],
+  extension: Json
 )
 
 object InputInfo {
@@ -36,6 +37,7 @@ object InputInfo {
       )
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
+      .modify(_.extension)(_.description("Context extension of the spending proof"))
 
   implicit val validator: Validator[InputInfo] = schema.validator
 
@@ -48,7 +50,8 @@ object InputInfo {
       i.input.txId,
       i.outputTxId,
       i.outputIndex,
-      i.address
+      i.address,
+      i.extension
     )
 
   def batch(ins: List[ExtendedInput]): List[InputInfo] =
