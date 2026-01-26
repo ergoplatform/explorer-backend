@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-slim as builder
+FROM eclipse-temurin:8-jre as builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends apt-transport-https apt-utils bc dirmngr gnupg && \
     echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list && \
@@ -12,6 +12,6 @@ RUN sbt utx-broadcaster/assembly
 RUN mv `find . -name UtxBroadcaster-assembly-*.jar` /utx-broadcaster.jar
 CMD ["/usr/bin/java", "-jar", "/utx-broadcaster.jar"]
 
-FROM openjdk:8-jre-slim
+FROM eclipse-temurin:8-jre
 COPY --from=builder /utx-broadcaster.jar /utx-broadcaster.jar
 ENTRYPOINT java -jar /utx-broadcaster.jar $0
