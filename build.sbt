@@ -41,7 +41,7 @@ lazy val httpApi = utils
     assembly / mainClass := Some("org.ergoplatform.explorer.http.api.Application"),
     libraryDependencies ++= dependencies.api
   )
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
 
 lazy val grabber = utils
   .mkModule("chain-grabber", "ChainGrabber")
