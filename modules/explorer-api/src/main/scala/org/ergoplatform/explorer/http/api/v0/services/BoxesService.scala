@@ -17,7 +17,7 @@ import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.repositories.{AssetRepo, OutputRepo}
 import org.ergoplatform.explorer.http.api.models.Sorting
 import org.ergoplatform.explorer.http.api.v0.models.OutputInfo
-import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.protocol.sigmaWrappers
 import org.ergoplatform.explorer.syntax.stream._
 import org.ergoplatform.explorer.{Address, BoxId, CRaise, HexString}
 
@@ -68,12 +68,12 @@ object BoxesService {
       } yield OutputInfo(box, assets)).value ||> trans.xa
 
     def getOutputsByAddress(address: Address): Stream[F, OutputInfo] =
-      (sigma.addressToErgoTreeHex(address) |> (outRepo
+      (sigmaWrappers.addressToErgoTreeHex(address) |> (outRepo
         .streamAllByErgoTree(_, 0, Int.MaxValue)
         .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getUnspentOutputsByAddress(address: Address): Stream[F, OutputInfo] =
-      (sigma.addressToErgoTreeHex(address) |> (outRepo
+      (sigmaWrappers.addressToErgoTreeHex(address) |> (outRepo
         .streamUnspentByErgoTree(_, 0, Int.MaxValue, Sorting.Asc.value)
         .chunkN(100))).through(toOutputInfo) ||> trans.xas
 

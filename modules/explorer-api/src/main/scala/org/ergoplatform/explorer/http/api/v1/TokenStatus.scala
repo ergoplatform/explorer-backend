@@ -47,6 +47,7 @@ object TokenStatus {
       case TokenStatus.Verified   => 1
       case TokenStatus.Suspicious => 2
       case TokenStatus.Blocked    => 3
+      case TokenStatus.Null => -1
     }
 
 }

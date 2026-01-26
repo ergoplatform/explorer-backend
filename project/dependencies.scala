@@ -66,8 +66,7 @@ object dependencies {
   )
 
   val Ergo: List[ModuleID] = List(
-    "org.ergoplatform" %% "ergo-wallet" % ErgoWalletVersion,
-    "org.ergoplatform" %% "contracts"   % ErgoContractsVersion
+    "org.ergoplatform" %% "ergo-wallet" % ErgoWalletVersion
   )
 
   val Logging: List[ModuleID] = List(
@@ -113,6 +112,10 @@ object dependencies {
     "com.github.pureconfig" %% "pureconfig-cats-effect" % PureConfigVersion
   )
 
+  val Paiges: List[ModuleID] = List(
+    "org.typelevel" %% "paiges-core" % "0.4.3"
+  )
+
   val CompilerPlugins: List[ModuleID] =
     List(
       compilerPlugin(
@@ -139,10 +142,11 @@ object dependencies {
     Typing ++
     Monocle ++
     Redis ++
-    Enums
+    Enums ++
+    Paiges
 
   lazy val api: List[ModuleID] = Monix ++
-    List("org.scorexfoundation" %% "sigma-state" % "4.0.6-31-e2e0ffa1-SNAPSHOT")
+    List("org.scorexfoundation" %% "sigma-state" % "6.0.2")
 
   lazy val grabber: List[ModuleID] = Monix
 

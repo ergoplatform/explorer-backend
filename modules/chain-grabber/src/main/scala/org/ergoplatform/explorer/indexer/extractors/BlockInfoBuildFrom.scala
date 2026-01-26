@@ -8,11 +8,11 @@ import org.ergoplatform.explorer.protocol.constants
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, BuildFrom, CRaise}
-import org.ergoplatform.{ErgoScriptPredef, Pay2SAddress}
+import org.ergoplatform.{ErgoTreePredef, Pay2SAddress}
 import scorex.util.encode.Base16
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigma.crypto.EcPointType
+import sigma.data.ProveDlog
+import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
 import tofu.WithContext
 import tofu.syntax.context._
 import tofu.syntax.monadic._
@@ -94,7 +94,7 @@ final class BlockInfoBuildFrom[
       .flatMap { x =>
         val minerPk = ProveDlog(x)
         val rewardScript =
-          ErgoScriptPredef.rewardOutputScript(
+          ErgoTreePredef.rewardOutputScript(
             protocolSettings.monetary.minerRewardDelay,
             minerPk
           )

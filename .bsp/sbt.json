@@ -1,1 +1,0 @@
-{"name":"sbt","version":"1.5.5","bspVersion":"2.0.0-M5","languages":["scala"],"argv":["/home/kushti/.jdks/jbr-17.0.12/bin/java","-Xms100m","-Xmx100m","-classpath","/home/kushti/.local/share/JetBrains/IdeaIC2024.3/Scala/launcher/sbt-launch.jar","xsbt.boot.Boot","-bsp","--sbt-launch-jar=/home/kushti/.local/share/JetBrains/IdeaIC2024.3/Scala/launcher/sbt-launch.jar"]}

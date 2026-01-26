@@ -1,7 +1,6 @@
 object versions {
 
-  val ErgoWalletVersion    = "v3.3.8-aaaab5ef-SNAPSHOT"
-  val ErgoContractsVersion = "1.0.0"
+  val ErgoWalletVersion    = "6.0.0"
 
   val Http4sVersion                  = "0.22.11"
   val TapirVersion                   = "0.18.3"

@@ -38,7 +38,7 @@ import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.v1.services.AddressesSpec._
 import org.ergoplatform.explorer.db.models.generators._
 import org.ergoplatform.explorer.http.api.v1.models.AddressInfo
-import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.protocol.sigmaWrappers
 import org.ergoplatform.explorer.v1.services.constants.{ReceiverAddressString, SenderAddressString}
 
 trait AddressesSpec
@@ -71,8 +71,8 @@ class AS_C extends AddressesSpec {
     val address2S                               = ReceiverAddressString
     val address1T                               = Address.fromString[Try](address1S)
     val address2T                               = Address.fromString[Try](address2S)
-    lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
-    lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
+    lazy val address1Tree                       = sigmaWrappers.addressToErgoTreeHex(address1T.get)
+    lazy val address2Tree                       = sigmaWrappers.addressToErgoTreeHex(address2T.get)
     withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (addr, _, _) =>
@@ -118,8 +118,8 @@ class AS_D extends AddressesSpec {
     val address2S                               = ReceiverAddressString
     val address1T                               = Address.fromString[Try](address1S)
     val address2T                               = Address.fromString[Try](address2S)
-    lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
-    lazy val address2Tree                       = sigma.addressToErgoTreeHex(address2T.get)
+    lazy val address1Tree                       = sigmaWrappers.addressToErgoTreeHex(address1T.get)
+    lazy val address2Tree                       = sigmaWrappers.addressToErgoTreeHex(address2T.get)
     val hasBeenUsedByErgoTree                   = PrivateMethod[IO[Boolean]]('hasBeenUsedByErgoTree)
     withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>

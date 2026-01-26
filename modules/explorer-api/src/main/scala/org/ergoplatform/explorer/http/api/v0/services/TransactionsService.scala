@@ -21,7 +21,7 @@ import org.ergoplatform.explorer.db.models.Transaction
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.{TransactionInfo, TransactionSummary}
-import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeHex
+import org.ergoplatform.explorer.protocol.sigmaWrappers.addressToErgoTreeHex
 import org.ergoplatform.explorer.settings.UtxCacheSettings
 import org.ergoplatform.explorer.{Address, TxId}
 

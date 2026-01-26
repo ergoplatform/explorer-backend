@@ -16,7 +16,7 @@ import org.ergoplatform.explorer.http.api.models.Sorting.SortOrder
 import org.ergoplatform.explorer.http.api.models.{InclusionHeightRange, Items, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.TransactionInfo
-import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeHex
+import org.ergoplatform.explorer.protocol.sigmaWrappers.addressToErgoTreeHex
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.{Address, ErgoTreeTemplateHash, TxId}
 import tofu.syntax.monadic._

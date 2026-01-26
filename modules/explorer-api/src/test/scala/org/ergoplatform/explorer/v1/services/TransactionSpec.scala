@@ -18,7 +18,7 @@ import org.ergoplatform.explorer.db.repositories.{HeaderRepo, InputRepo, OutputR
 import org.ergoplatform.explorer.http.api.models.{InclusionHeightRange, Paging}
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.services.Transactions
-import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.protocol.sigmaWrappers
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.scalatest.TryValues
 import org.scalatest.flatspec.AnyFlatSpec
@@ -39,7 +39,7 @@ class TransactionSpec extends AnyFlatSpec with should.Matchers with TryValues wi
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
     val addressS                                = "3WzSdM7NrjDJswpu2ThfhWvVM1mKJhgnGNieWYcGVsYp3AoirgR5"
     val addressT                                = Address.fromString[Try](addressS)
-    val addressTree                             = sigma.addressToErgoTreeHex(addressT.get)
+    val addressTree                             = sigmaWrappers.addressToErgoTreeHex(addressT.get)
     withTransactionService[IO, ConnectionIO] { txService =>
       addressT.isSuccess should be(true)
       withLiveRepos[ConnectionIO] { (headerRepo, txRepo, outputRepo, inputRepo) =>

@@ -7,26 +7,26 @@ import mouse.any._
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.ErgoTreeSerializationErr.ErgoTreeDeserializationFailed
 import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.{Base16DecodingFailed, ErgoTreeSerializationErr}
 import org.ergoplatform.explorer._
-import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder, Pay2SAddress}
+import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder, ErgoTreePredef, Pay2SAddress}
 import scorex.crypto.hash.Sha256
 import scorex.util.encode.Base16
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, FalseLeaf, SigmaPropConstant}
-import sigmastate._
-import sigmastate.basics.DLogProtocol.ProveDlogProp
-import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.serialization.{ConstantSerializer, ConstantStore, ErgoTreeSerializer, SigmaSerializer}
+import sigma.ast.ErgoTree.ZeroHeader
+import sigma.ast.{Constant, ConstantNode, DeserializationSigmaBuilder, ErgoTree, EvaluatedValue, FalseLeaf, SByte, SCollection, SCollectionType, SGroupElement, SOption, SPrimType, SSigmaProp, STuple, SType, SigmaPropConstant}
+import sigma.data.{CSigmaProp, ProveDlog}
+import sigma.data.TrivialProp.{FalseProp, TrueProp}
+import sigma.serialization.{ConstantSerializer, ConstantStore, ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer}
 import tofu.Throws
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
 
 import scala.util.Try
 
-object sigma {
+object sigmaWrappers {
 
   private val treeSerializer: ErgoTreeSerializer     = ErgoTreeSerializer.DefaultSerializer
   private val constantSerializer: ConstantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
-  @inline def deserializeErgoTree[F[_]: Applicative: Throws](raw: HexString): F[Values.ErgoTree] =
+  @inline def deserializeErgoTree[F[_]: Applicative: Throws](raw: HexString): F[ErgoTree] =
     Base16.decode(raw.unwrapped).map(treeSerializer.deserializeErgoTree).fold(_.raise, _.pure)
 
   @inline def extractErgoTreeConstants[F[_]: Applicative: Throws](
@@ -34,8 +34,7 @@ object sigma {
   ): F[List[(Int, Constant[SType], HexString)]] =
     deserializeErgoTree(raw).map {
       _.constants.zipWithIndex.toList.map { case (c, ix) =>
-        val constantStore = new ConstantStore()
-        val bw            = SigmaSerializer.startWriter(constantStore)
+        val bw            = SigmaSerializer.startWriter()
         constantSerializer.serialize(c, bw)
         val rawValue = HexString.fromStringUnsafe(Base16.encode(bw.toBytes))
         (ix, c, rawValue)
@@ -55,7 +54,7 @@ object sigma {
       .flatMap { bytes =>
         enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
       }
-      .fold(_ => (Pay2SAddress(FalseLeaf.toSigmaProp): ErgoAddress).pure, _.pure)
+      .fold(_ => (Pay2SAddress(ErgoTreePredef.FalseProp(ZeroHeader)): ErgoAddress).pure, _.pure)
 
   @inline def addressToErgoTree(
     address: Address
@@ -113,8 +112,8 @@ object sigma {
       ev0.tpe match {
         case SSigmaProp | SGroupElement =>
           ev0 match {
-            case SigmaPropConstant(ProveDlogProp(dlog)) =>
-              OptionT.some(SigmaType.SimpleKindSigmaType.SSigmaProp -> Base16.encode(dlog.pkBytes))
+            case SigmaPropConstant(CSigmaProp(ProveDlog(dlog))) =>
+              OptionT.some(SigmaType.SimpleKindSigmaType.SSigmaProp -> Base16.encode(GroupElementSerializer.toBytes(dlog)))
             case ConstantNode(groupElem, SGroupElement) =>
               OptionT.some(
                 SigmaType.SimpleKindSigmaType.SGroupElement ->
@@ -140,12 +139,12 @@ object sigma {
               tp -> ("[" + xs.mkString(",") + "]")
             }
           }
-        case SCollectionType(SByte) =>
+        case sigma.ast.SCollectionType(SByte) =>
           OptionT.some(
             SigmaType.SCollection(SigmaType.SimpleKindSigmaType.SByte) ->
             Base16.encode(ev0.value.asInstanceOf[SCollection[SByte.type]#WrappedType].toArray)
           )
-        case coll: SCollection[_] =>
+        case coll: sigma.ast.SCollection[_] =>
           val typeTerm = coll.toString.replaceAll("\\$", "")
           OptionT.fromOption[Eval](SigmaType.parse(typeTerm)).flatMap { tp =>
             val elems = ev0.value.asInstanceOf[coll.WrappedType].toArray.toList.map(Constant(_, coll.elemType))

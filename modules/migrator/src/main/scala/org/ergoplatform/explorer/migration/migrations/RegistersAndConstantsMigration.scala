@@ -20,7 +20,7 @@ import org.ergoplatform.explorer.db.repositories.{BoxRegisterRepo, ScriptConstan
 import org.ergoplatform.explorer.migration.configs.ProcessingConfig
 import org.ergoplatform.explorer.migration.migrations.RegistersAndConstantsMigration.UniversalExpandedRegister
 import org.ergoplatform.explorer.protocol.models.{ExpandedRegister, RegisterValue}
-import org.ergoplatform.explorer.protocol.{sigma, RegistersParser}
+import org.ergoplatform.explorer.protocol.{sigmaWrappers, RegistersParser}
 import org.ergoplatform.explorer.{BoxId, ErgoTreeTemplateHash, HexString, RegisterId}
 import tofu.syntax.monadic._
 
@@ -75,14 +75,14 @@ final class RegistersAndConstantsMigration(
 
   def extractConstants(out: Output): List[ScriptConstant] =
     for {
-      constants <- sigma.extractErgoTreeConstants[Try](out.ergoTree).toOption.toList
+      constants <- sigmaWrappers.extractErgoTreeConstants[Try](out.ergoTree).toOption.toList
       (ix, tp, v, rv) <- constants.flatMap { case (ix, c, v) =>
-                           sigma.renderEvaluatedValue(c).map { case (tp, rv) => (ix, tp, v, rv) }.toList
+                           sigmaWrappers.renderEvaluatedValue(c).map { case (tp, rv) => (ix, tp, v, rv) }.toList
                          }
     } yield ScriptConstant(ix, out.boxId, tp, v, rv)
 
   def addErgoTreeTemplateHash(out: Output): Output = {
-    val hash = sigma.deriveErgoTreeTemplateHash[Try](out.ergoTree).get
+    val hash = sigmaWrappers.deriveErgoTreeTemplateHash[Try](out.ergoTree).get
     out.copy(ergoTreeTemplateHash = hash)
   }
 

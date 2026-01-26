@@ -17,7 +17,7 @@ import org.ergoplatform.explorer.db.models.aggregates.AggregatedAsset
 import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.models.{Items, Paging}
 import org.ergoplatform.explorer.http.api.v0.models.{AddressInfo, AssetSummary, BalanceInfo}
-import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.protocol.sigmaWrappers
 import org.ergoplatform.explorer.{Address, CRaise, TokenId}
 
 /** A service providing an access to the addresses data.
@@ -67,7 +67,7 @@ object AddressesService {
       (for {
         height <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
         maxHeight = height - minConfirmations
-        ergoTree  = sigma.addressToErgoTreeHex(address)
+        ergoTree  = sigmaWrappers.addressToErgoTreeHex(address)
         totalReceived   <- outputRepo.sumAllByErgoTree(ergoTree, maxHeight)
         balance         <- outputRepo.sumUnspentByErgoTree(ergoTree, maxHeight)
         assets          <- assetRepo.aggregateUnspentByErgoTree(ergoTree, maxHeight)

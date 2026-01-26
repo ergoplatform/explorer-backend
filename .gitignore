@@ -6,6 +6,7 @@
 /.idea/
 .metals
 .bloop
+.bsp
 target
 data
 /modules/*/target/
@@ -15,3 +16,5 @@ data
 
 .vscode/
 project/metals.sbt
+
+QWEN.md

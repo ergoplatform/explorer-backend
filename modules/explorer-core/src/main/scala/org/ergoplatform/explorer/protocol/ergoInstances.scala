@@ -10,13 +10,11 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.Extensions._
-import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import special.collection.Coll
+import sigma.ast.{ErgoTree, EvaluatedValue, SType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll, WrapperOf}
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.{Coll, Colls}
 import sttp.tapir.SchemaType.SProductField
 import sttp.tapir.{Schema, SchemaType, Validator}
 
@@ -52,19 +50,19 @@ object ergoInstances {
       } yield transform(bytes)
     }
 
-  implicit val sigmaBigIntEncoder: Encoder[special.sigma.BigInt] =
+  implicit val sigmaBigIntEncoder: Encoder[sigma.BigInt] =
     Encoder.instance { bigInt =>
       JsonNumber
         .fromDecimalStringUnsafe(bigInt.asInstanceOf[WrapperOf[BigInteger]].wrappedValue.toString)
         .asJson
     }
 
-  implicit val sigmaBigIntDecoder: Decoder[special.sigma.BigInt] =
+  implicit val sigmaBigIntDecoder: Decoder[sigma.BigInt] =
     Decoder.instance { implicit cursor =>
       for {
         jsonNumber <- cursor.as[JsonNumber]
         bigInt     <- fromOption(jsonNumber.toBigInt)
-      } yield CBigInt(bigInt.bigInteger)
+      } yield sigma.data.CBigInt(bigInt.bigInteger)
     }
 
   implicit val arrayBytesEncoder: Encoder[Array[Byte]] =
@@ -82,6 +80,14 @@ object ergoInstances {
 
   implicit val digest32Encoder: Encoder[Digest32] = Encoder.instance(_.array.asJson)
   implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(Digest32 @@ _)
+
+  implicit val tokenIdEncoder: Encoder[TokenId] = Encoder.instance(bytes => ErgoAlgos.encode(bytes).asJson)
+  implicit val tokenIdDecoder: Decoder[TokenId] = Decoder.instance { implicit cursor =>
+    for {
+      str   <- cursor.as[String]
+      bytes <- fromTry(ErgoAlgos.decode(str))
+    } yield Digest32Coll @@ Colls.fromArray(bytes)
+  }
 
   implicit val assetEncoder: Encoder[(TokenId, Long)] =
     Encoder.instance { asset =>
@@ -227,7 +233,7 @@ object ergoInstances {
         treeFlagsByte <- cursor.downField("treeFlags").as[Byte]
         keyLength     <- cursor.downField("keyLength").as[Int]
         valueLength   <- cursor.downField("valueLength").as[Option[Int]]
-      } yield new AvlTreeData(digest, AvlTreeFlags(treeFlagsByte), keyLength, valueLength)
+      } yield new AvlTreeData(Colls.fromArray(digest), AvlTreeFlags(treeFlagsByte), keyLength, valueLength)
     }
 
   implicit val ergoTreeEncoder: Encoder[ErgoTree] = Encoder.instance { value =>
@@ -282,7 +288,7 @@ object ergoInstances {
       } yield new ErgoBox(
         value               = value,
         ergoTree            = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes),
-        additionalTokens    = additionalTokens.toColl,
+        additionalTokens    = Colls.fromArray(additionalTokens.toArray),
         additionalRegisters = additionalRegisters,
         transactionId       = transactionId,
         index               = index,
@@ -316,7 +322,7 @@ object ergoInstances {
                        .downField("additionalRegisters")
                        .as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
       } yield (
-        new ErgoBoxCandidate(value, ergoTree, creationHeight, assets.toColl, registers),
+        new ErgoBoxCandidate(value, ergoTree, creationHeight, Colls.fromArray(assets.toArray), registers),
         maybeId
       )
     }

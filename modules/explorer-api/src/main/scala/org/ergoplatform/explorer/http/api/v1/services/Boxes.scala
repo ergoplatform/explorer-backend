@@ -34,7 +34,7 @@ import org.ergoplatform.explorer.http.api.v1.models.{
   UOutputInfo
 }
 import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
-import org.ergoplatform.explorer.protocol.sigma._
+import org.ergoplatform.explorer.protocol.sigmaWrappers._
 import org.ergoplatform.explorer.settings.ServiceSettings
 import org.ergoplatform.explorer.syntax.stream._
 import tofu.Throws

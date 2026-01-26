@@ -1,9 +1,8 @@
 package org.ergoplatform.explorer.http.api.v1.models
 
-import org.ergoplatform.explorer.HexString
-import sigmastate.PrettyPrintErgoTree
-import sigmastate.lang.exceptions.SerializerException
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import org.ergoplatform.explorer.{HexString, PrettyPrintErgoTree}
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.SerializerException
 
 object PrettyErgoTree {
   def fromString(s: String) : Either[PrettyErgoTreeError, ErgoTreeHuman] = {

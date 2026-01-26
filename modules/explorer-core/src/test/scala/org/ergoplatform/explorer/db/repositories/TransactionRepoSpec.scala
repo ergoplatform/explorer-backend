@@ -13,7 +13,7 @@ import flatspec._
 import matchers._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.Address
-import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.protocol.sigmaWrappers
 
 import scala.util.Try
 
@@ -98,7 +98,7 @@ class TransactionRepoSpec extends AnyFlatSpec with should.Matchers with TryValue
     val networkPrefix: String Refined ValidByte     = "16"
     implicit val addressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(networkPrefix.value.toByte)
     val addressT                                    = Address.fromString[Try](addressS)
-    val addressTree                                 = sigma.addressToErgoTreeHex(addressT.get)
+    val addressTree                                 = sigmaWrappers.addressToErgoTreeHex(addressT.get)
     addressT.isSuccess should be(true)
     withLiveRepos[ConnectionIO] { (headerRepo, txRepo, outputRepo, inputRepo) =>
       forSingleInstance(`headerTxsOutputs&InputGen`(mainChain = true, 10, 20, addressT.get, addressTree)) { hTxList =>
@@ -122,7 +122,7 @@ class TransactionRepoSpec extends AnyFlatSpec with should.Matchers with TryValue
     val networkPrefix: String Refined ValidByte     = "16"
     implicit val addressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(networkPrefix.value.toByte)
     val addressT                                    = Address.fromString[Try](addressS)
-    val addressTree                                 = sigma.addressToErgoTreeHex(addressT.get)
+    val addressTree                                 = sigmaWrappers.addressToErgoTreeHex(addressT.get)
     addressT.isSuccess should be(true)
     withLiveRepos[ConnectionIO] { (headerRepo, txRepo, outputRepo, inputRepo) =>
       forSingleInstance(`headerTxsOutputs&InputGen`(mainChain = true, 10, 20, addressT.get, addressTree)) { hTxList =>
