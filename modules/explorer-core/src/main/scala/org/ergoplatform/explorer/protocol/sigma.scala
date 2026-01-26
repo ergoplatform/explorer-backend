@@ -41,10 +41,12 @@ object sigmaWrappers {
       }
     }
 
-  @inline def deriveErgoTreeTemplateHash[F[_]: Applicative: Throws](ergoTree: HexString): F[ErgoTreeTemplateHash] =
-    deserializeErgoTree(ergoTree).map { tree =>
-      ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(Sha256.hash(tree.template)))
-    }
+@inline def deriveErgoTreeTemplateHash[F[_]: Applicative: Throws](ergoTree: HexString): F[ErgoTreeTemplateHash] =
+  deserializeErgoTree(ergoTree).map { tree =>
+    val rawBytes = Base16.decode(ergoTree.unwrapped).getOrElse(Array.emptyByteArray)
+    val digest   = Try(Sha256.hash(tree.template)).getOrElse(Sha256.hash(rawBytes))
+    ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(digest))
+  }
 
   @inline def ergoTreeToAddress[F[_]: Applicative](
     ergoTree: HexString
