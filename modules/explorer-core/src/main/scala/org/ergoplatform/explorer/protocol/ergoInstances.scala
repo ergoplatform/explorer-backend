@@ -14,7 +14,7 @@ import sigma.ast.{ErgoTree, EvaluatedValue, SType}
 import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll, WrapperOf}
 import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigma.{Coll, Colls}
+import sigma.{Coll, Colls, VersionContext}
 import sttp.tapir.SchemaType.SProductField
 import sttp.tapir.{Schema, SchemaType, Validator}
 
@@ -130,14 +130,18 @@ object ergoInstances {
   implicit val evaluatedValueDecoder: Decoder[EvaluatedValue[_ <: SType]] =
     decodeEvaluatedValue(_.asInstanceOf[EvaluatedValue[SType]])
 
-  def decodeEvaluatedValue[T](transform: EvaluatedValue[SType] => T): Decoder[T] =
-    Decoder.instance { implicit cursor: ACursor =>
-      cursor.as[Array[Byte]] flatMap { bytes =>
-        fromThrows(
-          transform(ValueSerializer.deserialize(bytes).asInstanceOf[EvaluatedValue[SType]])
-        )
+  def decodeEvaluatedValue[T](transform: EvaluatedValue[SType] => T): Decoder[T] = {
+    val version = VersionContext.V6SoftForkVersion
+    VersionContext.withVersions(version, version) {
+      Decoder.instance { implicit cursor: ACursor =>
+        cursor.as[Array[Byte]] flatMap { bytes =>
+          fromThrows(
+            transform(ValueSerializer.deserialize(bytes).asInstanceOf[EvaluatedValue[SType]])
+          )
+        }
       }
     }
+  }
 
   implicit val dataInputEncoder: Encoder[DataInput] =
     Encoder.instance { input =>
@@ -240,12 +244,16 @@ object ergoInstances {
     ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(value).asJson
   }
 
-  def decodeErgoTree[T](transform: ErgoTree => T): Decoder[T] =
-    Decoder.instance { implicit cursor: ACursor =>
-      cursor.as[Array[Byte]] flatMap { bytes =>
-        fromThrows(transform(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)))
+  def decodeErgoTree[T](transform: ErgoTree => T): Decoder[T] = {
+    val version = VersionContext.V6SoftForkVersion
+    VersionContext.withVersions(version, version) {
+      Decoder.instance { implicit cursor: ACursor =>
+        cursor.as[Array[Byte]] flatMap { bytes =>
+          fromThrows(transform(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)))
+        }
       }
     }
+  }
 
   implicit val ergoTreeDecoder: Decoder[ErgoTree] =
     decodeErgoTree(_.asInstanceOf[ErgoTree])
@@ -287,7 +295,7 @@ object ergoInstances {
         index         <- cursor.downField("index").as[Short]
       } yield new ErgoBox(
         value               = value,
-        ergoTree            = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes),
+        ergoTree            = VersionContext.withVersions(3,3)(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes)),
         additionalTokens    = Colls.fromArray(additionalTokens.toArray),
         additionalRegisters = additionalRegisters,
         transactionId       = transactionId,

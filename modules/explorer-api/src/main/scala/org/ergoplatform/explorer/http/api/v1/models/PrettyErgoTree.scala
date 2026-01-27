@@ -1,6 +1,7 @@
 package org.ergoplatform.explorer.http.api.v1.models
 
 import org.ergoplatform.explorer.{HexString, PrettyPrintErgoTree}
+import sigma.VersionContext
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.SerializerException
 
@@ -14,7 +15,12 @@ object PrettyErgoTree {
 
   def fromHexString(h: HexString): Either[PrettyErgoTreeError, ErgoTreeHuman] = {
     try {
-      val ergoTree = DefaultSerializer.deserializeErgoTree(h.bytes)
+      val ergoTree = {
+        val version = VersionContext.V6SoftForkVersion
+        VersionContext.withVersions(version, version) {
+          DefaultSerializer.deserializeErgoTree(h.bytes)
+        }
+      }
       ergoTree.root match {
         case Left(_) => Left(PrettyErgoTreeError.UnparsedErgoTree)
         case Right(value) => 

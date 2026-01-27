@@ -2,19 +2,17 @@ package org.ergoplatform.explorer.protocol
 
 import cats.data.OptionT
 import cats.syntax.either._
-import cats.{Applicative, Eval, Monad}
+import cats.{Applicative, Eval}
 import mouse.any._
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.ErgoTreeSerializationErr.ErgoTreeDeserializationFailed
-import org.ergoplatform.explorer.Err.RequestProcessingErr.DexErr.ContractParsingErr.{Base16DecodingFailed, ErgoTreeSerializationErr}
 import org.ergoplatform.explorer._
 import org.ergoplatform.{ErgoAddress, ErgoAddressEncoder, ErgoTreePredef, Pay2SAddress}
 import scorex.crypto.hash.Sha256
 import scorex.util.encode.Base16
+import sigma.VersionContext
 import sigma.ast.ErgoTree.ZeroHeader
-import sigma.ast.{Constant, ConstantNode, DeserializationSigmaBuilder, ErgoTree, EvaluatedValue, FalseLeaf, SByte, SCollection, SCollectionType, SGroupElement, SOption, SPrimType, SSigmaProp, STuple, SType, SigmaPropConstant}
+import sigma.ast.{Constant, ConstantNode, DeserializationSigmaBuilder, ErgoTree, EvaluatedValue, SByte, SCollection, SGroupElement, SOption, SPrimType, SSigmaProp, STuple, SType, SigmaPropConstant}
 import sigma.data.{CSigmaProp, ProveDlog}
-import sigma.data.TrivialProp.{FalseProp, TrueProp}
-import sigma.serialization.{ConstantSerializer, ConstantStore, ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer}
+import sigma.serialization.{ConstantSerializer, ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer}
 import tofu.Throws
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
@@ -23,42 +21,53 @@ import scala.util.Try
 
 object sigmaWrappers {
 
+  private val treeVersion = VersionContext.V6SoftForkVersion // tree version for deserialization
   private val treeSerializer: ErgoTreeSerializer     = ErgoTreeSerializer.DefaultSerializer
   private val constantSerializer: ConstantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
-  @inline def deserializeErgoTree[F[_]: Applicative: Throws](raw: HexString): F[ErgoTree] =
-    Base16.decode(raw.unwrapped).map(treeSerializer.deserializeErgoTree).fold(_.raise, _.pure)
+  @inline def deserializeErgoTree[F[_]: Applicative: Throws](raw: HexString): F[ErgoTree] = {
+    VersionContext.withVersions(treeVersion, treeVersion) {
+      Base16.decode(raw.unwrapped).map(treeSerializer.deserializeErgoTree).fold(_.raise, _.pure)
+    }
+  }
 
   @inline def extractErgoTreeConstants[F[_]: Applicative: Throws](
     raw: HexString
   ): F[List[(Int, Constant[SType], HexString)]] =
     deserializeErgoTree(raw).map {
-      _.constants.zipWithIndex.toList.map { case (c, ix) =>
-        val bw            = SigmaSerializer.startWriter()
-        constantSerializer.serialize(c, bw)
-        val rawValue = HexString.fromStringUnsafe(Base16.encode(bw.toBytes))
-        (ix, c, rawValue)
+      VersionContext.withVersions(treeVersion, treeVersion) {
+        _.constants.zipWithIndex.toList.map { case (c, ix) =>
+          val bw = SigmaSerializer.startWriter()
+          constantSerializer.serialize(c, bw)
+          val rawValue = HexString.fromStringUnsafe(Base16.encode(bw.toBytes))
+          (ix, c, rawValue)
+        }
       }
     }
 
 @inline def deriveErgoTreeTemplateHash[F[_]: Applicative: Throws](ergoTree: HexString): F[ErgoTreeTemplateHash] =
   deserializeErgoTree(ergoTree).map { tree =>
-    val rawBytes = Base16.decode(ergoTree.unwrapped).getOrElse(Array.emptyByteArray)
-    val digest   = Try(Sha256.hash(tree.template)).getOrElse(Sha256.hash(rawBytes))
-    ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(digest))
+    VersionContext.withVersions(treeVersion, treeVersion) {
+      val rawBytes = Base16.decode(ergoTree.unwrapped).getOrElse(Array.emptyByteArray)
+      val digest = Try(Sha256.hash(tree.template)).getOrElse(Sha256.hash(rawBytes)) // if tree cant' be parsed
+      ErgoTreeTemplateHash.fromStringUnsafe(Base16.encode(digest))
+    }
   }
 
   @inline def ergoTreeToAddress[F[_]: Applicative](
     ergoTree: HexString
-  )(implicit enc: ErgoAddressEncoder): F[ErgoAddress] =
-    Base16
-      .decode(ergoTree.unwrapped)
-      .flatMap { bytes =>
-        enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
-      }
-      .fold(_ => (Pay2SAddress(ErgoTreePredef.FalseProp(ZeroHeader)): ErgoAddress).pure, _.pure)
+  )(implicit enc: ErgoAddressEncoder): F[ErgoAddress] = {
+    VersionContext.withVersions(treeVersion, treeVersion) {
+      Base16
+        .decode(ergoTree.unwrapped)
+        .flatMap { bytes =>
+          enc.fromProposition(treeSerializer.deserializeErgoTree(bytes))
+        }
+        .fold(_ => (Pay2SAddress(ErgoTreePredef.FalseProp(ZeroHeader)): ErgoAddress).pure, _.pure)
+    }
+  }
 
-  @inline def addressToErgoTree(
+  @inline private def addressToErgoTree(
     address: Address
   )(implicit enc: ErgoAddressEncoder): ErgoTree =
     enc
@@ -71,40 +80,6 @@ object sigmaWrappers {
 
   @inline def addressToErgoTreeNewtype(address: Address)(implicit enc: ErgoAddressEncoder): org.ergoplatform.explorer.ErgoTree =
     addressToErgoTreeHex(address) |> (tree => org.ergoplatform.explorer.ErgoTree(tree))
-
-  @inline def hexStringToBytes[
-    F[_]: CRaise[*[_], Base16DecodingFailed]: Applicative
-  ](s: HexString): F[Array[Byte]] =
-    Base16
-      .decode(s.unwrapped)
-      .toEither
-      .leftMap(e => Base16DecodingFailed(s, Option(e.getMessage)))
-      .toRaise
-
-  @inline def bytesToErgoTree[
-    F[_]: CRaise[*[_], ErgoTreeDeserializationFailed]: Applicative
-  ](bytes: Array[Byte]): F[ErgoTree] =
-    Try {
-      treeSerializer.deserializeErgoTree(bytes)
-    }.toEither
-      .leftMap(e => ErgoTreeDeserializationFailed(bytes, Option(e.getMessage)))
-      .toRaise
-
-  /** Extracts ErgoTree's template (serialized tree with placeholders instead of values)
-    * @param ergoTree ErgoTree
-    * @return serialized ErgoTree's template
-    */
-  @inline def ergoTreeTemplateBytes[F[_]: CRaise[*[_], ErgoTreeSerializationErr]: Monad](
-    ergoTree: ErgoTree
-  ): F[Array[Byte]] = {
-    val bytes = ergoTree.bytes
-    Try {
-      val r = SigmaSerializer.startReader(bytes)
-      treeSerializer.deserializeHeaderWithTreeBytes(r)._4
-    }.toEither
-      .leftMap(e => ErgoTreeDeserializationFailed(bytes, Option(e.getMessage)))
-      .toRaise
-  }
 
   import cats.instances.list._
   import cats.syntax.traverse._
