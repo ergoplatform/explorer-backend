@@ -5,7 +5,7 @@ import java.util.regex.Pattern
 import cats.instances.either._
 import org.ergoplatform.explorer.protocol.models.TokenPropsEip4
 import org.ergoplatform.explorer.{HexString, RegisterId}
-import sigmastate.{SByte, SCollection}
+import sigma.ast.{SByte, SCollection}
 import tofu.syntax.monadic._
 
 import scala.util.Try

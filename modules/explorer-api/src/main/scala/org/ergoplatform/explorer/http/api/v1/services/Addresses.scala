@@ -13,7 +13,7 @@ import org.ergoplatform.explorer.db.repositories._
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
 import org.ergoplatform.explorer.http.api.v1.models.{AddressInfo, Balance, TokenAmount, TotalBalance}
 import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
-import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.protocol.sigmaWrappers
 import org.ergoplatform.explorer.settings.ServiceSettings
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
@@ -55,13 +55,13 @@ object Addresses {
       (for {
         height <- if (minConfirmations > 0) headerRepo.getBestHeight else Int.MaxValue.pure[D]
         maxHeight = height - minConfirmations
-        tree      = sigma.addressToErgoTreeHex(address)
+        tree      = sigmaWrappers.addressToErgoTreeHex(address)
         balance <- outputRepo.sumUnspentByErgoTree(tree, maxHeight)
         assets  <- assetRepo.aggregateUnspentByErgoTree(tree, maxHeight)
       } yield Balance(balance, assets.map(TokenAmount(_)))) ||> trans.xa
 
     def totalBalanceOf(address: Address): F[TotalBalance] = {
-      val tree = sigma.addressToErgoTreeHex(address)
+      val tree = sigmaWrappers.addressToErgoTreeHex(address)
       (for {
         balance         <- outputRepo.sumUnspentByErgoTree(tree, Int.MaxValue)
         assets          <- assetRepo.aggregateUnspentByErgoTree(tree, Int.MaxValue)
@@ -92,8 +92,8 @@ object Addresses {
     private def mkBatch(maxHeight: Int): Pipe[D, Chunk[Address], (Address, AddressInfo)] =
       for {
         chunk <- _
-        chunkL = chunk.map(c => (c, sigma.addressToErgoTreeHex(c))).toList
-        chunkHex         <- Stream.emit(chunk.map(sigma.addressToErgoTreeHex(_)).toNel).unNone
+        chunkL = chunk.map(c => (c, sigmaWrappers.addressToErgoTreeHex(c))).toList
+        chunkHex         <- Stream.emit(chunk.map(sigmaWrappers.addressToErgoTreeHex(_)).toNel).unNone
         batchUnspentSums <- Stream.eval(outputRepo.sumUnspentByErgoTree(chunkHex, maxHeight))
         batchAssets      <- Stream.eval(assetRepo.aggregateUnspentByErgoTree(chunkHex, maxHeight))
         batchUsedState   <- Stream.eval(outputRepo.getUsedStateByErgoTree(chunkHex))

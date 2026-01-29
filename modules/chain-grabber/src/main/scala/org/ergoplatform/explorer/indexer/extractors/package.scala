@@ -9,7 +9,7 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.indexer.models.SlotData
 import org.ergoplatform.explorer.protocol.models.{ApiFullBlock, RegisterValue}
-import org.ergoplatform.explorer.protocol.{registers, sigma, RegistersParser}
+import org.ergoplatform.explorer.protocol.{RegistersParser, registers, sigmaWrappers}
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, BuildFrom}
 import tofu.syntax.context._
@@ -132,11 +132,11 @@ package object extractors {
           .zipWithIndex
           .traverse { case ((o, outIndex, txId), blockIndex) =>
             for {
-              address <- sigma
+              address <- sigmaWrappers
                            .ergoTreeToAddress[F](o.ergoTree)
                            .map(_.toString)
                            .flatMap(Address.fromString[F])
-              scriptTemplateHash <- sigma.deriveErgoTreeTemplateHash[F](o.ergoTree)
+              scriptTemplateHash <- sigmaWrappers.deriveErgoTreeTemplateHash[F](o.ergoTree)
               registersJson = registers.expand(o.additionalRegisters).asJson
               globalIndex   = lastOutputGlobalIndex + blockIndex + 1
             } yield Output(

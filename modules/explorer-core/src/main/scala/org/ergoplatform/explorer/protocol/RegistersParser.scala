@@ -3,9 +3,8 @@ package org.ergoplatform.explorer.protocol
 import cats.MonadError
 import org.ergoplatform.explorer.HexString
 import org.ergoplatform.explorer.protocol.models.RegisterValue
-import sigmastate.Values.EvaluatedValue
-import sigmastate._
-import sigmastate.serialization.ValueSerializer
+import sigma.ast.{SType, EvaluatedValue}
+import sigma.serialization.ValueSerializer
 import tofu.syntax.monadic._
 import tofu.syntax.raise._
 
@@ -26,7 +25,7 @@ object RegistersParser {
       def parseAny(raw: HexString): F[RegisterValue] =
         F.catchNonFatal(ValueSerializer.deserialize(raw.bytes)).flatMap {
           case v: EvaluatedValue[_] =>
-            sigma.renderEvaluatedValue(v)
+            sigmaWrappers.renderEvaluatedValue(v)
               .map { case (tp, vl) => RegisterValue(tp, vl) }
               .orRaise[F](new Exception(s"Failed to render constant value [$v] in register"))
           case v => F.raiseError(new Exception(s"Got non constant value [$v] in register"))

@@ -22,7 +22,6 @@ import org.ergoplatform.explorer.indexer.extractors._
 import org.ergoplatform.explorer.indexer.models.{FlatBlock, SlotData, TotalStats}
 import org.ergoplatform.explorer.indexer.modules.RepoBundle
 import org.ergoplatform.explorer.protocol.constants
-import org.ergoplatform.explorer.protocol.constants.GenesisHeight
 import org.ergoplatform.explorer.protocol.models.ApiFullBlock
 import org.ergoplatform.explorer.services.ErgoNetwork
 import org.ergoplatform.explorer.settings.{IndexerSettings, ProtocolSettings}

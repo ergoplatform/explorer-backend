@@ -1,10 +1,9 @@
 package org.ergoplatform.explorer.protocol
 
-import org.ergoplatform.ErgoScriptPredef
+import org.ergoplatform.{ErgoScriptPredef, ErgoTreePredef}
 import scorex.util.encode.Base16
-import sigmastate.basics.BcDlogGroup
-import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigma.crypto.BcDlogGroup
+import sigma.crypto.CryptoConstants
 
 // Ergo protocol constants. See: https://github.com/ergoplatform/ergo/blob/master/src/main/scala/org/ergoplatform/settings/Constants.scala
 object constants {
@@ -21,10 +20,10 @@ object constants {
 
   val TeamTreasuryThreshold = 67500000000L
 
-  val group: BcDlogGroup[EcPointType] = CryptoConstants.dlogGroup
+  val group: BcDlogGroup = CryptoConstants.dlogGroup
 
   val FeePropositionScriptHex: String = {
-    val script = ErgoScriptPredef.feeProposition(MinerRewardDelta)
+    val script = ErgoTreePredef.feeProposition(MinerRewardDelta)
     Base16.encode(script.bytes)
   }
 

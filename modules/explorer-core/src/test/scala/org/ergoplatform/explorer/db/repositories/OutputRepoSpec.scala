@@ -7,7 +7,6 @@ import org.ergoplatform.explorer.TokenId
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedOutput
 import org.ergoplatform.explorer.db.{repositories, RealDbTest}
-import org.ergoplatform.explorer.protocol.dex
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 
 import org.scalatest._
@@ -62,105 +61,7 @@ class OutputRepoSpec extends AnyFlatSpec with should.Matchers with RealDbTest {
     }
   }
 
-  ignore should "insert/getUnspentSellOrders" in { // TODO: IGNORED TEST 2
-    withLiveRepos[ConnectionIO] { (_, _, outputRepo, assetRepo) =>
-      forSingleInstance(dexSellOrdersGen(5)) { sellOrders =>
-        val contractTemplate = dex.sellContractTemplateHash
-        val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
-        outputRepo
-          .streamUnspentByErgoTreeTemplateHashAndTokenId(
-            contractTemplate,
-            arbTokenId,
-            0,
-            Int.MaxValue
-          )
-          .compile
-          .toList
-          .runWithIO() should be(empty)
 
-        sellOrders.foreach { case (out, asset) =>
-          assetRepo.insert(asset).runWithIO()
-          outputRepo.insert(out).runWithIO()
-        }
-
-        sellOrders.foreach { case (out, asset) =>
-          val expectedOuts = List(ExtendedOutput(out, None))
-          outputRepo
-            .streamUnspentByErgoTreeTemplateHashAndTokenId(
-              contractTemplate,
-              asset.tokenId,
-              0,
-              Int.MaxValue
-            )
-            .compile
-            .toList
-            .runWithIO() should contain theSameElementsAs expectedOuts
-        }
-
-        outputRepo
-          .streamUnspentByErgoTreeTemplateHashAndTokenId(
-            contractTemplate,
-            arbTokenId,
-            0,
-            Int.MaxValue
-          )
-          .compile
-          .toList
-          .runWithIO() should be(empty)
-      }
-    }
-  }
-
-  ignore should "insert/getUnspentBuyOrders" in { // TODO: IGNORED TEST 3
-    withLiveRepos[ConnectionIO] { (_, _, outputRepo, _) =>
-      forSingleInstance(dexBuyOrderGen) { buyOrder =>
-        val contractTemplate = dex.buyContractTemplateHash
-        val arbTokenId       = assetIdGen.retryUntil(_ => true).sample.get
-        outputRepo
-          .streamUnspentByErgoTreeTemplateHashAndTokenId(
-            contractTemplate,
-            arbTokenId,
-            0,
-            Int.MaxValue
-          )
-          .compile
-          .toList
-          .runWithIO() should be(empty)
-
-        outputRepo.insert(buyOrder).runWithIO()
-
-        val tokenEmbeddedInContract =
-          TokenId
-            .fromString[Try](
-              "21f84cf457802e66fb5930fb5d45fbe955933dc16a72089bf8980797f24e2fa1"
-            )
-            .get
-        val expectedOuts = List(ExtendedOutput(buyOrder, None))
-
-        outputRepo
-          .streamUnspentByErgoTreeTemplateHashAndTokenId(
-            contractTemplate,
-            tokenEmbeddedInContract,
-            0,
-            Int.MaxValue
-          )
-          .compile
-          .toList
-          .runWithIO() should contain theSameElementsAs expectedOuts
-
-        outputRepo
-          .streamUnspentByErgoTreeTemplateHashAndTokenId(
-            contractTemplate,
-            arbTokenId,
-            0,
-            Int.MaxValue
-          )
-          .compile
-          .toList
-          .runWithIO() should be(empty)
-      }
-    }
-  }
 
   private def withLiveRepos[D[_]: LiftConnectionIO: Sync](
     body: (

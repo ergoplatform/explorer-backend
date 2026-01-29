@@ -9,7 +9,7 @@ import io.circe.syntax._
 import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.explorer.db.models._
 import org.ergoplatform.explorer.protocol.models.ApiTransaction
-import org.ergoplatform.explorer.protocol.{registers, sigma}
+import org.ergoplatform.explorer.protocol.{registers, sigmaWrappers}
 import org.ergoplatform.explorer.settings.ProtocolSettings
 import org.ergoplatform.explorer.{Address, BuildFrom}
 import tofu.syntax.context._
@@ -50,11 +50,11 @@ object extractors {
         implicit val e: ErgoAddressEncoder = protocolSettings.addressEncoder
         apiTx.outputs.toList.zipWithIndex.traverse { case (apiOut, idx) =>
           for {
-            address <- sigma
+            address <- sigmaWrappers
                          .ergoTreeToAddress[F](apiOut.ergoTree)
                          .map(_.toString)
                          .flatMap(Address.fromString[F])
-            scriptTemplate <- sigma.deriveErgoTreeTemplateHash[F](apiOut.ergoTree)
+            scriptTemplate <- sigmaWrappers.deriveErgoTreeTemplateHash[F](apiOut.ergoTree)
             registersJson = registers.expand(apiOut.additionalRegisters).asJson
           } yield UOutput(
             apiOut.boxId,

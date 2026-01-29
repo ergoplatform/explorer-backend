@@ -40,7 +40,6 @@ object RoutesV0Bundle {
       implicit0(log: Logger[F]) <- Slf4jLogger.create
       blockChainService         <- BlockChainService(trans)
       assetsService             <- AssetsService(trans)
-      dexService                <- DexService(trans)
       addressesService          <- AddressesService(trans)
       statsService              <- StatsService(protocolSettings)(trans)
       boxesService              <- BoxesService(trans)
@@ -49,7 +48,6 @@ object RoutesV0Bundle {
       search        = Search(blockChainService, txsService, addressesService)
       blockRoutes   = BlocksRoutes(blockChainService)
       assetRoutes   = AssetsRoutes(assetsService)
-      dexRoutes     = DexRoutes(dexService)
       txRoutes      = TransactionsRoutes(txsService, offchainService)
       addressRoutes = AddressesRoutes(addressesService, txsService)
       infoRoutes    = InfoRoutes(statsService)
@@ -58,7 +56,7 @@ object RoutesV0Bundle {
       docsRoutes    = DocsRoutes[F]
       searchRoutes  = SearchRoutes(search)
       boxesRoutes   = BoxesRoutes(boxesService)
-      routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> dexRoutes <+> txRoutes <+>
+      routes = infoRoutes <+> blockRoutes <+> assetRoutes <+> txRoutes <+>
                  addressRoutes <+> statsRoutes <+> docsRoutes <+> searchRoutes <+> boxesRoutes <+> chartsRoutes
     } yield RoutesV0Bundle(routes)
 }

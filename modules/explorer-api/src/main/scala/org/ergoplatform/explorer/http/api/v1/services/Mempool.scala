@@ -20,7 +20,7 @@ import org.ergoplatform.explorer.http.api.v1.models.{OutputInfo, UOutputInfo, UT
 import org.ergoplatform.explorer.http.api.v1.shared.MempoolProps
 import org.ergoplatform.explorer.protocol.TxValidation
 import org.ergoplatform.explorer.protocol.TxValidation.PartialSemanticValidation
-import org.ergoplatform.explorer.protocol.sigma.addressToErgoTreeNewtype
+import org.ergoplatform.explorer.protocol.sigmaWrappers.addressToErgoTreeNewtype
 import org.ergoplatform.explorer.settings.{ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.{Address, BoxId, ErgoTree, TxId}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction}

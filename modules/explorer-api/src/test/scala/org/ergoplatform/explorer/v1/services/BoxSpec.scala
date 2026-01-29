@@ -22,7 +22,7 @@ import org.ergoplatform.explorer.http.api.v1.models.OutputInfo
 import org.ergoplatform.explorer.http.api.v1.services.{Boxes, Mempool}
 import org.ergoplatform.explorer.settings.{RedisSettings, ServiceSettings, UtxCacheSettings}
 import org.ergoplatform.explorer.v1.services.constants._
-import org.ergoplatform.explorer.protocol.sigma
+import org.ergoplatform.explorer.protocol.sigmaWrappers
 import org.ergoplatform.explorer.testContainers.RedisTest
 import org.scalatest.{PrivateMethodTester, TryValues}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -53,7 +53,7 @@ class BS_A extends BoxSpec {
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
     val address1S                               = SenderAddressString
     val address1T                               = Address.fromString[Try](address1S)
-    lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
+    lazy val address1Tree                       = sigmaWrappers.addressToErgoTreeHex(address1T.get)
     val getUnspentOutputsByAddressD             = PrivateMethod[ConnectionIO[List[OutputInfo]]]('getUnspentOutputsByAddressD)
     withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
@@ -112,7 +112,7 @@ class BS_B extends BoxSpec {
     implicit val trans: Trans[ConnectionIO, IO] = Trans.fromDoobie(xa)
     val address1S                               = SenderAddressString
     val address1T                               = Address.fromString[Try](address1S)
-    lazy val address1Tree                       = sigma.addressToErgoTreeHex(address1T.get)
+    lazy val address1Tree                       = sigmaWrappers.addressToErgoTreeHex(address1T.get)
     withResources[IO](container.mappedPort(redisTestPort))
       .use { case (settings, utxCache, redis) =>
         withServices[IO, ConnectionIO](settings, utxCache, redis) { (_, box) =>

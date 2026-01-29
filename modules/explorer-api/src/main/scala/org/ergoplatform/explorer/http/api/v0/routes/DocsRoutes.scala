@@ -26,7 +26,6 @@ final class DocsRoutes[F[_]: Concurrent: ContextShift: Timer](implicit opts: Htt
     AddressesEndpointDefs.endpoints ++
     AssetsEndpointDefs.endpoints ++
     BlocksEndpointDefs.endpoints ++
-    DexEndpointsDefs.endpoints ++
     TransactionsEndpointDefs.endpoints ++
     BoxesEndpointDefs.endpoints ++
     SearchEndpointDefs.endpoints ++
