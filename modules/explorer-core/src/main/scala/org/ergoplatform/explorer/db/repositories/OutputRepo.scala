@@ -62,7 +62,7 @@ trait OutputRepo[D[_], S[_[_], _]] {
 
   /** Get outputs with a given `ergoTree` from persistence.
     */
-  def streamAllByErgoTree(ergoTree: HexString, offset: Int, limit: Int): S[D, ExtendedOutput]
+  def streamAllByErgoTree(ergoTree: HexString, offset: Int, limit: Int, ordering: OrderingString): S[D, ExtendedOutput]
 
   /** Count outputs with a given `ergoTree` from persistence.
     */
