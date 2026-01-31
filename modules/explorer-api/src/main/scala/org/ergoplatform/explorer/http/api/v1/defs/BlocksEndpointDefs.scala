@@ -18,7 +18,7 @@ class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
   private val PathPrefix = "blocks"
 
   def endpoints: List[Endpoint[_, _, _, _]] =
-    getBlocksDef :: getBlockSummaryByIdDef :: getBlockHeadersDef :: streamBlocksDef :: streamBlocksSummaryDef :: Nil
+    getBlocksDef :: getBlockSummaryByIdDef :: getBlockHeadersDef :: streamBlocksDef :: streamBlocksSummaryDef :: streamFullBlocksDef :: Nil
 
   def getBlocksDef: Endpoint[(Paging, Sorting), ApiErr, Items[BlockInfo], Any] =
     baseEndpointDef.get
@@ -54,6 +54,14 @@ class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(sorting(allowedHeaderSortingFields, defaultFieldOpt = "height".some))
       .in(PathPrefix / "headers")
       .out(jsonBody[Items[BlockHeader]])
+
+  def streamFullBlocksDef: Endpoint[(Long, Int), ApiErr, fs2.Stream[F, Byte], Fs2Streams[F]] =
+    baseEndpointDef.get
+      .in(PathPrefix / "stream" / "full")
+      .in(minGlobalIndex)
+      .in(limit(settings.maxEntitiesPerRequest))
+      .out(streamBody(Fs2Streams[F])(Schema.derived[List[FullBlockInfo]], CodecFormat.Json(), None))
+      .description("Stream full blocks with all details (transactions, inputs, outputs, assets) ordered by height")
 
   val allowedBlockSortingFields: NonEmptyMap[String, String] =
     NonEmptyMap.of(

@@ -15,6 +15,15 @@ trait ApiQueryCache[F[_]] {
   def put(key: RequestHash32, value: CachedResponse): F[Unit]
 
   def get(key: RequestHash32): F[Option[CachedResponse]]
+  
+  /** Invalidate cache entries matching the given pattern */
+  def invalidatePattern(pattern: String): F[Unit]
+  
+  /** Invalidate recent blocks starting from given height */
+  def invalidateRecentBlocks(fromHeight: Int): F[Unit]
+  
+  /** Invalidate mutable data (unconfirmed transactions, addresses, stats) */
+  def invalidateMutableData(): F[Unit]
 }
 
 object ApiQueryCache {
@@ -49,6 +58,31 @@ object ApiQueryCache {
              }
         _ <- Logger[F].info(s"Get key $key result from api cache is $r.")
       } yield r
+    
+    def invalidatePattern(pattern: String): F[Unit] =
+      for {
+        _ <- Logger[F].info(s"Invalidating cache keys matching pattern: $pattern")
+        keys <- cmd.keys(s"ergo.explorer.*$pattern*")
+        _ <- keys.toList.traverse_(cmd.del)
+        _ <- Logger[F].info(s"Invalidated ${keys.size} keys matching pattern: $pattern")
+      } yield ()
+    
+    def invalidateRecentBlocks(fromHeight: Int): F[Unit] =
+      for {
+        _ <- Logger[F].info(s"Invalidating recent blocks from height $fromHeight")
+        _ <- invalidatePattern(s"blocks:height:$fromHeight")
+        _ <- invalidatePattern("blocks:tip")
+        _ <- Logger[F].info("Recent blocks invalidated")
+      } yield ()
+    
+    def invalidateMutableData(): F[Unit] =
+      for {
+        _ <- Logger[F].info("Invalidating mutable data (transactions, addresses, stats)")
+        _ <- invalidatePattern("transactions:unconfirmed")
+        _ <- invalidatePattern("addresses:")
+        _ <- invalidatePattern("stats:")
+        _ <- Logger[F].info("Mutable data invalidated")
+      } yield ()
 
   }
 }

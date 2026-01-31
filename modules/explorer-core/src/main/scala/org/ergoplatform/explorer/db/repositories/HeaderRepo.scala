@@ -71,6 +71,10 @@ trait HeaderRepo[D[_], S[_[_], _]] {
     ordering: OrderingString,
     orderBy: String
   ): S[D, Header]
+
+  /** Stream headers with global index greater than or equal to minGix
+    */
+  def streamHeadersAfterGix(minGix: Long, limit: Int): S[D, Header]
 }
 
 object HeaderRepo {
@@ -128,5 +132,8 @@ object HeaderRepo {
       orderBy: String
     ): Stream[D, Header] =
       QS.getMany(offset, limit, ordering, orderBy).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
+
+    def streamHeadersAfterGix(minGix: Long, limit: Int): Stream[D, Header] =
+      QS.getHeadersAfterGix(minGix, limit).stream.translate(LiftConnectionIO[D].liftConnectionIOK)
   }
 }

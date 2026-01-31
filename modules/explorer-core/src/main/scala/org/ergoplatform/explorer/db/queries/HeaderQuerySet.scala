@@ -204,4 +204,30 @@ object HeaderQuerySet extends QuerySet {
   def getBestHeight(implicit lh: LogHandler): Query0[Int] =
     sql"select height from node_headers where main_chain = true order by height desc limit 1"
       .query[Int]
+
+  def getHeadersAfterGix(minGix: Long, limit: Int)(implicit lh: LogHandler): Query0[Header] =
+    sql"""
+         |select
+         |  id,
+         |  parent_id,
+         |  version,
+         |  height,
+         |  n_bits,
+         |  difficulty,
+         |  timestamp,
+         |  state_root,
+         |  ad_proofs_root,
+         |  transactions_root,
+         |  extension_hash,
+         |  miner_pk,
+         |  w,
+         |  n,
+         |  d,
+         |  votes,
+         |  main_chain
+         |from node_headers
+         |where height >= $minGix and main_chain = true
+         |order by height asc
+         |limit $limit
+         |""".stripMargin.query[Header]
 }
