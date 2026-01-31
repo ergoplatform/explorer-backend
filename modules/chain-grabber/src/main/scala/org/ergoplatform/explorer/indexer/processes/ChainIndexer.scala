@@ -223,13 +223,34 @@ object ChainIndexer {
       )
 
     private def updateChainStatus(blockId: BlockId, mainChain: Boolean): D[Unit] =
-      repos.headers.updateChainStatusById(blockId, mainChain) >>
-      (if (settings.indexes.blockStats) repos.blocksInfo.updateChainStatusByHeaderId(blockId, mainChain)
-       else unit[D]) >>
-      repos.txs.updateChainStatusByHeaderId(blockId, mainChain) >>
-      repos.outputs.updateChainStatusByHeaderId(blockId, mainChain) >>
-      repos.inputs.updateChainStatusByHeaderId(blockId, mainChain) >>
-      repos.dataInputs.updateChainStatusByHeaderId(blockId, mainChain)
+      for {
+        // Update chain status for all entities
+        _ <- repos.headers.updateChainStatusById(blockId, mainChain)
+        _ <- if (settings.indexes.blockStats) repos.blocksInfo.updateChainStatusByHeaderId(blockId, mainChain)
+             else unit[D]
+        _ <- repos.txs.updateChainStatusByHeaderId(blockId, mainChain)
+        _ <- repos.outputs.updateChainStatusByHeaderId(blockId, mainChain)
+        _ <- repos.inputs.updateChainStatusByHeaderId(blockId, mainChain)
+        _ <- repos.dataInputs.updateChainStatusByHeaderId(blockId, mainChain)
+        
+        // FIX FOR ISSUE #259: Recalculate globalIndex after chain reorganization
+        // When a block's main_chain status changes, we need to ensure globalIndex
+        // remains consistent with chronological ordering (height -> timestamp -> tx_index)
+        //
+        // This only triggers when mainChain = true (block becoming part of main chain)
+        // to avoid unnecessary recalculations when blocks are removed from main chain.
+        headerOpt <- repos.headers.get(blockId)
+        _ <- headerOpt match {
+          case Some(header) if mainChain =>
+            // Recalculate globalIndex for all transactions from this height onwards
+            // This ensures ORDER BY timestamp = ORDER BY globalIndex invariant
+            repos.txs.recalculateGlobalIndexFromHeight(header.height)
+          case _ =>
+            // No recalculation needed if block is being marked as non-main-chain
+            // or if header not found (shouldn't happen, but defensive programming)
+            unit[D]
+        }
+      } yield ()
 
     private def insertBlock(block: FlatBlock): F[Unit] = {
       val insertAll =
