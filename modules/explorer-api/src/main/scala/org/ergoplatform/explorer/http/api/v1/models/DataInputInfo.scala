@@ -5,6 +5,7 @@ import io.circe.{Codec, Json}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, FullDataInput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
+import org.ergoplatform.explorer.protocol.models.ExpandedRegister
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 final case class DataInputInfo(
@@ -41,7 +42,7 @@ object DataInputInfo {
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
+        Schema.derived[ExpandedRegister]
       )(_ => Map.empty)
     )
 

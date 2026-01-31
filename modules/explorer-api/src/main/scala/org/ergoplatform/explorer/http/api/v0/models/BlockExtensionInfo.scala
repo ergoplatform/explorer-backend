@@ -4,6 +4,7 @@ import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import io.circe.{Codec, Json}
 import org.ergoplatform.explorer.db.models.BlockExtension
+import org.ergoplatform.explorer.protocol.models.ExpandedRegister
 import org.ergoplatform.explorer.{BlockId, HexString}
 import sttp.tapir.{Schema, SchemaType, Validator}
 
@@ -20,7 +21,7 @@ object BlockExtensionInfo {
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
+        Schema.derived[ExpandedRegister]
       )(_ => Map.empty)
     )
 
