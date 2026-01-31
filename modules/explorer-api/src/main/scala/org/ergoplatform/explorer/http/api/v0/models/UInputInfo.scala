@@ -1,6 +1,6 @@
 package org.ergoplatform.explorer.http.api.v0.models
 
-import io.circe.Codec
+import io.circe.{Codec, Json}
 import io.circe.magnolia.derivation.decoder.semiauto.deriveMagnoliaDecoder
 import io.circe.magnolia.derivation.encoder.semiauto.deriveMagnoliaEncoder
 import org.ergoplatform.explorer.db.models.aggregates.ExtendedUInput
@@ -15,7 +15,8 @@ final case class UInputInfo(
   index: Int,
   outputTransactionId: Option[TxId],
   outputIndex: Option[Int],
-  address: Option[Address]
+  address: Option[Address],
+  extension: Json
 )
 
 object UInputInfo {
@@ -32,6 +33,7 @@ object UInputInfo {
       .modify(_.outputTransactionId)(_.description("ID of the output transaction"))
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Address"))
+      .modify(_.extension)(_.description("Context extension of the spending proof"))
 
   implicit val validator: Validator[UInputInfo] = schema.validator
 
@@ -44,7 +46,8 @@ object UInputInfo {
       in.input.index,
       Some(in.outputTxId),
       Some(in.outputIndex),
-      Some(in.address)
+      Some(in.address),
+      in.extension
     )
 
   def batch(ins: List[ExtendedUInput]): List[UInputInfo] =

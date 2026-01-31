@@ -25,7 +25,8 @@ final case class InputInfo(
   ergoTreeScript: String,
   address: Address,
   assets: List[AssetInstanceInfo],
-  additionalRegisters: Json
+  additionalRegisters: Json,
+  extension: Json
 )
 
 object InputInfo {
@@ -45,6 +46,7 @@ object InputInfo {
       .modify(_.outputCreatedAt)(_.description("Height the output corresponding this input was created at"))
       .modify(_.outputSettledAt)(_.description("Height the output corresponding this input was settled at"))
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
+      .modify(_.extension)(_.description("Context extension of the spending proof"))
 
   implicit val validator: Validator[InputInfo] = schema.validator
 
@@ -73,10 +75,11 @@ object InputInfo {
       i.outputSettledAt,
       i.ergoTree,
       ergoTreeConstants,
-      ergoTreeScript,
+      i.ergoTreeScript,
       i.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)),
-      i.additionalRegisters
+      i.additionalRegisters,
+      i.extension
     )
   }
 

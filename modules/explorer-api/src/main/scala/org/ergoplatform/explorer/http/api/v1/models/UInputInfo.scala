@@ -20,7 +20,8 @@ final case class UInputInfo(
   ergoTree: ErgoTree,
   address: Address,
   assets: List[AssetInstanceInfo],
-  additionalRegisters: Json
+  additionalRegisters: Json,
+  extension: Json
 )
 
 object UInputInfo {
@@ -37,6 +38,7 @@ object UInputInfo {
       )
       .modify(_.outputIndex)(_.description("Index of the output corresponding this input"))
       .modify(_.address)(_.description("Decoded address of the corresponding box holder"))
+      .modify(_.extension)(_.description("Context extension of the spending proof"))
 
   implicit val validator: Validator[UInputInfo] = schema.validator
 
@@ -59,7 +61,8 @@ object UInputInfo {
       i.ergoTree,
       i.address,
       assets.sortBy(_.index).map(AssetInstanceInfo(_)) ++ confirmedAssets.sortBy(_.index).map(AssetInstanceInfo(_)),
-      i.additionalRegisters
+      i.additionalRegisters,
+      i.extension
     )
 
   def batch(
