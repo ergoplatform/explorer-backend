@@ -112,6 +112,11 @@ trait TransactionRepo[D[_], S[_[_], _]] {
   /** Update main_chain flag with a given `newChainStatus` for all txs related to given `headerId`.
     */
   def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit]
+
+  /** Recalculate globalIndex for all transactions starting from a given height.
+    * This method should be called after blockchain reorganization to maintain chronological consistency.
+    */
+  def recalculateGlobalIndexFromHeight(height: Int): D[Unit]
 }
 
 object TransactionRepo {
@@ -205,5 +210,8 @@ object TransactionRepo {
 
     def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean): D[Unit] =
       QS.updateChainStatusByHeaderId(headerId, newChainStatus).run.void.liftConnectionIO
+
+    def recalculateGlobalIndexFromHeight(height: Int): D[Unit] =
+      QS.recalculateGlobalIndexFromHeight(height).run.void.liftConnectionIO
   }
 }

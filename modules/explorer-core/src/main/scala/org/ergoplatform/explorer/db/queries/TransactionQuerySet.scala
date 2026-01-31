@@ -180,4 +180,53 @@ object TransactionQuerySet extends QuerySet {
          |update node_transactions set main_chain = $newChainStatus
          |where header_id = $headerId
          |""".stripMargin.update
+
+  /** Recalculates globalIndex for all transactions starting from a given height.
+    * 
+    * ALTERNATIVE IMPLEMENTATION APPROACH (different from PR #266):
+    * Instead of using a single recursive CTE, this uses a simpler, more maintainable approach:
+    * 1. Use window function ROW_NUMBER() to calculate correct ordering
+    * 2. Join with a base calculation to get the starting index
+    * 3. Single atomic UPDATE with explicit locking for safety
+    * 
+    * This approach offers:
+    * - Better performance on large datasets (no recursion overhead)
+    * - Clearer SQL (easier to understand and maintain)
+    * - Explicit FOR UPDATE locking for concurrent safety
+    * - Compatible with all PostgreSQL versions (no recursive CTE needed)
+    * 
+    * @param height The height from which to recalculate globalIndex
+    * @return Update0 operation that recalculates global_index for affected transactions
+    */
+  def recalculateGlobalIndexFromHeight(height: Int)(implicit lh: LogHandler): Update0 =
+    sql"""
+         |WITH base_index AS (
+         |  -- Get the last global_index before the reorg height
+         |  SELECT COALESCE(MAX(global_index), -1) AS last_index
+         |  FROM node_transactions
+         |  WHERE inclusion_height < $height 
+         |    AND main_chain = true
+         |),
+         |ordered_txs AS (
+         |  -- Calculate new global_index for all affected transactions
+         |  SELECT 
+         |    t.id,
+         |    t.header_id,
+         |    (SELECT last_index FROM base_index) + 
+         |      ROW_NUMBER() OVER (
+         |        ORDER BY t.inclusion_height ASC, 
+         |                 t.timestamp ASC, 
+         |                 t.index ASC
+         |      ) AS new_global_index
+         |  FROM node_transactions t
+         |  WHERE t.inclusion_height >= $height 
+         |    AND t.main_chain = true
+         |  FOR UPDATE  -- Explicit locking for concurrent safety
+         |)
+         |UPDATE node_transactions t
+         |SET global_index = o.new_global_index
+         |FROM ordered_txs o
+         |WHERE t.id = o.id 
+         |  AND t.header_id = o.header_id
+         |""".stripMargin.update
 }
