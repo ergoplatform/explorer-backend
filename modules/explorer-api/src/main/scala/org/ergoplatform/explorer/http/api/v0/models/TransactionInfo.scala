@@ -48,7 +48,10 @@ object TransactionInfo {
       val relatedInputs = inputs
         .filter(_.input.txId == tx.id)
         .sortBy(_.input.index)
-        .map(InputInfo.apply)
+        .map { in =>
+          val relAssets = groupedAssets.get(in.input.boxId).toList.flatten
+          InputInfo(in, relAssets)
+        }
       val relatedDataInputs = dataInputs
         .filter(_.input.txId == tx.id)
         .sortBy(_.input.index)
