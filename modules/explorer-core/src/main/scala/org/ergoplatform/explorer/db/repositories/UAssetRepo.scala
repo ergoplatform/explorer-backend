@@ -63,8 +63,25 @@ object UAssetRepo {
     def getAllByBoxId(boxId: BoxId): D[List[ExtendedUAsset]] =
       QS.getAllByBoxId(boxId).to[List].liftConnectionIO
 
-    def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedUAsset]] =
-      QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
+    def getAllByBoxIds(boxIds: NonEmptyList[BoxId]): D[List[ExtendedUAsset]] = {
+      import org.ergoplatform.explorer.db.QueryConstants
+      
+      if (boxIds.size <= QueryConstants.MaxIdsPerQuery) {
+        // Fast path: no chunking needed
+        QS.getAllByBoxIds(boxIds).to[List].liftConnectionIO
+      } else {
+        // Slow path: chunk and flatten to avoid PostgreSQL parameter limit
+        boxIds.toList
+          .grouped(QueryConstants.MaxIdsPerQuery)
+          .toList
+          .flatTraverse { chunk =>
+            NonEmptyList.fromList(chunk) match {
+              case Some(nel) => QS.getAllByBoxIds(nel).to[List].liftConnectionIO
+              case None      => Monad[D].pure(List.empty)
+            }
+          }
+      }
+    }
 
     def getConfirmedAndUnconfirmed(boxIds: NonEmptyList[BoxId]): D[List[AnyAsset]] =
       QS.getConfirmedAndUnconfirmed(boxIds).to[List].liftConnectionIO
