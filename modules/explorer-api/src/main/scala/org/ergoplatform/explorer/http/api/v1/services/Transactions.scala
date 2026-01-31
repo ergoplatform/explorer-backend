@@ -139,12 +139,22 @@ object Transactions {
         chunk      <- _
         txIds      <- Stream.emit(chunk.map(_.id).toNel).unNone
         ins        <- Stream.eval(inputs.getFullByTxIds(txIds, narrowByAddress))
-        inIds      <- Stream.emit(ins.map(_.input.boxId).toNel).unNone
-        inAssets   <- Stream.eval(inIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds))
+        // Support empty inputs: load assets only if inputs exist
+        inAssets   <- Stream.eval(
+          ins.map(_.input.boxId).toNel match {
+            case Some(inIds) => inIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds)
+            case None        => Monad[D].pure(List.empty)
+          }
+        )
         dataIns    <- Stream.eval(dataInputs.getFullByTxIds(txIds))
         outs       <- Stream.eval(outputs.getAllByTxIds(txIds, narrowByAddress))
-        outIds     <- Stream.emit(outs.map(_.output.boxId).toNel).unNone
-        outAssets  <- Stream.eval(outIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds))
+        // Support empty outputs: load assets only if outputs exist
+        outAssets  <- Stream.eval(
+          outs.map(_.output.boxId).toNel match {
+            case Some(outIds) => outIds.grouped(MaxIdsPerRequest).toList.flatTraverse(assets.getAllByBoxIds)
+            case None         => Monad[D].pure(List.empty)
+          }
+        )
         bestHeight <- Stream.eval(headers.getBestHeight)
         txsWithHeights = chunk.map(tx => tx -> tx.numConfirmations(bestHeight))
         txInfo <-
