@@ -7,6 +7,7 @@ import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.AnyOutput
 import org.ergoplatform.explorer.db.models.aggregates.AnyAsset
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
+import org.ergoplatform.explorer.protocol.models.ExpandedRegister
 import sttp.tapir.{Schema, SchemaType, Validator}
 
 @derive(encoder, decoder)
@@ -51,7 +52,11 @@ object AnyOutputInfo {
   implicit private def registersSchema: Schema[Json] =
     Schema(
       SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
+        Schema.derived[ExpandedRegister]
+          .modify(_.serializedValue)(_.description("Hex-encoded serialized register value"))
+          .modify(_.sigmaType)(_.description("Type of the register value"))
+          .modify(_.renderedValue)(_.description("Human-readable rendered register value"))
+          .as[Json]
       )(_ => Map.empty)
     )
 

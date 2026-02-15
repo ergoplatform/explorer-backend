@@ -15,11 +15,7 @@ final case class BlockExtensionInfo(
 object BlockExtensionInfo {
 
   implicit private def fieldsSchema: Schema[Json] =
-    Schema(
-      SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
-      )(_ => Map.empty)
-    )
+    Schema(SchemaType.SArray(Schema.derived[Any])(_.toIterable))
 
   implicit val codec: Codec[BlockExtensionInfo] = deriveCodec
 
