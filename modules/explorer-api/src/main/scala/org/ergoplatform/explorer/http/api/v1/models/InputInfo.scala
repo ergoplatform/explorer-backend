@@ -14,6 +14,7 @@ final case class InputInfo(
   value: Long,
   index: Int,
   spendingProof: Option[HexString],
+  extension: Json,
   outputBlockId: BlockId,
   outputTransactionId: TxId,
   outputIndex: Int,
@@ -35,6 +36,7 @@ object InputInfo {
       .derived[InputInfo]
       .modify(_.boxId)(_.description("ID of the corresponding box"))
       .modify(_.spendingProof)(_.description("Hex-encoded serialized sigma proof"))
+      .modify(_.extension)(_.description("Spending proof context extension: arbitrary key->value dictionary"))
       .modify(_.value)(_.description("Number of nanoErgs in the corresponding box"))
       .modify(_.index)(_.description("Index of the input in a transaction"))
       .modify(_.outputTransactionId)(
@@ -65,6 +67,7 @@ object InputInfo {
       i.value,
       i.input.index,
       i.input.proofBytes,
+      i.input.extension,
       i.outputHeaderId,
       i.outputTxId,
       i.outputIndex,
