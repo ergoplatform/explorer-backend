@@ -14,7 +14,7 @@ import org.ergoplatform.explorer.cache.Redis
 import org.ergoplatform.explorer.commonGenerators.forSingleInstance
 import org.ergoplatform.explorer.db.algebra.LiftConnectionIO
 import org.ergoplatform.explorer.db.{repositories, RealDbTest, Trans}
-import org.ergoplatform.explorer.http.api.models.Paging
+import org.ergoplatform.explorer.http.api.models.{Paging, Sorting}
 import org.ergoplatform.explorer.http.api.models.Sorting.Desc
 import org.ergoplatform.explorer.testSyntax.runConnectionIO._
 import org.ergoplatform.explorer.http.api.streaming.CompileStream
@@ -81,7 +81,7 @@ class BS_A extends BoxSpec {
                     outRepo.insert(out).runWithIO()
                     txRepo.insert(tx).runWithIO()
                   }
-                  box.getOutputsByAddress(address1T.get, Paging(0, Int.MaxValue)).unsafeRunSync().total should be(3)
+                  box.getOutputsByAddress(address1T.get, Paging(0, Int.MaxValue), Sorting.Asc).unsafeRunSync().total should be(3)
                   (box invokePrivate getUnspentOutputsByAddressD(
                     address1T.get,
                     Desc,
@@ -139,7 +139,7 @@ class BS_B extends BoxSpec {
                     outRepo.insert(out).runWithIO()
                     txRepo.insert(tx).runWithIO()
                   }
-                  box.getOutputsByAddress(address1T.get, Paging(0, Int.MaxValue)).unsafeRunSync().total should be(3)
+                  box.getOutputsByAddress(address1T.get, Paging(0, Int.MaxValue), Sorting.Asc).unsafeRunSync().total should be(3)
                   val data = box
                     .`getUnspent&UnconfirmedOutputsMergedByAddress`(
                       address1T.get,

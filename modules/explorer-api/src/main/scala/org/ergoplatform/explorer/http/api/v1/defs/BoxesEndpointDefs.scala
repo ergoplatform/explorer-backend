@@ -104,10 +104,11 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(PathPrefix / path[BoxId])
       .out(jsonBody[OutputInfo])
 
-  def getOutputsByErgoTreeDef: Endpoint[(HexString, Paging), ApiErr, Items[OutputInfo], Any] =
+  def getOutputsByErgoTreeDef: Endpoint[(HexString, Paging, SortOrder), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byErgoTree" / path[HexString])
       .in(paging(settings.maxEntitiesPerRequest))
+      .in(ordering)
       .out(jsonBody[Items[OutputInfo]])
 
   def getUnspentOutputsByErgoTreeDef: Endpoint[(HexString, Paging, SortOrder), ApiErr, Items[OutputInfo], Any] =
@@ -130,10 +131,11 @@ final class BoxesEndpointDefs[F[_]](settings: RequestsSettings) {
       .in(paging(settings.maxEntitiesPerRequest))
       .out(jsonBody[Items[OutputInfo]])
 
-  def getOutputsByAddressDef: Endpoint[(Address, Paging), ApiErr, Items[OutputInfo], Any] =
+  def getOutputsByAddressDef: Endpoint[(Address, Paging, SortOrder), ApiErr, Items[OutputInfo], Any] =
     baseEndpointDef.get
       .in(PathPrefix / "byAddress" / path[Address])
       .in(paging(settings.maxEntitiesPerRequest))
+      .in(ordering)
       .out(jsonBody[Items[OutputInfo]])
 
   def `getUnspent&UnconfirmedOutputsMergedByAddressDef`

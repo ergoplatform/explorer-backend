@@ -63,9 +63,10 @@ object OutputQuerySet extends QuerySet {
   def getMainByErgoTree(
     ergoTree: HexString,
     offset: Int,
-    limit: Int
-  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
-    sql"""
+    limit: Int,
+    ordering: OrderingString
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val q = sql"""
          |select
          |  o.box_id,
          |  o.tx_id,
@@ -85,8 +86,11 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |where o.main_chain = true and o.ergo_tree = $ergoTree
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput]
+         |""".stripMargin
+    val ord = Fragment.const(s"order by o.global_index $ordering")
+    val lim = Fragment.const(s"offset $offset limit $limit")
+    (q ++ ord ++ lim).query[ExtendedOutput]
+  }
 
   def countAllByErgoTree(
     ergoTree: HexString

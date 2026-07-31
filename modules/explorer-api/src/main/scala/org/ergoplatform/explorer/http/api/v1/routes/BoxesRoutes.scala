@@ -97,8 +97,8 @@ final class BoxesRoutes[
     }
 
   private def getOutputsByErgoTreeR: HttpRoutes[F] =
-    interpreter.toRoutes(defs.getOutputsByErgoTreeDef) { case (tree, paging) =>
-      service.getOutputsByErgoTree(tree, paging).adaptThrowable.value
+    interpreter.toRoutes(defs.getOutputsByErgoTreeDef) { case (tree, paging, ord) =>
+      service.getOutputsByErgoTree(tree, paging, ord).adaptThrowable.value
     }
 
   private def getUnspentOutputsByErgoTreeR: HttpRoutes[F] =
@@ -117,8 +117,8 @@ final class BoxesRoutes[
     }
 
   private def getOutputsByAddressR: HttpRoutes[F] =
-    interpreter.toRoutes(defs.getOutputsByAddressDef) { case (address, paging) =>
-      service.getOutputsByAddress(address, paging).adaptThrowable.value
+    interpreter.toRoutes(defs.getOutputsByAddressDef) { case (address, paging, ord) =>
+      service.getOutputsByAddress(address, paging, ord).adaptThrowable.value
     }
 
   private def getUnspentOutputsByAddressR: HttpRoutes[F] =
