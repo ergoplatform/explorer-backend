@@ -6,7 +6,7 @@ import io.circe.Json
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, FullInput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
-import sttp.tapir.{Schema, SchemaType, Validator}
+import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
 final case class InputInfo(
@@ -48,12 +48,7 @@ object InputInfo {
 
   implicit val validator: Validator[InputInfo] = schema.validator
 
-  implicit private def registersSchema: Schema[Json] =
-    Schema(
-      SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
-      )(_ => Map.empty)
-    )
+  implicit private def registersSchema: Schema[Json] = RegisterInfo.registersSchema
 
   def apply(i: FullInput, assets: List[ExtendedAsset]): InputInfo = {
     val (ergoTreeConstants, ergoTreeScript) = PrettyErgoTree.fromHexString(i.ergoTree).fold(

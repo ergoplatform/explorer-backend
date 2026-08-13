@@ -5,7 +5,7 @@ import io.circe.{Codec, Json}
 import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, FullDataInput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
-import sttp.tapir.{Schema, SchemaType, Validator}
+import sttp.tapir.{Schema, Validator}
 
 final case class DataInputInfo(
   boxId: BoxId,
@@ -38,12 +38,7 @@ object DataInputInfo {
 
   implicit val validator: Validator[DataInputInfo] = schema.validator
 
-  implicit private def registersSchema: Schema[Json] =
-    Schema(
-      SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
-      )(_ => Map.empty)
-    )
+  implicit private def registersSchema: Schema[Json] = RegisterInfo.registersSchema
 
   def apply(i: FullDataInput, assets: List[ExtendedAsset]): DataInputInfo =
     DataInputInfo(
