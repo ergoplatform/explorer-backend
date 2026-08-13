@@ -7,7 +7,7 @@ import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.{Output, UOutput}
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput, ExtendedUAsset, ExtendedUOutput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
-import sttp.tapir.{Schema, SchemaType, Validator}
+import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
 final case class UOutputInfo(
@@ -39,12 +39,7 @@ object UOutputInfo {
 
   implicit val validator: Validator[UOutputInfo] = schema.validator
 
-  implicit private def registersSchema: Schema[Json] =
-    Schema(
-      SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
-      )(_ => Map.empty)
-    )
+  implicit private def registersSchema: Schema[Json] = RegisterInfo.registersSchema
 
   def apply(
     o: ExtendedUOutput,

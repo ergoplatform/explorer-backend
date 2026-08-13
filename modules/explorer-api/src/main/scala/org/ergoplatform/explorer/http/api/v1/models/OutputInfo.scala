@@ -7,7 +7,7 @@ import org.ergoplatform.explorer._
 import org.ergoplatform.explorer.db.models.Output
 import org.ergoplatform.explorer.db.models.aggregates.{ExtendedAsset, ExtendedOutput}
 import org.ergoplatform.explorer.http.api.models.AssetInstanceInfo
-import sttp.tapir.{Schema, SchemaType, Validator}
+import sttp.tapir.{Schema, Validator}
 
 @derive(encoder, decoder)
 final case class OutputInfo(
@@ -48,12 +48,7 @@ object OutputInfo {
 
   implicit val validator: Validator[OutputInfo] = schema.validator
 
-  implicit private def registersSchema: Schema[Json] =
-    Schema(
-      SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
-      )(_ => Map.empty)
-    )
+  implicit private def registersSchema: Schema[Json] = RegisterInfo.registersSchema
 
   def apply(
     o: ExtendedOutput,

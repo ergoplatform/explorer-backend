@@ -6,7 +6,7 @@ import derevo.derive
 import io.circe.Json
 import cats.syntax.option._
 import org.ergoplatform.explorer.{Address, BlockId, BoxId, HexString, TxId}
-import sttp.tapir.{Schema, SchemaType, Validator}
+import sttp.tapir.{Schema, Validator}
 
 /** MOutputInfo is a merge of `UOutputInfo` & `OutputInfo`
   */
@@ -85,10 +85,5 @@ object MOutputInfo {
 
   implicit val validator: Validator[MOutputInfo] = schema.validator
 
-  implicit private def registersSchema: Schema[Json] =
-    Schema(
-      SchemaType.SOpenProduct(
-        Schema(SchemaType.SString[Json]())
-      )(_ => Map.empty)
-    )
+  implicit private def registersSchema: Schema[Json] = RegisterInfo.registersSchema
 }
