@@ -69,7 +69,7 @@ object BoxesService {
 
     def getOutputsByAddress(address: Address): Stream[F, OutputInfo] =
       (sigmaWrappers.addressToErgoTreeHex(address) |> (outRepo
-        .streamAllByErgoTree(_, 0, Int.MaxValue)
+        .streamAllByErgoTree(_, 0, Int.MaxValue, Sorting.Asc.value)
         .chunkN(100))).through(toOutputInfo) ||> trans.xas
 
     def getUnspentOutputsByAddress(address: Address): Stream[F, OutputInfo] =
@@ -79,7 +79,7 @@ object BoxesService {
 
     def getOutputsByErgoTree(ergoTree: HexString): Stream[F, OutputInfo] =
       outRepo
-        .streamAllByErgoTree(ergoTree, 0, Int.MaxValue)
+        .streamAllByErgoTree(ergoTree, 0, Int.MaxValue, Sorting.Asc.value)
         .chunkN(100)
         .through(toOutputInfo) ||> trans.xas
 

@@ -36,7 +36,8 @@ final class TestOutputRepo[F[_]: Applicative](val source: Source) extends Output
   override def streamAllByErgoTree(
     ergoTree: HexString,
     offset: Int,
-    limit: Int
+    limit: Int,
+    ord: OrderingString
   ): fs2.Stream[F, ExtendedOutput] = ???
 
   def countAllByTokenId(tokenId: TokenId): F[Int] = ???
