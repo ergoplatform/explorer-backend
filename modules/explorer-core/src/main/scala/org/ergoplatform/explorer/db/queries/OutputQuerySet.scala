@@ -63,9 +63,10 @@ object OutputQuerySet extends QuerySet {
   def getMainByErgoTree(
     ergoTree: HexString,
     offset: Int,
-    limit: Int
-  )(implicit lh: LogHandler): Query0[ExtendedOutput] =
-    sql"""
+    limit: Int,
+    ordering: OrderingString
+  )(implicit lh: LogHandler): Query0[ExtendedOutput] = {
+    val q = sql"""
          |select
          |  o.box_id,
          |  o.tx_id,
@@ -82,11 +83,25 @@ object OutputQuerySet extends QuerySet {
          |  o.timestamp,
          |  o.main_chain,
          |  i.tx_id
-         |from node_outputs o
-         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
-         |where o.main_chain = true and o.ergo_tree = $ergoTree
-         |offset $offset limit $limit
-         |""".stripMargin.query[ExtendedOutput]
+         |from (
+         |  select *
+         |  from node_outputs
+         |  where main_chain = true and ergo_tree = $ergoTree
+         |""".stripMargin
+    val innerOrdAndLim =
+      Fragment.const(s"order by global_index $ordering, box_id $ordering offset $offset limit $limit")
+    val join = sql"""
+         |) as o
+         |left join lateral (
+         |  select tx_id
+         |  from node_inputs
+         |  where box_id = o.box_id and main_chain = true
+         |  limit 1
+         |) as i on true
+         |""".stripMargin
+    val outerOrd = Fragment.const(s"order by o.global_index $ordering, o.box_id $ordering")
+    (q ++ innerOrdAndLim ++ join ++ outerOrd).query[ExtendedOutput]
+  }
 
   def countAllByErgoTree(
     ergoTree: HexString
