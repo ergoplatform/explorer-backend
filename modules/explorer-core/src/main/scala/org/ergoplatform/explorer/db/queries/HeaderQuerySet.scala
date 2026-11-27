@@ -188,6 +188,7 @@ object HeaderQuerySet extends QuerySet {
            |  votes,
            |  main_chain
            |from node_headers
+           |where main_chain = true
            |""".stripMargin
     (q ++ ord ++ lim).query[Header]
   }

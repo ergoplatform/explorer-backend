@@ -39,7 +39,7 @@ class BlocksEndpointDefs[F[_]](settings: RequestsSettings) {
     baseEndpointDef.get
       .in(PathPrefix / "stream" / "summary")
       .in(paging(settings.maxBlocksPerRequest))
-      .in(sorting(allowedBlockSortingFields))
+      .in(sorting(allowedHeaderSortingFields, defaultFieldOpt = "height".some))
       .out(streamBody(Fs2Streams[F])(Schema.derived[List[BlockSummaryV1]], CodecFormat.Json(), None))
       .description("Get a stream of block summaries ordered by global index (height)")
 

@@ -204,7 +204,7 @@ object OutputQuerySet extends QuerySet {
     sql"""
          |select o.address, coalesce(cast(sum(o.value) as bigint), 0) as balance from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
-         |left join node_transactions tx on tx.id = o.tx_id
+         |left join node_transactions tx on tx.id = o.tx_id and tx.main_chain = true
          |where o.main_chain = true and i.box_id is null
          |group by o.address
          |order by balance desc
@@ -393,22 +393,21 @@ object OutputQuerySet extends QuerySet {
          |select coalesce(cast(sum(o.value) as decimal), 0)
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
-         |where i.box_id is null and o.timestamp >= $ts
+         |where o.main_chain = true and i.box_id is null and o.timestamp >= $ts
          |""".stripMargin.query[BigDecimal]
 
   def estimatedOutputsSince(
     ts: Long
   )(genesisAddress: Address)(implicit lh: LogHandler): Query0[BigDecimal] =
-    Fragment
-      .const(
-        s"""
-           |select coalesce(cast(sum(o.value) as decimal), 0)
-           |from node_outputs o
-           |join node_inputs i on o.box_id = i.box_id
-           |where i.box_id is null and o.timestamp >= $ts and o.address <> '$genesisAddress'
-           |""".stripMargin
-      )
-      .query[BigDecimal]
+    sql"""
+         |select coalesce(cast(sum(o.value) as decimal), 0)
+         |from node_outputs o
+         |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |where o.main_chain = true
+         |  and i.box_id is null
+         |  and o.timestamp >= $ts
+         |  and o.address <> $genesisAddress
+         |""".stripMargin.query[BigDecimal]
 
   def updateChainStatusByHeaderId(headerId: BlockId, newChainStatus: Boolean)(implicit lh: LogHandler): Update0 =
     sql"""
@@ -867,7 +866,7 @@ object OutputQuerySet extends QuerySet {
     lh: LogHandler
   ): Query0[ExtendedOutput] =
     sql"""
-         |select distinct on (o.box_id, o.creation_height)
+         |select distinct on (h.height, o.box_id, o.creation_height)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -886,7 +885,8 @@ object OutputQuerySet extends QuerySet {
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
          |left join node_headers h on h.id = o.header_id
-         |where o.ergo_tree_template_hash = $templateHash
+         |where o.main_chain = true
+         |  and o.ergo_tree_template_hash = $templateHash
          |  and h.height >= $minHeight
          |  and h.height <= $maxHeight
          |order by h.height asc
@@ -896,7 +896,7 @@ object OutputQuerySet extends QuerySet {
     implicit lh: LogHandler
   ): Query0[Output] =
     sql"""
-         |select distinct on (o.box_id, o.creation_height)
+         |select distinct on (h.height, o.box_id, o.creation_height)
          |  o.box_id,
          |  o.tx_id,
          |  o.header_id,
@@ -913,6 +913,7 @@ object OutputQuerySet extends QuerySet {
          |  o.main_chain
          |from node_outputs o
          |left join node_inputs i on o.box_id = i.box_id and i.main_chain = true
+         |left join node_headers h on h.id = o.header_id
          |where o.main_chain = true
          |  and i.box_id is null
          |  and o.ergo_tree_template_hash = $templateHash
