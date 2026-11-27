@@ -34,9 +34,9 @@ object sigmaWrappers {
   @inline def extractErgoTreeConstants[F[_]: Applicative: Throws](
     raw: HexString
   ): F[List[(Int, Constant[SType], HexString)]] =
-    deserializeErgoTree(raw).map {
+    deserializeErgoTree(raw).map { tree =>
       VersionContext.withVersions(treeVersion, treeVersion) {
-        _.constants.zipWithIndex.toList.map { case (c, ix) =>
+        tree.constants.zipWithIndex.toList.map { case (c, ix) =>
           val bw = SigmaSerializer.startWriter()
           constantSerializer.serialize(c, bw)
           val rawValue = HexString.fromStringUnsafe(Base16.encode(bw.toBytes))
@@ -70,10 +70,12 @@ object sigmaWrappers {
   @inline private def addressToErgoTree(
     address: Address
   )(implicit enc: ErgoAddressEncoder): ErgoTree =
-    enc
-      .fromString(address.unwrapped)
-      .map(_.script)
-      .get
+    VersionContext.withVersions(treeVersion, treeVersion) {
+      enc
+        .fromString(address.unwrapped)
+        .map(_.script)
+        .get
+    }
 
   @inline def addressToErgoTreeHex(address: Address)(implicit enc: ErgoAddressEncoder): HexString =
     addressToErgoTree(address) |> (tree => HexString.fromStringUnsafe(Base16.encode(tree.bytes)))
@@ -137,6 +139,7 @@ object sigmaWrappers {
               case None        => OptionT.some(tp -> "null")
             }
           }
+        case _ => OptionT.none
       }
     goRender(ev).value.value
   }
