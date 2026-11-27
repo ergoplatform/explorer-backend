@@ -228,8 +228,8 @@ object BlockInfoQuerySet extends QuerySet {
   def circulatingSupplySince(ts: Long)(implicit lh: LogHandler): Query0[Long] =
     sql"""
          |select coalesce(cast(sum(o.value) as bigint), 0) from node_transactions t
-         |right join node_outputs o on t.id = o.tx_id
-         |where t.timestamp >= $ts
+         |right join node_outputs o on t.id = o.tx_id and t.header_id = o.header_id and t.main_chain = true
+         |where t.timestamp >= $ts and o.main_chain = true
          |""".stripMargin.query[Long]
 
   def totalCoinsSince(ts: Long)(implicit lh: LogHandler): Query0[TimePoint[Long]] =
@@ -239,7 +239,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  cast(max(total_coins_issued) as bigint),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
-         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.id = blocks_info.header_id and h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
@@ -250,7 +250,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  cast(avg(block_size) as bigint),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
-         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.id = blocks_info.header_id and h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
@@ -261,7 +261,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  cast(avg(txs_count) as bigint),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
-         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.id = blocks_info.header_id and h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
@@ -272,7 +272,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  cast(sum(txs_count) as bigint),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
-         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.id = blocks_info.header_id and h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
@@ -283,7 +283,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  cast(max(block_chain_total_size) as bigint),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
-         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.id = blocks_info.header_id and h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
@@ -294,7 +294,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  cast(avg(difficulty) as bigint),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
-         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.id = blocks_info.header_id and h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
@@ -305,7 +305,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  cast(sum(difficulty) as decimal),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
-         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.id = blocks_info.header_id and h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[BigInt]]
 
@@ -316,7 +316,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  cast(sum(miner_revenue) as bigint),
          |  to_char(to_timestamp(timestamp / 1000), 'DD/MM/YYYY') as date
          |from blocks_info
-         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.main_chain = true))
+         |where (timestamp >= $ts and exists(select 1 from node_headers h where h.id = blocks_info.header_id and h.main_chain = true))
          |group by date order by t asc
          |""".stripMargin.query[TimePoint[Long]]
 
@@ -329,7 +329,7 @@ object BlockInfoQuerySet extends QuerySet {
          |  count(*) as count,
          |  m.miner_name
          |from blocks_info bi left join known_miners m on (bi.miner_address = m.miner_address)
-         |where timestamp >= $ts
+         |where bi.timestamp >= $ts and bi.main_chain = true
          |group by bi.miner_address, m.miner_name
          |order by count desc
          |""".stripMargin.query[MinerStats]
