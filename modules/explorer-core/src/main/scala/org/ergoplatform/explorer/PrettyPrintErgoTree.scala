@@ -3,7 +3,7 @@ package org.ergoplatform.explorer
 import org.typelevel.paiges.Doc
 import sigma.ast._
 import sigma.ast.syntax.SValue
-import sigma.data.CBigInt
+import sigma.data.{CBigInt, CUnsignedBigInt}
 import sigma.Coll
 import sigma.serialization.OpCodes
 
@@ -25,13 +25,14 @@ object PrettyPrintErgoTree {
           val suffix = tpe match {
             case SInt => Doc.empty
             case SLong => Doc.char('L')
-            case SByte | SShort | SBigInt | SBoolean => Doc.text(".to") + STypeDoc(tpe)
+            case SByte | SShort | SBigInt | SUnsignedBigInt | SBoolean => Doc.text(".to") + STypeDoc(tpe)
             case _: SCollection[_] => Doc.empty
             // Change this fallback to use base16 after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/814
             case other => Doc.empty
           }
           val res = value match {
             case CBigInt(bi) => Doc.str(bi)
+            case CUnsignedBigInt(bi) => Doc.str(bi)
             case coll: Coll[_] =>
               // Drop Coll, keep (2,3,4,5,5,...)
               val elems = coll.toString().drop(4)
@@ -269,6 +270,7 @@ object PrettyPrintErgoTree {
     case SInt => Doc.text("Int")
     case SLong => Doc.text("Long")
     case SBigInt => Doc.text("BigInt")
+    case SUnsignedBigInt => Doc.text("UnsignedBigInt")
     case SBox => Doc.text("Box")
     case SSigmaProp => Doc.text("SigmaProp")
     case SCollectionType(elemType) => Doc.text("Coll") + wrapDocWithBrackets(STypeDoc(elemType))
@@ -290,6 +292,7 @@ object PrettyPrintErgoTree {
     // Not used in final ergo tree
     case STypeApply(name, args) => Doc.text("Error: STypeApply node should be eliminated during compilation.")
     case STypeVar(name) => Doc.text("Error: STypeVar node should be eliminated during compilation.")
+    case other => Doc.text(other.toString)
   }
 
   // Create `(item1, item2, ...)`
@@ -304,6 +307,7 @@ object PrettyPrintErgoTree {
     case SInt => "i"
     case SLong => "l"
     case SBigInt => "bi"
+    case SUnsignedBigInt => "ubi"
     case SBox => "box"
     case SSigmaProp => "prop"
     case SCollectionType(_) => "coll"
@@ -323,6 +327,7 @@ object PrettyPrintErgoTree {
     // Not used in final ergo tree
     case STypeApply(_, _) => "STypeApply (should be eliminated during compilation)"
     case STypeVar(_) => "STypeVar (should be eliminated during compilation)"
+    case _ => "v"
   }
 
 }

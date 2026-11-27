@@ -124,24 +124,26 @@ object ergoInstances {
 
   implicit val evaluatedValueEncoder: Encoder[EvaluatedValue[_ <: SType]] =
     Encoder.instance { value =>
-      ValueSerializer.serialize(value).asJson
+      val version = VersionContext.V6SoftForkVersion
+      VersionContext.withVersions(version, version) {
+        ValueSerializer.serialize(value).asJson
+      }
     }
 
   implicit val evaluatedValueDecoder: Decoder[EvaluatedValue[_ <: SType]] =
     decodeEvaluatedValue(_.asInstanceOf[EvaluatedValue[SType]])
 
-  def decodeEvaluatedValue[T](transform: EvaluatedValue[SType] => T): Decoder[T] = {
-    val version = VersionContext.V6SoftForkVersion
-    VersionContext.withVersions(version, version) {
-      Decoder.instance { implicit cursor: ACursor =>
-        cursor.as[Array[Byte]] flatMap { bytes =>
-          fromThrows(
+  def decodeEvaluatedValue[T](transform: EvaluatedValue[SType] => T): Decoder[T] =
+    Decoder.instance { implicit cursor: ACursor =>
+      cursor.as[Array[Byte]] flatMap { bytes =>
+        val version = VersionContext.V6SoftForkVersion
+        fromThrows(
+          VersionContext.withVersions(version, version) {
             transform(ValueSerializer.deserialize(bytes).asInstanceOf[EvaluatedValue[SType]])
-          )
-        }
+          }
+        )
       }
     }
-  }
 
   implicit val dataInputEncoder: Encoder[DataInput] =
     Encoder.instance { input =>
@@ -241,19 +243,23 @@ object ergoInstances {
     }
 
   implicit val ergoTreeEncoder: Encoder[ErgoTree] = Encoder.instance { value =>
-    ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(value).asJson
-  }
-
-  def decodeErgoTree[T](transform: ErgoTree => T): Decoder[T] = {
     val version = VersionContext.V6SoftForkVersion
     VersionContext.withVersions(version, version) {
-      Decoder.instance { implicit cursor: ACursor =>
-        cursor.as[Array[Byte]] flatMap { bytes =>
-          fromThrows(transform(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)))
-        }
-      }
+      ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(value).asJson
     }
   }
+
+  def decodeErgoTree[T](transform: ErgoTree => T): Decoder[T] =
+    Decoder.instance { implicit cursor: ACursor =>
+      cursor.as[Array[Byte]] flatMap { bytes =>
+        val version = VersionContext.V6SoftForkVersion
+        fromThrows(
+          VersionContext.withVersions(version, version) {
+            transform(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes))
+          }
+        )
+      }
+    }
 
   implicit val ergoTreeDecoder: Decoder[ErgoTree] =
     decodeErgoTree(_.asInstanceOf[ErgoTree])
@@ -269,23 +275,26 @@ object ergoInstances {
 
   implicit val ergoBoxEncoder: Encoder[ErgoBox] =
     Encoder.instance { box =>
-      Json.obj(
-        "boxId"               -> box.id.asJson,
-        "value"               -> box.value.asJson,
-        "ergoTree"            -> ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(box.ergoTree).asJson,
-        "assets"              -> box.additionalTokens.toArray.toSeq.asJson,
-        "creationHeight"      -> box.creationHeight.asJson,
-        "additionalRegisters" -> box.additionalRegisters.asJson,
-        "transactionId"       -> box.transactionId.asJson,
-        "index"               -> box.index.asJson
-      )
+      val version = VersionContext.V6SoftForkVersion
+      VersionContext.withVersions(version, version) {
+        Json.obj(
+          "boxId"               -> box.id.asJson,
+          "value"               -> box.value.asJson,
+          "ergoTree"            -> ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(box.ergoTree).asJson,
+          "assets"              -> box.additionalTokens.toArray.toSeq.asJson,
+          "creationHeight"      -> box.creationHeight.asJson,
+          "additionalRegisters" -> box.additionalRegisters.asJson,
+          "transactionId"       -> box.transactionId.asJson,
+          "index"               -> box.index.asJson
+        )
+      }
     }
 
   implicit val ergoBoxDecoder: Decoder[ErgoBox] =
     Decoder.instance { cursor =>
       for {
         value            <- cursor.downField("value").as[Long]
-        ergoTreeBytes    <- cursor.downField("ergoTree").as[Array[Byte]]
+        ergoTree         <- cursor.downField("ergoTree").as[ErgoTree]
         additionalTokens <- cursor.downField("assets").as(Decoder.decodeSeq(assetDecoder))
         creationHeight   <- cursor.downField("creationHeight").as[Int]
         additionalRegisters <- cursor
@@ -295,7 +304,7 @@ object ergoInstances {
         index         <- cursor.downField("index").as[Short]
       } yield new ErgoBox(
         value               = value,
-        ergoTree            = VersionContext.withVersions(3,3)(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes)),
+        ergoTree            = ergoTree,
         additionalTokens    = Colls.fromArray(additionalTokens.toArray),
         additionalRegisters = additionalRegisters,
         transactionId       = transactionId,
@@ -306,12 +315,15 @@ object ergoInstances {
 
   implicit val ergoLikeTransactionEncoder: Encoder[ErgoLikeTransaction] =
     Encoder.instance { tx =>
-      Json.obj(
-        "id"         -> tx.id.asJson,
-        "inputs"     -> tx.inputs.asJson,
-        "dataInputs" -> tx.dataInputs.asJson,
-        "outputs"    -> tx.outputs.asJson
-      )
+      val version = VersionContext.V6SoftForkVersion
+      VersionContext.withVersions(version, version) {
+        Json.obj(
+          "id"         -> tx.id.asJson,
+          "inputs"     -> tx.inputs.asJson,
+          "dataInputs" -> tx.dataInputs.asJson,
+          "outputs"    -> tx.outputs.asJson
+        )
+      }
     }
 
   implicit val transactionOutputsDecoder: Decoder[(ErgoBoxCandidate, Option[BoxId])] =

@@ -25,6 +25,7 @@ object SigmaType {
     case object SInt extends SimpleKindSigmaType
     case object SLong extends SimpleKindSigmaType
     case object SBigInt extends SimpleKindSigmaType
+    case object SUnsignedBigInt extends SimpleKindSigmaType
     case object SContext extends SimpleKindSigmaType
     case object SGlobal extends SimpleKindSigmaType
     case object SHeader extends SimpleKindSigmaType
